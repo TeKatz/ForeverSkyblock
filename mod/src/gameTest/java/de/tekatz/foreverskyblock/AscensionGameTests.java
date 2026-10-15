@@ -26,7 +26,8 @@ public final class AscensionGameTests {
     @GameTest(template = "empty")
     public static void failedStorageRetainsCoreAndRetryCompletesOnce(GameTestHelper h) throws Exception {
         var machine = place(h); var owner = player(h, "StorageOwner");
-        var file = net.neoforged.fml.loading.FMLPaths.GAMEDIR.get().resolve("forever_skyblock/progression/server/" + owner.getUUID() + ".json");
+        var file = net.neoforged.fml.loading.FMLPaths.GAMEDIR.get().resolve("forever_skyblock/progression")
+                .resolve(owner.server.isDedicatedServer() ? "server" : "local").resolve(owner.getUUID() + ".json");
         java.nio.file.Files.createDirectories(file);
         try {
             machine.inventory().setStackInSlot(0, ForeverCore.create()); machine.start(owner);
