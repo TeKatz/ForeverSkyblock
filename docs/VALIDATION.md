@@ -12,7 +12,7 @@
 - Inspected the delivered JAR: 0.5.0/TeKatz metadata, optional Iron Jetpacks dependency, all six declared mixins, new classes/recipe, EN/DE key parity, no bundled third-party classes or test/profile data. Thirty condenser recipe/texture/implementation entries match 0.4.0 byte-for-byte. JSON/TOML, relative links, four-card layout bounds and the unchanged fixed-island hash passed.
 - JAR SHA-256: `99d1ab1cc8be3beb1267a360da9e66538298f9b79f7f2bb478126c3ff8fcac4f`.
 
-The integration baseline is separate from TeKatz's not-yet-supplied installed Iron Jetpacks version. No claim is made that these are the installed versions of the newly added mods.
+At the time of the 0.5.0 integration test, installed Iron Jetpacks/Iron Furnaces versions had not been supplied. The later `Modliste.txt` update lists Iron Jetpacks 8.0.11 and Iron Furnaces 4.3.2; this is separate user-supplied evidence.
 
 TeKatz reported successful in-game testing of 0.5.0 on October 15, 2026: unlocked jetpacks appear in JEI only after purchase, resetting points hides them again, and jetpack functionality is disabled without the required research. A specifically tested Creative Jetpack works only after buying the final Creative stage. TeKatz stated that the system behaves exactly as intended. This is user-reported client validation, separate from the automated tests above.
 
@@ -154,3 +154,7 @@ Client visual verification beside the condenser/log/fence, actual JEI plus/Shift
 ## Acceptance and integration — October 15, 2026
 
 TeKatz accepted the delivered 0.6.1 update and requested merging the completed work. The Iron Jetpacks research and condenser-mixing prerequisites were merged into `main` through PRs #5 and #6. PR #7 combines the chamber-rendering fix, JEI recipe transfer, introductory tutorial suppression and this documentation refresh. Its mod source is unchanged from the verified 0.6.1 test JAR; the final follow-up edits only documentation. Acceptance is user-reported; individual client checks were not enumerated and are not claimed as separately performed automated or manual tests.
+
+## Updated user-supplied mod list — October 15, 2026
+
+Imported `Modliste.txt` as 80 unique enabled artifact labels, with no disabled entries. Verified exact label order/count, source-text SHA-256 and byte-for-byte preservation of the raw text and previous runtime JSON. Confirmed Forever Skyblock 0.6.1, Iron Jetpacks 8.0.11 and Iron Furnaces 4.3.2 directly from the supplied labels. The snapshot is explicitly provisional and does not assert a new loaded-ID count, embedded module removals, launcher download identifiers or full pack compatibility. Schema 3 distinguishes this launcher list from the archived schema-2 runtime-log snapshot. No mod code, recipes, configs or fixed-island bytes changed; no new game build is required for this documentation/data update.

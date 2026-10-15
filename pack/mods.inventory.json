@@ -1,581 +1,388 @@
 {
-  "schema_version": 2,
-  "status": "development_runtime_snapshot_not_a_launcher_manifest",
+  "schema_version": 3,
+  "status": "development_user_supplied_mod_list_not_a_launcher_manifest",
   "snapshot_date": "2026-10-15",
   "source": {
-    "file_name": "latest.log",
-    "log_start_local": "2026-10-15 08:00:57.610",
-    "sha256": "166a66550a3add3af618c0602813112585d1832692fcecbe06e20cb40ed312de",
-    "raw_log_committed": false
+    "kind": "user_supplied_launcher_mod_list",
+    "file_name": "Modliste.txt",
+    "sha256": "64b716a2b4359ebc6dbe5076e45a55d6900a847964fa4ef24af0fbfaece5c646",
+    "raw_list_path": "pack/snapshots/2026-10-15_modlist.txt",
+    "interpretation": "Enabled artifact labels exactly as supplied. This file does not report loaded mod IDs, embedded modules, JAR contents, file hashes or launcher download identifiers."
   },
-  "update_policy": "Mods are experimental and may change frequently. Refresh this snapshot from a newly supplied log when requested; inclusion is not a final design decision.",
+  "update_policy": "Subject to change. Mods are experimental and may change frequently. Refresh from newly supplied lists/logs/files when requested; inclusion is not a final progression decision.",
   "minecraft": "1.21.1",
   "loader": {
     "name": "NeoForge",
     "installed_version": "21.1.259",
     "version_policy": "Pinned pack runtime; change only when TeKatz reports a new version.",
-    "custom_mod_build_version": "21.1.249"
+    "custom_mod_build_version": "21.1.249",
+    "installed_version_source": "TeKatz confirmation and the previous runtime log; unchanged, not measured from this text list"
   },
   "java": 21,
-  "loaded_entry_count": 79,
+  "enabled_entry_count": 80,
+  "disabled_entry_count": 0,
+  "loaded_entry_count": null,
   "mods": [
     {
-      "name": "AE2WTLib",
-      "version": "19.5.1",
-      "mod_id": "ae2wtlib",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ae2wtlib-19.5.1",
+      "enabled": true
     },
     {
-      "name": "AE2WTLib API",
-      "version": "19.5.1",
-      "mod_id": "ae2wtlib_api",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "Apotheosis-1.21.1-8.9.0",
+      "enabled": true
     },
     {
-      "name": "Apotheosis",
-      "version": "8.9.0",
-      "mod_id": "apotheosis",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ApothicAttributes-1.21.1-2.11.0",
+      "enabled": true
     },
     {
-      "name": "Apothic Attributes",
-      "version": "2.11.0",
-      "mod_id": "apothic_attributes",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ApothicEnchanting-1.21.1-1.6.4",
+      "enabled": true
     },
     {
-      "name": "Apothic Enchanting",
-      "version": "1.6.4",
-      "mod_id": "apothic_enchanting",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ApothicSpawners-1.21.1-1.4.0",
+      "enabled": true
     },
     {
-      "name": "Apothic Spawners",
-      "version": "1.4.0",
-      "mod_id": "apothic_spawners",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "appleskin-neoforge-mc1.21-3.0.9",
+      "enabled": true
     },
     {
-      "name": "AppleSkin",
-      "version": "3.0.9+mc1.21",
-      "mod_id": "appleskin",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "appliedenergistics2-19.2.18",
+      "enabled": true
     },
     {
-      "name": "Applied Energistics 2",
-      "version": "19.2.18",
-      "mod_id": "ae2",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "Applied-Mekanistics-1.6.3",
+      "enabled": true
     },
     {
-      "name": "Applied Mekanistics",
-      "version": "1.6.3",
-      "mod_id": "appmek",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "architectury-13.0.11-neoforge",
+      "enabled": true
     },
     {
-      "name": "Architectury",
-      "version": "13.0.11",
-      "mod_id": "architectury",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "BadOptimizations-2.4.1-1.21.1",
+      "enabled": true
     },
     {
-      "name": "BadOptimizations",
-      "version": "2.4.1",
-      "mod_id": "badoptimizations",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "balm-neoforge-1.21.1-21.0.66",
+      "enabled": true
     },
     {
-      "name": "Balm",
-      "version": "21.0.66",
-      "mod_id": "balm",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "better-advanced-tooltips-2101.1.0-build.5",
+      "enabled": true
     },
     {
-      "name": "Better Advanced Tooltips",
-      "version": "2101.1.0-build.5",
-      "mod_id": "betteradvancedtooltips",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "bookshelf-neoforge-1.21.1-21.1.81",
+      "enabled": true
     },
     {
-      "name": "Bookshelf",
-      "version": "21.1.81",
-      "mod_id": "bookshelf",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "cleanswing-1.10-1.21",
+      "enabled": true
     },
     {
-      "name": "Cloth Config v15 API",
-      "version": "15.0.140",
-      "mod_id": "cloth_config",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "cloth-config-15.0.140-neoforge",
+      "enabled": true
     },
     {
-      "name": "Clumps",
-      "version": "19.0.0.1",
-      "mod_id": "clumps",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "Clumps-neoforge-1.21.1-19.0.0.1",
+      "enabled": true
     },
     {
-      "name": "Configured",
-      "version": "2.6.3",
-      "mod_id": "configured",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "configured-neoforge-1.21.1-2.6.3",
+      "enabled": true
     },
     {
-      "name": "Controlling",
-      "version": "19.0.5",
-      "mod_id": "controlling",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "Controlling-neoforge-1.21.1-19.0.5",
+      "enabled": true
     },
     {
-      "name": "Cucumber Library",
-      "version": "8.0.16",
-      "mod_id": "cucumber",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "Cucumber-1.21.1-8.0.16",
+      "enabled": true
     },
     {
-      "name": "Curios API",
-      "version": "9.5.1+1.21.1",
-      "mod_id": "curios",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "curios-neoforge-9.5.1+1.21.1",
+      "enabled": true
     },
     {
-      "name": "Default World Type",
-      "version": "1.21-5.0.4",
-      "mod_id": "defaultworldtype",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "DefaultWorldType-1.21-5.0.4",
+      "enabled": true
     },
     {
-      "name": "EnchantmentDescriptions",
-      "version": "21.1.11",
-      "mod_id": "enchdesc",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "enchdesc-neoforge-1.21.1-21.1.11",
+      "enabled": true
     },
     {
-      "name": "EntityCulling",
-      "version": "1.11.3",
-      "mod_id": "entityculling",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "entityculling-neoforge-1.11.3-mc1.21.1",
+      "enabled": true
     },
     {
-      "name": "Euphoria Patcher",
-      "version": "1.10.5-r5.9.3-neoforge",
-      "mod_id": "euphoria_patcher",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "EuphoriaPatcher-1.10.5-r5.9.3-neoforge",
+      "enabled": true
     },
     {
-      "name": "ExtendedAE",
-      "version": "1.21-2.2.35-neoforge",
-      "mod_id": "extendedae",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ExtendedAE-1.21-2.2.35-neoforge",
+      "enabled": true
     },
     {
-      "name": "Ferrite Core",
-      "version": "7.0.3",
-      "mod_id": "ferritecore",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ExtremeSoundMuffler-3.57_NeoForge-1.21",
+      "enabled": true
     },
     {
-      "name": "Forever Production Monitor",
-      "version": "5.0.1",
-      "mod_id": "forever_production_monitor",
-      "status": "observed_in_runtime_log",
-      "repository": "TeKatz/ForeverProductionMonitor"
+      "artifact_label": "FallingTree-1.21.1-1.21.1.11",
+      "enabled": true
     },
     {
-      "name": "Forever Recipe Editor",
-      "version": "1.4.3-skyblock.1",
-      "mod_id": "forever_recipe_editor",
-      "status": "observed_in_runtime_log",
-      "repository": "TeKatz/ForeverRecipeEditor",
-      "branch": "skyblock",
-      "commit": "3dbaa50e8f0a59b900f8b5e5ac68f3cac73ea32f",
-      "required_jei": "19.64.0.454"
+      "artifact_label": "ferritecore-7.0.3-neoforge",
+      "enabled": true
     },
     {
-      "name": "Forever Skyblock",
-      "version": "0.2.1",
-      "mod_id": "forever_skyblock",
-      "status": "observed_in_runtime_log",
-      "repository": "TeKatz/ForeverSkyblock",
-      "source": "mod/"
+      "artifact_label": "ForeverProductionMonitor-1.21.1-NeoForge-5.0.1",
+      "enabled": true
     },
     {
-      "name": "Forgified Fabric API Base",
-      "version": "0.4.42+d1308ded19",
-      "mod_id": "fabric_api_base",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ForeverRecipeEditor-1.21.1-NeoForge-1.4.3-skyblock.1",
+      "enabled": true
     },
     {
-      "name": "Forgified Fabric BlockView API (v2)",
-      "version": "1.0.10+9afaaf8c19",
-      "mod_id": "fabric_block_view_api_v2",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ForeverSkyblock-1.21.1-NeoForge-0.6.1",
+      "enabled": true
     },
     {
-      "name": "Forgified Fabric Renderer API (v1)",
-      "version": "3.4.1+9125b6dc19",
-      "mod_id": "fabric_renderer_api_v1",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ftb-backups-3-21.1.5",
+      "enabled": true
     },
     {
-      "name": "Forgified Fabric Rendering Data Attachment (v1)",
-      "version": "0.3.48+73761d2e19",
-      "mod_id": "fabric_rendering_data_attachment_v1",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ftb-chunks-neoforge-2101.1.22",
+      "enabled": true
     },
     {
-      "name": "FTB Backups 3",
-      "version": "21.1.5",
-      "mod_id": "ftbbackups3",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ftb-essentials-neoforge-2101.1.10",
+      "enabled": true
     },
     {
-      "name": "FTB Chunks",
-      "version": "2101.1.22",
-      "mod_id": "ftbchunks",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ftb-library-neoforge-2101.1.37",
+      "enabled": true
     },
     {
-      "name": "FTB Essentials",
-      "version": "2101.1.10",
-      "mod_id": "ftbessentials",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ftb-quests-neoforge-2101.1.36",
+      "enabled": true
     },
     {
-      "name": "FTB Library",
-      "version": "2101.1.37",
-      "mod_id": "ftblibrary",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ftb-teams-neoforge-2101.1.11",
+      "enabled": true
     },
     {
-      "name": "FTB Quests",
-      "version": "2101.1.36",
-      "mod_id": "ftbquests",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ftb-ultimine-neoforge-2101.1.15",
+      "enabled": true
     },
     {
-      "name": "FTB Teams",
-      "version": "2101.1.11",
-      "mod_id": "ftbteams",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "functionalstorage-1.21.1-1.5.7",
+      "enabled": true
     },
     {
-      "name": "FTB Ultimine",
-      "version": "2101.1.15",
-      "mod_id": "ftbultimine",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "Glodium-1.21-2.2-neoforge",
+      "enabled": true
     },
     {
-      "name": "Functional Storage",
-      "version": "1.21.1-1.5.7",
-      "mod_id": "functionalstorage",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "guideme-21.1.19",
+      "enabled": true
     },
     {
-      "name": "Glodium",
-      "version": "1.21-2.2-neoforge",
-      "mod_id": "glodium",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ImmediatelyFast-NeoForge-1.6.15+1.21.1",
+      "enabled": true
     },
     {
-      "name": "GuideME",
-      "version": "21.1.19",
-      "mod_id": "guideme",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "industrialforegoing-1.21-3.6.39",
+      "enabled": true
     },
     {
-      "name": "ImmediatelyFast",
-      "version": "1.6.15+1.21.1",
-      "mod_id": "immediatelyfast",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "iris-neoforge-1.8.14-beta.1+mc1.21.1",
+      "enabled": true
     },
     {
-      "name": "Industrial Foregoing",
-      "version": "1.21-3.6.39",
-      "mod_id": "industrialforegoing",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "ironfurnaces-neoforge-1.21.1-4.3.2",
+      "enabled": true
     },
     {
-      "name": "Iris",
-      "version": "1.8.14-beta.1+mc1.21.1",
-      "mod_id": "iris",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "IronJetpacks-1.21.1-8.0.11",
+      "enabled": true
     },
     {
-      "name": "Jade",
-      "version": "15.10.6+neoforge",
-      "mod_id": "jade",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "Jade-1.21.1-NeoForge-15.10.6",
+      "enabled": true
     },
     {
-      "name": "Just Enough Items",
-      "version": "19.64.0.454",
-      "mod_id": "jei",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "jei-1.21.1-neoforge-19.64.0.454",
+      "enabled": true
     },
     {
-      "name": "KubeJS",
-      "version": "2101.7.2-build.377",
-      "mod_id": "kubejs",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "kubejs_curios_neoforge_1.21.1-1.0.4",
+      "enabled": true
     },
     {
-      "name": "KubeJS Mekanism",
-      "version": "2101.1.7-build.18",
-      "mod_id": "kubejs_mekanism",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "kubejs-mekanism-neoforge-2101.1.7-build.18",
+      "enabled": true
     },
     {
-      "name": "KubeJSCurios",
-      "version": "1.0.4",
-      "mod_id": "kubejs_curios",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "kubejs-neoforge-2101.7.2-build.377",
+      "enabled": true
     },
     {
-      "name": "KumaAPI",
-      "version": "21.0.8",
-      "mod_id": "kuma_api",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "LibX-1.21.1-6.0.15",
+      "enabled": true
     },
     {
-      "name": "LibX",
-      "version": "1.21.1-6.0.15",
-      "mod_id": "libx",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "lithium-neoforge-0.15.4+mc1.21.1",
+      "enabled": true
     },
     {
-      "name": "Lithium",
-      "version": "0.15.4+mc1.21.1",
-      "mod_id": "lithium",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "MagnumTorch-v21.1.1-1.21.1-NeoForge",
+      "enabled": true
     },
     {
-      "name": "Mekanism",
-      "version": "10.7.19",
-      "mod_id": "mekanism",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "Mekanism-1.21.1-10.7.19.85",
+      "enabled": true
     },
     {
-      "name": "MezzConfig",
-      "version": "0.6.8",
-      "mod_id": "mezz_config",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "merequester-neoforge-1.21.1-1.5.0",
+      "enabled": true
     },
     {
-      "name": "Minecraft",
-      "version": "1.21.1",
-      "mod_id": "minecraft",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "mezz_config-1.21.1-neoforge-0.6.8-standalone",
+      "enabled": true
     },
     {
-      "name": "Mob Grinding Utils",
-      "version": "1.1.10+mc1.21.1",
-      "mod_id": "mob_grinding_utils",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "mob_grinding_utils-1.1.10+mc1.21.1",
+      "enabled": true
     },
     {
-      "name": "ModernFix",
-      "version": "5.27.26+mc1.21.1",
-      "mod_id": "modernfix",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "modernfix-neoforge-5.27.26+mc1.21.1",
+      "enabled": true
     },
     {
-      "name": "Mouse Tweaks",
-      "version": "2.26.1",
-      "mod_id": "mousetweaks",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "MouseTweaks-neoforge-mc1.21-2.26.1",
+      "enabled": true
     },
     {
-      "name": "Mystical Agriculture",
-      "version": "8.0.28",
-      "mod_id": "mysticalagriculture",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "MysticalAgriculture-1.21.1-8.0.28",
+      "enabled": true
     },
     {
-      "name": "NeoForge",
-      "version": "21.1.259",
-      "mod_id": "neoforge",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "Patchouli-1.21.1-93-NEOFORGE",
+      "enabled": true
     },
     {
-      "name": "Patchouli",
-      "version": "1.21.1-93-NEOFORGE",
-      "mod_id": "patchouli",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "PickUpNotifier-v21.1.1-1.21.1-NeoForge",
+      "enabled": true
     },
     {
-      "name": "Placebo",
-      "version": "9.9.4",
-      "mod_id": "placebo",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "Placebo-1.21.1-9.9.4",
+      "enabled": true
     },
     {
-      "name": "Polymorph",
-      "version": "1.2.0+1.21.1",
-      "mod_id": "polymorph",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "polymorph-neoforge-1.2.0+1.21.1",
+      "enabled": true
     },
     {
-      "name": "Powah",
-      "version": "6.2.10",
-      "mod_id": "powah",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "Powah-6.2.10",
+      "enabled": true
     },
     {
-      "name": "PrickleMC",
-      "version": "21.1.11",
-      "mod_id": "prickle",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "prickle-neoforge-1.21.1-21.1.11",
+      "enabled": true
     },
     {
-      "name": "Rhino",
-      "version": "2101.2.8-build.91",
-      "mod_id": "rhino",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "puzzleslib-v21.1.64-mc1.21.1+neoforge",
+      "enabled": true
     },
     {
-      "name": "Searchables",
-      "version": "1.0.2",
-      "mod_id": "searchables",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "rhino-2101.2.8-build.91",
+      "enabled": true
     },
     {
-      "name": "Skyblock Builder",
-      "version": "21.1.37",
-      "mod_id": "skyblockbuilder",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "Searchables-neoforge-1.21.1-1.0.2",
+      "enabled": true
     },
     {
-      "name": "Sodium",
-      "version": "0.8.13+mc1.21.1",
-      "mod_id": "sodium",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "SkyblockBuilder-21.1.37",
+      "enabled": true
     },
     {
-      "name": "Sophisticated Backpacks",
-      "version": "3.26.12",
-      "mod_id": "sophisticatedbackpacks",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "sodium-neoforge-0.8.13+mc1.21.1",
+      "enabled": true
     },
     {
-      "name": "Sophisticated Core",
-      "version": "1.5.12",
-      "mod_id": "sophisticatedcore",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "sophisticatedbackpacks-1.21.1-3.26.12.2208",
+      "enabled": true
     },
     {
-      "name": "Sophisticated Storage",
-      "version": "1.6.6",
-      "mod_id": "sophisticatedstorage",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "sophisticatedcore-1.21.1-1.5.12.2400",
+      "enabled": true
     },
     {
-      "name": "spark",
-      "version": "1.10.124",
-      "mod_id": "spark",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "sophisticatedstorage-1.21.1-1.6.6.2181",
+      "enabled": true
     },
     {
-      "name": "Titanium",
-      "version": "4.0.51",
-      "mod_id": "titanium",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "spark-1.10.124-neoforge",
+      "enabled": true
     },
     {
-      "name": "TRansition",
-      "version": "1.0.26",
-      "mod_id": "transition",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "tiab-neoforge-6.5.4",
+      "enabled": true
     },
     {
-      "name": "TRender",
-      "version": "1.0.17",
-      "mod_id": "trender",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "titanium-1.21-4.0.51",
+      "enabled": true
     },
     {
-      "name": "Waystones",
-      "version": "21.1.46",
-      "mod_id": "waystones",
-      "status": "observed_in_runtime_log"
+      "artifact_label": "TwerkCropGrowth-neoforge-1.21.1-3.0.0",
+      "enabled": true
+    },
+    {
+      "artifact_label": "waystones-neoforge-1.21.1-21.1.46",
+      "enabled": true
     }
   ],
-  "mods_folder_jar_count": 67,
-  "mods_folder_jars": [
-    "ae2wtlib-19.5.1.jar",
-    "Apotheosis-1.21.1-8.9.0.jar",
-    "ApothicAttributes-1.21.1-2.11.0.jar",
-    "ApothicEnchanting-1.21.1-1.6.4.jar",
-    "ApothicSpawners-1.21.1-1.4.0.jar",
-    "appleskin-neoforge-mc1.21-3.0.9.jar",
-    "Applied-Mekanistics-1.6.3.jar",
-    "appliedenergistics2-19.2.18.jar",
-    "architectury-13.0.11-neoforge.jar",
-    "BadOptimizations-2.4.1-1.21.1.jar",
-    "balm-neoforge-1.21.1-21.0.66.jar",
-    "better-advanced-tooltips-2101.1.0-build.5.jar",
-    "bookshelf-neoforge-1.21.1-21.1.81.jar",
-    "cloth-config-15.0.140-neoforge.jar",
-    "Clumps-neoforge-1.21.1-19.0.0.1.jar",
-    "configured-neoforge-1.21.1-2.6.3.jar",
-    "Controlling-neoforge-1.21.1-19.0.5.jar",
-    "Cucumber-1.21.1-8.0.16.jar",
-    "curios-neoforge-9.5.1+1.21.1.jar",
-    "DefaultWorldType-1.21-5.0.4.jar",
-    "enchdesc-neoforge-1.21.1-21.1.11.jar",
-    "entityculling-neoforge-1.11.3-mc1.21.1.jar",
-    "EuphoriaPatcher-1.10.5-r5.9.3-neoforge.jar",
-    "ExtendedAE-1.21-2.2.35-neoforge.jar",
-    "ferritecore-7.0.3-neoforge.jar",
-    "ForeverProductionMonitor-1.21.1-NeoForge-5.0.1.jar",
-    "ForeverRecipeEditor-1.21.1-NeoForge-1.4.3-skyblock.1.jar",
-    "ForeverSkyblock-1.21.1-NeoForge-0.2.1.jar",
-    "ftb-backups-3-21.1.5.jar",
-    "ftb-chunks-neoforge-2101.1.22.jar",
-    "ftb-essentials-neoforge-2101.1.10.jar",
-    "ftb-library-neoforge-2101.1.37.jar",
-    "ftb-quests-neoforge-2101.1.36.jar",
-    "ftb-teams-neoforge-2101.1.11.jar",
-    "ftb-ultimine-neoforge-2101.1.15.jar",
-    "functionalstorage-1.21.1-1.5.7.jar",
-    "Glodium-1.21-2.2-neoforge.jar",
-    "guideme-21.1.19.jar",
-    "ImmediatelyFast-NeoForge-1.6.15+1.21.1.jar",
-    "industrialforegoing-1.21-3.6.39.jar",
-    "iris-neoforge-1.8.14-beta.1+mc1.21.1.jar",
-    "Jade-1.21.1-NeoForge-15.10.6.jar",
-    "jei-1.21.1-neoforge-19.64.0.454.jar",
-    "kubejs-mekanism-neoforge-2101.1.7-build.18.jar",
-    "kubejs-neoforge-2101.7.2-build.377.jar",
-    "kubejs_curios_neoforge_1.21.1-1.0.4.jar",
-    "LibX-1.21.1-6.0.15.jar",
-    "lithium-neoforge-0.15.4+mc1.21.1.jar",
-    "Mekanism-1.21.1-10.7.19.85.jar",
-    "mob_grinding_utils-1.1.10+mc1.21.1.jar",
-    "modernfix-neoforge-5.27.26+mc1.21.1.jar",
-    "MouseTweaks-neoforge-mc1.21-2.26.1.jar",
-    "MysticalAgriculture-1.21.1-8.0.28.jar",
-    "Patchouli-1.21.1-93-NEOFORGE.jar",
-    "Placebo-1.21.1-9.9.4.jar",
-    "polymorph-neoforge-1.2.0+1.21.1.jar",
-    "Powah-6.2.10.jar",
-    "prickle-neoforge-1.21.1-21.1.11.jar",
-    "rhino-2101.2.8-build.91.jar",
-    "Searchables-neoforge-1.21.1-1.0.2.jar",
-    "SkyblockBuilder-21.1.37.jar",
-    "sophisticatedbackpacks-1.21.1-3.26.12.2208.jar",
-    "sophisticatedcore-1.21.1-1.5.12.2400.jar",
-    "sophisticatedstorage-1.21.1-1.6.6.2181.jar",
-    "spark-1.10.124-neoforge.jar",
-    "titanium-1.21-4.0.51.jar",
-    "waystones-neoforge-1.21.1-21.1.46.jar"
-  ],
+  "previous_runtime_snapshot": {
+    "path": "pack/snapshots/2026-10-15_080057.runtime.json",
+    "source_file_name": "latest.log",
+    "log_start_local": "2026-10-15 08:00:57.610",
+    "source_sha256": "166a66550a3add3af618c0602813112585d1832692fcecbe06e20cb40ed312de",
+    "loaded_entry_count": 79,
+    "mods_folder_jar_count": 67
+  },
+  "artifact_label_changes_vs_previous_jar_scan": {
+    "new_or_replacement_labels": [
+      "ExtremeSoundMuffler-3.57_NeoForge-1.21",
+      "FallingTree-1.21.1-1.21.1.11",
+      "ForeverSkyblock-1.21.1-NeoForge-0.6.1",
+      "IronJetpacks-1.21.1-8.0.11",
+      "MagnumTorch-v21.1.1-1.21.1-NeoForge",
+      "PickUpNotifier-v21.1.1-1.21.1-NeoForge",
+      "TwerkCropGrowth-neoforge-1.21.1-3.0.0",
+      "cleanswing-1.10-1.21",
+      "ironfurnaces-neoforge-1.21.1-4.3.2",
+      "merequester-neoforge-1.21.1-1.5.0",
+      "mezz_config-1.21.1-neoforge-0.6.8-standalone",
+      "puzzleslib-v21.1.64-mc1.21.1+neoforge",
+      "sodium-neoforge-0.8.13+mc1.21.1",
+      "tiab-neoforge-6.5.4"
+    ],
+    "no_longer_listed_labels": [
+      "ForeverSkyblock-1.21.1-NeoForge-0.2.1"
+    ],
+    "notes": [
+      "Forever Skyblock 0.6.1 replaces the previously listed 0.2.1 artifact.",
+      "Sodium 0.8.13 and MezzConfig 0.6.8 were already observed as loaded IDs in the old log; their new explicit artifact labels do not prove new installations or version upgrades.",
+      "A launcher artifact label is not a runtime mod ID. Absence of previously embedded runtime IDs from this list does not prove their removal."
+    ]
+  },
   "not_observed_candidates": [
     {
       "name": "ForeverDeepCore",
       "repository": "TeKatz/ForeverDeepCore",
-      "status": "not_installed_in_this_snapshot_inclusion_undecided"
+      "status": "not_listed_in_supplied_export_inclusion_undecided"
     }
   ]
 }

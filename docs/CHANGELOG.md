@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-15 — Provisional mod-list refresh
+
+- Record TeKatz's supplied 80 enabled artifact labels and preserve the exact original text.
+- Update Forever Skyblock to the listed 0.6.1 and record Iron Jetpacks 8.0.11 / Iron Furnaces 4.3.2.
+- Archive the earlier 79-loaded-ID / 67-JAR runtime snapshot unchanged and distinguish artifact labels from loaded mod IDs.
+- Keep the selection experimental and NeoForge 21.1.259 unchanged; no progression roles, skill locks, recipes or compatibility guarantees are inferred.
+
 ## 2026-10-15 — Iron Jetpacks research test (0.5.0)
 
 - Add four sequential profile-wide flight research stages with costs 5/10/20/40 SP and a dedicated Jetpacks tab.

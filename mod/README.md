@@ -12,7 +12,7 @@ Points, milestone claims and purchases are saved outside world folders. Dedicate
 
 The **Jetpacks** tab adds Beginner (5 SP), Mid-Game (10 SP), End-Game (20 SP) and Creative (40 SP), in order. Locked jetpacks and components are hidden from JEI; supported crafting and flight paths enforce the research on the server. The temporary **TEST: +10 SP** button is available to the singleplayer owner or server operators. Existing profiles remain compatible. See [JETPACK_RESEARCH.md](../docs/JETPACK_RESEARCH.md) for tier mapping, shared automation policy, reset behavior and the conditional Creative crafting recipe.
 
-Integration baseline: Iron Jetpacks 8.0.11, optional at runtime; JEI 19.64.0.454 remains optional. Client and server must both use 0.6.1. Iron Furnaces is newly reported installed by TeKatz but is not modified.
+Integration baseline: Iron Jetpacks 8.0.11, optional at runtime; JEI 19.64.0.454 remains optional. Client and server must both use 0.6.1. TeKatz's supplied list specifies Iron Jetpacks 8.0.11 and Iron Furnaces 4.3.2; Iron Furnaces is not modified.
 
 ## Condenser Mark I
 
