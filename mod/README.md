@@ -1,4 +1,4 @@
-# Forever Skyblock — 0.5.0
+# Forever Skyblock — 0.6.0
 
 Minecraft 1.21.1 / NeoForge 21.1.249 or newer 21.1.x. Requires Java 21. Maintained by TeKatz; Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
@@ -12,11 +12,11 @@ Points, milestone claims and purchases are saved outside world folders. Dedicate
 
 The **Jetpacks** tab adds Beginner (5 SP), Mid-Game (10 SP), End-Game (20 SP) and Creative (40 SP), in order. Locked jetpacks and components are hidden from JEI; supported crafting and flight paths enforce the research on the server. The temporary **TEST: +10 SP** button is available to the singleplayer owner or server operators. Existing profiles remain compatible. See [JETPACK_RESEARCH.md](../docs/JETPACK_RESEARCH.md) for tier mapping, shared automation policy, reset behavior and the conditional Creative crafting recipe.
 
-Integration baseline: Iron Jetpacks 8.0.11, optional at runtime; JEI 19.64.0.454 remains optional. Client and server must both use 0.5.0. Iron Furnaces is newly reported installed by TeKatz but is not modified.
+Integration baseline: Iron Jetpacks 8.0.11, optional at runtime; JEI 19.64.0.454 remains optional. Client and server must both use 0.6.0. Iron Furnaces is newly reported installed by TeKatz but is not modified.
 
 ## Condenser Mark I
 
-Right-click `forever_skyblock:condenser_mark_i` to open its compact two-slot interface. Insert logs or planks on the left and collect Stone Fragments on the right. No fuel, water or power is required.
+Right-click `forever_skyblock:condenser_mark_i` to open its compact interface. Insert logs or planks on the left and collect Stone Fragments on the right. An adjacent Mixing Chamber reveals a second input for Stone Meal plus a sapling into dirt. No fuel, water or power is required.
 
 | Input consumed per operation | Output | Default duration |
 | --- | --- | --- |
