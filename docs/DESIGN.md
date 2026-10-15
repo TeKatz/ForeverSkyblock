@@ -48,3 +48,7 @@ A complete Expert recipe progression has not been approved yet.
 ## Approved condenser mixing — version 0.6.0
 
 TeKatz requested the reusable Mortar, Stone Meal, an adjacent Mixing Chamber that exposes one additional input, two-input dirt processing, and persistent ghost filters editable using inventory items or JEI. Shared block faces count; diagonals do not. Removing the module preserves the hidden input and filter. No changes to the fixed island or skills are authorized by this feature. Details: [CONDENSER_MIXING.md](CONDENSER_MIXING.md).
+
+## Approved follow-up — version 0.6.1
+
+Fix Mixing Chamber z-fighting and disappearing adjacent faces. Add a JEI plus-button transfer from player inventory with unavailable recipes disabled. Disable Vanilla's initial in-world tutorial sequence. Preserve the existing progression, filters, starter island and optional JEI support.

@@ -46,7 +46,7 @@ public final class ForeverSkyblock {
                     .lightLevel(state -> state.getValue(CondenserBlock.ACTIVE) ? 5 : 0)));
     public static final DeferredItem<BlockItem> CONDENSER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(CONDENSER_MARK_I);
     public static final DeferredBlock<Block> MIXING_CHAMBER_MARK_I = BLOCKS.registerSimpleBlock("mixing_chamber_mark_i",
-            BlockBehaviour.Properties.of().mapColor(MapColor.STONE).strength(2.0F, 6.0F).sound(SoundType.STONE).requiresCorrectToolForDrops());
+            BlockBehaviour.Properties.of().mapColor(MapColor.STONE).strength(2.0F, 6.0F).sound(SoundType.STONE).requiresCorrectToolForDrops().noOcclusion());
     public static final DeferredItem<BlockItem> MIXING_CHAMBER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(MIXING_CHAMBER_MARK_I);
     public static final DeferredItem<Item> STONE_MEAL = ITEMS.registerSimpleItem("stone_meal");
     public static final DeferredItem<MortarItem> MORTAR = ITEMS.register("mortar", () -> new MortarItem(new Item.Properties().stacksTo(1)));

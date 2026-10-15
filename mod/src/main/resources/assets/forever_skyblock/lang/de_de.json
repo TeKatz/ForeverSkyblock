@@ -92,5 +92,11 @@
   "gui.forever_skyblock.filter_empty": "Kein Filter gesetzt",
   "gui.forever_skyblock.filter_set": "Filter: %s",
   "jei.forever_skyblock.module_required": "Kammer anbauen",
-  "jei.forever_skyblock.inputs_swappable": "Eingänge tauschbar"
+  "jei.forever_skyblock.inputs_swappable": "Eingänge tauschbar",
+  "jei.forever_skyblock.transfer.module": "Baue eine Mischkammer direkt an den Kondensator.",
+  "jei.forever_skyblock.transfer.editing": "Beende die Filterbearbeitung vor dem Zutatentransfer.",
+  "jei.forever_skyblock.transfer.cursor": "Lege zuerst das Item am Mauszeiger ab.",
+  "jei.forever_skyblock.transfer.filters": "Die Eingangsfilter erlauben dieses Rezept nicht.",
+  "jei.forever_skyblock.transfer.missing": "Zutaten fehlen im Inventar oder in den Eingängen.",
+  "jei.forever_skyblock.transfer.space": "Zu wenig Inventarplatz für bereits eingelegte Items."
 }

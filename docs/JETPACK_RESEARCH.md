@@ -1,6 +1,6 @@
 # Iron Jetpacks research test — 0.5.0
 
-This is a development test of profile-wide mod restrictions, not final Forever balancing. Source is on `feature/iron-jetpacks-research`. Iron Jetpacks is optional; integration is built against 8.0.11 for Minecraft 1.21.1. Automated integration runs also load AE2 19.2.18 and GuideME 21.1.19 on the pack's NeoForge 21.1.259. Installed Iron Jetpacks and Iron Furnaces versions have not yet been supplied by TeKatz. The last log inventory remains unchanged.
+This is a development test of profile-wide mod restrictions, not final Forever balancing. The implementation originated on `feature/iron-jetpacks-research` and is included in the current 0.6.1 source. Iron Jetpacks is optional; integration is built against 8.0.11 for Minecraft 1.21.1. Automated integration runs also load AE2 19.2.18 and GuideME 21.1.19 on the pack's NeoForge 21.1.259. Installed Iron Jetpacks and Iron Furnaces versions have not yet been supplied by TeKatz. The last log inventory remains unchanged.
 
 ## Menu and prices
 
