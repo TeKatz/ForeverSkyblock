@@ -49,7 +49,7 @@ Relative to the instance/server working directory:
 - Dedicated server: `forever_skyblock/progression/server/<player-uuid>.json`.
 - Last validated state: the corresponding `.json.bak` file.
 
-Profiles use schema version 1. Writes use a flushed temporary file and atomic replacement where supported. A purchase/reward is committed to memory only after a successful save. The last validated profile is backed up before replacement. A corrupted primary file can recover from a valid backup; if neither is readable, purchases/rewards stop and an error is shown instead of silently resetting progression. Unsupported schemas are never overwritten.
+Current profiles use schema version 2 with separate SP/PP balances, paid-perk investments and Core receipts. Schema-1 profiles migrate as documented in [ASCENSION.md](ASCENSION.md). Writes use a flushed temporary file and atomic replacement where supported. A purchase/reward is committed to memory only after a successful save. The last validated profile is backed up before replacement. A corrupted primary file can recover from a valid backup; if neither is readable, purchases/rewards stop and an error is shown instead of silently resetting progression. Unsupported schemas are never overwritten.
 
 Back up the progression directory separately from world saves. Deleting the entire Minecraft instance also deletes these local profiles. Files are loaded on demand, cached during a session and evicted when players leave; they are not polled from disk every tick. No account backend, cross-PC synchronization or cryptographic anti-cheat is included.
 
@@ -83,3 +83,7 @@ This administrative command adds 1–1000 points per invocation, up to the profi
 8. Click Reset skills, then Cancel or Escape: verify no change. Confirm a reset: verify the point returns and reach is removed immediately. Close/reopen, switch worlds and restart; the reset must persist. The task must stay completed. Buy the skill again and confirm the bonus remains exactly +1.
 
 Automated coverage and actual completed tests are recorded in [VALIDATION.md](VALIDATION.md). No manual client test is claimed before it has occurred.
+
+## Ascension update — 0.8.0
+
+TeKatz approved separate Perk Points, earned by personally consuming an endgame Forever Core in an Ascension Chamber. Creative Jetpack research now requires **40 SP + 1 PP**, retaining its EndGame prerequisite. The menu, confirmed refunds and cross-world persistence support both currencies. Legacy SP-only Creative research is refunded and re-locked. See [ASCENSION.md](ASCENSION.md) for initial recipes, automation, migration, claim replay and test scope. The implementation was developed on `feature/ascension-perk-points` over the permanent-tool work in PR #9. TeKatz authorized integrating PRs #9 and #10 into `main` on October 15, 2026.

@@ -16,6 +16,7 @@ public final class SkillCatalog {
     public record Skill(String id, int cost, int maxRank, Item icon, Holder<Attribute> attribute, double bonusPerRank) {
         public String titleKey() { return "skill." + id.replace(':', '.'); }
         public String descriptionKey() { return titleKey() + ".description"; }
+        public int perkCost() { return id.equals(JetpackResearch.IDS.get(3)) ? 1 : 0; }
         public boolean jetpack() { return JetpackResearch.IDS.contains(id); }
         public boolean available() { return !jetpack() || JetpackGate.installed(); }
         public String prerequisite() { return JetpackResearch.prerequisite(id); }

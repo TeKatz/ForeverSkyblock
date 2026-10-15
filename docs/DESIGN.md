@@ -56,3 +56,7 @@ Fix Mixing Chamber z-fighting and disappearing adjacent faces. Add a JEI plus-bu
 ## Approved permanent tools — version 0.7.0
 
 Implement the supplied [tool handoff](TOOL_RECIPE_HANDOFF.md): exact 20 tiered crafting replacements, four reinforced-Netherite smithing replacements and scoped infinite durability. Gold branches from Stone; Diamond requires Iron plus Obsidian. The iron/water/lava/pre-Diamond Obsidian acquisition routes remain open. See [TOOL_PROGRESSION.md](TOOL_PROGRESSION.md).
+
+## Ascension update — 0.8.0
+
+TeKatz approved separate Perk Points, earned by personally consuming an endgame Forever Core in an Ascension Chamber. Creative Jetpack research now requires **40 SP + 1 PP**, retaining its EndGame prerequisite. The menu, confirmed refunds and cross-world persistence support both currencies. Legacy SP-only Creative research is refunded and re-locked. See [ASCENSION.md](ASCENSION.md) for initial recipes, automation, migration, claim replay and test scope. The implementation was developed on `feature/ascension-perk-points` over the permanent-tool work in PR #9. TeKatz authorized integrating PRs #9 and #10 into `main` on October 15, 2026.

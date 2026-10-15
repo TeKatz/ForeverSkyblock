@@ -11,9 +11,9 @@ Open Forever Skills with K and select **Jetpacks**. Four compact ordered cards s
 | Beginner | 5 SP | Non-creative material tiers 0–1; straps and basic coils |
 | Mid-Game | 10 SP | Non-creative tiers 2–3; advanced coils |
 | End-Game | 20 SP | Non-creative tiers 4 and higher; elite/ultimate coils |
-| Creative | 40 SP | Creative variants and their components |
+| Creative | 40 SP + 1 PP | Creative variants and their components |
 
-Stages must be bought in order; total cost is 75 SP. Typed cells, thrusters and capacitors follow their jetpack definition. The actual registered tier and creative flag determine the stage, including customized jetpacks. Invalid/missing variants fail closed at Creative. Missing Iron Jetpacks disables research purchases.
+Stages must be bought in order; total cost is 75 SP + 1 PP. Typed cells, thrusters and capacitors follow their jetpack definition. The actual registered tier and creative flag determine the stage, including customized jetpacks. Invalid/missing variants fail closed at Creative. Missing Iron Jetpacks disables research purchases.
 
 ## Temporary test points
 
@@ -43,9 +43,13 @@ Iron Jetpacks does not generate a recipe for its default Creative variant. A con
 2. Open K → Jetpacks. Click TEST: +10 SP. Buy Beginner for five points. Only Beginner items/recipes should appear, without reconnecting.
 3. Try Mid-Game without enough points, and later stages without their prerequisite. Both must remain unavailable. Grant more test points and buy each stage in order; check the newly visible variants and components.
 4. Craft and use a permitted jetpack; try a higher-stage jetpack via an administrator-given item. Test chest and Curios flight.
-5. Buy Creative, verify its test crafting recipe and creative variant are visible and usable.
+5. Redeem a crafted Forever Core for one PP, buy Creative, then verify its test crafting recipe and creative variant are visible and usable.
 6. Cancel a reset, then confirm it. Check full point refund, no repeated task payout, JEI hiding and an already-equipped jetpack losing flight eligibility.
 7. Change worlds and restart the game. The same profile must retain points and research/reset state.
 8. On a dedicated server, check operator-only test points, separate personal flight permissions and the documented shared automation policy.
 
 Automated build/test evidence is recorded in [VALIDATION.md](VALIDATION.md). Headless tests do not establish GUI readability or JEI client behavior.
+
+## Ascension update — 0.8.0
+
+TeKatz approved separate Perk Points, earned by personally consuming an endgame Forever Core in an Ascension Chamber. Creative Jetpack research now requires **40 SP + 1 PP**, retaining its EndGame prerequisite. The menu, confirmed refunds and cross-world persistence support both currencies. Legacy SP-only Creative research is refunded and re-locked. See [ASCENSION.md](ASCENSION.md) for initial recipes, automation, migration, claim replay and test scope. The implementation was developed on `feature/ascension-perk-points` over the permanent-tool work in PR #9. TeKatz authorized integrating PRs #9 and #10 into `main` on October 15, 2026.

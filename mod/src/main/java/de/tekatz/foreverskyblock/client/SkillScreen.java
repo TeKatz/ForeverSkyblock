@@ -25,8 +25,8 @@ import net.neoforged.neoforge.client.gui.widget.ScrollPanel;
 public final class SkillScreen extends Screen {
     private static final int LIGHT = 0xFFE8EFF4, MUTED = 0xFFABBBC7, CYAN = 0xFF7DDDE2, GREEN = 0xFF89DBA5;
     private int x, y, panelWidth, panelHeight;
-    private boolean tasks, jetpacks;
-    private Button skillsTab, tasksTab, jetpacksTab, reset, testPoints;
+    private boolean tasks, jetpacks, perks;
+    private Button skillsTab, tasksTab, jetpacksTab, perksTab, reset, testPoints;
     private CatalogPanel catalog;
 
     public SkillScreen() { super(label("title")); }
@@ -39,13 +39,15 @@ public final class SkillScreen extends Screen {
         x = (width - panelWidth) / 2;
         y = (height - panelHeight) / 2;
         clearWidgets();
-        int tabWidth = (panelWidth - 28) / 3;
+        int tabWidth = (panelWidth - 30) / 4;
         skillsTab = addRenderableWidget(Button.builder(label("skills_short"), b -> changeTab(0))
                 .bounds(x + 12, y + 44, tabWidth, 20).build());
         jetpacksTab = addRenderableWidget(Button.builder(label("jetpacks_tab"), b -> changeTab(1))
                 .bounds(x + 14 + tabWidth, y + 44, tabWidth, 20).build());
         tasksTab = addRenderableWidget(Button.builder(label("tasks_short"), b -> changeTab(2))
                 .bounds(x + 16 + tabWidth * 2, y + 44, tabWidth, 20).build());
+        perksTab = addRenderableWidget(Button.builder(label("perks_tab"), b -> changeTab(3))
+                .bounds(x + 18 + tabWidth * 3, y + 44, tabWidth, 20).build());
         catalog = addRenderableWidget(new CatalogPanel());
         reset = addRenderableWidget(Button.builder(label("reset"), b -> confirmReset())
                 .bounds(x + 12, y + panelHeight - 26, (panelWidth - 108) / 2, 20).build());
@@ -59,6 +61,7 @@ public final class SkillScreen extends Screen {
     private void changeTab(int value) {
         tasks = value == 2;
         jetpacks = value == 1;
+        perks = value == 3;
         rebuildWidgets();
     }
     private void confirmReset() {
@@ -69,14 +72,15 @@ public final class SkillScreen extends Screen {
         minecraft.setScreen(new ConfirmScreen(confirmed -> {
             minecraft.setScreen(this);
             if (confirmed) { ClientSkills.reset(); refresh(); }
-        }, label("reset_title"), label("reset_description", refund), label("reset_confirm"), Component.translatable("gui.cancel")));
+        }, label("reset_title"), label("reset_description", refund, SkillCatalog.SKILLS.stream().mapToInt(s -> state.rank(s.id()) * s.perkCost()).sum()), label("reset_confirm"), Component.translatable("gui.cancel")));
     }
     public void refresh() {
         if (catalog == null) return;
         var state = ClientSkills.snapshot();
         boolean available = state != null && state.available();
         reset.active = available && !ClientSkills.pending() && SkillCatalog.SKILLS.stream().anyMatch(s -> state.rank(s.id()) > 0);
-        skillsTab.active = tasks || jetpacks;
+        skillsTab.active = tasks || jetpacks || perks;
+        perksTab.active = !perks;
         jetpacksTab.active = !jetpacks;
         testPoints.active = available && !ClientSkills.pending() && state.canTestPoints();
         tasksTab.active = !tasks;
@@ -94,16 +98,16 @@ public final class SkillScreen extends Screen {
         g.fill(x, y, x + panelWidth, y + panelHeight, 0xFF314653);
         g.fill(x + 1, y + 1, x + panelWidth - 1, y + panelHeight - 1, 0xFF101D27);
         g.fill(x + 1, y + 1, x + panelWidth - 1, y + 3, CYAN);
-        g.drawString(font, title, x + 12, y + 12, LIGHT, false);
-        g.drawString(font, label("overview"), x + 12, y + 27, MUTED, false);
-        g.fill(x + panelWidth - 116, y + 8, x + panelWidth - 12, y + 38, 0xFF203444);
-        g.drawCenteredString(font, label("available_points"), x + panelWidth - 64, y + 11, MUTED);
+        g.drawString(font, font.plainSubstrByWidth(title.getString(), panelWidth - 164), x + 12, y + 12, LIGHT, false);
+        g.drawString(font, font.plainSubstrByWidth(label("overview").getString(), panelWidth - 164), x + 12, y + 27, MUTED, false);
+        g.fill(x + panelWidth - 140, y + 8, x + panelWidth - 12, y + 38, 0xFF203444);
+        g.drawCenteredString(font, label("available_points"), x + panelWidth - 76, y + 11, MUTED);
         var state = ClientSkills.snapshot();
-        Component points = state == null || !state.available() ? Component.literal("—") : label("points", state.points());
-        g.drawCenteredString(font, points, x + panelWidth - 64, y + 24, 0xFFFFDA82);
-        int activeTabX = x + 12 + (tasks ? 2 : jetpacks ? 1 : 0) * (2 + (panelWidth - 28) / 3);
-        g.fill(activeTabX, y + 64, activeTabX + (panelWidth - 28) / 3, y + 66, CYAN);
-        g.drawString(font, jetpacks ? label("jetpacks_hint", ClientSkills.jetpackStage()) : label(tasks ? "tasks_hint" : "skills_hint"), x + 12, y + 71, MUTED, false);
+        Component points = state == null || !state.available() ? Component.literal("—") : label("balances", state.points(), state.perkPoints());
+        g.drawCenteredString(font, points, x + panelWidth - 76, y + 24, 0xFFFFDA82);
+        int activeTabX = x + 12 + (perks ? 3 : tasks ? 2 : jetpacks ? 1 : 0) * (2 + (panelWidth - 30) / 4);
+        g.fill(activeTabX, y + 64, activeTabX + (panelWidth - 30) / 4, y + 66, CYAN);
+        g.drawString(font, font.plainSubstrByWidth((perks ? label("perks_hint") : jetpacks ? label("jetpacks_hint", ClientSkills.jetpackStage()) : label(tasks ? "tasks_hint" : "skills_hint")).getString(), panelWidth - 24), x + 12, y + 71, MUTED, false);
         g.fill(x + 12, y + 82, x + panelWidth - 12, y + panelHeight - 48, 0xFF0B151D);
         String footer = state != null && !state.available() ? "storage_error"
                 : state != null && !state.message().isEmpty() ? state.message()
@@ -113,7 +117,7 @@ public final class SkillScreen extends Screen {
                 state != null && !state.available() ? 0xFFFFAE94 : MUTED, false);
     }
 
-    private record Card(String id, String titleKey, String descriptionKey, ItemStack icon, int cost, int maxRank, boolean task, String prerequisite, Component description) { }
+    private record Card(String id, String titleKey, String descriptionKey, ItemStack icon, int cost, int perkCost, int maxRank, boolean task, String prerequisite, Component description) { }
 
     private final class CatalogPanel extends ScrollPanel {
         private final List<Card> cards = new ArrayList<>();
@@ -123,10 +127,13 @@ public final class SkillScreen extends Screen {
         CatalogPanel() {
             super(SkillScreen.this.minecraft, panelWidth - 24, panelHeight - 132, y + 84, x + 12, 0, 4,
                     0xFF1B2B38, CYAN, 0xFFA6EAF0);
+            if (perks) cards.add(new Card("ascension_info", "gui.forever_skyblock.skills.perk_info_title",
+                    "gui.forever_skyblock.skills.perk_info_description", new ItemStack(de.tekatz.foreverskyblock.ForeverSkyblock.FOREVER_CORE.get()),
+                    1, 0, 0, true, "", label("perk_info_description")));
             if (tasks) for (var entry : MilestoneCatalog.MILESTONES)
-                cards.add(new Card(entry.id(), entry.titleKey(), entry.descriptionKey(), entry.icon().getDefaultInstance(), entry.reward(), 0, true, "", Component.translatable(entry.descriptionKey())));
+                cards.add(new Card(entry.id(), entry.titleKey(), entry.descriptionKey(), entry.icon().getDefaultInstance(), entry.reward(), 0, 0, true, "", Component.translatable(entry.descriptionKey())));
             else for (var entry : SkillCatalog.SKILLS) {
-                if (entry.jetpack() != jetpacks) continue;
+                if (perks ? entry.perkCost() == 0 : entry.jetpack() != jetpacks) continue;
                 ItemStack icon = entry.icon().getDefaultInstance();
                 var description = Component.translatable(entry.descriptionKey());
                 if (entry.jetpack()) {
@@ -139,12 +146,13 @@ public final class SkillScreen extends Screen {
                     if (!entry.prerequisite().isEmpty()) description.append("\n").append(label("requires_skill",
                             Component.translatable(SkillCatalog.find(entry.prerequisite()).titleKey())));
                 }
-                cards.add(new Card(entry.id(), entry.titleKey(), entry.descriptionKey(), icon, entry.cost(), entry.maxRank(), false, entry.prerequisite(), description));
+                if (entry.perkCost() > 0) description.append("\n").append(label("perk_requirement", entry.perkCost()));
+                cards.add(new Card(entry.id(), entry.titleKey(), entry.descriptionKey(), icon, entry.cost(), entry.perkCost(), entry.maxRank(), false, entry.prerequisite(), description));
             }
             for (Card card : cards) {
                 offsets.add(contentHeight);
                 int titleHeight = Math.max(16, font.split(Component.translatable(card.titleKey()), cardWidth() - 48).size() * 10);
-                int cardHeight = jetpacks ? 44 : 52 + titleHeight + font.split(card.description(), cardWidth() - 20).size() * 10;
+                int cardHeight = jetpacks ? 64 : 52 + titleHeight + font.split(card.description(), cardWidth() - 20).size() * 10;
                 heights.add(cardHeight);
                 contentHeight += cardHeight + 6;
                 Button action = Button.builder(Component.empty(), b -> { ClientSkills.buy(card.id()); SkillScreen.this.refresh(); })
@@ -174,9 +182,9 @@ public final class SkillScreen extends Screen {
                 boolean installed = !JetpackResearch.IDS.contains(card.id()) || JetpackGate.installed();
                 String key = card.task() ? complete ? "completed" : "task_open" : complete ? "unlocked"
                         : !available || !installed ? "unavailable" : !prerequisite ? "requires_previous" : ClientSkills.pending() ? "waiting"
-                        : state.points() < card.cost() ? "need_points" : "unlock";
-                button.setMessage(label(key, card.cost()));
-                button.active = !card.task() && available && !complete && prerequisite && installed && !ClientSkills.pending() && state.points() >= card.cost();
+                        : state.perkPoints() < card.perkCost() ? "need_perks" : state.points() < card.cost() ? "need_points" : card.perkCost() > 0 ? "unlock_short" : "unlock";
+                button.setMessage(card.id().equals("ascension_info") ? label("machine_required") : label(key, key.equals("need_perks") ? card.perkCost() : card.cost()));
+                button.active = !card.task() && available && !complete && prerequisite && installed && !ClientSkills.pending() && state.points() >= card.cost() && state.perkPoints() >= card.perkCost();
             }
         }
         @Override protected int getContentHeight() { return contentHeight; }
@@ -196,7 +204,7 @@ public final class SkillScreen extends Screen {
                     g.renderItem(card.icon(), left + 10, cardY + 13);
                     g.drawString(font, Component.translatable(card.titleKey()), left + 34, cardY + 8, LIGHT, false);
                     int stage = JetpackResearch.IDS.indexOf(card.id()) + 1;
-                    g.drawString(font, label("jetpack_summary_" + stage, card.cost()), left + 34, cardY + 24, complete ? GREEN : MUTED, false);
+                    g.drawString(font, label("jetpack_summary_" + stage, card.cost(), card.perkCost()), left + 34, cardY + 24, complete ? GREEN : MUTED, false);
                     actions.get(i).render(g, mouseX, mouseY, 0);
                     continue;
                 }
@@ -208,7 +216,7 @@ public final class SkillScreen extends Screen {
                 for (var line : font.split(card.description(), cardWidth - 20)) {
                     g.drawString(font, line, left + 10, descriptionY, MUTED, false); descriptionY += 10;
                 }
-                Component status = card.task() ? label("reward", card.cost()) : (JetpackResearch.IDS.contains(card.id()) ? label("cost", card.cost()) : label("rank", state == null ? 0 : state.rank(card.id()), card.maxRank()));
+                Component status = card.id().equals("ascension_info") ? label("core_conversion") : card.perkCost() > 0 ? label("dual_cost", card.cost(), card.perkCost()) : card.task() ? label("reward", card.cost()) : (JetpackResearch.IDS.contains(card.id()) ? label("cost", card.cost()) : label("rank", state == null ? 0 : state.rank(card.id()), card.maxRank()));
                 g.drawString(font, status, left + 10, cardY + cardHeight - 22, complete ? GREEN : CYAN, false);
                 actions.get(i).render(g, mouseX, mouseY, 0);
             }
@@ -239,7 +247,7 @@ public final class SkillScreen extends Screen {
             return getFocused() != null ? NarratableEntry.NarrationPriority.FOCUSED : NarratableEntry.NarrationPriority.NONE;
         }
         @Override public void updateNarration(NarrationElementOutput output) {
-            output.add(NarratedElementType.TITLE, label(tasks ? "tasks_short" : jetpacks ? "jetpacks_tab" : "skills_short"));
+            output.add(NarratedElementType.TITLE, label(perks ? "perks_tab" : tasks ? "tasks_short" : jetpacks ? "jetpacks_tab" : "skills_short"));
             for (int i = 0; i < actions.size(); i++) if (actions.get(i).isFocused()) {
                 Card card = cards.get(i);
                 output.add(NarratedElementType.USAGE, Component.translatable(card.titleKey()).append(". ")

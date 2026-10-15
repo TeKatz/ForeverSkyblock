@@ -23,7 +23,7 @@ public final class SkillNetwork {
     private SkillNetwork() { }
     public static void setClientReceiver(Consumer<Snapshot> receiver) { clientReceiver = receiver; }
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("skills-3");
+        var registrar = event.registrar("skills-4");
         registrar.playToServer(Request.TYPE, Request.CODEC, (request, context) -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             var service = ProgressionService.get(player.server);
@@ -39,7 +39,7 @@ public final class SkillNetwork {
         for (var skill : SkillCatalog.SKILLS) if (profile.rank(skill.id()) > 0) skills.put(skill.id(), profile.rank(skill.id()));
         var milestones = new LinkedHashSet<String>();
         for (var milestone : MilestoneCatalog.MILESTONES) if (profile.milestones().contains(milestone.id())) milestones.add(milestone.id());
-        PacketDistributor.sendToPlayer(player, new Snapshot(profile.points(), skills, milestones, local, open, available, message, ProgressionService.canTestPoints(player)));
+        PacketDistributor.sendToPlayer(player, new Snapshot(profile.points(), profile.perkPoints(), skills, milestones, local, open, available, message, ProgressionService.canTestPoints(player)));
     }
     public record Request(int action, String skillId) implements CustomPacketPayload {
         public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "skill_request"));
@@ -49,7 +49,7 @@ public final class SkillNetwork {
         };
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
-    public record Snapshot(int points, Map<String, Integer> skills, Set<String> milestones, boolean local, boolean open,
+    public record Snapshot(int points, int perkPoints, Map<String, Integer> skills, Set<String> milestones, boolean local, boolean open,
                            boolean available, String message, boolean canTestPoints) implements CustomPacketPayload {
         public Snapshot { skills = Map.copyOf(skills); milestones = Set.copyOf(milestones); }
         public static final Type<Snapshot> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "skill_snapshot"));
@@ -57,6 +57,8 @@ public final class SkillNetwork {
             @Override public Snapshot decode(RegistryFriendlyByteBuf buffer) {
                 int points = buffer.readVarInt();
                 if (points < 0 || points > ProgressionProfile.MAX_POINTS) throw new IllegalArgumentException("Invalid skill balance");
+                int perks = buffer.readVarInt();
+                if (perks < 0 || perks > ProgressionProfile.MAX_POINTS) throw new IllegalArgumentException("Invalid perk balance");
                 int flags = buffer.readUnsignedByte();
                 String message = buffer.readUtf(128);
                 int size = size(buffer);
@@ -70,7 +72,7 @@ public final class SkillNetwork {
                 size = size(buffer);
                 var milestones = new LinkedHashSet<String>();
                 for (int i = 0; i < size; i++) { String id = buffer.readUtf(128); ProgressionProfile.validateId(id); milestones.add(id); }
-                return new Snapshot(points, skills, milestones, (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, message, (flags & 8) != 0);
+                return new Snapshot(points, perks, skills, milestones, (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, message, (flags & 8) != 0);
             }
             private int size(RegistryFriendlyByteBuf buffer) {
                 int count = buffer.readVarInt();
@@ -79,6 +81,7 @@ public final class SkillNetwork {
             }
             @Override public void encode(RegistryFriendlyByteBuf buffer, Snapshot value) {
                 buffer.writeVarInt(value.points());
+                buffer.writeVarInt(value.perkPoints());
                 buffer.writeByte((value.local() ? 1 : 0) | (value.open() ? 2 : 0) | (value.available() ? 4 : 0) | (value.canTestPoints() ? 8 : 0));
                 buffer.writeUtf(value.message(), 128);
                 buffer.writeVarInt(value.skills().size());

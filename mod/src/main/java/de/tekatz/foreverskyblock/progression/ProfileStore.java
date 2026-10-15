@@ -23,7 +23,7 @@ import java.util.function.UnaryOperator;
 /** Stored outside saves/: deleting a world does not delete the player's progression. */
 public final class ProfileStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final int SCHEMA = 1;
+    private static final int SCHEMA = 2;
     private static final long MAX_FILE_SIZE = 1_048_576;
     private final Path directory;
     private final Map<UUID, ProgressionProfile> cache = new HashMap<>();
@@ -68,6 +68,9 @@ public final class ProfileStore {
         json.addProperty("schema_version", SCHEMA);
         json.addProperty("player_uuid", player.toString());
         json.addProperty("points", profile.points());
+        json.addProperty("perk_points", profile.perkPoints());
+        json.add("perk_investments", GSON.toJsonTree(new java.util.TreeMap<>(profile.perkInvestments())));
+        json.add("redeemed_cores", GSON.toJsonTree(profile.redeemedCores().stream().map(UUID::toString).sorted().toList()));
         json.add("milestones", GSON.toJsonTree(profile.milestones().stream().sorted().toList()));
         json.add("skills", GSON.toJsonTree(new java.util.TreeMap<>(profile.skills())));
         return (GSON.toJson(json) + "\n").getBytes(StandardCharsets.UTF_8);
@@ -77,7 +80,7 @@ public final class ProfileStore {
         try {
             JsonObject json = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
             int schema = integer(json, "schema_version");
-            if (schema != SCHEMA) throw new UnsupportedSchemaException();
+            if (schema != 1 && schema != SCHEMA) throw new UnsupportedSchemaException();
             if (!player.toString().equals(json.get("player_uuid").getAsString())) throw new IllegalArgumentException("Profile UUID mismatch");
             int points = integer(json, "points");
             var milestones = new LinkedHashSet<String>();
@@ -86,7 +89,18 @@ public final class ProfileStore {
             for (var entry : json.getAsJsonObject("skills").entrySet()) {
                 skills.put(entry.getKey(), entry.getValue().getAsBigDecimal().intValueExact());
             }
-            return new ProgressionProfile(points, milestones, skills);
+            if (schema == 1) {
+                // The former SP-only Creative purchase must pass the new PP gate after migration.
+                Integer creative = skills.remove("forever_skyblock:jetpacks_creative");
+                if (creative != null) points = Math.addExact(points, Math.multiplyExact(creative, 40));
+                return new ProgressionProfile(points, milestones, skills);
+            }
+            var paid = new LinkedHashMap<String, Integer>();
+            for (var entry : json.getAsJsonObject("perk_investments").entrySet())
+                paid.put(entry.getKey(), entry.getValue().getAsBigDecimal().intValueExact());
+            var receipts = new LinkedHashSet<UUID>();
+            for (var core : json.getAsJsonArray("redeemed_cores")) receipts.add(UUID.fromString(core.getAsString()));
+            return new ProgressionProfile(points, milestones, skills, integer(json, "perk_points"), paid, receipts);
         } catch (UnsupportedSchemaException e) { throw e; }
         catch (RuntimeException e) { throw new IOException("Invalid progression profile", e); }
     }

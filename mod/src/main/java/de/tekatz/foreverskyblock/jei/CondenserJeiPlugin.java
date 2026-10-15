@@ -23,13 +23,16 @@ public final class CondenserJeiPlugin implements IModPlugin {
     @Override public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime runtime) { JetpackJeiVisibility.available(runtime); }
     @Override public void onRuntimeUnavailable() { JetpackJeiVisibility.unavailable(); if (transfers != null) transfers.clearPending(); }
     @Override public void registerCategories(IRecipeCategoryRegistration registration) {
+        registration.addRecipeCategories(new AscensionCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CondensingCategory(registration.getJeiHelpers().getGuiHelper()));
     }
     @Override public void registerRecipes(IRecipeRegistration registration) {
+        registration.addRecipes(AscensionCategory.TYPE, java.util.List.of(AscensionCategory.Conversion.CORE));
         var level = Minecraft.getInstance().level;
         if (level != null) registration.addRecipes(TYPE, level.getRecipeManager().getAllRecipesFor(ForeverSkyblock.CONDENSING.get()));
     }
     @Override public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
+        registration.addRecipeCatalyst(ForeverSkyblock.ASCENSION_CHAMBER.get(), AscensionCategory.TYPE);
         registration.addRecipeCatalyst(ForeverSkyblock.CONDENSER_MARK_I.get(), TYPE);
     }
     private CondenserRecipeTransferHandler transfers;
@@ -38,6 +41,7 @@ public final class CondenserJeiPlugin implements IModPlugin {
         registration.addRecipeTransferHandler(transfers, TYPE);
     }
     @Override public void registerGuiHandlers(IGuiHandlerRegistration registration) {
+        registration.addRecipeClickArea(de.tekatz.foreverskyblock.client.AscensionScreen.class, 50, 59, 107, 6, AscensionCategory.TYPE);
         registration.addGhostIngredientHandler(CondenserScreen.class, new CondenserGhostHandler());
         registration.addRecipeClickArea(CondenserScreen.class, 77, 40, 38, 18, TYPE);
     }

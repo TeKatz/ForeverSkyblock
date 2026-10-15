@@ -1,6 +1,6 @@
 # Permanent mining and farming tools — 0.7.0
 
-Implements TeKatz's supplied [complete handoff](TOOL_RECIPE_HANDOFF.md) on `feature/infinite-tools-recipe-overhaul`, based on main `16d96019274766e1e22c4748ea0d5b16f10b28c7`. No main merge or release is authorized by this implementation request. This is a test baseline, not a completed resource progression.
+Implements TeKatz's supplied [complete handoff](TOOL_RECIPE_HANDOFF.md) on `feature/infinite-tools-recipe-overhaul`, based on main `16d96019274766e1e22c4748ea0d5b16f10b28c7`. TeKatz authorized its integration into `main` on October 15, 2026 alongside the Ascension update. This remains a test baseline, not a completed resource progression; no release is published by the integration.
 
 ## Exact scope and patterns
 

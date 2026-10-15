@@ -15,6 +15,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class Ae2PatternMixin {
     @Inject(method = "assemble", at = @At("RETURN"), cancellable = true)
     private void foreverSkyblock$gate(CraftingInput input, Level level, CallbackInfoReturnable<ItemStack> callback) {
-        if (!JetpackGate.canCraft(level, callback.getReturnValue())) callback.setReturnValue(ItemStack.EMPTY);
+        // Cached AE2 outputs cannot preserve a fresh Core identity for each operation.
+        if (callback.getReturnValue().is(de.tekatz.foreverskyblock.ForeverSkyblock.FOREVER_CORE.get())
+                || !JetpackGate.canCraft(level, callback.getReturnValue())) callback.setReturnValue(ItemStack.EMPTY);
     }
 }

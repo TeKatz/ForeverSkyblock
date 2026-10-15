@@ -1,4 +1,4 @@
-# Forever Skyblock — 0.7.0
+# Forever Skyblock — 0.8.0
 
 Minecraft 1.21.1 / NeoForge 21.1.249 or newer 21.1.x. Requires Java 21. Maintained by TeKatz; Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
@@ -10,9 +10,9 @@ Points, milestone claims and purchases are saved outside world folders. Dedicate
 
 ## Iron Jetpacks research test
 
-The **Jetpacks** tab adds Beginner (5 SP), Mid-Game (10 SP), End-Game (20 SP) and Creative (40 SP), in order. Locked jetpacks and components are hidden from JEI; supported crafting and flight paths enforce the research on the server. The temporary **TEST: +10 SP** button is available to the singleplayer owner or server operators. Existing profiles remain compatible. See [JETPACK_RESEARCH.md](../docs/JETPACK_RESEARCH.md) for tier mapping, shared automation policy, reset behavior and the conditional Creative crafting recipe.
+The **Jetpacks** tab adds Beginner (5 SP), Mid-Game (10 SP), End-Game (20 SP) and Creative (40 SP + 1 PP), in order. Locked jetpacks and components are hidden from JEI; supported crafting and flight paths enforce the research on the server. The temporary **TEST: +10 SP** button is available to the singleplayer owner or server operators. Existing profiles migrate as described in the Ascension section. See [JETPACK_RESEARCH.md](../docs/JETPACK_RESEARCH.md) for tier mapping, shared automation policy, reset behavior and the conditional Creative crafting recipe.
 
-Integration baseline: Iron Jetpacks 8.0.11, optional at runtime; JEI 19.64.0.454 remains optional. Client and server must both use 0.7.0. TeKatz's supplied list specifies Iron Jetpacks 8.0.11 and Iron Furnaces 4.3.2; Iron Furnaces is not modified.
+Integration baseline: Iron Jetpacks 8.0.11, optional at runtime; JEI 19.64.0.454 remains optional. Client and server must both use 0.8.0. TeKatz's supplied list specifies Iron Jetpacks 8.0.11 and Iron Furnaces 4.3.2; Iron Furnaces is not modified.
 
 ## Condenser Mark I
 
@@ -40,7 +40,7 @@ Each input and the output hold at most one stack of 64 items. Tagged wood from o
 
 ## Stone Fragments and crafting
 
-`forever_skyblock:stone_fragment` uses a custom transparent 16×16 pixel texture depicting one angular stone shard and appears in the Ingredients creative tab. Four fragments in a 2×2 crafting recipe produce one cobblestone. Version 0.7.0 adds the reusable Mortar, Stone Meal and Mixing Chamber Mark I; see [mixing and filters](../docs/CONDENSER_MIXING.md). Later condenser tiers and tool recipes remain unchanged.
+`forever_skyblock:stone_fragment` uses a custom transparent 16×16 pixel texture depicting one angular stone shard and appears in the Ingredients creative tab. Four fragments in a 2×2 crafting recipe produce one cobblestone. Version 0.6.0 added the reusable Mortar, Stone Meal and Mixing Chamber Mark I; see [mixing and filters](../docs/CONDENSER_MIXING.md). Later condenser tiers are not implemented; permanent-tool progression is documented below.
 
 The condenser remains in Functional Blocks. Its registered ID and original cube textures are preserved. It drops itself with a pickaxe; stored inventory is dropped separately when the block is removed. Existing placed condensers acquire their new block entity when loaded; test a copy of the starter template before replacing a distributed pack.
 
@@ -65,7 +65,7 @@ Recipes use the custom serializer `forever_skyblock:condensing`:
 
 ## Install and build
 
-Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.7.0.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
+Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.8.0.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
 
 With Java 21 installed:
 
@@ -85,7 +85,7 @@ Run the isolated dedicated-server integration tests with:
 
 Test classes and their empty structure are in `src/gameTest/` and are excluded from the production JAR. See [validation status](../docs/VALIDATION.md) for completed checks and remaining manual tests.
 
-## Condenser mixing in 0.7.0
+## Condenser mixing in 0.6.0
 
 See [CONDENSER_MIXING.md](../docs/CONDENSER_MIXING.md) for recipes, the live second input, persistent filters, automation and migration. Filter editing copies items without consuming them; right-click clears an input filter. JEI is optional.
 
@@ -100,3 +100,7 @@ The Mixing Chamber model now uses disjoint solid partitions with only exposed fa
 ## Permanent tools in 0.7.0
 
 The 24 Vanilla pickaxes, axes, shovels and hoes have infinite durability and replacement progression recipes. Gold branches from Stone; Diamond needs Iron and Obsidian; Netherite uses the smithing table with the new Reinforced Netherite Ingot. Standard recipe JSON is bundled in this JAR and mirrored in the pack Recipe Editor directory. See [TOOL_PROGRESSION.md](../docs/TOOL_PROGRESSION.md) for exact patterns, scope, recipe replacement rules, open resource dependencies and validation. No separate datapack installation is needed for the JAR test.
+
+## Ascension in 0.8.0
+
+Craft a Forever Core and personally redeem it in the Ascension Chamber for one Perk Point. Creative Jetpack research now costs 40 SP + 1 PP after EndGame research. The K menu shows both balances and a Perks tab. Confirmed reset refunds each currency separately. Legacy Creative purchases are removed and their 40 SP refunded without minting PP. See [ASCENSION.md](../docs/ASCENSION.md) for exact recipes, the Vanilla Crafter automation route, intentionally blocked AE2 automatic Core patterns, claim replay and storage requirements. Both client and server need 0.8.0; no extra datapack installation is needed for the test JAR.
