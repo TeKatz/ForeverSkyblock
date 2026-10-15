@@ -49,3 +49,7 @@ Iron Jetpacks does not generate a recipe for its default Creative variant. A con
 8. On a dedicated server, check operator-only test points, separate personal flight permissions and the documented shared automation policy.
 
 Automated build/test evidence is recorded in [VALIDATION.md](VALIDATION.md). Headless tests do not establish GUI readability or JEI client behavior.
+
+## Ascension update — 0.8.0
+
+TeKatz approved separate Perk Points, earned by personally consuming an endgame Forever Core in an Ascension Chamber. Creative Jetpack research now requires **40 SP + 1 PP**, retaining its EndGame prerequisite. The menu, confirmed refunds and cross-world persistence support both currencies. Legacy SP-only Creative research is refunded and re-locked. See [ASCENSION.md](ASCENSION.md) for initial recipes, automation, migration, claim replay and test scope. This feature is on `feature/ascension-perk-points`, based on the still-open permanent-tool PR #9; no main merge is implied.

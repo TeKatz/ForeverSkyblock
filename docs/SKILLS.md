@@ -83,3 +83,7 @@ This administrative command adds 1–1000 points per invocation, up to the profi
 8. Click Reset skills, then Cancel or Escape: verify no change. Confirm a reset: verify the point returns and reach is removed immediately. Close/reopen, switch worlds and restart; the reset must persist. The task must stay completed. Buy the skill again and confirm the bonus remains exactly +1.
 
 Automated coverage and actual completed tests are recorded in [VALIDATION.md](VALIDATION.md). No manual client test is claimed before it has occurred.
+
+## Ascension update — 0.8.0
+
+TeKatz approved separate Perk Points, earned by personally consuming an endgame Forever Core in an Ascension Chamber. Creative Jetpack research now requires **40 SP + 1 PP**, retaining its EndGame prerequisite. The menu, confirmed refunds and cross-world persistence support both currencies. Legacy SP-only Creative research is refunded and re-locked. See [ASCENSION.md](ASCENSION.md) for initial recipes, automation, migration, claim replay and test scope. This feature is on `feature/ascension-perk-points`, based on the still-open permanent-tool PR #9; no main merge is implied.

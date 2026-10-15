@@ -24,6 +24,35 @@ import net.neoforged.neoforge.gametest.*;
 @PrefixGameTestTemplate(false)
 public final class AscensionGameTests {
     @GameTest(template = "empty")
+    public static void failedStorageRetainsCoreAndRetryCompletesOnce(GameTestHelper h) throws Exception {
+        var machine = place(h); var owner = player(h, "StorageOwner");
+        var file = net.neoforged.fml.loading.FMLPaths.GAMEDIR.get().resolve("forever_skyblock/progression/server/" + owner.getUUID() + ".json");
+        java.nio.file.Files.createDirectories(file);
+        try {
+            machine.inventory().setStackInSlot(0, ForeverCore.create()); machine.start(owner);
+            for (int i = 0; i < 200; i++) machine.advance(owner);
+            h.assertTrue(!machine.inventory().getStackInSlot(0).isEmpty() && !machine.busy()
+                    && machine.menuData().get(1) == AscensionChamberBlockEntity.STORAGE_ERROR, "Failed persistence retains the Core and stops automatic retries");
+        } finally { java.nio.file.Files.delete(file); }
+        machine.start(owner);
+        for (int i = 0; i < 200; i++) machine.advance(owner);
+        h.assertTrue(machine.inventory().getStackInSlot(0).isEmpty() && ProgressionService.get(owner.server).perkPoints(owner) == 1,
+                "Repairing storage and explicitly retrying finishes the existing claim once");
+        h.succeed();
+    }
+    @GameTest(template = "empty")
+    public static void breakingActiveChamberReturnsOneCoreAndNoPoint(GameTestHelper h) throws Exception {
+        var machine = place(h); var owner = player(h, "BreakOwner");
+        var core = ForeverCore.create(); var identity = ForeverCore.identity(core);
+        machine.inventory().setStackInSlot(0, core); machine.start(owner); machine.advance(owner);
+        var pos = machine.getBlockPos(); h.getLevel().destroyBlock(pos, false);
+        var drops = h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                new net.minecraft.world.phys.AABB(pos).inflate(1), e -> e.getItem().is(ForeverSkyblock.FOREVER_CORE.get()));
+        h.assertTrue(drops.size() == 1 && identity.equals(ForeverCore.identity(drops.getFirst().getItem()))
+                && ProgressionService.get(owner.server).perkPoints(owner) == 0, "Breaking a running Chamber returns the same Core exactly once and awards no PP");
+        h.succeed();
+    }
+    @GameTest(template = "empty")
     public static void actualCoreRecipeAutomatesWithCrafterAndCannotReuseAe2CachedIdentity(GameTestHelper h) throws Exception {
         if (!Boolean.getBoolean("forever_skyblock.expectAscension")) { h.succeed(); return; }
         var holder = h.getLevel().getRecipeManager().byKey(net.minecraft.resources.ResourceLocation.parse("forever_skyblock:forever_core")).orElseThrow();

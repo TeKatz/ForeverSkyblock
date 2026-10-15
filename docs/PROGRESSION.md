@@ -46,3 +46,7 @@ TeKatz authors the FTB quests manually. Import actual saved crafting changes int
 ## Permanent tool progression — 0.7.0
 
 The accepted handoff adds Wood → Stone → Iron → Diamond → Netherite pickaxes/axes/shovels/hoes, with Gold as an optional Stone-based sidegrade. Exact recipes and durability behavior are documented in [TOOL_PROGRESSION.md](TOOL_PROGRESSION.md). First metals and pre-Diamond Obsidian production remain unresolved and must be designed before claiming complete survival progression through Diamond.
+
+## Ascension update — 0.8.0
+
+TeKatz approved separate Perk Points, earned by personally consuming an endgame Forever Core in an Ascension Chamber. Creative Jetpack research now requires **40 SP + 1 PP**, retaining its EndGame prerequisite. The menu, confirmed refunds and cross-world persistence support both currencies. Legacy SP-only Creative research is refunded and re-locked. See [ASCENSION.md](ASCENSION.md) for initial recipes, automation, migration, claim replay and test scope. This feature is on `feature/ascension-perk-points`, based on the still-open permanent-tool PR #9; no main merge is implied.
