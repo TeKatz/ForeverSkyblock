@@ -20,6 +20,10 @@ public final class ClientSkills {
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, "key.categories.forever_skyblock");
     private static SkillNetwork.Snapshot snapshot;
     private static boolean pending;
+    private static Runnable visibilityChanged = () -> { };
+    public static void onVisibilityChanged(Runnable listener) { visibilityChanged = listener; }
+    public static int jetpackStage() { return snapshot == null || !snapshot.available() ? 0
+            : de.tekatz.foreverskyblock.progression.JetpackResearch.stage(snapshot::rank); }
     private ClientSkills() { }
     public static SkillNetwork.Snapshot snapshot() { return snapshot; }
     public static boolean pending() { return pending; }
@@ -28,6 +32,7 @@ public final class ClientSkills {
         if (minecraft.player == null || minecraft.level == null) return;
         snapshot = value;
         pending = false;
+        visibilityChanged.run();
         if (value.open() && !(minecraft.screen instanceof SkillScreen)) minecraft.setScreen(new SkillScreen());
         if (minecraft.screen instanceof SkillScreen screen) screen.refresh();
     }
@@ -41,10 +46,15 @@ public final class ClientSkills {
         pending = true;
         PacketDistributor.sendToServer(new SkillNetwork.Request(2, ""));
     }
+    public static void testPoints() {
+        if (pending || snapshot == null || !snapshot.canTestPoints()) return;
+        pending = true;
+        PacketDistributor.sendToServer(new SkillNetwork.Request(3, ""));
+    }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         var minecraft = Minecraft.getInstance();
         while (OPEN.consumeClick()) if (minecraft.player != null && minecraft.screen == null)
             PacketDistributor.sendToServer(new SkillNetwork.Request(0, ""));
     }
-    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { snapshot = null; pending = false; }
+    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { snapshot = null; pending = false; visibilityChanged.run(); }
 }

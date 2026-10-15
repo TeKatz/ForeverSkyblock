@@ -14,7 +14,10 @@ public final class ClientEvents {
     private ClientEvents() { }
     @SubscribeEvent public static void registerKeys(RegisterKeyMappingsEvent event) { event.register(ClientSkills.OPEN); }
     @SubscribeEvent public static void setup(FMLClientSetupEvent event) {
-        event.enqueueWork(() -> SkillNetwork.setClientReceiver(ClientSkills::accept));
+        event.enqueueWork(() -> {
+            SkillNetwork.setClientReceiver(ClientSkills::accept);
+            de.tekatz.foreverskyblock.progression.JetpackGate.setClientStage(ClientSkills::jetpackStage);
+        });
     }
     @SubscribeEvent public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ForeverSkyblock.CONDENSER_MENU.get(), CondenserScreen::new);

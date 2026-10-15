@@ -4,7 +4,7 @@ license="MIT"
 
 [[mods]]
 modId="forever_skyblock"
-version="0.4.0"
+version="0.5.0"
 displayName="Forever Skyblock"
 authors="TeKatz"
 description='''The foundation for Forever Skyblock. Condenser Mark I, Stone Fragments and persistent cross-world skills.'''
@@ -29,3 +29,13 @@ type="optional"
 versionRange="[19.64.0.454,20)"
 ordering="AFTER"
 side="CLIENT"
+
+[[dependencies.forever_skyblock]]
+modId="ironjetpacks"
+type="optional"
+versionRange="[8.0.11,9)"
+ordering="AFTER"
+side="BOTH"
+
+[[mixins]]
+config="forever_skyblock.mixins.json"
