@@ -2,7 +2,14 @@
 
 ## Forever Skyblock mod 0.2.0
 
-Implementation and build validation are in progress on `feature/condenser-mark-i-processing`. Automated server coverage includes ratios and timing, blocked output, sided capabilities and simulated transfers, actual hopper transport, and persistence of partial progress. Results will be recorded after execution.
+- [Java 21 build and five dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38688266212) for commit `26a12bb258787aec7acbb7e4357aff515eb04af3`.
+- Verified the 4:1 log ratio and 1:1 plank ratio, delayed output and consumption only at completion.
+- Verified full-output blocking and resumption without item loss.
+- Verified sided capability access, rejection of invalid input, and non-mutating simulated insertion/extraction.
+- Verified actual vanilla hoppers feeding wood and extracting exactly four fragments.
+- Verified inventory and partial progress serialization/restoration followed by exact completion.
+- [All six dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38688444211) for commit `97ede5cf0727298bff9f78fa32d37ad34a7ddad8`, including shift-click transfers, menu distance checks and exact inventory drops on removal.
+- Static JSON/TOML, recipe-data, version and project-identity checks passed. The fragment sprite was visually inspected.
 
 Manual client validation remains pending: open the GUI, move stacks with click/shift-click, inspect animation and localized labels, browse both machine recipes and the crafting recipe in JEI 19.64.0.454, and test the updated island template. No interactive client test is claimed.
 
