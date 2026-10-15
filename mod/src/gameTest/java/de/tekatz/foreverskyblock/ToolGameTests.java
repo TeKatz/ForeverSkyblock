@@ -72,7 +72,7 @@ public final class ToolGameTests {
             check(h, holder.value() instanceof ShapedRecipe, "Use standard editable shaped recipe: " + name);
             var recipe = (ShapedRecipe) holder.value();
             var input = grid(PATTERNS[tool], material(tier), core(tier, TOOLS[tool]), reinforcement(tier));
-            check(h, recipe.matches(input, h.getLevel()), "Exact handoff pattern matches: " + name);
+            check(h, recipe.matches(input, h.getLevel()), "Exact handoff pattern matches: " + name + " size=" + recipe.getWidth() + "x" + recipe.getHeight() + " expected=" + input.items() + " actual=" + recipe.getIngredients().stream().map(g -> java.util.Arrays.toString(g.getItems())).toList());
             var result = recipe.assemble(input, h.getLevel().registryAccess());
             check(h, result.is(item(name)) && result.getCount() == 1 && !result.isDamageableItem(), "One permanent tool per recipe");
             Item headMaterial = material(tier);
@@ -96,7 +96,7 @@ public final class ToolGameTests {
         var manager = h.getLevel().getRecipeManager();
         for (int i = 0; i < 4; i++) {
             var gold = (ShapedRecipe) manager.byKey(id("golden_" + TOOLS[i])).orElseThrow().value();
-            check(h, gold.matches(grid(PATTERNS[i], Items.GOLD_INGOT, item("stone_" + TOOLS[i]), Items.REDSTONE), h.getLevel()), "Gold branches from Stone");
+            check(h, gold.matches(grid(PATTERNS[i], Items.GOLD_INGOT, item("stone_" + TOOLS[i]), Items.REDSTONE), h.getLevel()), "Gold branches from Stone: " + TOOLS[i] + " actual=" + gold.getIngredients().stream().map(g -> java.util.Arrays.toString(g.getItems())).toList());
             check(h, !gold.matches(grid(PATTERNS[i], Items.GOLD_INGOT, item("iron_" + TOOLS[i]), Items.REDSTONE), h.getLevel()), "Gold does not consume Iron");
             var diamond = (ShapedRecipe) manager.byKey(id("diamond_" + TOOLS[i])).orElseThrow().value();
             check(h, diamond.matches(grid(PATTERNS[i], Items.DIAMOND, item("iron_" + TOOLS[i]), Items.OBSIDIAN), h.getLevel()), "Diamond requires Iron and Obsidian");
