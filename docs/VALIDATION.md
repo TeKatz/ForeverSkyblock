@@ -150,3 +150,7 @@ The production JAR is `ForeverSkyblock-1.21.1-NeoForge-0.6.1.jar`, 152,138 bytes
 The Vanilla `Tutorial.setStep` implementation was inspected in the SHA-1-verified official Minecraft 1.21.1 client bytecode using Mojang's mappings: it updates the tutorial option, saves Options and clears/replaces an active step. This is source/bytecode verification, not a manual client test. Documentation-only follow-ups do not alter the tested mod source.
 
 Client visual verification beside the condenser/log/fence, actual JEI plus/Shift-plus clicks and fresh-instance tutorial behavior remain for TeKatz's in-game test. No manual client test is claimed.
+
+## Acceptance and integration — October 15, 2026
+
+TeKatz accepted the delivered 0.6.1 update and requested merging the completed work. The Iron Jetpacks research and condenser-mixing prerequisites were merged into `main` through PRs #5 and #6. PR #7 combines the chamber-rendering fix, JEI recipe transfer, introductory tutorial suppression and this documentation refresh. Its mod source is unchanged from the verified 0.6.1 test JAR; the final follow-up edits only documentation. Acceptance is user-reported; individual client checks were not enumerated and are not claimed as separately performed automated or manual tests.

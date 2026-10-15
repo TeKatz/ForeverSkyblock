@@ -1,6 +1,6 @@
 # Condenser mixing and input filters — 0.6.0
 
-This development branch builds on the unmerged `feature/iron-jetpacks-research` branch. It preserves its skill profiles, four Jetpack research stages, restrictions, JEI visibility and temporary +10 SP test button. It does not merge or release either feature.
+Condenser mixing is included in the current 0.6.1 source together with the Iron Jetpacks research system. It preserves skill profiles, all four research stages, restrictions, JEI visibility and the temporary +10 SP test button. The model, recipe-transfer and tutorial follow-up is documented below; balancing remains provisional.
 
 ## Recipes and initial balancing
 

@@ -48,4 +48,4 @@ Copy the **contents** of `pack/` into the instance directory with the dependenci
 
 The initial import into `main` did not introduce new gameplay. Further features and balancing changes use working branches; see [AGENTS.md](AGENTS.md).
 
-The tested 0.4.0 baseline is merged into main. This branch includes the unmerged 0.5.0 Iron Jetpacks research test and adds condenser mixing in 0.6.0; see [JETPACK_RESEARCH.md](docs/JETPACK_RESEARCH.md) and [CONDENSER_MIXING.md](docs/CONDENSER_MIXING.md). The observed pack inventory remains the supplied 0.2.1 runtime snapshot until TeKatz supplies an update.
+The current source includes the 0.5.0 Iron Jetpacks research system, 0.6.0 condenser mixing and the 0.6.1 chamber-rendering, JEI-transfer and Vanilla-tutorial updates; see [JETPACK_RESEARCH.md](docs/JETPACK_RESEARCH.md) and [CONDENSER_MIXING.md](docs/CONDENSER_MIXING.md). The observed pack inventory remains the supplied 0.2.1 runtime snapshot until TeKatz supplies an update.
