@@ -1,13 +1,13 @@
 # Changelog
 
-## 0.8.0 — Ascension and Perk Points (development)
+## 0.8.0 — Ascension and Perk Points
 
 - Add a Forever Core, an animated Ascension Chamber and personal conversion of one Core to one persistent Perk Point.
 - Require 40 SP + 1 PP for Creative Jetpack research; add dual balances, an explanatory Perks tab and separate confirmed currency refunds.
 - Migrate old profiles, refund/re-lock old Creative purchases, preserve milestone claims and prevent duplicate Core credit through durable authority-wide claims and profile receipts.
 - Add initial cross-mod endgame and Chamber recipes mirrored into the Recipe Editor pack. Keep Core crafting standard JSON and mint identities through scoped assembly hooks.
 - Support idle hopper/pipe I/O, locked processing, recipient-bound progress, storage failure recovery and replay-safe consumption. Verify Vanilla Crafter automation; block cached AE2 Core patterns.
-- Keep the existing fixed island, mod inventory, condenser progression and other skill costs. This branch includes the unmerged 0.7.0 tool update.
+- Keep the existing fixed island, mod inventory, condenser progression and other skill costs. Includes the 0.7.0 tool update. TeKatz authorized integrating PRs #9 and #10 into main on October 15, 2026; no release was requested.
 
 
 ## 2026-10-15 — Permanent tool progression test (0.7.0)

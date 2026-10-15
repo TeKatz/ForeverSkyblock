@@ -1,6 +1,6 @@
 # Ascension and Perk Points — 0.8.0
 
-TeKatz approved a second, separate profile currency for exceptional endgame unlocks. This branch builds on the unmerged permanent-tool update from PR #9; it does not merge either feature into `main`.
+TeKatz approved a second, separate profile currency for exceptional endgame unlocks. The implementation combines the permanent-tool update from [PR #9](https://github.com/TeKatz/ForeverSkyblock/pull/9) with Ascension from [PR #10](https://github.com/TeKatz/ForeverSkyblock/pull/10). TeKatz authorized integrating both updates into `main` on October 15, 2026; release publishing remains separate.
 
 ## Currencies and first perk
 
