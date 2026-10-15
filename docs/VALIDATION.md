@@ -1,5 +1,13 @@
 # Validation status
 
+## Forever Skyblock mod 0.2.1
+
+- Texture-only gameplay update: one angular stone shard replaces the three-pebble image; texture remains transparent and 16×16.
+- No Java sources or recipe data changed; build metadata, version inventory and documentation identify 0.2.1.
+- Build/artifact checks are performed for the new JAR before delivery; the existing server test suite also runs through CI.
+- Manual visual approval of the revised texture remains pending.
+
+
 ## Forever Skyblock mod 0.2.0
 
 - [Java 21 build and five dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38688266212) for commit `26a12bb258787aec7acbb7e4357aff515eb04af3`.
@@ -11,7 +19,7 @@
 - [All six dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38688444211) for commit `97ede5cf0727298bff9f78fa32d37ad34a7ddad8`, including shift-click transfers, menu distance checks and exact inventory drops on removal.
 - Static JSON/TOML, recipe-data, version and project-identity checks passed. The fragment sprite was visually inspected.
 
-Manual client validation remains pending: open the GUI, move stacks with click/shift-click, inspect animation and localized labels, browse both machine recipes and the crafting recipe in JEI 19.64.0.454, and test the updated island template. No interactive client test is claimed.
+TeKatz reported successful in-game testing of 0.2.0: logs and planks are processed into Stone Fragments, and the fragments can be crafted further. TeKatz stated that the functions work as intended; the remaining requested adjustment was item-texture readability. This is user-reported validation, separate from the automated tests above. Individual GUI/JEI checks were not enumerated, and a fresh exported island test is still pending.
 
 
 ## Forever Skyblock mod 0.1.1

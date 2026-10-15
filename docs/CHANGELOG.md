@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-15 — Clearer Stone Fragment texture (0.2.1)
+
+- Replace the three-pebble sprite with one angular stone shard with a light fracture face and a dark outline, readable at 16×16 inventory scale.
+- Preserve all item IDs, recipes, processing behavior, GUI and automation.
+- Record TeKatz's successful 0.2.0 in-game processing and crafting test. The revised texture still needs visual approval in the pack.
+
+
 ## 2026-10-15 — Condenser Mark I processing (0.2.0)
 
 - Process one tagged log into four Stone Fragments, or one tagged plank into one fragment, without power. Default duration: 160 ticks per operation.

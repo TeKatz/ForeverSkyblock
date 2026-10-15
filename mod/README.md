@@ -1,4 +1,4 @@
-# Forever Skyblock — 0.2.0
+# Forever Skyblock — 0.2.1
 
 Minecraft 1.21.1 / NeoForge 21.1.249 or newer 21.1.x. Requires Java 21. Maintained by TeKatz; Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
@@ -28,7 +28,7 @@ The input and output each hold at most one stack of 64 items. Tagged wood from o
 
 ## Stone Fragments and crafting
 
-`forever_skyblock:stone_fragment` uses a custom transparent 16×16 pixel texture and appears in the Ingredients creative tab. Four fragments in a 2×2 crafting recipe produce one cobblestone. This update does not change tool recipes or add a mortar, machine frame or later condenser tiers.
+`forever_skyblock:stone_fragment` uses a custom transparent 16×16 pixel texture depicting one angular stone shard and appears in the Ingredients creative tab. Four fragments in a 2×2 crafting recipe produce one cobblestone. This update does not change tool recipes or add a mortar, machine frame or later condenser tiers.
 
 The condenser remains in Functional Blocks. Its registered ID and original cube textures are preserved. It drops itself with a pickaxe; stored inventory is dropped separately when the block is removed. Existing placed condensers acquire their new block entity when loaded; test a copy of the starter template before replacing a distributed pack.
 
@@ -53,7 +53,7 @@ Recipes use the custom serializer `forever_skyblock:condensing`:
 
 ## Install and build
 
-Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.2.0.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
+Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.2.1.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
 
 With Java 21 installed:
 

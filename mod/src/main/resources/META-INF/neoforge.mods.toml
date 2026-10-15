@@ -4,7 +4,7 @@ license="MIT"
 
 [[mods]]
 modId="forever_skyblock"
-version="0.2.0"
+version="0.2.1"
 displayName="Forever Skyblock"
 authors="TeKatz"
 description='''The foundation for Forever Skyblock. Condenser Mark I converts logs and planks into Stone Fragments without power.'''

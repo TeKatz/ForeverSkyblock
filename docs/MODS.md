@@ -9,7 +9,7 @@ This is an inventory, **not a complete or resolvable modpack lockfile**. Do not 
 | Minecraft | 1.21.1 | Confirmed |
 | Loader | NeoForge | Confirmed; installed version still needs to be recorded |
 | Java | 21 | Build and runtime baseline |
-| Forever Skyblock mod | 0.2.0 | Source under `mod/`; targets NeoForge 21.1.249 |
+| Forever Skyblock mod | 0.2.1 | Source under `mod/`; targets NeoForge 21.1.249 |
 | JEI | 19.64.0.454 | Reported by TeKatz as the current Skyblock version |
 | Forever Recipe Editor | 1.4.3-skyblock.1 | Skyblock build requires exactly JEI 19.64.0.454 and NeoForge 21.1.249+ |
 | Applied Energistics 2 | To be recorded | Present; starting network tested by TeKatz |
