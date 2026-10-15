@@ -48,6 +48,7 @@ public final class ForeverSkyblock {
     public static final DeferredBlock<Block> MIXING_CHAMBER_MARK_I = BLOCKS.registerSimpleBlock("mixing_chamber_mark_i",
             BlockBehaviour.Properties.of().mapColor(MapColor.STONE).strength(2.0F, 6.0F).sound(SoundType.STONE).requiresCorrectToolForDrops().noOcclusion());
     public static final DeferredItem<BlockItem> MIXING_CHAMBER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(MIXING_CHAMBER_MARK_I);
+    public static final DeferredItem<Item> REINFORCED_NETHERITE_INGOT = ITEMS.registerSimpleItem("reinforced_netherite_ingot");
     public static final DeferredItem<Item> STONE_MEAL = ITEMS.registerSimpleItem("stone_meal");
     public static final DeferredItem<MortarItem> MORTAR = ITEMS.register("mortar", () -> new MortarItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> STONE_FRAGMENT = ITEMS.registerSimpleItem("stone_fragment");
@@ -73,6 +74,7 @@ public final class ForeverSkyblock {
         modBus.addListener(ForeverSkyblock::registerCapabilities);
         modBus.addListener(SkillNetwork::register);
         modBus.addListener(CondenserNetwork::register);
+        modBus.addListener(de.tekatz.foreverskyblock.tools.ToolPolicy::modifyComponents);
     }
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
@@ -81,6 +83,6 @@ public final class ForeverSkyblock {
 
     private static void addCreativeContents(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) { event.accept(CONDENSER_MARK_I_ITEM.get()); event.accept(MIXING_CHAMBER_MARK_I_ITEM.get()); }
-        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) { event.accept(STONE_FRAGMENT.get()); event.accept(STONE_MEAL.get()); event.accept(MORTAR.get()); }
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) { event.accept(STONE_FRAGMENT.get()); event.accept(STONE_MEAL.get()); event.accept(MORTAR.get()); event.accept(REINFORCED_NETHERITE_INGOT.get()); }
     }
 }

@@ -28,7 +28,6 @@ The approved next step adds a reusable Mortar (two fragments, two cobblestone an
 
 ## Further uses discussed, not implemented
 
-- Stone tools using fragments in place of cobblestone.
 - A wood-and-fragment machine frame once a concrete machine needs it.
 - Later condenser tiers.
 
@@ -43,3 +42,7 @@ These remaining entries are proposals.
 5. How should a possible emergency sapling quest work?
 
 TeKatz authors the FTB quests manually. Import actual saved crafting changes into `pack/config/forever_recipe_editor/generated_pack/` when available.
+
+## Permanent tool progression — 0.7.0
+
+The accepted handoff adds Wood → Stone → Iron → Diamond → Netherite pickaxes/axes/shovels/hoes, with Gold as an optional Stone-based sidegrade. Exact recipes and durability behavior are documented in [TOOL_PROGRESSION.md](TOOL_PROGRESSION.md). First metals and pre-Diamond Obsidian production remain unresolved and must be designed before claiming complete survival progression through Diamond.

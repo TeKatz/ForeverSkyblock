@@ -98,5 +98,6 @@
   "jei.forever_skyblock.transfer.cursor": "Put down the carried item before transferring a recipe.",
   "jei.forever_skyblock.transfer.filters": "The input filters do not allow this recipe.",
   "jei.forever_skyblock.transfer.missing": "Missing ingredients in your inventory or condenser inputs.",
-  "jei.forever_skyblock.transfer.space": "Not enough inventory space to return the current input items."
+  "jei.forever_skyblock.transfer.space": "Not enough inventory space to return the current input items.",
+  "item.forever_skyblock.reinforced_netherite_ingot": "Reinforced Netherite Ingot"
 }
