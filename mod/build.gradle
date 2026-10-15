@@ -22,8 +22,8 @@ sourceSets {
 }
 
 neoForge {
-    addModdingDependenciesTo sourceSets.gameTest
     version = '21.1.249'
+    addModdingDependenciesTo sourceSets.gameTest
     runs {
         server {
             server()
