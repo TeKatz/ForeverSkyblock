@@ -1,7 +1,9 @@
-# Add the island template
+# Fixed island template status
 
-Place the actual exported **`forever.nbt`** here.
+TeKatz supplied and approved **`forever_me_start.nbt`** as the final starting island on October 15, 2026. The actual file and matching configuration are tracked in [PR #2](https://github.com/TeKatz/ForeverSkyblock/pull/2) and the [development template directory](https://github.com/TeKatz/ForeverSkyblock/tree/8d9f4136f6427893aeac0fc8f47857d19646e0a9/pack/config/skyblockbuilder/templates/islands).
 
-The file has not been supplied yet. `../../templates.json5` already references this filename. This README is not a substitute for the NBT and is not loaded as an island by Skyblock Builder.
+This directory on `main` does not contain the NBT yet; the implementation/pack import is awaiting merge. Do not create a placeholder or reconstruct the island.
 
-After adding the file, test a fresh world: spawn, all machines, installed 1k cell, ME contents, power supply and revised starter inventory.
+The fixed template uses spawn `[8, 4, 5]` facing east and contains one 1k ME cell with eight bread and one wheat seed. Preserve the supplied NBT byte-for-byte unless TeKatz requests a revision. SHA-256: `1ae2e4b779b1c6b56320aede0af2a711d4bd247a976771c95f633e05c1beb0c1`.
+
+See [START_ISLAND.md](../../../../../docs/START_ISLAND.md) for verified contents.

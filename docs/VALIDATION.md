@@ -1,5 +1,40 @@
 # Validation status
 
+> Project status: this document includes development work tracked in [PR #2](https://github.com/TeKatz/ForeverSkyblock/pull/2). Its implementation and actual pack files are in the [development snapshot](https://github.com/TeKatz/ForeverSkyblock/tree/8d9f4136f6427893aeac0fc8f47857d19646e0a9); see the [main README](../README.md#project-status) for branch availability.
+
+## Fixed island and actual pack configuration — October 15, 2026
+
+- Parsed all 10 supplied Skyblock Builder JSON5 configuration files and the actual Default World Type TOML.
+- Verified `templateList` selects only `forever_me_start.nbt`; the referenced structure exists and spawn `[8, 4, 5]` is air over grass within the structure bounds.
+- Parsed the original compressed NBT: 14×11×10, 396 blocks, zero entities, expected machines and saved cable/terminal parts.
+- Read the storage cell component directly: one 1k cell with exactly eight bread and one wheat seed.
+- Imported operational configuration and structures byte-for-byte; preserved the fixed-island SHA-256. Generated registry lists and the raw log are excluded.
+- Extracted 79 unique loaded IDs and versions, plus 67 mods-folder JAR filenames. NeoForge 21.1.259 matches TeKatz's stated pack runtime.
+- These are source/configuration checks, not a newly performed client installation test. TeKatz previously confirmed the island works and has now declared it final. A fresh complete exported-pack test is still pending.
+
+
+## Forever Skyblock mod 0.2.1
+
+- Texture-only gameplay update: one angular stone shard replaces the three-pebble image; texture remains transparent and 16×16.
+- No Java sources or recipe data changed; build metadata, version inventory and documentation identify 0.2.1.
+- [Java 21 build and all six server GameTests passed for 0.2.1](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38689634298). The downloaded archive checksum, JAR version and exact sprite bytes were verified; compiled classes and recipe data are byte-identical to 0.2.0.
+- Manual visual approval of the revised texture remains pending.
+
+
+## Forever Skyblock mod 0.2.0
+
+- [Java 21 build and five dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38688266212) for commit `26a12bb258787aec7acbb7e4357aff515eb04af3`.
+- Verified the 4:1 log ratio and 1:1 plank ratio, delayed output and consumption only at completion.
+- Verified full-output blocking and resumption without item loss.
+- Verified sided capability access, rejection of invalid input, and non-mutating simulated insertion/extraction.
+- Verified actual vanilla hoppers feeding wood and extracting exactly four fragments.
+- Verified inventory and partial progress serialization/restoration followed by exact completion.
+- [All six dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38688444211) for commit `97ede5cf0727298bff9f78fa32d37ad34a7ddad8`, including shift-click transfers, menu distance checks and exact inventory drops on removal.
+- Static JSON/TOML, recipe-data, version and project-identity checks passed. The fragment sprite was visually inspected.
+
+TeKatz reported successful in-game testing of 0.2.0: logs and planks are processed into Stone Fragments, and the fragments can be crafted further. TeKatz stated that the functions work as intended; the remaining requested adjustment was item-texture readability. This is user-reported validation, separate from the automated tests above. Individual GUI/JEI checks were not enumerated, and a fresh exported island test is still pending.
+
+
 ## Forever Skyblock mod 0.1.1
 
 - The Java package and Gradle group now use `de.tekatz.foreverskyblock`.
@@ -35,7 +70,7 @@ The local server checks used development mode. The complete imported pack export
 ## Before publishing the pack
 
 1. Import the actual missing files listed in [FILES_TO_IMPORT.md](FILES_TO_IMPORT.md).
-2. Revise the Expert starter inventory in the island template.
+2. Preserve and verify the fixed island and its eight-bread/one-seed inventory.
 3. Record the full mod list and versions.
 4. Create a fresh instance from the eventual pack export.
 5. Check the island, spawn, power, ME contents and world-type restriction.

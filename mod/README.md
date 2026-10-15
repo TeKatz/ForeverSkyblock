@@ -1,5 +1,7 @@
 # Forever Skyblock — 0.1.1
 
+This README describes the **0.1.1 source currently on main**. The latest delivered development version is **0.2.1** with wood conversion, Stone Fragments, a GUI, automation and JEI integration. See [PR #2](https://github.com/TeKatz/ForeverSkyblock/pull/2) and its [mod documentation](https://github.com/TeKatz/ForeverSkyblock/tree/8d9f4136f6427893aeac0fc8f47857d19646e0a9/mod/README.md). Those changes have not been merged into this branch.
+
 Minimal standalone mod for Minecraft 1.21.1 / NeoForge 21.1.249 or newer 21.1.x. Requires Java 21.
 
 ## Content
