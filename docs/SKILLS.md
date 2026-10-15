@@ -1,4 +1,4 @@
-# Persistent skills — menu and refunds (0.4.0)
+# Persistent skills — menu and research test (0.5.0)
 
 ## Scope
 
@@ -12,7 +12,7 @@ The fixed island and its stored inventory are unchanged. Players gain profile ef
 
 Press **K** in game. Remap **Open Skills** under **Options → Controls → Key Binds → Forever Skyblock**. A conflicting binding can be changed there. The same key or Escape closes the menu. `/foreverskills` opens it as a command fallback.
 
-The menu uses two tabs: **Skills** for purchases and **Tasks** for earning points. Each full-width card combines its effect/objective, rank/reward and action. The available point balance stays at the top; the selected tab has a cyan underline. Scroll the card list to view later entries or long text at larger GUI scales. Descriptions stay inline rather than appearing as large hover tooltips. The world continues running while the menu is open.
+The menu adds a **Jetpacks** research tab in 0.5.0; see [JETPACK_RESEARCH.md](JETPACK_RESEARCH.md). The original two tabs remain: **Skills** for purchases and **Tasks** for earning points. Each full-width card combines its effect/objective, rank/reward and action. The available point balance stays at the top; the selected tab has a cyan underline. Scroll the card list to view later entries or long text at larger GUI scales. Descriptions stay inline rather than appearing as large hover tooltips. The world continues running while the menu is open.
 
 Completing a task sends the usual chat message with a green, underlined **+1 SP** reward. Open chat and click that reward to open the Skills menu through `/foreverskills`. Hovering it explains the shortcut; the link does not claim points or buy a skill.
 

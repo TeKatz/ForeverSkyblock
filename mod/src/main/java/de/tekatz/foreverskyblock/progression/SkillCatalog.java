@@ -16,7 +16,14 @@ public final class SkillCatalog {
     public record Skill(String id, int cost, int maxRank, Item icon, Holder<Attribute> attribute, double bonusPerRank) {
         public String titleKey() { return "skill." + id.replace(':', '.'); }
         public String descriptionKey() { return titleKey() + ".description"; }
+        public boolean jetpack() { return JetpackResearch.IDS.contains(id); }
+        public boolean available() { return !jetpack() || JetpackGate.installed(); }
+        public String prerequisite() { return JetpackResearch.prerequisite(id); }
+        public boolean canPurchase(ProgressionProfile profile) {
+            return available() && (prerequisite().isEmpty() || profile.rank(prerequisite()) > 0);
+        }
         public void apply(ServerPlayer player, int rank) {
+            if (attribute == null) return;
             var instance = player.getAttribute(attribute);
             if (instance == null) return;
             ResourceLocation modifier = ResourceLocation.parse(id);
@@ -27,7 +34,11 @@ public final class SkillCatalog {
     }
     public static final String EXTENDED_REACH = ForeverSkyblock.MOD_ID + ":extended_reach";
     public static final List<Skill> SKILLS = List.of(new Skill(EXTENDED_REACH, 1, 1, Items.IRON_PICKAXE,
-            Attributes.BLOCK_INTERACTION_RANGE, 1.0));
+            Attributes.BLOCK_INTERACTION_RANGE, 1.0),
+            new Skill(JetpackResearch.IDS.get(0), 5, 1, Items.FEATHER, null, 0),
+            new Skill(JetpackResearch.IDS.get(1), 10, 1, Items.IRON_INGOT, null, 0),
+            new Skill(JetpackResearch.IDS.get(2), 20, 1, Items.DIAMOND, null, 0),
+            new Skill(JetpackResearch.IDS.get(3), 40, 1, Items.NETHER_STAR, null, 0));
     private SkillCatalog() { }
     public static Skill find(String id) { return SKILLS.stream().filter(skill -> skill.id().equals(id)).findFirst().orElse(null); }
     public static ProgressionProfile reset(ProgressionProfile profile) {

@@ -1,4 +1,4 @@
-# Forever Skyblock — 0.4.0
+# Forever Skyblock — 0.5.0
 
 Minecraft 1.21.1 / NeoForge 21.1.249 or newer 21.1.x. Requires Java 21. Maintained by TeKatz; Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
@@ -7,6 +7,12 @@ Minecraft 1.21.1 / NeoForge 21.1.249 or newer 21.1.x. Requires Java 21. Maintain
 Press **K** to open the new Skills menu, or remap **Open Skills** in the **Forever Skyblock** keybind category. Craft cobblestone from four Stone Fragments to earn one profile-wide point. Buy **Extended Reach** for one point to gain +1 block interaction range across singleplayer worlds in this instance.
 
 Points, milestone claims and purchases are saved outside world folders. Dedicated servers keep their own profiles; no client profile is imported. The card-based GUI has Skills/Tasks tabs. Each card shows its effect or objective, rank/reward, price and action together. Reset skills opens a confirmation dialog and refunds purchased ranks while keeping completed tasks. The green point reward in chat links directly to the menu. See [SKILLS.md](../docs/SKILLS.md) for scope, storage, commands, extension points and manual test steps.
+
+## Iron Jetpacks research test
+
+The **Jetpacks** tab adds Beginner (5 SP), Mid-Game (10 SP), End-Game (20 SP) and Creative (40 SP), in order. Locked jetpacks and components are hidden from JEI; supported crafting and flight paths enforce the research on the server. The temporary **TEST: +10 SP** button is available to the singleplayer owner or server operators. Existing profiles remain compatible. See [JETPACK_RESEARCH.md](../docs/JETPACK_RESEARCH.md) for tier mapping, shared automation policy, reset behavior and the conditional Creative crafting recipe.
+
+Integration baseline: Iron Jetpacks 8.0.11, optional at runtime; JEI 19.64.0.454 remains optional. Client and server must both use 0.5.0. Iron Furnaces is newly reported installed by TeKatz but is not modified.
 
 ## Condenser Mark I
 
@@ -59,7 +65,7 @@ Recipes use the custom serializer `forever_skyblock:condensing`:
 
 ## Install and build
 
-Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.4.0.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
+Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.5.0.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
 
 With Java 21 installed:
 

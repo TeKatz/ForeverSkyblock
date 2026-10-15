@@ -31,7 +31,7 @@ public final class ProgressionService {
     }
     public static void stop(MinecraftServer server) { SERVICES.remove(server); }
     public void login(ServerPlayer player) {
-        try { SkillCatalog.apply(player, store.load(player.getUUID())); }
+        try { SkillCatalog.apply(player, store.load(player.getUUID())); sync(player, false, ""); }
         catch (IOException e) { error(player, false, e); }
     }
     public void open(ServerPlayer player) { sync(player, true, ""); }
@@ -42,6 +42,8 @@ public final class ProgressionService {
             ProgressionProfile previous = store.load(player.getUUID());
             String message;
             if (previous.rank(id) >= skill.maxRank()) message = "already_owned";
+            else if (!skill.available()) message = "missing_jetpacks";
+            else if (!skill.canPurchase(previous)) message = "requires_previous";
             else if (previous.points() < skill.cost()) message = "not_enough_points";
             else {
                 ProgressionProfile next = store.update(player.getUUID(), state -> state.purchase(id, skill.cost(), skill.maxRank()));
@@ -50,6 +52,22 @@ public final class ProgressionService {
             }
             sync(player, false, message);
         } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); }
+    }
+    public int jetpackStage(ServerPlayer player) {
+        try { return JetpackResearch.stage(store.load(player.getUUID())::rank); }
+        catch (IOException e) { return 0; }
+    }
+    public static boolean canTestPoints(ServerPlayer player) {
+        return player.hasPermissions(2) || player.server.isSingleplayerOwner(player.getGameProfile());
+    }
+    /** Temporary developer action: fixed server-side amount, never a client-supplied balance. */
+    public void testPoints(ServerPlayer player) {
+        if (!canTestPoints(player)) { sync(player, false, "test_denied"); return; }
+        try {
+            store.update(player.getUUID(), state -> state.grant(10));
+            sync(player, false, "test_points_added");
+        } catch (IOException e) { error(player, false, e); }
+        catch (IllegalArgumentException | ArithmeticException e) { sync(player, false, "reset_limit"); }
     }
     public void reset(ServerPlayer player) {
         try {
