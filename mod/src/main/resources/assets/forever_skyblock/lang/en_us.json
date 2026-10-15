@@ -1,3 +1,12 @@
 {
-  "block.forever_skyblock.condenser_mark_i": "Condenser Mark I"
+  "block.forever_skyblock.condenser_mark_i": "Condenser Mark I",
+  "item.forever_skyblock.stone_fragment": "Stone Fragment",
+  "gui.forever_skyblock.input": "Input",
+  "gui.forever_skyblock.output": "Output",
+  "gui.forever_skyblock.processing": "Condensing...",
+  "gui.forever_skyblock.blocked": "Output full",
+  "gui.forever_skyblock.idle": "Insert logs or planks",
+  "gui.forever_skyblock.no_power": "No power required",
+  "jei.forever_skyblock.condensing": "Condensing",
+  "jei.forever_skyblock.duration": "%s seconds"
 }

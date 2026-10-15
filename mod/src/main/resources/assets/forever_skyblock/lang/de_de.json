@@ -1,3 +1,12 @@
 {
-  "block.forever_skyblock.condenser_mark_i": "Kondensator Mark I"
+  "block.forever_skyblock.condenser_mark_i": "Kondensator Mark I",
+  "item.forever_skyblock.stone_fragment": "Steinfragment",
+  "gui.forever_skyblock.input": "Eingang",
+  "gui.forever_skyblock.output": "Ausgang",
+  "gui.forever_skyblock.processing": "Kondensiert...",
+  "gui.forever_skyblock.blocked": "Ausgang voll",
+  "gui.forever_skyblock.idle": "Holz oder Bretter einlegen",
+  "gui.forever_skyblock.no_power": "Kein Strom erforderlich",
+  "jei.forever_skyblock.condensing": "Kondensieren",
+  "jei.forever_skyblock.duration": "%s Sekunden"
 }

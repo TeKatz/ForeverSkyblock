@@ -1,6 +1,9 @@
 {
   "variants": {
-    "": {
+    "active=false": {
+      "model": "forever_skyblock:block/condenser_mark_i"
+    },
+    "active=true": {
       "model": "forever_skyblock:block/condenser_mark_i"
     }
   }
