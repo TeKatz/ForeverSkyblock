@@ -89,7 +89,7 @@ Test classes and their empty structure are in `src/gameTest/` and are excluded f
 
 See [CONDENSER_MIXING.md](../docs/CONDENSER_MIXING.md) for recipes, the live second input, persistent filters, automation and migration. Filter editing copies items without consuming them; right-click clears an input filter. JEI is optional.
 
-## JEI transfer and Vanilla tutorial hints in 0.7.0
+## JEI transfer and Vanilla tutorial hints in 0.6.1
 
 Open the Condensing category through the condenser progress area (JEI's **Show all recipes**), then press the recipe **+** to load one set from the player inventory. Shift-click loads the largest complete set count, bounded by stack sizes. Already loaded matching inputs can count toward the recipe. The plus remains visible but disabled if ingredients, the required Mixing Chamber or return space are missing, if filters conflict, while editing ghosts, or while holding a cursor item. Hover for the reason. The server rechecks the recipe, module, filters, distance and current items before changing either inventory; a failed transfer moves nothing. Displaced real inputs are returned to the inventory without dropping items. Hidden secondary inputs, filters and output are retained. The JEI completion callback waits for the server result. JEI remains optional.
 
