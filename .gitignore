@@ -43,3 +43,7 @@ Thumbs.db
 
 # Skyblock Builder regenerates these registry-reference lists
 /pack/config/skyblockbuilder/data/
+
+# Personal cross-world progression is runtime data
+/forever_skyblock/progression/
+/pack/forever_skyblock/progression/

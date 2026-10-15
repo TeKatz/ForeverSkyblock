@@ -4,10 +4,11 @@ plugins {
 }
 
 group = 'de.tekatz.foreverskyblock'
-version = '0.2.1'
+version = '0.3.0'
 base.archivesName = 'ForeverSkyblock-1.21.1-NeoForge'
 
 repositories {
+    mavenCentral()
     maven { url = 'https://maven.blamejared.com' }
 }
 
@@ -45,6 +46,8 @@ neoForge {
 }
 
 dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     compileOnly 'mezz.jei:jei-1.21.1-common-api:19.64.0.454'
     compileOnly 'mezz.jei:jei-1.21.1-neoforge-api:19.64.0.454'
     clientAdditionalRuntimeClasspath 'mezz.jei:jei-1.21.1-neoforge:19.64.0.454'
@@ -59,3 +62,5 @@ tasks.withType(AbstractArchiveTask).configureEach {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
 }
+
+tasks.named('test') { useJUnitPlatform() }

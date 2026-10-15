@@ -3,6 +3,7 @@ package de.tekatz.foreverskyblock;
 import de.tekatz.foreverskyblock.block.CondenserBlock;
 import de.tekatz.foreverskyblock.blockentity.CondenserBlockEntity;
 import de.tekatz.foreverskyblock.menu.CondenserMenu;
+import de.tekatz.foreverskyblock.network.SkillNetwork;
 import de.tekatz.foreverskyblock.recipe.CondenserRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.flag.FeatureFlags;
@@ -62,6 +63,7 @@ public final class ForeverSkyblock {
         RECIPE_SERIALIZERS.register(modBus);
         modBus.addListener(ForeverSkyblock::addCreativeContents);
         modBus.addListener(ForeverSkyblock::registerCapabilities);
+        modBus.addListener(SkillNetwork::register);
     }
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
