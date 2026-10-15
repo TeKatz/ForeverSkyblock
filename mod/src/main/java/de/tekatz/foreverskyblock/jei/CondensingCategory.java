@@ -31,6 +31,7 @@ public final class CondensingCategory implements IRecipeCategory<RecipeHolder<Co
         builder.addOutputSlot(112, 10).addItemStack(holder.value().result());
     }
     @Override public void draw(RecipeHolder<CondenserRecipe> holder, IRecipeSlotsView slots, GuiGraphics g, double mouseX, double mouseY) {
+        g.fill(0, 0, getWidth(), getHeight(), 0xFF19242C);
         slot.draw(g, 21, 9);
         slot.draw(g, 111, 9);
         g.fill(51, 15, 98, 21, 0xFF46545C);

@@ -1,6 +1,12 @@
 # Starting island and inventory
 
-## Tested snapshot
+## Latest revision — October 15, 2026
+
+TeKatz rebuilt the island with the oak tree on the left, a compact wooden equipment platform on the right, torches on fence posts and open central workspace. The latest ME screenshot contains bread and one seed. Spare saplings and dirt were explicitly removed because the island already provides sufficient space and soil. A possible emergency sapling quest is reserved for later design.
+
+These observations come from the screenshots supplied at 07:15 local time, not from an imported NBT. The actual updated `forever.nbt` is still required. The images below document the earlier revision and its superseded inventory.
+
+## Earlier tested snapshot
 
 On October 15, 2026, TeKatz confirmed that the world, spawn and placed machines work. The island was slightly enlarged. The prebuilt ME network and condenser are visible in these reference images:
 

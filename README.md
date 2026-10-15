@@ -6,9 +6,9 @@ Players start on a small island with a tree, an operational AE2 network and the 
 
 ## Current status
 
-- Custom mod **0.1.1**: a placeable condenser with textures, an item, translations and a loot table. Resource generation and a GUI have not been implemented.
+- Custom mod **0.2.0**: Condenser Mark I turns logs into four Stone Fragments or planks into one, without power. Includes a two-slot animated GUI, hopper/pipe support, a custom fragment texture, a 2×2 cobblestone recipe and optional JEI integration.
 - TeKatz successfully tested the starting world, spawn and placed machines in game using mod 0.1.0.
-- The island was enlarged; the placed starter chest was removed and its contents moved into the ME system.
+- The island has a tree, wooden equipment platform and open workspace. The latest ME inventory contains bread and one seed; spare saplings and dirt were removed. The original chest is no longer placed.
 - `templates.json5` uses only `forever.nbt`, with spawn `[8, 3, 4]` facing east.
 - The Default World Type configuration records the agreed world-type restriction.
 - Forever Recipe Editor **1.4.3-skyblock.1** is maintained in its own repository on branch `skyblock` and was built against **JEI 19.64.0.454**.

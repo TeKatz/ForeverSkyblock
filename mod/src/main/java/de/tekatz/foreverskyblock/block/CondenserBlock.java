@@ -38,7 +38,7 @@ public final class CondenserBlock extends BaseEntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
     @Override protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
-        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof CondenserBlockEntity condenser) {
+        if (!level.isClientSide && !state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof CondenserBlockEntity condenser) {
             for (int slot = 0; slot < 2; slot++) {
                 Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), condenser.inventory().getStackInSlot(slot));
             }

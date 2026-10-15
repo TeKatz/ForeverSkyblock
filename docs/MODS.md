@@ -9,7 +9,7 @@ This is an inventory, **not a complete or resolvable modpack lockfile**. Do not 
 | Minecraft | 1.21.1 | Confirmed |
 | Loader | NeoForge | Confirmed; installed version still needs to be recorded |
 | Java | 21 | Build and runtime baseline |
-| Forever Skyblock mod | 0.1.1 | Source under `mod/`; targets NeoForge 21.1.249 |
+| Forever Skyblock mod | 0.2.0 | Source under `mod/`; targets NeoForge 21.1.249 |
 | JEI | 19.64.0.454 | Reported by TeKatz as the current Skyblock version |
 | Forever Recipe Editor | 1.4.3-skyblock.1 | Skyblock build requires exactly JEI 19.64.0.454 and NeoForge 21.1.249+ |
 | Applied Energistics 2 | To be recorded | Present; starting network tested by TeKatz |
@@ -18,6 +18,8 @@ This is an inventory, **not a complete or resolvable modpack lockfile**. Do not 
 | FTB Quests | To be recorded | Quest line planned; no quest files supplied yet |
 | Forever Production Monitor | To be selected/recorded | Intended for integration; no verified Skyblock installation yet |
 | ForeverDeepCore | Open | Candidate for later industry; check void-world suitability first |
+
+The custom mod now includes an optional JEI category compiled against 19.64.0.454. Its development client runtime includes that version; dedicated servers do not require JEI.
 
 ## Separate Forever repositories
 

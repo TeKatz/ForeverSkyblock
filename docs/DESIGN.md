@@ -12,8 +12,10 @@ As of October 15, 2026. TeKatz's explicit decisions are authoritative. Unconfirm
 - The island was enlarged after the first build. The placed chest was removed and its contents moved into the ME system.
 - Use only the custom `forever.nbt` island template. Skyblock should be the only world type available through the normal selection button.
 - **No sieve progression.** Create is excluded in line with TeKatz's modpack preference.
-- A custom pack mod with **Condenser Mark I** as its first block. Version 0.1.0 introduced only this block and its item; 0.1.1 updates project identity without changing gameplay.
+- A custom pack mod with **Condenser Mark I** as its first block. Version 0.2.0 adds wood conversion, a GUI, automation and JEI integration.
+- Mark I converts one log into **four Stone Fragments**, or one plank into **one Stone Fragment**, without electricity. Four fragments craft into one cobblestone in a 2×2 recipe.
 - Mark I must **not generate iron directly**.
+- The latest starter inventory contains bread and one seed; spare saplings and dirt were explicitly removed by TeKatz. An emergency sapling quest is a possible later addition.
 - Remove starter items that enable an immediate water/lava cobblestone generator. This decision still needs to be applied to, or verified in, the final island NBT.
 - TeKatz creates and organizes the **FTB quest line manually**. Technical progression and tutorial content can be developed together.
 - Crafting recipes are adjusted in game using **Forever Recipe Editor**. Its Skyblock version is maintained on a separate branch.
@@ -24,9 +26,9 @@ Expert difficulty will be developed through connected crafting steps, new proces
 
 ## Open questions
 
-- Mark I's output resource, production interval, interaction and buffer size.
+- Final balancing of the initial eight-second machine cycle; later condenser tiers remain optional.
 - The complete route to water, lava, stone, initial metals and processing machines.
-- Final starter inventory, particularly additional plants and obsidian.
+- Final exported island NBT reflecting the latest bread-and-seed starter inventory.
 - Core technology mods, other resource paths, Nether/End progression and the final goal.
 - DeepCore's role in a void world. Survey behavior and resource distribution must first be checked against its actual code.
 - Integration of Production Monitor, AE2 expansion and possible AE2 add-ons.

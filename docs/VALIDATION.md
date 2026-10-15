@@ -1,5 +1,12 @@
 # Validation status
 
+## Forever Skyblock mod 0.2.0
+
+Implementation and build validation are in progress on `feature/condenser-mark-i-processing`. Automated server coverage includes ratios and timing, blocked output, sided capabilities and simulated transfers, actual hopper transport, and persistence of partial progress. Results will be recorded after execution.
+
+Manual client validation remains pending: open the GUI, move stacks with click/shift-click, inspect animation and localized labels, browse both machine recipes and the crafting recipe in JEI 19.64.0.454, and test the updated island template. No interactive client test is claimed.
+
+
 ## Forever Skyblock mod 0.1.1
 
 - The Java package and Gradle group now use `de.tekatz.foreverskyblock`.

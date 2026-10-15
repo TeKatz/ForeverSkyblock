@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-15 — Condenser Mark I processing (0.2.0)
+
+- Process one tagged log into four Stone Fragments, or one tagged plank into one fragment, without power. Default duration: 160 ticks per operation.
+- Add persistent input/output inventory, saved progress, full-output pausing and inventory drops when removed.
+- Add a compact localized GUI with animated progress and activity indicators, shift-click support and subtle active block light.
+- Expose sided item handlers for hopper and pipe input/output.
+- Add the custom Stone Fragment sprite and a 2×2 cobblestone recipe.
+- Register a datapack-driven Condensing recipe type and an optional JEI category using the actual machine recipes.
+- Add isolated dedicated-server tests and run them in CI.
+- Record the latest island layout and reduced bread-and-seed starter inventory.
+
+
 ## 2026-10-15 — English documentation and TeKatz identity
 
 - Translate all project documentation and READMEs into English.
