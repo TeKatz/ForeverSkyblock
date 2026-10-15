@@ -1,5 +1,29 @@
 # Validation status
 
+## Skills menu readability — 0.3.1
+
+TeKatz's 0.3.0 screenshot showed blurred custom text/panels while vanilla buttons remained sharp, and a single-line description tooltip extending off screen. The screen called `renderBackground` before custom drawing and then `Screen.render`, which calls the background again. The fix draws the panel in the overridden background phase; the inherited render then draws widgets. Long descriptions wrap and scroll inline, with no area-wide or row description tooltip.
+
+[Java 21 build, all eight storage tests and all nine dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38698177437) for source commit `bc4f8df0f14a76fdd5d586b4781b40d579d3a648`. The delivered JAR contains version 0.3.1 and author TeKatz. Compared byte-for-byte with 0.3.0, only `SkillScreen.class` and the mod version metadata differ; all progression/storage code, condenser code, recipes, translations and assets are unchanged.
+
+- JAR SHA-256: `c1fe3176590aab70b15a7693dfc5f0d3c33ff63744be9684af2ca1815b6df792`.
+- Verified archive digest, absence of test/profile data, JSON/TOML, translation parity, relative documentation links and the unchanged fixed-island hash.
+- Visual acceptance at multiple GUI scales with background blur enabled remains a manual client check; headless server tests do not verify rendered pixels.
+
+## Persistent skills — 0.3.0
+
+Implementation is on `feature/persistent-skills`, based on the current condenser branch. [Java 21 build, all eight storage tests and all nine dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38696790035) for commit `127009ef9aded0f203ea14b295d1e2970a4178a2`.
+
+- Storage tests verified persistence after store recreation/world-directory deletion, once-per-profile rewards, persistent non-duplicated purchases, insufficient funds, independent player UUIDs, backup recovery, corrupt/future schema refusal, failed-write rollback and concurrent duplicate claims.
+- Server tests verified exactly +1 block interaction range without stacking, removal/reapplication of the modifier, the fragment-crafting milestone predicate and payload round trips.
+- All six existing condenser integration tests also passed. No JEI dependency was required on the dedicated test server.
+- JSON/TOML, translation-key parity, relative links, common/client separation and the unchanged fixed-island hash were checked.
+
+Automated coverage includes eight profile-storage tests (restart/world independence, deduplication, purchases, insufficient funds, player separation, backup recovery, corrupt/future schemas, failed writes and concurrent claims) and three additional server GameTests (non-stacking reach application, exact milestone ingredients and packet round trips). Existing six condenser GameTests remain enabled.
+
+Manual client testing remains pending: remappable key, GUI layout and purchase states, crafting through AE2, exact reach behavior, death/respawn, new-world carryover and a full game restart. These are not claimed as completed.
+
+
 ## Fixed island and actual pack configuration — October 15, 2026
 
 - Parsed all 10 supplied Skyblock Builder JSON5 configuration files and the actual Default World Type TOML.
