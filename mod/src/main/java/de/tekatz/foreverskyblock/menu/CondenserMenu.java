@@ -18,7 +18,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 public final class CondenserMenu extends AbstractContainerMenu {
-    public static final int FIRST_X = 28, SECOND_X = 50, INPUT_Y = 38, OUTPUT_X = 126;
+    public static final int FIRST_X = 30, SECOND_X = 80, INPUT_Y = 62, OUTPUT_X = 202;
     private final ContainerData data;
     private final ContainerLevelAccess access;
     private final DataSlot editMode = DataSlot.standalone();
@@ -42,8 +42,8 @@ public final class CondenserMenu extends AbstractContainerMenu {
         });
         addSlot(inputSlot(inventory, 2, SECOND_X, playerInventory));
         for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++)
-            addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 124 + row * 18));
-        for (int col = 0; col < 9; col++) addSlot(new Slot(playerInventory, col, 8 + col * 18, 182));
+            addSlot(new Slot(playerInventory, col + row * 9 + 9, MachineLayout.CONDENSER.inventoryX(col), MachineLayout.CONDENSER.inventoryRowY(row)));
+        for (int col = 0; col < 9; col++) addSlot(new Slot(playerInventory, col, MachineLayout.CONDENSER.inventoryX(col), MachineLayout.CONDENSER.hotbarY()));
         addDataSlots(data);
         addDataSlot(editMode);
     }

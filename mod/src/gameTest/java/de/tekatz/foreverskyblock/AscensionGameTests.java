@@ -174,7 +174,7 @@ public final class AscensionGameTests {
         AscensionChamberBlockEntity.tick(h.getLevel(), machine.getBlockPos(), machine.getBlockState(), machine);
         h.assertTrue(menu.status() == AscensionChamberBlockEntity.OFFLINE && menu.progress() == 0, "An initiator absent from the online list pauses processing");
         h.setBlock(new BlockPos(2, 1, 1), Blocks.OAK_LOG);
-        h.assertTrue(machine.getBlockState().canOcclude() && machine.getBlockState().isCollisionShapeFullBlock(h.getLevel(), machine.getBlockPos()), "Closed cube can legitimately cull only its shared full faces");
+        h.assertTrue(!machine.getBlockState().canOcclude() && machine.getBlockState().isCollisionShapeFullBlock(h.getLevel(), machine.getBlockPos()), "Recessed housing preserves neighboring faces while keeping full collision");
         h.assertTrue(!machine.getBlockState().getValue(AscensionChamberBlock.ACTIVE), "Paused machine has no processing light");
         h.succeed();
     }

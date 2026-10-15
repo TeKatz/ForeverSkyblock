@@ -19,6 +19,10 @@ public final class ClientEvents {
             de.tekatz.foreverskyblock.progression.JetpackGate.setClientStage(ClientSkills::jetpackStage);
         });
     }
+    @SubscribeEvent public static void registerRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(ForeverSkyblock.CONDENSER_ENTITY.get(), CondenserRenderer::new);
+        event.registerBlockEntityRenderer(ForeverSkyblock.ASCENSION_ENTITY.get(), AscensionRenderer::new);
+    }
     @SubscribeEvent public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ForeverSkyblock.ASCENSION_MENU.get(), AscensionScreen::new);
         event.register(ForeverSkyblock.CONDENSER_MENU.get(), CondenserScreen::new);

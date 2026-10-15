@@ -42,7 +42,7 @@ public final class ForeverSkyblock {
 
     public static final DeferredBlock<de.tekatz.foreverskyblock.block.AscensionChamberBlock> ASCENSION_CHAMBER = BLOCKS.register("ascension_chamber",
             () -> new de.tekatz.foreverskyblock.block.AscensionChamberBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE)
-                    .strength(4.0F, 10.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()
+                    .strength(4.0F, 10.0F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()
                     .lightLevel(state -> state.getValue(de.tekatz.foreverskyblock.block.AscensionChamberBlock.ACTIVE) ? 8 : 0)));
     public static final DeferredItem<BlockItem> ASCENSION_CHAMBER_ITEM = ITEMS.registerSimpleBlockItem(ASCENSION_CHAMBER);
     public static final DeferredItem<Item> FOREVER_CORE = ITEMS.register("forever_core", () -> new Item(new Item.Properties().stacksTo(1).fireResistant().rarity(net.minecraft.world.item.Rarity.EPIC)));
@@ -53,7 +53,7 @@ public final class ForeverSkyblock {
 
     public static final DeferredBlock<CondenserBlock> CONDENSER_MARK_I = BLOCKS.register("condenser_mark_i",
             () -> new CondenserBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
-                    .strength(2.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()
+                    .strength(2.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()
                     .lightLevel(state -> state.getValue(CondenserBlock.ACTIVE) ? 5 : 0)));
     public static final DeferredItem<BlockItem> CONDENSER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(CONDENSER_MARK_I);
     public static final DeferredBlock<Block> MIXING_CHAMBER_MARK_I = BLOCKS.registerSimpleBlock("mixing_chamber_mark_i",
