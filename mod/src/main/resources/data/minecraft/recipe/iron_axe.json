@@ -1,25 +1,7 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "equipment",
-  "pattern": [
-    "XX ",
-    "XTX",
-    " C "
-  ],
-  "key": {
-    "X": {
-      "item": "minecraft:iron_ingot"
-    },
-    "T": {
-      "item": "minecraft:stone_axe"
-    },
-    "C": {
-      "item": "minecraft:chain"
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:false"
     }
-  },
-  "result": {
-    "id": "minecraft:iron_axe",
-    "count": 1
-  },
-  "show_notification": true
+  ]
 }

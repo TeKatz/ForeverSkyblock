@@ -50,6 +50,7 @@ public final class ToolGameTests {
     private static final String[][] PATTERNS = {{"XXX", "XTX", " C "}, {"XX ", "XTX", " C "}, {" X ", "XTX", " C "}, {"XX ", " TX", " C "}};
     private static final int[] COUNTS = {5, 4, 3, 3};
     private static ResourceLocation id(String path) { return ResourceLocation.withDefaultNamespace(path); }
+    private static ResourceLocation toolId(String path) { return ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "tools/" + path); }
     private static Item item(String path) { return BuiltInRegistries.ITEM.get(id(path)); }
     private static CraftingInput grid(String[] pattern, Item material, Item core, Item reinforcement) {
         var stacks = new ArrayList<ItemStack>();
@@ -68,7 +69,8 @@ public final class ToolGameTests {
         var manager = h.getLevel().getRecipeManager();
         for (int tier = 0; tier < 5; tier++) for (int tool = 0; tool < 4; tool++) {
             String name = TIERS[tier] + "_" + TOOLS[tool];
-            var holder = manager.byKey(id(name)).orElseThrow();
+            check(h, manager.byKey(id(name)).isEmpty(), "Original Vanilla/NeoForge recipe ID must be removed: " + name);
+            var holder = manager.byKey(toolId(name)).orElseThrow();
             check(h, holder.value() instanceof ShapedRecipe, "Use standard editable shaped recipe: " + name);
             var recipe = (ShapedRecipe) holder.value();
             var input = grid(PATTERNS[tool], material(tier), core(tier, TOOLS[tool]), reinforcement(tier));
@@ -87,7 +89,7 @@ public final class ToolGameTests {
         }
         // Plank tags must accept another Vanilla wood type rather than only oak.
         var birch = grid(PATTERNS[0], Items.BIRCH_PLANKS, Items.STICK, ForeverSkyblock.STONE_FRAGMENT.get());
-        check(h, manager.getRecipeFor(RecipeType.CRAFTING, birch, h.getLevel()).orElseThrow().id().equals(id("wooden_pickaxe")), "Plank tag resolves across wood variants");
+        check(h, manager.getRecipeFor(RecipeType.CRAFTING, birch, h.getLevel()).orElseThrow().id().equals(toolId("wooden_pickaxe")), "Plank tag resolves across wood variants");
         h.succeed();
     }
 
@@ -95,10 +97,10 @@ public final class ToolGameTests {
     public static void sidegradeAndDiamondGateUseExactPriorTiers(GameTestHelper h) {
         var manager = h.getLevel().getRecipeManager();
         for (int i = 0; i < 4; i++) {
-            var gold = (ShapedRecipe) manager.byKey(id("golden_" + TOOLS[i])).orElseThrow().value();
+            var gold = (ShapedRecipe) manager.byKey(toolId("golden_" + TOOLS[i])).orElseThrow().value();
             check(h, gold.matches(grid(PATTERNS[i], Items.GOLD_INGOT, item("stone_" + TOOLS[i]), Items.REDSTONE), h.getLevel()), "Gold branches from Stone: " + TOOLS[i] + " actual=" + gold.getIngredients().stream().map(g -> java.util.Arrays.toString(g.getItems())).toList());
             check(h, !gold.matches(grid(PATTERNS[i], Items.GOLD_INGOT, item("iron_" + TOOLS[i]), Items.REDSTONE), h.getLevel()), "Gold does not consume Iron");
-            var diamond = (ShapedRecipe) manager.byKey(id("diamond_" + TOOLS[i])).orElseThrow().value();
+            var diamond = (ShapedRecipe) manager.byKey(toolId("diamond_" + TOOLS[i])).orElseThrow().value();
             check(h, diamond.matches(grid(PATTERNS[i], Items.DIAMOND, item("iron_" + TOOLS[i]), Items.OBSIDIAN), h.getLevel()), "Diamond requires Iron and Obsidian");
             check(h, !diamond.matches(grid(PATTERNS[i], Items.DIAMOND, item("golden_" + TOOLS[i]), Items.OBSIDIAN), h.getLevel()), "Gold is never required for Diamond");
             check(h, !diamond.matches(grid(PATTERNS[i], Items.DIAMOND, item("iron_" + TOOLS[i]), Items.AIR), h.getLevel()), "No Diamond without the Obsidian gate");
@@ -121,8 +123,9 @@ public final class ToolGameTests {
             base.set(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(tag));
             base.enchant(h.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.EFFICIENCY), 4);
             var upgrade = new SmithingRecipeInput(new ItemStack(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE), base, new ItemStack(ForeverSkyblock.REINFORCED_NETHERITE_INGOT.get()));
+            check(h, manager.byKey(id("netherite_" + tool + "_smithing")).isEmpty(), "Original smithing ID is removed");
             var recipe = manager.getRecipeFor(RecipeType.SMITHING, upgrade, h.getLevel()).orElseThrow();
-            check(h, recipe.id().equals(id("netherite_" + tool + "_smithing")), "Keep Vanilla smithing ID");
+            check(h, recipe.id().equals(toolId("netherite_" + tool + "_smithing")), "Use authoritative Forever smithing ID");
             var result = recipe.value().assemble(upgrade, h.getLevel().registryAccess());
             check(h, result.is(item("netherite_" + tool)) && !result.isDamageableItem(), "Permanent Netherite result");
             for (var component : List.of(DataComponents.CUSTOM_NAME, DataComponents.REPAIR_COST, DataComponents.CUSTOM_DATA, DataComponents.ENCHANTMENTS))

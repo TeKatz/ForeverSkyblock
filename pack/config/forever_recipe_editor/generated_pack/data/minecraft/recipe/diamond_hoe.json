@@ -1,25 +1,7 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "equipment",
-  "pattern": [
-    "XX ",
-    " TX",
-    " C "
-  ],
-  "key": {
-    "X": {
-      "item": "minecraft:diamond"
-    },
-    "T": {
-      "item": "minecraft:iron_hoe"
-    },
-    "C": {
-      "item": "minecraft:obsidian"
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:false"
     }
-  },
-  "result": {
-    "id": "minecraft:diamond_hoe",
-    "count": 1
-  },
-  "show_notification": true
+  ]
 }

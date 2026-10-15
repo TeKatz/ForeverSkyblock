@@ -1,25 +1,7 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "equipment",
-  "pattern": [
-    "XX ",
-    "XTX",
-    " C "
-  ],
-  "key": {
-    "X": {
-      "item": "minecraft:diamond"
-    },
-    "T": {
-      "item": "minecraft:iron_axe"
-    },
-    "C": {
-      "item": "minecraft:obsidian"
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:false"
     }
-  },
-  "result": {
-    "id": "minecraft:diamond_axe",
-    "count": 1
-  },
-  "show_notification": true
+  ]
 }

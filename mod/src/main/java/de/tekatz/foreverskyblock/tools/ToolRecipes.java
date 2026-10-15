@@ -14,7 +14,7 @@ public final class ToolRecipes {
         var output = holder.value().getResultItem(registries);
         if (!ToolPolicy.includes(output)) return true;
         var item = BuiltInRegistries.ITEM.getKey(output.getItem());
-        var intended = ResourceLocation.withDefaultNamespace(item.getPath() + (item.getPath().startsWith("netherite_") ? "_smithing" : ""));
+        var intended = ResourceLocation.fromNamespaceAndPath("forever_skyblock", "tools/" + item.getPath() + (item.getPath().startsWith("netherite_") ? "_smithing" : ""));
         return holder.id().equals(intended);
     }
     public static List<RecipeHolder<?>> filter(Iterable<RecipeHolder<?>> recipes, HolderLookup.Provider registries) {
