@@ -7,7 +7,6 @@ import de.tekatz.foreverskyblock.blockentity.AscensionChamberBlockEntity;
 import de.tekatz.foreverskyblock.item.ForeverCore;
 import de.tekatz.foreverskyblock.menu.AscensionMenu;
 import de.tekatz.foreverskyblock.progression.*;
-import de.tekatz.foreverskyblock.recipe.ForeverCoreRecipe;
 import io.netty.buffer.Unpooled;
 import java.util.*;
 import net.minecraft.core.*;
@@ -28,7 +27,7 @@ public final class AscensionGameTests {
     public static void actualCoreRecipeAutomatesWithCrafterAndCannotReuseAe2CachedIdentity(GameTestHelper h) throws Exception {
         if (!Boolean.getBoolean("forever_skyblock.expectAscension")) { h.succeed(); return; }
         var holder = h.getLevel().getRecipeManager().byKey(net.minecraft.resources.ResourceLocation.parse("forever_skyblock:forever_core")).orElseThrow();
-        var recipe = (ForeverCoreRecipe) holder.value();
+        var recipe = (ShapedRecipe) holder.value();
         var pos = new BlockPos(4, 1, 4); h.setBlock(pos, Blocks.CRAFTER);
         var absolute = h.absolutePos(pos);
         var crafter = (net.minecraft.world.level.block.entity.CrafterBlockEntity) h.getBlockEntity(pos);
@@ -67,7 +66,7 @@ public final class AscensionGameTests {
                  "result":{"id":"forever_skyblock:forever_core","count":1}}
                 """);
         var ops = RegistryOps.create(com.mojang.serialization.JsonOps.INSTANCE, h.getLevel().registryAccess());
-        var serializer = new ForeverCoreRecipe.Serializer();
+        var serializer = new ShapedRecipe.Serializer();
         var recipe = serializer.codec().codec().parse(ops, json).getOrThrow();
         var items = new ArrayList<ItemStack>(); for (int i = 0; i < 9; i++) items.add(new ItemStack(i == 4 ? Items.NETHER_STAR : Items.NETHERITE_INGOT));
         var grid = CraftingInput.of(3, 3, items);

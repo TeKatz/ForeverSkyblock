@@ -50,8 +50,6 @@ public final class ForeverSkyblock {
             BLOCK_ENTITIES.register("ascension_chamber", () -> BlockEntityType.Builder.of(de.tekatz.foreverskyblock.blockentity.AscensionChamberBlockEntity::new, ASCENSION_CHAMBER.get()).build(null));
     public static final DeferredHolder<MenuType<?>, MenuType<de.tekatz.foreverskyblock.menu.AscensionMenu>> ASCENSION_MENU =
             MENUS.register("ascension_chamber", () -> new MenuType<>(de.tekatz.foreverskyblock.menu.AscensionMenu::new, FeatureFlags.DEFAULT_FLAGS));
-    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<de.tekatz.foreverskyblock.recipe.ForeverCoreRecipe>> FOREVER_CORE_SERIALIZER =
-            RECIPE_SERIALIZERS.register("forever_core", de.tekatz.foreverskyblock.recipe.ForeverCoreRecipe.Serializer::new);
 
     public static final DeferredBlock<CondenserBlock> CONDENSER_MARK_I = BLOCKS.register("condenser_mark_i",
             () -> new CondenserBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)

@@ -13,7 +13,7 @@
       "item": "ae2:singularity"
     }
   ],
-  "type": "forever_skyblock:forever_core",
+  "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
     "MNM",

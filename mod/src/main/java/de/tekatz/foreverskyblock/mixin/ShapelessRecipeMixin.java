@@ -11,6 +11,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ShapelessRecipe.class)
 public abstract class ShapelessRecipeMixin {
+    @Inject(method = "assemble(Lnet/minecraft/world/item/crafting/CraftingInput;Lnet/minecraft/core/HolderLookup$Provider;)Lnet/minecraft/world/item/ItemStack;", at = @At("RETURN"), cancellable = true)
+    private void foreverSkyblock$coreIdentity(CraftingInput input, net.minecraft.core.HolderLookup.Provider registries,
+                                             CallbackInfoReturnable<net.minecraft.world.item.ItemStack> callback) {
+        var result = callback.getReturnValue();
+        if (result.is(de.tekatz.foreverskyblock.ForeverSkyblock.FOREVER_CORE.get()))
+            callback.setReturnValue(de.tekatz.foreverskyblock.item.ForeverCore.stamp(result));
+    }
     @Inject(method = "matches(Lnet/minecraft/world/item/crafting/CraftingInput;Lnet/minecraft/world/level/Level;)Z", at = @At("RETURN"), cancellable = true)
     private void foreverSkyblock$gate(CraftingInput input, Level level, CallbackInfoReturnable<Boolean> callback) {
         if (callback.getReturnValue() && !JetpackGate.canCraft(level, ((ShapelessRecipe) (Object) this).getResultItem(level.registryAccess())))

@@ -12,7 +12,11 @@ public final class ForeverCore {
     private ForeverCore() { }
     public static ItemStack create() {
         var stack = new ItemStack(ForeverSkyblock.FOREVER_CORE.get());
-        var tag = new CompoundTag(); tag.putUUID(KEY, UUID.randomUUID());
+        return stamp(stack);
+    }
+    public static ItemStack stamp(ItemStack template) {
+        var stack = template.copyWithCount(1);
+        var tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag(); tag.putUUID(KEY, UUID.randomUUID());
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         return stack;
     }
