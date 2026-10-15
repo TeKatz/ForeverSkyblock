@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:smithing_transform",
+  "template": {
+    "item": "minecraft:netherite_upgrade_smithing_template"
+  },
+  "base": {
+    "item": "minecraft:diamond_axe"
+  },
+  "addition": {
+    "item": "forever_skyblock:reinforced_netherite_ingot"
+  },
+  "result": {
+    "id": "minecraft:netherite_axe",
+    "count": 1
+  }
+}

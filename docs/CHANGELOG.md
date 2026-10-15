@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-15 — Permanent tool progression test (0.7.0)
+
+- Implement the approved handoff for 24 Vanilla mining/farming tools with the exact shared patterns, prior-tool cores and tier reinforcements.
+- Add Reinforced Netherite Ingot and four component-preserving smithing replacements.
+- Mirror 25 standard recipe definitions and 24 explicit Vanilla-ID removals in the Recipe Editor pack and bundle them for a single-JAR test.
+- Scope infinite durability and repair prevention to the approved tools; remove alternative static-output tool recipes during recipe loading/replacement.
+- Preserve the island and existing features; leave first metals/water/lava/pre-Diamond Obsidian routes and the follow-up equipment pass open.
+
 ## 2026-10-15 — Provisional mod-list refresh
 
 - Record TeKatz's supplied 80 enabled artifact labels and preserve the exact original text.

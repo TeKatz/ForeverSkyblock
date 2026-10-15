@@ -98,5 +98,6 @@
   "jei.forever_skyblock.transfer.cursor": "Lege zuerst das Item am Mauszeiger ab.",
   "jei.forever_skyblock.transfer.filters": "Die Eingangsfilter erlauben dieses Rezept nicht.",
   "jei.forever_skyblock.transfer.missing": "Zutaten fehlen im Inventar oder in den Eingängen.",
-  "jei.forever_skyblock.transfer.space": "Zu wenig Inventarplatz für bereits eingelegte Items."
+  "jei.forever_skyblock.transfer.space": "Zu wenig Inventarplatz für bereits eingelegte Items.",
+  "item.forever_skyblock.reinforced_netherite_ingot": "Verstärkter Netheritbarren"
 }

@@ -28,7 +28,7 @@ As of October 15, 2026. TeKatz's explicit decisions are authoritative. Unconfirm
 - Extended Reach costs one point and adds one block interaction range. The island NBT is unchanged.
 - Dedicated servers own separate profiles; online/cross-PC synchronization and FTB quest integration are not part of this first version.
 - Version 0.4.0 reorganizes the menu into skill/task cards, adds confirmed refunds without clearing task claims and links the green chat point reward to the menu.
-- Global tool-durability removal and expensive tool recipes remain a separate discussion, not an implemented change.
+- Version 0.7.0 implements the approved permanent-tool recipe handoff for the 24 Vanilla pickaxes, axes, shovels and hoes; other equipment remains a separate design pass.
 
 ## Pacing direction
 
@@ -52,3 +52,7 @@ TeKatz requested the reusable Mortar, Stone Meal, an adjacent Mixing Chamber tha
 ## Approved follow-up — version 0.6.1
 
 Fix Mixing Chamber z-fighting and disappearing adjacent faces. Add a JEI plus-button transfer from player inventory with unavailable recipes disabled. Disable Vanilla's initial in-world tutorial sequence. Preserve the existing progression, filters, starter island and optional JEI support.
+
+## Approved permanent tools — version 0.7.0
+
+Implement the supplied [tool handoff](TOOL_RECIPE_HANDOFF.md): exact 20 tiered crafting replacements, four reinforced-Netherite smithing replacements and scoped infinite durability. Gold branches from Stone; Diamond requires Iron plus Obsidian. The iron/water/lava/pre-Diamond Obsidian acquisition routes remain open. See [TOOL_PROGRESSION.md](TOOL_PROGRESSION.md).

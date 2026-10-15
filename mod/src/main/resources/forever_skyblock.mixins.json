@@ -9,7 +9,10 @@
     "SlotMixin",
     "JetpackFlightMixin",
     "Ae2CraftingSlotMixin",
-    "Ae2PatternMixin"
+    "Ae2PatternMixin",
+    "InfiniteToolMixin",
+    "ToolRecipeManagerMixin",
+    "ToolRepairRecipeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -14,7 +14,7 @@ These are no longer missing. The island is fixed; no additional island redesign 
 
 | File or information | Destination | When needed |
 | --- | --- | --- |
-| Actual saved Recipe Editor recipes | `pack/config/forever_recipe_editor/generated_pack/` | Once custom crafting changes have been created |
+| Further user-authored Recipe Editor exports | `pack/config/forever_recipe_editor/generated_pack/` | Once custom crafting changes have been created |
 | FTB quest files | `pack/config/ftbquests/` and any related pack paths | Once TeKatz has authored quests |
 | KubeJS scripts/assets/data, if customized | Corresponding paths under `pack/kubejs/` | KubeJS is installed, but no script files were supplied |
 | Other intentional configuration overrides | Corresponding `pack/config/` and `pack/defaultconfigs/` paths | When relevant settings are changed or required for a reproducible instance |
@@ -24,3 +24,5 @@ These are no longer missing. The island is fixed; no additional island redesign 
 Neither the current launcher text list nor the previous log-derived snapshot is a launcher manifest or a final mod selection. Missing future recipes and quests are planned work, not defects in the supplied island. No Creative world save or raw log needs to be committed.
 
 Before publishing, verify a fresh instance created from the actual export, including the fixed island, power, ME inventory, world-type restriction, production, recipes and quests.
+
+The `feature/infinite-tools-recipe-overhaul` implementation includes the approved tool baseline in `pack/config/forever_recipe_editor/generated_pack`: 25 recipe definitions and 24 legacy-removal overrides. Those authored baseline files are present on this working branch; additional recipes/edits exported by TeKatz remain future imports.
