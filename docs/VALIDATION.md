@@ -5,7 +5,11 @@
 - The Java package and Gradle group now use `de.tekatz.foreverskyblock`.
 - Author metadata and project licenses identify TeKatz.
 - Registered mod, block and item IDs remain unchanged.
-- Build and compiled-JAR checks for this revision are pending until recorded below.
+- [Java 21 CI build succeeded](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38681195245) for source commit `038e7cbc4c3a67dda232a46d49ae506c8c27d0ae`.
+- Inspected the actual CI JAR: version `0.1.1`, author `TeKatz`, compiled class `de/tekatz/foreverskyblock/ForeverSkyblock.class`, stable registered IDs and retained German localization.
+- Checked every repository file path and file's bytes, plus every JAR entry name and its decompressed bytes, for remnants of the previous personal name: no matches.
+- Parsed all JSON and TOML files and verified relative Markdown links.
+- JAR SHA-256: `be393e77bc3408f494d035cc601d08c859a54ef3fecf5b24c91e9c7548e9f84c`.
 - No new in-game test is claimed for 0.1.1.
 
 ## Previous Forever Skyblock mod 0.1.0 checks
