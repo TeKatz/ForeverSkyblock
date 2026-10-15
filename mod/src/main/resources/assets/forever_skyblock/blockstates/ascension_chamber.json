@@ -1,0 +1,36 @@
+{
+  "variants": {
+    "active=false,facing=north": {
+      "model": "forever_skyblock:block/ascension_chamber",
+      "y": 0
+    },
+    "active=false,facing=east": {
+      "model": "forever_skyblock:block/ascension_chamber",
+      "y": 90
+    },
+    "active=false,facing=south": {
+      "model": "forever_skyblock:block/ascension_chamber",
+      "y": 180
+    },
+    "active=false,facing=west": {
+      "model": "forever_skyblock:block/ascension_chamber",
+      "y": 270
+    },
+    "active=true,facing=north": {
+      "model": "forever_skyblock:block/ascension_chamber_active",
+      "y": 0
+    },
+    "active=true,facing=east": {
+      "model": "forever_skyblock:block/ascension_chamber_active",
+      "y": 90
+    },
+    "active=true,facing=south": {
+      "model": "forever_skyblock:block/ascension_chamber_active",
+      "y": 180
+    },
+    "active=true,facing=west": {
+      "model": "forever_skyblock:block/ascension_chamber_active",
+      "y": 270
+    }
+  }
+}

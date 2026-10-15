@@ -16,8 +16,20 @@ public final class ProgressionService {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Map<MinecraftServer, ProgressionService> SERVICES = new IdentityHashMap<>();
     private final ProfileStore store;
+    private final CoreRedemptions redemptions;
     private final boolean local;
-    public ProgressionService(ProfileStore store, boolean local) { this.store = store; this.local = local; }
+    public ProgressionService(ProfileStore store, boolean local) {
+        this.store = store; this.local = local;
+        this.redemptions = new CoreRedemptions(store.file(new java.util.UUID(0, 0)).getParent().resolve("core_claims"), store);
+    }
+    public CoreRedemptions.Result redeemCore(ServerPlayer player, java.util.UUID core) throws IOException {
+        var result = redemptions.redeem(core, player.getUUID());
+        if (result == CoreRedemptions.Result.CREDITED) {
+            player.sendSystemMessage(SkillMessages.perk());
+            sync(player, false, "perk_earned");
+        }
+        return result;
+    }
     public static ProgressionService get(MinecraftServer server) {
         return SERVICES.computeIfAbsent(server, key -> {
             boolean local = !key.isDedicatedServer();
@@ -44,15 +56,17 @@ public final class ProgressionService {
             if (previous.rank(id) >= skill.maxRank()) message = "already_owned";
             else if (!skill.available()) message = "missing_jetpacks";
             else if (!skill.canPurchase(previous)) message = "requires_previous";
+            else if (previous.perkPoints() < skill.perkCost()) message = "not_enough_perks";
             else if (previous.points() < skill.cost()) message = "not_enough_points";
             else {
-                ProgressionProfile next = store.update(player.getUUID(), state -> state.purchase(id, skill.cost(), skill.maxRank()));
+                ProgressionProfile next = store.update(player.getUUID(), state -> state.purchase(id, skill.cost(), skill.perkCost(), skill.maxRank()));
                 SkillCatalog.apply(player, next);
                 message = "purchased";
             }
             sync(player, false, message);
         } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); }
     }
+    public int perkPoints(ServerPlayer player) throws IOException { return store.load(player.getUUID()).perkPoints(); }
     public int jetpackStage(ServerPlayer player) {
         try { return JetpackResearch.stage(store.load(player.getUUID())::rank); }
         catch (IOException e) { return 0; }

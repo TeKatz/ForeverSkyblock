@@ -4,11 +4,12 @@ plugins {
 }
 
 group = 'de.tekatz.foreverskyblock'
-version = '0.7.0'
+version = '0.8.0'
 base.archivesName = 'ForeverSkyblock-1.21.1-NeoForge'
 
 repositories {
     mavenCentral()
+    maven { url = 'https://api.modrinth.com/maven'; content { includeGroup 'maven.modrinth' } }
     maven { url = 'https://maven.neoforged.net/releases' }
     maven { url = 'https://cursemaven.com'; content { includeGroup 'curse.maven' } }
     maven { url = 'https://maven.blamejared.com' }
@@ -38,6 +39,7 @@ neoForge {
         gameTestServer {
             type = 'gameTestServer'
             systemProperty 'neoforge.enabledGameTestNamespaces', 'forever_skyblock'
+            systemProperty 'forever_skyblock.expectAscension', project.hasProperty('ascensionTests').toString()
             systemProperty 'forever_skyblock.expectJetpacks', project.hasProperty('jetpackTests').toString()
             systemProperty 'forever_skyblock.expectToolIntegrations', project.hasProperty('toolIntegrationTests').toString()
             gameDirectory = project.file('runs/gametest')
@@ -60,6 +62,11 @@ dependencies {
         runtimeOnly 'curse.maven:cucumber-272335:8035802'
         runtimeOnly 'org.appliedenergistics:appliedenergistics2:19.2.18'
         runtimeOnly 'org.appliedenergistics:guideme:21.1.19'
+    }
+    if (project.hasProperty('ascensionTests')) {
+        runtimeOnly('maven.modrinth:mekanism:5KzzycBT') { transitive = false } // 10.7.19.85
+        runtimeOnly('maven.modrinth:powah:1prWLuga') { transitive = false } // 6.2.10
+        runtimeOnly('maven.modrinth:cloth-config:izKINKFg') { transitive = false } // 15.0.140 NeoForge
     }
     if (project.hasProperty('toolIntegrationTests')) {
         runtimeOnly('dev.ftb.mods:ftb-ultimine-neoforge:2101.1.15') { transitive = false }

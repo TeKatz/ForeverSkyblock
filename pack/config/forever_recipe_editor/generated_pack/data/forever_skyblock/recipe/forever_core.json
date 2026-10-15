@@ -1,0 +1,41 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "mekanism:pellet_antimatter"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "powah:crystal_nitro"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "ae2:singularity"
+    }
+  ],
+  "type": "forever_skyblock:forever_core",
+  "category": "misc",
+  "pattern": [
+    "MNM",
+    "ASA",
+    "MNM"
+  ],
+  "key": {
+    "M": {
+      "item": "mekanism:pellet_antimatter"
+    },
+    "N": {
+      "item": "powah:crystal_nitro"
+    },
+    "A": {
+      "item": "ae2:singularity"
+    },
+    "S": {
+      "item": "minecraft:nether_star"
+    }
+  },
+  "result": {
+    "id": "forever_skyblock:forever_core",
+    "count": 1
+  }
+}

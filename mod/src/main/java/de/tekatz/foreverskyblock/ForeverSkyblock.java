@@ -40,6 +40,19 @@ public final class ForeverSkyblock {
     private static final DeferredRegister<RecipeType<?>> RECIPE_TYPES = DeferredRegister.create(Registries.RECIPE_TYPE, MOD_ID);
     private static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS = DeferredRegister.create(Registries.RECIPE_SERIALIZER, MOD_ID);
 
+    public static final DeferredBlock<de.tekatz.foreverskyblock.block.AscensionChamberBlock> ASCENSION_CHAMBER = BLOCKS.register("ascension_chamber",
+            () -> new de.tekatz.foreverskyblock.block.AscensionChamberBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE)
+                    .strength(4.0F, 10.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()
+                    .lightLevel(state -> state.getValue(de.tekatz.foreverskyblock.block.AscensionChamberBlock.ACTIVE) ? 8 : 0)));
+    public static final DeferredItem<BlockItem> ASCENSION_CHAMBER_ITEM = ITEMS.registerSimpleBlockItem(ASCENSION_CHAMBER);
+    public static final DeferredItem<Item> FOREVER_CORE = ITEMS.register("forever_core", () -> new Item(new Item.Properties().stacksTo(1).fireResistant().rarity(net.minecraft.world.item.Rarity.EPIC)));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<de.tekatz.foreverskyblock.blockentity.AscensionChamberBlockEntity>> ASCENSION_ENTITY =
+            BLOCK_ENTITIES.register("ascension_chamber", () -> BlockEntityType.Builder.of(de.tekatz.foreverskyblock.blockentity.AscensionChamberBlockEntity::new, ASCENSION_CHAMBER.get()).build(null));
+    public static final DeferredHolder<MenuType<?>, MenuType<de.tekatz.foreverskyblock.menu.AscensionMenu>> ASCENSION_MENU =
+            MENUS.register("ascension_chamber", () -> new MenuType<>(de.tekatz.foreverskyblock.menu.AscensionMenu::new, FeatureFlags.DEFAULT_FLAGS));
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<de.tekatz.foreverskyblock.recipe.ForeverCoreRecipe>> FOREVER_CORE_SERIALIZER =
+            RECIPE_SERIALIZERS.register("forever_core", de.tekatz.foreverskyblock.recipe.ForeverCoreRecipe.Serializer::new);
+
     public static final DeferredBlock<CondenserBlock> CONDENSER_MARK_I = BLOCKS.register("condenser_mark_i",
             () -> new CondenserBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
                     .strength(2.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()
@@ -78,11 +91,12 @@ public final class ForeverSkyblock {
     }
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ASCENSION_ENTITY.get(), de.tekatz.foreverskyblock.blockentity.AscensionChamberBlockEntity::automation);
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, CONDENSER_ENTITY.get(), CondenserBlockEntity::automation);
     }
 
     private static void addCreativeContents(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) { event.accept(CONDENSER_MARK_I_ITEM.get()); event.accept(MIXING_CHAMBER_MARK_I_ITEM.get()); }
-        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) { event.accept(STONE_FRAGMENT.get()); event.accept(STONE_MEAL.get()); event.accept(MORTAR.get()); event.accept(REINFORCED_NETHERITE_INGOT.get()); }
+        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) { event.accept(ASCENSION_CHAMBER_ITEM.get()); event.accept(CONDENSER_MARK_I_ITEM.get()); event.accept(MIXING_CHAMBER_MARK_I_ITEM.get()); }
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) { event.accept(de.tekatz.foreverskyblock.item.ForeverCore.create()); event.accept(STONE_FRAGMENT.get()); event.accept(STONE_MEAL.get()); event.accept(MORTAR.get()); event.accept(REINFORCED_NETHERITE_INGOT.get()); }
     }
 }

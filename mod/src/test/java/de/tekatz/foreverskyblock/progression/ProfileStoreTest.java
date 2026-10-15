@@ -64,9 +64,9 @@ class ProfileStoreTest {
         Files.writeString(store.file(id), "corrupt");
         assertThrows(IOException.class, () -> store.update(id, state -> state.award(MILESTONE, 1)));
         assertEquals("corrupt", Files.readString(store.file(id)));
-        Files.writeString(store.file(id), "{\"schema_version\":2}");
+        Files.writeString(store.file(id), "{\"schema_version\":3}");
         assertThrows(IOException.class, () -> new ProfileStore(root).update(id, state -> state.award(MILESTONE, 1)));
-        assertEquals("{\"schema_version\":2}", Files.readString(store.file(id)));
+        assertEquals("{\"schema_version\":3}", Files.readString(store.file(id)));
     }
     @Test void failedWriteDoesNotCommitAnInMemoryReward() throws Exception {
         Path blocked = root.resolve("blocked"); Files.writeString(blocked, "not a directory");

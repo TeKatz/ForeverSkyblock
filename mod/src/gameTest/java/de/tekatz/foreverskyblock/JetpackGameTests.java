@@ -65,7 +65,15 @@ public final class JetpackGameTests {
                     checked++;
                 }
                 h.assertTrue(checked >= 20, "Check actual dynamic recipes and components, not only synthetic recipes");
-                if (stage < 4) service.buy(player, JetpackResearch.IDS.get(stage));
+                if (stage < 4) {
+                    service.buy(player, JetpackResearch.IDS.get(stage));
+                    if (stage == 3) {
+                        h.assertTrue(service.jetpackStage(player) == 3, "40 SP alone cannot buy Creative research");
+                        try { service.redeemCore(player, UUID.randomUUID()); }
+                        catch (java.io.IOException e) { throw new IllegalStateException(e); }
+                        service.buy(player, JetpackResearch.IDS.get(stage));
+                    }
+                }
             }
         } finally { CommonHooks.setCraftingPlayer(null); }
         h.assertTrue(service.jetpackStage(player) == 4, "All four research stages unlock");

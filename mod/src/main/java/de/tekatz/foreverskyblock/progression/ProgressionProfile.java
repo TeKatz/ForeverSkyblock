@@ -6,18 +6,36 @@ import java.util.Map;
 import java.util.Set;
 
 /** Immutable profile snapshots keep failed saves and duplicate requests from changing the balance. */
-public record ProgressionProfile(int points, Set<String> milestones, Map<String, Integer> skills) {
+public record ProgressionProfile(int points, Set<String> milestones, Map<String, Integer> skills,
+                                 int perkPoints, Map<String, Integer> perkInvestments, Set<java.util.UUID> redeemedCores) {
     public static final int MAX_POINTS = 1_000_000;
     public ProgressionProfile {
-        if (points < 0 || points > MAX_POINTS) throw new IllegalArgumentException("Invalid point balance");
+        if (points < 0 || points > MAX_POINTS || perkPoints < 0 || perkPoints > MAX_POINTS) throw new IllegalArgumentException("Invalid point balance");
         milestones = Set.copyOf(milestones);
         skills = Map.copyOf(skills);
+        perkInvestments = Map.copyOf(perkInvestments);
+        redeemedCores = Set.copyOf(redeemedCores);
+        if (redeemedCores.size() > 16384) throw new IllegalArgumentException("Core receipt limit reached");
+        for (var entry : perkInvestments.entrySet()) {
+            validateId(entry.getKey());
+            if (!skills.containsKey(entry.getKey()) || entry.getValue() < 1 || entry.getValue() > MAX_POINTS)
+                throw new IllegalArgumentException("Invalid perk investment");
+        }
         if (milestones.size() > 4096 || skills.size() > 128) throw new IllegalArgumentException("Profile too large");
         for (String id : milestones) validateId(id);
         skills.forEach((id, rank) -> {
             validateId(id);
             if (rank < 1 || rank > 100) throw new IllegalArgumentException("Invalid skill rank");
         });
+    }
+    public ProgressionProfile(int points, Set<String> milestones, Map<String, Integer> skills) {
+        this(points, milestones, skills, 0, Map.of(), Set.of());
+    }
+    public ProgressionProfile redeem(java.util.UUID core) {
+        if (redeemedCores.contains(core)) return this;
+        var receipts = new LinkedHashSet<>(redeemedCores);
+        receipts.add(core);
+        return new ProgressionProfile(points, milestones, skills, Math.addExact(perkPoints, 1), perkInvestments, receipts);
     }
     public static ProgressionProfile empty() { return new ProgressionProfile(0, Set.of(), Map.of()); }
     public int rank(String id) { return skills.getOrDefault(id, 0); }
@@ -27,31 +45,42 @@ public record ProgressionProfile(int points, Set<String> milestones, Map<String,
         if (milestones.contains(id)) return this;
         var reached = new LinkedHashSet<>(milestones);
         reached.add(id);
-        return new ProgressionProfile(Math.addExact(points, reward), reached, skills);
+        return new ProgressionProfile(Math.addExact(points, reward), reached, skills, perkPoints, perkInvestments, redeemedCores);
     }
     public ProgressionProfile purchase(String id, int cost, int maximumRank) {
+        return purchase(id, cost, 0, maximumRank);
+    }
+    public ProgressionProfile purchase(String id, int cost, int perkCost, int maximumRank) {
         validateId(id);
+        if (perkCost < 0) throw new IllegalArgumentException("Invalid perk cost");
         if (cost < 1 || maximumRank < 1 || maximumRank > 100) throw new IllegalArgumentException("Invalid skill definition");
-        if (points < cost || rank(id) >= maximumRank) return this;
+        if (points < cost || perkPoints < perkCost || rank(id) >= maximumRank) return this;
         var purchased = new LinkedHashMap<>(skills);
         purchased.put(id, rank(id) + 1);
-        return new ProgressionProfile(points - cost, milestones, purchased);
+        var paid = new LinkedHashMap<>(perkInvestments);
+        if (perkCost > 0) paid.merge(id, perkCost, Math::addExact);
+        return new ProgressionProfile(points - cost, milestones, purchased, perkPoints - perkCost, paid, redeemedCores);
     }
     /** Refund known purchases without clearing completed milestones or unknown future skill data. */
     public ProgressionProfile resetSkills(Map<String, Integer> costs) {
         var remaining = new LinkedHashMap<>(skills);
-        int refunded = points;
+        int refunded = points, perksRefunded = perkPoints;
+        var paid = new LinkedHashMap<>(perkInvestments);
         for (var entry : costs.entrySet()) {
             validateId(entry.getKey());
             if (entry.getValue() < 1) throw new IllegalArgumentException("Invalid skill cost");
             Integer rank = remaining.remove(entry.getKey());
-            if (rank != null) refunded = Math.addExact(refunded, Math.multiplyExact(rank, entry.getValue()));
+            if (rank != null) {
+                refunded = Math.addExact(refunded, Math.multiplyExact(rank, entry.getValue()));
+                perksRefunded = Math.addExact(perksRefunded, paid.getOrDefault(entry.getKey(), 0));
+                paid.remove(entry.getKey());
+            }
         }
-        return new ProgressionProfile(refunded, milestones, remaining);
+        return new ProgressionProfile(refunded, milestones, remaining, perksRefunded, paid, redeemedCores);
     }
     public ProgressionProfile grant(int amount) {
         if (amount < 1) throw new IllegalArgumentException("Invalid grant");
-        return new ProgressionProfile(Math.addExact(points, amount), milestones, skills);
+        return new ProgressionProfile(Math.addExact(points, amount), milestones, skills, perkPoints, perkInvestments, redeemedCores);
     }
     public static void validateId(String id) {
         if (id == null || id.length() > 128 || !id.matches("[a-z0-9_.-]+:[a-z0-9_./-]+"))
