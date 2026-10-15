@@ -1,0 +1,42 @@
+# Build and IDE state
+**/.gradle/
+**/build/
+**/.idea/
+**/*.iml
+**/run/
+**/runs/
+**/run-data/
+**/repo/
+.vscode/
+
+# Instance and runtime data
+**/saves/
+**/logs/
+**/crash-reports/
+**/backups/
+**/_backups/
+**/screenshots/
+**/mods/
+**/options.txt
+**/servers.dat*
+**/session.lock
+**/eula.txt
+**/usercache.json
+**/usernamecache.json
+**/ops.json
+**/whitelist.json
+**/banned-*.json
+**/*.log
+
+# Deliverables are CI artifacts, not source files
+*.jar
+!mod/gradle/wrapper/gradle-wrapper.jar
+*.zip
+
+# Local credentials
+.env
+.env.*
+*.pem
+*.key
+.DS_Store
+Thumbs.db

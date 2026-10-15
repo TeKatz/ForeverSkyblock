@@ -1,0 +1,24 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+
+[[mods]]
+modId="forever_skyblock"
+version="0.1.0"
+displayName="Forever Skyblock"
+authors="TeKatz"
+description='''The foundation for Forever Skyblock. Version 0.1.0 adds the Condenser Mark I block.'''
+
+[[dependencies.forever_skyblock]]
+modId="neoforge"
+type="required"
+versionRange="[21.1.249,21.2)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.forever_skyblock]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1]"
+ordering="NONE"
+side="BOTH"

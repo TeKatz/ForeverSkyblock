@@ -1,0 +1,34 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.147'
+}
+
+group = 'de.timo.foreverskyblock'
+version = '0.1.0'
+base.archivesName = 'ForeverSkyblock-1.21.1-NeoForge'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+neoForge {
+    version = '21.1.249'
+    runs {
+        server {
+            server()
+            programArgument '--nogui'
+        }
+        client { client() }
+    }
+    mods {
+        forever_skyblock { sourceSet(sourceSets.main) }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}

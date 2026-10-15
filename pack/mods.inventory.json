@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "status": "partial_inventory_not_a_launcher_manifest",
+  "minecraft": "1.21.1",
+  "loader": {
+    "name": "NeoForge",
+    "installed_version": null,
+    "custom_mod_build_version": "21.1.249"
+  },
+  "java": 21,
+  "mods": [
+    {
+      "name": "Forever Skyblock",
+      "mod_id": "forever_skyblock",
+      "version": "0.1.0",
+      "status": "source_imported",
+      "source": "mod/"
+    },
+    {
+      "name": "Just Enough Items",
+      "mod_id": "jei",
+      "version": "19.64.0.454",
+      "status": "user_reported_pack_version"
+    },
+    {
+      "name": "Forever Recipe Editor",
+      "mod_id": "forever_recipe_editor",
+      "version": "1.4.3-skyblock.1",
+      "status": "built_and_delivered_ingame_test_pending",
+      "repository": "TeKatz/ForeverRecipeEditor",
+      "branch": "skyblock",
+      "commit": "3dbaa50e8f0a59b900f8b5e5ac68f3cac73ea32f",
+      "required_jei": "19.64.0.454"
+    },
+    {
+      "name": "Applied Energistics 2",
+      "mod_id": "ae2",
+      "version": null,
+      "status": "user_tested_start_network"
+    },
+    {
+      "name": "Skyblock Builder",
+      "mod_id": "skyblockbuilder",
+      "version": null,
+      "status": "user_tested_world_and_spawn"
+    },
+    {
+      "name": "Default World Type",
+      "mod_id": "defaultworldtype",
+      "version": null,
+      "status": "configuration_reconstructed_local_file_pending"
+    },
+    {
+      "name": "FTB Quests",
+      "version": null,
+      "status": "planned_user_authored_quests"
+    },
+    {
+      "name": "Forever Production Monitor",
+      "version": null,
+      "status": "planned",
+      "repository": "TeKatz/ForeverProductionMonitor"
+    },
+    {
+      "name": "ForeverDeepCore",
+      "version": null,
+      "status": "candidate_void_compatibility_unverified",
+      "repository": "TeKatz/ForeverDeepCore"
+    }
+  ]
+}

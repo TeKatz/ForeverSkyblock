@@ -1,0 +1,6 @@
+# Reconstructed from the agreed Forever Skyblock settings.
+# The original local file has not yet been supplied for comparison.
+[world-preset]
+world-preset = "skyblockbuilder:skyblock"
+disable-button = true
+allowed-world-types = ["skyblockbuilder:skyblock"]
