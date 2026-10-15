@@ -19,6 +19,8 @@
 
 ## Branches and external changes
 
+- When documenting tested development work before its merge, state which source and pack files are actually available on the current branch. Link to the implementation branch/commit for files not yet present; do not imply a documentation update merges code.
+
 - Implement new features, recipe balancing and fixes on separate working branches.
 - The initial project import into `main` was authorized by TeKatz's import request. Later merges into `main`, releases and publishing require a corresponding user request.
 - Preserve existing user changes. Do not overwrite unrelated work or bypass version control.
