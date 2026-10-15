@@ -89,6 +89,20 @@ public final class CondenserMenu extends AbstractContainerMenu {
         broadcastChanges();
         return accepted;
     }
+    public boolean transferRecipe(Player player, net.minecraft.resources.ResourceLocation recipeId, boolean maximum) {
+        if (machine == null || !stillValid(player)) return false;
+        var holder = player.level().getRecipeManager().byKey(recipeId).orElse(null);
+        if (holder == null || !(holder.value() instanceof de.tekatz.foreverskyblock.recipe.CondenserRecipe recipe)) return false;
+        CondenserTransfer.Plan plan = CondenserTransfer.plan(this, recipe, maximum);
+        if (!plan.success()) { broadcastChanges(); return false; }
+        // Apply the complete server-side plan together. Failure never mutates or drops any items.
+        for (int i = 0; i < 36; i++) getSlot(i + 3).set(plan.inventory().get(i));
+        machine.inventory().setStackInSlot(0, plan.inputs().get(0));
+        if (recipe.requiresModule()) machine.inventory().setStackInSlot(2, plan.inputs().get(1));
+        player.getInventory().setChanged();
+        broadcastChanges();
+        return true;
+    }
     @Override public void clicked(int slotId, int button, ClickType type, Player player) {
         if (CondenserBlockEntity.isInput(slotId) && (editing() || !slots.get(slotId).isActive())) return;
         super.clicked(slotId, button, type, player);

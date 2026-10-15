@@ -92,5 +92,11 @@
   "gui.forever_skyblock.filter_empty": "No filter set",
   "gui.forever_skyblock.filter_set": "Filter: %s",
   "jei.forever_skyblock.module_required": "Adjacent chamber",
-  "jei.forever_skyblock.inputs_swappable": "Inputs swappable"
+  "jei.forever_skyblock.inputs_swappable": "Inputs swappable",
+  "jei.forever_skyblock.transfer.module": "Place a Mixing Chamber directly against the condenser.",
+  "jei.forever_skyblock.transfer.editing": "Finish editing filters before transferring real ingredients.",
+  "jei.forever_skyblock.transfer.cursor": "Put down the carried item before transferring a recipe.",
+  "jei.forever_skyblock.transfer.filters": "The input filters do not allow this recipe.",
+  "jei.forever_skyblock.transfer.missing": "Missing ingredients in your inventory or condenser inputs.",
+  "jei.forever_skyblock.transfer.space": "Not enough inventory space to return the current input items."
 }
