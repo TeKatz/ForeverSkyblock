@@ -4,7 +4,7 @@ This is a development test of profile-wide mod restrictions, not final Forever b
 
 ## Menu and prices
 
-Open Forever Skills with K and select **Jetpacks**. Four ordered cards show cost, actual registered jetpack variants and the preceding stage required. Buying a stage spends profile points and persists across worlds/restarts.
+Open Forever Skills with K and select **Jetpacks**. Four compact ordered cards show stage, cost and unlock/prerequisite state. All four fit in the normal 344-pixel-high panel; smaller screens scroll. Hover a card action button for a bounded, automatically wrapped description with actual registered variants and prerequisite. Buying a stage spends profile points and persists across worlds/restarts.
 
 | Research | Additional cost | Included content |
 | --- | ---: | --- |

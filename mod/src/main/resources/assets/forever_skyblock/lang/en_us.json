@@ -76,5 +76,10 @@
   "skill.forever_skyblock.jetpacks_end_game": "End-Game",
   "skill.forever_skyblock.jetpacks_end_game.description": "Unlock material tiers 4+ and elite/ultimate coils.",
   "skill.forever_skyblock.jetpacks_creative": "Creative",
-  "skill.forever_skyblock.jetpacks_creative.description": "Unlock creative jetpacks and their components."
+  "skill.forever_skyblock.jetpacks_creative.description": "Unlock creative jetpacks and their components.",
+  "gui.forever_skyblock.skills.jetpack_summary_1": "Tier 0–1 · %s SP",
+  "gui.forever_skyblock.skills.jetpack_summary_2": "Tier 2–3 · %s SP",
+  "gui.forever_skyblock.skills.jetpack_summary_3": "Tier 4+ · %s SP",
+  "gui.forever_skyblock.skills.jetpack_summary_4": "Creative · %s SP",
+  "gui.forever_skyblock.skills.jetpack_details_hint": "Components included. Hover a button for details."
 }

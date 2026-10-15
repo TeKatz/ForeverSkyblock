@@ -107,7 +107,7 @@ public final class SkillScreen extends Screen {
         g.fill(x + 12, y + 82, x + panelWidth - 12, y + panelHeight - 48, 0xFF0B151D);
         String footer = state != null && !state.available() ? "storage_error"
                 : state != null && !state.message().isEmpty() ? state.message()
-                : state != null && !state.local() ? "server_scope" : "local_scope";
+                : jetpacks ? "jetpack_details_hint" : state != null && !state.local() ? "server_scope" : "local_scope";
         var lines = font.split(label(footer), panelWidth - 24);
         if (!lines.isEmpty()) g.drawString(font, lines.getFirst(), x + 12, y + panelHeight - 40,
                 state != null && !state.available() ? 0xFFFFAE94 : MUTED, false);
@@ -144,11 +144,13 @@ public final class SkillScreen extends Screen {
             for (Card card : cards) {
                 offsets.add(contentHeight);
                 int titleHeight = Math.max(16, font.split(Component.translatable(card.titleKey()), cardWidth() - 48).size() * 10);
-                int cardHeight = 52 + titleHeight + font.split(card.description(), cardWidth() - 20).size() * 10;
+                int cardHeight = jetpacks ? 44 : 52 + titleHeight + font.split(card.description(), cardWidth() - 20).size() * 10;
                 heights.add(cardHeight);
                 contentHeight += cardHeight + 6;
-                actions.add(Button.builder(Component.empty(), b -> { ClientSkills.buy(card.id()); SkillScreen.this.refresh(); })
-                        .bounds(left + cardWidth() - 124, top, 114, 20).build());
+                Button action = Button.builder(Component.empty(), b -> { ClientSkills.buy(card.id()); SkillScreen.this.refresh(); })
+                        .bounds(left + cardWidth() - 124, top, 114, 20).build();
+                if (jetpacks) action.setTooltip(net.minecraft.client.gui.components.Tooltip.create(card.description()));
+                actions.add(action);
             }
             contentHeight = Math.max(height, contentHeight);
             positionButtons();
@@ -190,6 +192,14 @@ public final class SkillScreen extends Screen {
                 g.fill(left, cardY, left + cardWidth, cardY + cardHeight, 0xFF2C4352);
                 g.fill(left + 1, cardY + 1, left + cardWidth - 1, cardY + cardHeight - 1, complete ? 0xFF152E2A : 0xFF1A2A38);
                 g.fill(left, cardY, left + 3, cardY + cardHeight, complete ? GREEN : CYAN);
+                if (jetpacks) {
+                    g.renderItem(card.icon(), left + 10, cardY + 13);
+                    g.drawString(font, Component.translatable(card.titleKey()), left + 34, cardY + 8, LIGHT, false);
+                    int stage = JetpackResearch.IDS.indexOf(card.id()) + 1;
+                    g.drawString(font, label("jetpack_summary_" + stage, card.cost()), left + 34, cardY + 24, complete ? GREEN : MUTED, false);
+                    actions.get(i).render(g, mouseX, mouseY, 0);
+                    continue;
+                }
                 g.renderItem(card.icon(), left + 10, cardY + 8);
                 int titleY = cardY + 8;
                 var titles = font.split(Component.translatable(card.titleKey()), cardWidth - 48);
