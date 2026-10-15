@@ -4,7 +4,11 @@
 
 TeKatz's 0.3.0 screenshot showed blurred custom text/panels while vanilla buttons remained sharp, and a single-line description tooltip extending off screen. The screen called `renderBackground` before custom drawing and then `Screen.render`, which calls the background again. The fix draws the panel in the overridden background phase; the inherited render then draws widgets. Long descriptions wrap and scroll inline, with no area-wide or row description tooltip.
 
-Build and regression checks for this revision are pending. Visual acceptance at multiple GUI scales with background blur enabled remains a manual client check; headless server tests do not verify rendered pixels.
+[Java 21 build, all eight storage tests and all nine dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38698177437) for source commit `bc4f8df0f14a76fdd5d586b4781b40d579d3a648`. The delivered JAR contains version 0.3.1 and author TeKatz. Compared byte-for-byte with 0.3.0, only `SkillScreen.class` and the mod version metadata differ; all progression/storage code, condenser code, recipes, translations and assets are unchanged.
+
+- JAR SHA-256: `c1fe3176590aab70b15a7693dfc5f0d3c33ff63744be9684af2ca1815b6df792`.
+- Verified archive digest, absence of test/profile data, JSON/TOML, translation parity, relative documentation links and the unchanged fixed-island hash.
+- Visual acceptance at multiple GUI scales with background blur enabled remains a manual client check; headless server tests do not verify rendered pixels.
 
 ## Persistent skills — 0.3.0
 
