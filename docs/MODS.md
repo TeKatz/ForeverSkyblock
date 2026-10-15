@@ -1,38 +1,38 @@
-# Mods und Versionen
+# Mods and versions
 
-Dies ist eine Bestandsaufnahme, **keine vollständige oder auflösbare Modpack-Lockdatei**. Unbekannte Versionen werden nicht aus dem normalen Forever-Pack oder dem separaten 1.21.4-Testpack übernommen.
+This is an inventory, **not a complete or resolvable modpack lockfile**. Do not copy unknown versions from the regular Forever pack or the separate 1.21.4 test pack.
 
-## Bekannter Stand
+## Known state
 
-| Bestandteil | Bekannter Wert | Status |
+| Component | Known value | Status |
 | --- | --- | --- |
-| Minecraft | 1.21.1 | Festgelegt |
-| Loader | NeoForge | Festgelegt; tatsächlich installierte Version noch erfassen |
-| Java | 21 | Build-/Laufzeitbasis |
-| Forever Skyblock Mod | 0.1.0 | Im Repo unter `mod/`; gegen NeoForge 21.1.249 gebaut |
-| JEI | 19.64.0.454 | Von Timo als aktuelle Skyblock-Version genannt |
-| Forever Recipe Editor | 1.4.3-skyblock.1 | Skyblock-Build verlangt exakt JEI 19.64.0.454 und NeoForge 21.1.249+ |
-| Applied Energistics 2 | Noch erfassen | Vorhanden, Startnetz von Timo getestet |
-| Skyblock Builder | Noch erfassen | Vorhanden, Startwelt von Timo getestet |
-| Default World Type | Noch erfassen | Für Vorauswahl und Sperre des Welttyps vorgesehen; konkrete lokale Datei noch abgleichen |
-| FTB Quests | Noch erfassen | Questreihe vorgesehen; noch keine Questdateien übergeben |
-| Forever Production Monitor | Noch festlegen/erfassen | Soll integriert werden; kein Skyblock-Installationsstand belegt |
-| ForeverDeepCore | Noch offen | Kandidat für spätere Industrie; Void-Eignung zuvor prüfen |
+| Minecraft | 1.21.1 | Confirmed |
+| Loader | NeoForge | Confirmed; installed version still needs to be recorded |
+| Java | 21 | Build and runtime baseline |
+| Forever Skyblock mod | 0.1.1 | Source under `mod/`; targets NeoForge 21.1.249 |
+| JEI | 19.64.0.454 | Reported by TeKatz as the current Skyblock version |
+| Forever Recipe Editor | 1.4.3-skyblock.1 | Skyblock build requires exactly JEI 19.64.0.454 and NeoForge 21.1.249+ |
+| Applied Energistics 2 | To be recorded | Present; starting network tested by TeKatz |
+| Skyblock Builder | To be recorded | Present; starting world tested by TeKatz |
+| Default World Type | To be recorded | Intended for world-type selection and restriction; compare actual local file |
+| FTB Quests | To be recorded | Quest line planned; no quest files supplied yet |
+| Forever Production Monitor | To be selected/recorded | Intended for integration; no verified Skyblock installation yet |
+| ForeverDeepCore | Open | Candidate for later industry; check void-world suitability first |
 
-## Separate Forever-Repositories
+## Separate Forever repositories
 
-- [Forever Recipe Editor](https://github.com/TeKatz/ForeverRecipeEditor): Branch [`skyblock`](https://github.com/TeKatz/ForeverRecipeEditor/tree/skyblock), bekannter Build-Commit `3dbaa50e8f0a59b900f8b5e5ac68f3cac73ea32f`. `main` bleibt die reguläre Version mit anderer JEI-Bindung.
-- [Forever Production Monitor](https://github.com/TeKatz/ForeverProductionMonitor): eigenes Repository, konkrete Pack-Version noch auswählen.
-- [ForeverDeepCore](https://github.com/TeKatz/ForeverDeepCore): eigenes Repository, Aufnahme und Version noch offen.
+- [Forever Recipe Editor](https://github.com/TeKatz/ForeverRecipeEditor): branch [`skyblock`](https://github.com/TeKatz/ForeverRecipeEditor/tree/skyblock), known build commit `3dbaa50e8f0a59b900f8b5e5ac68f3cac73ea32f`. `main` remains the regular version with a different JEI requirement.
+- [Forever Production Monitor](https://github.com/TeKatz/ForeverProductionMonitor): separate repository; select the specific pack version later.
+- [ForeverDeepCore](https://github.com/TeKatz/ForeverDeepCore): separate repository; inclusion and version remain undecided.
 
-Die Quellen dieser Mods werden hier nicht dupliziert. Die Pack-Bestandsaufnahme hält die verwendeten Versionen und Commits fest. Rezeptänderungen des Editors liegen unter `config/forever_recipe_editor/generated_pack` und werden von der Editor-Mod als Datapack eingebunden.
+Do not duplicate these mods' sources here. Record the selected versions and commits in the pack inventory. Editor recipe changes are stored in `config/forever_recipe_editor/generated_pack` and loaded as a datapack by the editor mod.
 
-## Bisher diskutierte Kandidaten
+## Candidates discussed so far
 
-Mekanism, Industrial Foregoing, Powah, ExtendedAE, Applied Mekanistics, Functional Storage und Sophisticated Storage wurden vorgeschlagen. Modern Industrialization wurde als mögliche stärkere industrielle Ausrichtung diskutiert. Mystical Agriculture ist eine offene Balanceentscheidung. **Keine dieser Nennungen bestätigt die Aufnahme oder eine konkrete installierte Version.**
+Mekanism, Industrial Foregoing, Powah, ExtendedAE, Applied Mekanistics, Functional Storage and Sophisticated Storage were proposed. Modern Industrialization was discussed as an option for a stronger industrial focus. Mystical Agriculture remains a balancing decision. **None of these mentions confirms inclusion or an installed version.**
 
-Ex Deorum war ein Vorschlag für den inzwischen verworfenen Sieb-Einstieg. KubeJS war eine mögliche Packgestaltungshilfe; ein Bedarf zusätzlich zum eigenen Recipe Editor ist noch nicht beschlossen.
+Ex Deorum was proposed for the sieve opening that has since been rejected. KubeJS was suggested as a pack customization tool; whether it is needed alongside the custom Recipe Editor remains undecided.
 
 ## Distribution
 
-Fremdmod-JARs nicht ins Git-Repo einchecken. Für die spätere Veröffentlichung ein echtes Launcher-Manifest und Overrides erzeugen, Lizenzen und Distributionsregeln der tatsächlich gewählten Mods beachten und eine frische Installation testen. Ein Manifest wird erst angelegt, wenn Plattform und vollständiger Modbestand feststehen.
+Do not commit third-party mod JARs. Before publication, generate an actual launcher manifest and overrides, follow the selected mods' licenses and distribution rules, and test a fresh installation. Create the manifest once the platform and complete mod inventory are known.

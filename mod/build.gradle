@@ -3,8 +3,8 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.147'
 }
 
-group = 'de.timo.foreverskyblock'
-version = '0.1.0'
+group = 'de.tekatz.foreverskyblock'
+version = '0.1.1'
 base.archivesName = 'ForeverSkyblock-1.21.1-NeoForge'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)

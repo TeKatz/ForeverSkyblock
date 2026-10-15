@@ -1,46 +1,46 @@
 # Forever Skyblock
 
-Eigenständiges **Expert-Skyblock-Modpack für Minecraft 1.21.1 / NeoForge** von TeKatz.
+A standalone **Expert Skyblock modpack for Minecraft 1.21.1 / NeoForge** by TeKatz.
 
-Der Einstieg beginnt auf einer kleinen Insel mit Baum, betriebsbereitem AE2-Netz und dem eigenen **Kondensator Mark I**. Das Questbuch wird von Timo manuell mit FTB Quests aufgebaut. Dieses Repository enthält Mod-Quellcode, verfügbare Pack-Dateien und die verbindliche Projektdokumentation.
+Players start on a small island with a tree, an operational AE2 network and the custom **Condenser Mark I**. TeKatz builds the quest book manually using FTB Quests. This repository contains the mod source, available pack files and authoritative project documentation.
 
-## Aktueller Stand
+## Current status
 
-- Eigene Mod **0.1.0**: ein platzierbarer Kondensator mit Texturen, Item, Übersetzungen und Loot-Tabelle. Noch keine Ressourcenproduktion oder GUI.
-- Startwelt, Spawn und aufgestellte Maschinen wurden von Timo erfolgreich ingame getestet.
-- Die Insel wurde vergrößert; die Startkiste wurde entfernt und ihr Inhalt ins ME-System gelegt.
-- `templates.json5` verwendet ausschließlich `forever.nbt`, Spawn `[8, 3, 4]`, Blickrichtung Osten.
-- Die Welttyp-Sperre ist mit den besprochenen Werten für Default World Type hinterlegt.
-- Forever Recipe Editor **1.4.3-skyblock.1** liegt in seinem eigenen Repository auf Branch `skyblock` und wurde gegen **JEI 19.64.0.454** gebaut.
+- Custom mod **0.1.1**: a placeable condenser with textures, an item, translations and a loot table. Resource generation and a GUI have not been implemented.
+- TeKatz successfully tested the starting world, spawn and placed machines in game using mod 0.1.0.
+- The island was enlarged; the placed starter chest was removed and its contents moved into the ME system.
+- `templates.json5` uses only `forever.nbt`, with spawn `[8, 3, 4]` facing east.
+- The Default World Type configuration records the agreed world-type restriction.
+- Forever Recipe Editor **1.4.3-skyblock.1** is maintained in its own repository on branch `skyblock` and was built against **JEI 19.64.0.454**.
 
-**Der vollständige Pack-Export ist noch nicht reproduzierbar:** Die echte `forever.nbt`, weitere lokale Skyblock-Builder-Konfigurationen und die vollständige installierte Modliste wurden noch nicht übergeben. Die Datei für Default World Type ist aus unseren besprochenen Einstellungen rekonstruiert und noch nicht mit Timos lokaler Datei abgeglichen. Details: [Fehlende Dateien](docs/FILES_TO_IMPORT.md).
+**A complete pack export cannot be reproduced yet:** the actual `forever.nbt`, additional local Skyblock Builder configuration files and the full installed mod list have not been supplied. The Default World Type file was reconstructed from the agreed settings and has not been compared with TeKatz's local file. See [Files still to import](docs/FILES_TO_IMPORT.md).
 
-## Aufbau
+## Repository layout
 
-| Pfad | Inhalt |
+| Path | Contents |
 | --- | --- |
-| `mod/` | Vollständiges eigenständiges Gradle-Projekt der Forever-Skyblock-Mod |
-| `pack/` | Dateien, die später in den Instanzordner des Modpacks kopiert werden |
-| `docs/DESIGN.md` | Festgelegte Ausrichtung und Expert-Pacing |
-| `docs/PROGRESSION.md` | Offene Entwürfe für die erste Materialprogression |
-| `docs/START_ISLAND.md` | Startinsel, bestätigter Snapshot und geplante Änderungen |
-| `docs/MODS.md` | Bestätigte Versionen, separate Repositories und Mod-Kandidaten |
-| `docs/VALIDATION.md` | Bisherige Prüfungen und Grenzen der Reproduzierbarkeit |
-| `docs/CHANGELOG.md` | Änderungen am Projekt |
+| `mod/` | Complete standalone Gradle project for the Forever Skyblock mod |
+| `pack/` | Files to copy into the modpack instance directory |
+| `docs/DESIGN.md` | Agreed direction and Expert pacing |
+| `docs/PROGRESSION.md` | Unconfirmed proposals for early material progression |
+| `docs/START_ISLAND.md` | Starting island, tested snapshot and planned changes |
+| `docs/MODS.md` | Known versions, separate repositories and candidate mods |
+| `docs/VALIDATION.md` | Completed checks and reproducibility limits |
+| `docs/CHANGELOG.md` | Project changes |
 
-## Mod bauen
+## Build the mod
 
-Java 21 installieren, dann:
+Install Java 21, then run:
 
 ```sh
 cd mod
 ./gradlew build
 ```
 
-Windows: `gradlew.bat build`. Die JAR entsteht in `mod/build/libs/`. Ein GitHub-Actions-Workflow baut die Mod ebenfalls mit Java 21 und stellt die JAR als Build-Artefakt bereit.
+On Windows, use `gradlew.bat build`. The JAR is written to `mod/build/libs/`. A GitHub Actions workflow also builds the mod with Java 21 and provides the JAR as a build artifact.
 
-## Pack-Dateien verwenden
+## Use the pack files
 
-Den **Inhalt** von `pack/` in den Instanzordner übernehmen, sobald die unter [FILES_TO_IMPORT.md](docs/FILES_TO_IMPORT.md) genannten Dateien ergänzt sind. `mods.inventory.json` ist unsere Bestandsaufnahme und kein Launcher-Manifest. Fremdmods werden über den später festzulegenden Launcher-/Distributionsweg eingebunden.
+Copy the **contents** of `pack/` into the instance directory once the files listed in [FILES_TO_IMPORT.md](docs/FILES_TO_IMPORT.md) have been added. `mods.inventory.json` is an inventory, not a launcher manifest. Third-party mods will be included through the launcher and distribution platform selected later.
 
-Für die Anfangsübernahme auf `main` wurde kein neues Gameplay implementiert. Weitere Feature- und Balancing-Arbeiten erfolgen auf Arbeitsbranches; siehe [AGENTS.md](AGENTS.md).
+The initial import into `main` did not introduce new gameplay. Further features and balancing changes use working branches; see [AGENTS.md](AGENTS.md).

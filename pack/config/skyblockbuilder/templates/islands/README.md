@@ -1,7 +1,7 @@
-# Inselvorlage ergänzen
+# Add the island template
 
-Hier wird die tatsächlich exportierte **`forever.nbt`** abgelegt.
+Place the actual exported **`forever.nbt`** here.
 
-Die Datei wurde bisher nicht übergeben. `../../templates.json5` verweist bereits auf diesen Namen. Diese README ist kein Ersatz für die NBT und wird von Skyblock Builder nicht als Insel geladen.
+The file has not been supplied yet. `../../templates.json5` already references this filename. This README is not a substitute for the NBT and is not loaded as an island by Skyblock Builder.
 
-Nach dem Ergänzen in einer frischen Welt prüfen: Spawn, alle Maschinen, eingesetzte 1k-Zelle, ME-Inhalt, Stromversorgung und überarbeiteter Startvorrat.
+After adding the file, test a fresh world: spawn, all machines, installed 1k cell, ME contents, power supply and revised starter inventory.

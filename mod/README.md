@@ -1,4 +1,4 @@
-# Forever Skyblock — 0.1.0
+# Forever Skyblock — 0.1.1
 
 Minimal standalone mod for Minecraft 1.21.1 / NeoForge 21.1.249 or newer 21.1.x. Requires Java 21.
 
@@ -14,7 +14,7 @@ Exactly one block and its block item: `forever_skyblock:condenser_mark_i`.
 
 ## Install
 
-Copy `ForeverSkyblock-1.21.1-NeoForge-0.1.0.jar` into the instance's `mods` folder. Install on both client and server for multiplayer.
+Copy `ForeverSkyblock-1.21.1-NeoForge-0.1.1.jar` into the instance's `mods` folder. Install on both client and server for multiplayer.
 
 Give command:
 
@@ -35,3 +35,7 @@ On Windows, use `gradlew.bat build`. Output is in `build/libs`.
 For development: `./gradlew runClient` or `./gradlew runServer`. The dedicated server requires accepting the Minecraft EULA in its run directory before launching.
 
 The mod uses standard block models and no client-only Java references. This first version intentionally has no block entity or ticking code.
+
+## Project identity
+
+Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`. Version 0.1.1 updates the package and project identity; registered identifiers and gameplay are unchanged.

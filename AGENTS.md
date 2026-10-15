@@ -1,31 +1,38 @@
-# Arbeiten an Forever Skyblock
+# Working on Forever Skyblock
 
-## Zuerst den tatsächlichen Stand prüfen
+## Language and project identity
 
-- Vor Änderungen Branch, HEAD, Arbeitsverzeichnis, vorhandene Regeln und relevante Quellen prüfen. Bei anderen Forever-Mods direkt deren Repository lesen; ältere Erinnerungen ersetzen keinen aktuellen Quellcode.
-- `docs/DESIGN.md` enthält beschlossene Vorgaben. `docs/PROGRESSION.md` kennzeichnet unbestätigte Vorschläge. Vorschläge erst nach Zustimmung implementieren, sofern der Benutzer die konkrete Umsetzung nicht bereits angefordert hat.
-- Vor der Arbeit am Mod `mod/README.md`, Registrierungen, Ressourcen und Abhängigkeiten prüfen.
-- Die Vorlage `forever.nbt` und die aktuelle installierte Modliste nicht erfinden oder aus Screenshots rekonstruieren. Fehlende Dateien unter `docs/FILES_TO_IMPORT.md` nachhalten.
+- Write all READMEs, project documentation, code comments and new contributor instructions in English.
+- Use **TeKatz** for the project owner's name in documentation, credits, author metadata, package names and other project files. Do not introduce a personal name or personal email address.
+- Use `de.tekatz.foreverskyblock` for this mod's Java package and Gradle group. Preserve registered identifiers such as `forever_skyblock:condenser_mark_i` unless a migration is explicitly requested.
+- Keep supported in-game translations, including `de_de.json`; the English documentation requirement does not remove localization.
 
-## Branches und externe Änderungen
+## Inspect the actual state first
 
-- Neue Features, Rezeptbalance und Fehlerbehebungen auf eigenen Arbeitsbranches umsetzen.
-- Der initiale Projektimport auf `main` ist durch Timos Auftrag zur Übernahme autorisiert. Spätere Merges nach `main`, Releases und Veröffentlichungen benötigen einen entsprechenden Benutzerauftrag.
-- Bestehende Benutzeränderungen erhalten; keine fremden Arbeitsstände überschreiben oder Versionskontrollen umgehen.
-- Recipe Editor, Production Monitor und DeepCore behalten ihre eigenen Repositories. Änderungen dort nur im passenden Repo und Branch umsetzen.
+- Before editing, inspect the branch, HEAD, working directory, existing rules and relevant source files. For other Forever mods, read their own repositories; older recollections do not replace current source code.
+- `docs/DESIGN.md` contains agreed requirements. `docs/PROGRESSION.md` identifies unconfirmed proposals. Implement proposals only after approval, unless the user has already requested that specific implementation.
+- Before working on the mod, inspect `mod/README.md`, registrations, resources and dependencies.
+- Do not invent `forever.nbt` or reconstruct the installed mod list from screenshots. Track missing files in `docs/FILES_TO_IMPORT.md`.
 
-## Implementierung und Prüfung
+## Branches and external changes
 
-- Minecraft 1.21.1, NeoForge, Java 21 und Mod-Metadaten konsistent halten. Versionen nur nach tatsächlicher Prüfung als kompatibel dokumentieren.
-- Kleine, begrenzte Änderungen durchführen. Keine unnötigen Tick-Schleifen, Netzwerknachrichten oder unbegrenzten Produktionspuffer einführen.
-- Passende Builds und gezielte Prüfungen ausführen. Ingame-Tests nur als durchgeführt bezeichnen, wenn sie tatsächlich stattgefunden haben; Tests durch Timo separat zuordnen.
-- Bei UI-Änderungen echte Screens, Handler und Registrierungen prüfen. Kein alleiniger Schluss aus Klassennamen.
-- Keine veröffentlichte JAR durch manuelles Umbenennen ihrer Version als neuen Build ausgeben. Aus dem zugehörigen Commit bauen und die fertige JAR samt Metadaten prüfen.
-- Funktionsänderungen, Testergebnisse und offene Punkte in der Dokumentation aktualisieren.
+- Implement new features, recipe balancing and fixes on separate working branches.
+- The initial project import into `main` was authorized by TeKatz's import request. Later merges into `main`, releases and publishing require a corresponding user request.
+- Preserve existing user changes. Do not overwrite unrelated work or bypass version control.
+- Recipe Editor, Production Monitor and DeepCore retain their own repositories. Make changes there only in the appropriate repository and branch.
 
-## Pack und Speicherung
+## Implementation and validation
 
-- Konfigurationen, eigene Rezept-Datapacks, Questdateien, Ressourcen und die echte Insel-NBT gehören ins Repo.
-- Build-Ausgaben, Fremdmod-JARs, Welten, Logs, Caches, Zugangsdaten und lokale Infrastruktur-Hilfen gehören nicht ins Repo. Der Gradle-Wrapper ist eine beabsichtigte Ausnahme für eine Build-Abhängigkeit.
-- Fertige JARs über Build-Artefakte bzw. eine ausdrücklich beauftragte Release-Veröffentlichung liefern.
-- Vor einer Pack-Veröffentlichung eine frische Instanz aus dem Export testen: Insel, Spawn, ME-Inhalte, Energie, Welttyp-Sperre, Rezepte und Quests.
+- Keep Minecraft 1.21.1, NeoForge, Java 21 and mod metadata consistent. Document version compatibility only after checking it.
+- Make small, bounded changes. Avoid unnecessary tick loops, network messages and unbounded production buffers.
+- Run appropriate builds and focused checks. Claim in-game tests only when they actually occurred; attribute tests performed by TeKatz separately.
+- For UI changes, inspect actual screens, handlers and registrations. Do not infer behavior from class names alone.
+- Do not present an existing JAR as a new build by renaming its version. Build from the corresponding commit and inspect the resulting JAR and metadata.
+- Update documentation with behavior changes, validation results and remaining work.
+
+## Pack files and storage
+
+- Track configuration, custom recipe datapacks, quest files, resources and the actual island NBT in this repository.
+- Do not commit build outputs, third-party mod JARs, worlds, logs, caches, credentials or local infrastructure helpers. The Gradle wrapper is an intentional build-dependency exception.
+- Deliver built JARs through build artifacts or an explicitly requested release.
+- Before publishing the pack, test a fresh instance from the export: island, spawn, ME contents, power, world-type restriction, recipes and quests.
