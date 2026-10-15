@@ -1,5 +1,16 @@
 # Validation status
 
+## Fixed island and actual pack configuration — October 15, 2026
+
+- Parsed all 10 supplied Skyblock Builder JSON5 configuration files and the actual Default World Type TOML.
+- Verified `templateList` selects only `forever_me_start.nbt`; the referenced structure exists and spawn `[8, 4, 5]` is air over grass within the structure bounds.
+- Parsed the original compressed NBT: 14×11×10, 396 blocks, zero entities, expected machines and saved cable/terminal parts.
+- Read the storage cell component directly: one 1k cell with exactly eight bread and one wheat seed.
+- Imported operational configuration and structures byte-for-byte; preserved the fixed-island SHA-256. Generated registry lists and the raw log are excluded.
+- Extracted 79 unique loaded IDs and versions, plus 67 mods-folder JAR filenames. NeoForge 21.1.259 matches TeKatz's stated pack runtime.
+- These are source/configuration checks, not a newly performed client installation test. TeKatz previously confirmed the island works and has now declared it final. A fresh complete exported-pack test is still pending.
+
+
 ## Forever Skyblock mod 0.2.1
 
 - Texture-only gameplay update: one angular stone shard replaces the three-pebble image; texture remains transparent and 16×16.
@@ -57,7 +68,7 @@ The local server checks used development mode. The complete imported pack export
 ## Before publishing the pack
 
 1. Import the actual missing files listed in [FILES_TO_IMPORT.md](FILES_TO_IMPORT.md).
-2. Revise the Expert starter inventory in the island template.
+2. Preserve and verify the fixed island and its eight-bread/one-seed inventory.
 3. Record the full mod list and versions.
 4. Create a fresh instance from the eventual pack export.
 5. Check the island, spawn, power, ME contents and world-type restriction.

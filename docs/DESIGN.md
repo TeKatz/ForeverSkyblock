@@ -5,18 +5,18 @@ As of October 15, 2026. TeKatz's explicit decisions are authoritative. Unconfirm
 ## Confirmed decisions
 
 - **Forever Skyblock** is a separate project from the regular Forever modpack.
-- **Minecraft 1.21.1 / NeoForge**, with support for integrating Forever Production Monitor.
+- **Minecraft 1.21.1 / NeoForge 21.1.259** is the current pack runtime. TeKatz will report loader changes. The experimental mod list may change independently; Forever Production Monitor 5.0.1 is present in the supplied snapshot.
 - **Expert** difficulty. This supersedes the initial recommendation of Normal.
 - A custom starting island created with Skyblock Builder, inspired by the opening of Cuboid Outpost.
 - A prebuilt, operational AE2 network: ME Controller, ME Drive, one item storage cell, Crystal Resonance Generator, one Smart Cable and an ME Crafting Terminal. The tested snapshot uses a **1k cell**.
 - The island was enlarged after the first build. The placed chest was removed and its contents moved into the ME system.
-- Use only the custom `forever.nbt` island template. Skyblock should be the only world type available through the normal selection button.
+- The supplied **`forever_me_start.nbt` island is final**. Preserve its layout and inventory unless TeKatz explicitly requests a revision. It is the only selected template, with spawn `[8, 4, 5]` facing east. Skyblock is the only type available through the normal selection button.
 - **No sieve progression.** Create is excluded in line with TeKatz's modpack preference.
 - A custom pack mod with **Condenser Mark I** as its first block. Version 0.2.0 adds wood conversion, a GUI, automation and JEI integration.
 - Mark I converts one log into **four Stone Fragments**, or one plank into **one Stone Fragment**, without electricity. Four fragments craft into one cobblestone in a 2×2 recipe.
 - Mark I must **not generate iron directly**.
-- The latest starter inventory contains bread and one seed; spare saplings and dirt were explicitly removed by TeKatz. An emergency sapling quest is a possible later addition.
-- Remove starter items that enable an immediate water/lava cobblestone generator. This decision still needs to be applied to, or verified in, the final island NBT.
+- The fixed NBT stores **eight bread and one wheat seed** in one 1k ME cell. Spare saplings and dirt were removed. An emergency sapling quest is a possible later addition.
+- No ice or lava bucket is stored in the fixed starter inventory, preventing an immediate water/lava cobblestone generator.
 - TeKatz creates and organizes the **FTB quest line manually**. Technical progression and tutorial content can be developed together.
 - Crafting recipes are adjusted in game using **Forever Recipe Editor**. Its Skyblock version is maintained on a separate branch.
 
@@ -28,7 +28,7 @@ Expert difficulty will be developed through connected crafting steps, new proces
 
 - Final balancing of the initial eight-second machine cycle; later condenser tiers remain optional.
 - The complete route to water, lava, stone, initial metals and processing machines.
-- Final exported island NBT reflecting the latest bread-and-seed starter inventory.
+- Periodic updates to the experimental mod snapshot and final progression roles for installed mods.
 - Core technology mods, other resource paths, Nether/End progression and the final goal.
 - DeepCore's role in a void world. Survey behavior and resource distribution must first be checked against its actual code.
 - Integration of Production Monitor, AE2 expansion and possible AE2 add-ons.

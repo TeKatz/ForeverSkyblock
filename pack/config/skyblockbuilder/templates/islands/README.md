@@ -1,7 +1,7 @@
-# Add the island template
+# Fixed island template
 
-Place the actual exported **`forever.nbt`** here.
+`forever_me_start.nbt` is the actual island exported and approved as final by TeKatz on October 15, 2026. `../../templates.json5` selects it as the only available template, with spawn `[8, 4, 5]` facing east.
 
-The file has not been supplied yet. `../../templates.json5` already references this filename. This README is not a substitute for the NBT and is not loaded as an island by Skyblock Builder.
+Preserve this file byte-for-byte unless TeKatz explicitly requests a revision. Its SHA-256 is `1ae2e4b779b1c6b56320aede0af2a711d4bd247a976771c95f633e05c1beb0c1`.
 
-After adding the file, test a fresh world: spawn, all machines, installed 1k cell, ME contents, power supply and revised starter inventory.
+`default.nbt` is retained from the supplied folder but is not selected. See [the island documentation](../../../../../docs/START_ISLAND.md) for the verified layout and exact stored ME inventory.

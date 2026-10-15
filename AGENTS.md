@@ -12,7 +12,10 @@
 - Before editing, inspect the branch, HEAD, working directory, existing rules and relevant source files. For other Forever mods, read their own repositories; older recollections do not replace current source code.
 - `docs/DESIGN.md` contains agreed requirements. `docs/PROGRESSION.md` identifies unconfirmed proposals. Implement proposals only after approval, unless the user has already requested that specific implementation.
 - Before working on the mod, inspect `mod/README.md`, registrations, resources and dependencies.
-- Do not invent `forever.nbt` or reconstruct the installed mod list from screenshots. Track missing files in `docs/FILES_TO_IMPORT.md`.
+- The supplied `pack/config/skyblockbuilder/templates/islands/forever_me_start.nbt` is the final starting island. Preserve its exact bytes, layout, spawn and ME contents unless TeKatz explicitly requests a revision. It supersedes the earlier `forever.nbt` placeholder name.
+- The pack runtime is NeoForge 21.1.259 until TeKatz reports a version change. The mod project's build dependency is tracked separately.
+- `pack/mods.inventory.json` is an experimental runtime snapshot, not a final selection or launcher lockfile. Refresh it from actual supplied logs/files when requested; do not freeze the mod selection or silently substitute versions.
+- Do not infer installed versions from screenshots or unrelated Forever instances. Track remaining files in `docs/FILES_TO_IMPORT.md`.
 
 ## Branches and external changes
 

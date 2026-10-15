@@ -1,17 +1,25 @@
-# Local files still to import
+# Remaining files and information
 
-The initial import includes all relevant source and project files currently available here. A complete pack still requires:
+## Received and imported on October 15, 2026
 
-| File or information | Destination | Purpose |
+- Actual Skyblock Builder configuration folder and fixed `forever_me_start.nbt` island template.
+- Actual `config/defaultworldtype/client-config.toml`, replacing the reconstructed configuration.
+- A full runtime mod-ID/version snapshot and mods-folder JAR filenames from the supplied log.
+- Installed pack runtime **NeoForge 21.1.259**, confirmed by TeKatz and the log.
+
+These are no longer missing. The island is fixed; no additional island redesign or export is requested. The mod list is intentionally experimental and can be refreshed periodically from a newly supplied log. NeoForge changes are reported explicitly by TeKatz.
+
+## Import when available or relevant
+
+| File or information | Destination | When needed |
 | --- | --- | --- |
-| Actual exported `forever.nbt` | `pack/config/skyblockbuilder/templates/islands/forever.nbt` | Contains the island, machines and saved inventories; the main current blocker |
-| Remaining Skyblock Builder configuration files actually in use | `pack/config/skyblockbuilder/` | Includes world generation, dimensions, spawn, structures and optional starting inventory |
-| Local Default World Type configuration | Compare with `pack/config/defaultworldtype/client-config.toml` | The tracked file records agreed values but was not copied from the instance |
-| Full Skyblock mod list or launcher manifest | Pack inventory and eventual export format | Record all actual versions, dependencies and sources |
-| Actual saved Recipe Editor recipes, once created | `pack/config/forever_recipe_editor/generated_pack/` | Custom recipes applied across the pack |
-| FTB quest files, once created | Appropriate paths under `pack/config/ftbquests/` | Quest book manually authored by TeKatz |
-| Additional resources and configuration actually in use | Corresponding paths under `pack/` | Import after inspection |
+| Actual saved Recipe Editor recipes | `pack/config/forever_recipe_editor/generated_pack/` | Once custom crafting changes have been created |
+| FTB quest files | `pack/config/ftbquests/` and any related pack paths | Once TeKatz has authored quests |
+| KubeJS scripts/assets/data, if customized | Corresponding paths under `pack/kubejs/` | KubeJS is installed, but no script files were supplied |
+| Other intentional configuration overrides | Corresponding `pack/config/` and `pack/defaultconfigs/` paths | When relevant settings are changed or required for a reproducible instance |
+| Launcher/export manifest and download identifiers | Chosen pack export format | Before distributing a complete installable pack |
+| Updated runtime mod snapshot | `pack/mods.inventory.json` and snapshot documentation | Periodically, when TeKatz supplies an update |
 
-Do not create an empty or invented `forever.nbt` placeholder. The complete `config/skyblockbuilder/` directory and the instance's Default World Type file are especially useful for the next import.
+The log-derived mod list is not a launcher manifest or a final mod selection. Missing future recipes and quests are planned work, not defects in the supplied island. No Creative world save or raw log needs to be committed.
 
-The Creative build world remains TeKatz's working copy and is not required for pack distribution. Do not commit world saves or logs.
+Before publishing, verify a fresh instance created from the actual export, including the fixed island, power, ME inventory, world-type restriction, production, recipes and quests.

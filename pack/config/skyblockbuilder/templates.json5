@@ -43,7 +43,15 @@
       "west": [],
       "north": [],
       "east": [
-        [ 8, 3, 4 ]
+        [ 8, 4, 5 ]
+      ]
+    },
+    "forever_me_start": {
+      "south": [],
+      "west": [],
+      "north": [],
+      "east": [
+        [ 8, 4, 5 ]
       ]
     }
   },
@@ -76,14 +84,14 @@
   // The list of templates being available. The first entry is the default template.
   "templateList": [
     {
-      "name": "forever",
-      "file": "forever.nbt",
+      "name": "forever_me_start",
+      "file": "forever_me_start.nbt",
       "spawns": {
         "south": [],
         "west": [],
         "north": [],
         "east": [
-          [ 8, 3, 4 ]
+          [ 8, 4, 5 ]
         ]
       }
     }

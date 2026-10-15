@@ -1,48 +1,53 @@
-# Starting island and inventory
+# Fixed starting island
 
-## Latest revision — October 15, 2026
+## Authoritative baseline
 
-TeKatz rebuilt the island with the oak tree on the left, a compact wooden equipment platform on the right, torches on fence posts and open central workspace. The latest ME screenshot contains bread and one seed. Spare saplings and dirt were explicitly removed because the island already provides sufficient space and soil. A possible emergency sapling quest is reserved for later design.
+On October 15, 2026, TeKatz declared the supplied starting island **final**. Preserve its layout, stored inventories and exact NBT bytes. Do not redesign, resize, regenerate or change starter items unless TeKatz explicitly requests a revision.
 
-These observations come from the screenshots supplied at 07:15 local time, not from an imported NBT. The actual updated `forever.nbt` is still required. The images below document the earlier revision and its superseded inventory.
+The actual exported file is **`forever_me_start.nbt`**, superseding the earlier provisional `forever.nbt` name.
 
-## Earlier tested snapshot
+| Setting | Verified value |
+| --- | --- |
+| Structure | `pack/config/skyblockbuilder/templates/islands/forever_me_start.nbt` |
+| Selected template | `forever_me_start` |
+| Spawn | `[8, 4, 5]`, relative to the structure, facing east |
+| Structure size | 14 × 11 × 10 blocks (X × Y × Z, including tree and underside) |
+| Stored blocks | 396 |
+| Stored entities | 0 |
+| `mainSpawnIsland` | `null` |
+| Spawn cell | Air, with a grass block immediately beneath |
+| NBT DataVersion | 3955 |
 
-On October 15, 2026, TeKatz confirmed that the world, spawn and placed machines work. The island was slightly enlarged. The prebuilt ME network and condenser are visible in these reference images:
+The archive's `default.nbt` is preserved as supplied but is not selected: `templateList` contains only `forever_me_start`. Old named spawn references in the configuration are not additional selectable templates.
 
-![Starting island](images/starting-island-2026-10-15.png)
+## Layout and stored equipment
 
-![Starting inventory in the ME system](images/starting-inventory-2026-10-15.png)
+The island has a tree on the left, a compact oak-plank equipment platform on the right, torches on fence posts and open workspace. The parsed NBT contains:
 
-The visible ME Drive readout shows **one 1k ME Item Storage Cell**. The earlier recommendation of a 4k cell was not adopted in this snapshot.
+- 206 dirt blocks, 90 grass blocks and 19 oak planks.
+- Six oak logs, 58 oak leaves, six oak fences and six torches.
+- One Condenser Mark I, one ME Controller, one ME Drive, one Crystal Resonance Generator and one AE2 cable bus.
+- The cable bus stores one Fluix Smart Cable and a west-facing ME Crafting Terminal.
 
-## Inventory shown in the screenshot
+The condenser is stored without a block-entity inventory tag in this export. Preserve the supplied NBT; the functional mod provides its block entity when placed/initialized. A fresh exported-pack instance remains the final integration check.
 
-| Item | Quantity |
+## Exact ME inventory
+
+The ME Drive contains **one 1k ME Item Storage Cell**. Its saved storage component contains exactly:
+
+| Item ID | Quantity |
 | --- | ---: |
-| Bamboo | 1 |
-| Cactus | 1 |
-| Chests as items | 2 |
-| Ice | 1 |
-| Lava bucket | 1 |
-| Melon slice | 1 |
-| Obsidian | 1 |
-| Seeds; exact type cannot be reliably identified without a tooltip | 1 |
-| Sand | 1 |
-| Sugar cane | 1 |
+| `minecraft:bread` | 8 |
+| `minecraft:wheat_seeds` | 1 |
 
-This is a visual inventory, not item IDs read from the NBT. The two chest items in the network are distinct from the previously placed starter chest that was removed.
+These values were read from NBT, not inferred from a screenshot. No spare dirt, saplings, ice, lava bucket or other starter items are stored in the cell. `starter_inventory.json5` also contains an empty `items` list; items granted by other mods are not disabled by `clearInitialInventory`, which is false in the supplied settings.
 
-## Subsequent decisions
+An emergency sapling quest remains an optional future design task. It does not change the fixed island.
 
-TeKatz subsequently chose Expert difficulty and wants to remove items that enable an immediate cobblestone generator. The screenshot therefore **does not show the final starter inventory**. Remove ice and the lava bucket in the next revision and decide the remaining contents. Removing obsidian was a suggestion, not a confirmed decision.
+## Integrity and provenance
 
-## Stored template configuration
+- Island SHA-256: `1ae2e4b779b1c6b56320aede0af2a711d4bd247a976771c95f633e05c1beb0c1`.
+- Supplied archive SHA-256: `7e02bbc7ea184e41d51cfcd14a073f0abe43357f7de7012c72f4c2d21ea52b92`.
+- All operational Skyblock Builder JSON5 files and supplied structure files were imported byte-for-byte. Generated registry listings under `skyblockbuilder/data/` are excluded.
 
-- File: `pack/config/skyblockbuilder/templates.json5`
-- Only template: `forever`
-- Structure file: `forever.nbt`
-- Spawn: `[8, 3, 4]`, relative to the structure, facing east
-- `mainSpawnIsland`: `null`, so the first and only template is used
-
-The structure file itself is still missing. After each revision, export the island again from the build world and replace the actual file at `pack/config/skyblockbuilder/templates/islands/forever.nbt`. Starter item changes must be applied to the saved machine inventories or storage cell in the template; this document does not modify the ME inventory.
+The screenshot references in `docs/images/starting-*-2026-10-15.png` show an earlier revision and are retained only as historical references. They do not override this fixed NBT baseline.

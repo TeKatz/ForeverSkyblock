@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-15 — Fixed island, actual configuration and development inventory
+
+- Import the actual Skyblock Builder settings and approved final `forever_me_start.nbt` without modifying the supplied files.
+- Replace the provisional island filename/spawn with the actual template and east-facing spawn `[8, 4, 5]`.
+- Verify one 1k storage cell containing eight bread and one wheat seed directly from NBT.
+- Replace reconstructed Default World Type settings with the actual supplied file.
+- Record NeoForge 21.1.259 as the pack runtime, separately from the mod's 21.1.249 build baseline.
+- Extract 79 loaded mod IDs/versions and 67 mods-folder JAR filenames as an explicitly evolving development snapshot.
+- Close the received-file gaps and retain future recipes, quests, scripts, additional overrides and launcher export as later work.
+- Exclude raw logs and generated Skyblock Builder registry listings.
+
+
 ## 2026-10-15 — Clearer Stone Fragment texture (0.2.1)
 
 - Replace the three-pebble sprite with one angular stone shard with a light fracture face and a dark outline, readable at 16×16 inventory scale.
