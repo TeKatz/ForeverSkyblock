@@ -23,12 +23,13 @@ public final class SkillNetwork {
     private SkillNetwork() { }
     public static void setClientReceiver(Consumer<Snapshot> receiver) { clientReceiver = receiver; }
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("skills-1");
+        var registrar = event.registrar("skills-2");
         registrar.playToServer(Request.TYPE, Request.CODEC, (request, context) -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             var service = ProgressionService.get(player.server);
             if (request.action() == 0) service.open(player);
             else if (request.action() == 1) service.buy(player, request.skillId());
+            else if (request.action() == 2) service.reset(player);
         });
         registrar.playToClient(Snapshot.TYPE, Snapshot.CODEC, (snapshot, context) -> clientReceiver.accept(snapshot));
     }

@@ -27,6 +27,7 @@ As of October 15, 2026. TeKatz's explicit decisions are authoritative. Unconfirm
 - First Foundations awards one point once per profile when personally crafting cobblestone from four Stone Fragments.
 - Extended Reach costs one point and adds one block interaction range. The island NBT is unchanged.
 - Dedicated servers own separate profiles; online/cross-PC synchronization and FTB quest integration are not part of this first version.
+- Version 0.4.0 reorganizes the menu into skill/task cards, adds confirmed refunds without clearing task claims and links the green chat point reward to the menu.
 - Global tool-durability removal and expensive tool recipes remain a separate discussion, not an implemented change.
 
 ## Pacing direction

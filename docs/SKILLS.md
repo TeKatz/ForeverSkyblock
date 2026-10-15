@@ -1,4 +1,4 @@
-# Persistent skills — first version (0.3.1)
+# Persistent skills — menu and refunds (0.4.0)
 
 ## Scope
 
@@ -12,7 +12,17 @@ The fixed island and its stored inventory are unchanged. Players gain profile ef
 
 Press **K** in game. Remap **Open Skills** under **Options → Controls → Key Binds → Forever Skyblock**. A conflicting binding can be changed there. The same key or Escape closes the menu. `/foreverskills` opens it as a command fallback.
 
-The custom screen includes a point balance, scrollable Skills and Milestones lists, selected-entry details, current rank/reward, purchase state and profile-scope label. Descriptions wrap inside the detail panel; use the mouse wheel over that text when a scrollbar appears. Hovering the panel does not create a description tooltip. The world continues running while the menu is open.
+The menu uses two tabs: **Skills** for purchases and **Tasks** for earning points. Each full-width card combines its effect/objective, rank/reward and action. The available point balance stays at the top; the selected tab has a cyan underline. Scroll the card list to view later entries or long text at larger GUI scales. Descriptions stay inline rather than appearing as large hover tooltips. The world continues running while the menu is open.
+
+Completing a task sends the usual chat message with a green, underlined **+1 SP** reward. Open chat and click that reward to open the Skills menu through `/foreverskills`. Hovering it explains the shortcut; the link does not claim points or buy a skill.
+
+## Reset purchased skills
+
+**Reset skills** opens an explicit confirmation dialog showing the number of points to refund and the cross-world scope. Cancel or Escape leaves the profile unchanged. Confirming sends one reset request; purchases and further resets wait for the server response.
+
+The server refunds all ranks of known skills, clears those purchases, saves the profile and immediately removes their effects. Unspent points remain. Completed tasks remain claimed and cannot award points again, including in another world. Reset can be repeated safely without duplicating refunds, and skills can be bought again with the refunded points. The control is disabled when there are no known purchases, a request is pending or storage is unavailable.
+
+Version 0.4.0 keeps schema 1 and reads existing profiles without migration. Refunds use the server catalog's cost per rank; the existing skill still costs one point. A future change to skill prices needs an explicit refund/migration policy. Unknown stored skill IDs are preserved and not refunded. A refund exceeding the balance limit is refused without changing the profile. Failed storage writes retain the existing purchase and effect.
 
 ## Earn and spend the first point
 
@@ -63,12 +73,13 @@ This administrative command adds 1–1000 points per invocation, up to the profi
 
 ## Manual acceptance test
 
-1. Open the menu with K; check the Controls entry and rebind it. With background blur enabled, confirm the panel, text, icons and buttons stay sharp. Hover the details and rows: no description tooltip should cover the screen. Check both tabs at multiple GUI scales; scroll the details when a scrollbar appears.
+1. Open the menu with K; check the Controls entry and rebind it. With background blur enabled, check readable cards, both tabs, cost/status/action placement and scrolling at multiple GUI scales. Hover the cards: no description tooltip should cover the screen.
 2. Process wood and craft cobblestone from four fragments, including a test through the ME Crafting Terminal.
-3. Verify one point is awarded; repeat the craft and confirm no second reward.
+3. Verify one point is awarded; repeat the craft and confirm no second reward. Open chat and click the green +1 SP to open the Skills menu.
 4. Buy Extended Reach and confirm the point is spent and a block can be interacted with one block farther away.
 5. Close/reopen the menu, die/respawn and change dimensions; confirm the bonus remains exactly +1.
 6. Exit to the menu, create a second world in the same instance and check that the purchased skill remains unlocked and the milestone cannot pay again.
 7. Restart the game and verify persistence once more.
+8. Click Reset skills, then Cancel or Escape: verify no change. Confirm a reset: verify the point returns and reach is removed immediately. Close/reopen, switch worlds and restart; the reset must persist. The task must stay completed. Buy the skill again and confirm the bonus remains exactly +1.
 
 Automated coverage and actual completed tests are recorded in [VALIDATION.md](VALIDATION.md). No manual client test is claimed before it has occurred.

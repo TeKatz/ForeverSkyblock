@@ -36,6 +36,11 @@ public final class ClientSkills {
         pending = true;
         PacketDistributor.sendToServer(new SkillNetwork.Request(1, skill));
     }
+    public static void reset() {
+        if (pending) return;
+        pending = true;
+        PacketDistributor.sendToServer(new SkillNetwork.Request(2, ""));
+    }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         var minecraft = Minecraft.getInstance();
         while (OPEN.consumeClick()) if (minecraft.player != null && minecraft.screen == null)

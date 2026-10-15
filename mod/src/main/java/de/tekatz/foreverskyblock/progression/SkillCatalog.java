@@ -30,6 +30,11 @@ public final class SkillCatalog {
             Attributes.BLOCK_INTERACTION_RANGE, 1.0));
     private SkillCatalog() { }
     public static Skill find(String id) { return SKILLS.stream().filter(skill -> skill.id().equals(id)).findFirst().orElse(null); }
+    public static ProgressionProfile reset(ProgressionProfile profile) {
+        var costs = new java.util.LinkedHashMap<String, Integer>();
+        for (var skill : SKILLS) costs.put(skill.id(), skill.cost());
+        return profile.resetSkills(costs);
+    }
     public static void apply(ServerPlayer player, ProgressionProfile profile) {
         for (Skill skill : SKILLS) skill.apply(player, profile.rank(skill.id()));
     }

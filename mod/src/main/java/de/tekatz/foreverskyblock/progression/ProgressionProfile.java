@@ -37,6 +37,18 @@ public record ProgressionProfile(int points, Set<String> milestones, Map<String,
         purchased.put(id, rank(id) + 1);
         return new ProgressionProfile(points - cost, milestones, purchased);
     }
+    /** Refund known purchases without clearing completed milestones or unknown future skill data. */
+    public ProgressionProfile resetSkills(Map<String, Integer> costs) {
+        var remaining = new LinkedHashMap<>(skills);
+        int refunded = points;
+        for (var entry : costs.entrySet()) {
+            validateId(entry.getKey());
+            if (entry.getValue() < 1) throw new IllegalArgumentException("Invalid skill cost");
+            Integer rank = remaining.remove(entry.getKey());
+            if (rank != null) refunded = Math.addExact(refunded, Math.multiplyExact(rank, entry.getValue()));
+        }
+        return new ProgressionProfile(refunded, milestones, remaining);
+    }
     public ProgressionProfile grant(int amount) {
         if (amount < 1) throw new IllegalArgumentException("Invalid grant");
         return new ProgressionProfile(Math.addExact(points, amount), milestones, skills);
