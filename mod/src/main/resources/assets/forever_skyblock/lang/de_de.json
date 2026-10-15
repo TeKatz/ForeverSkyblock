@@ -5,7 +5,7 @@
   "gui.forever_skyblock.output": "Ausgang",
   "gui.forever_skyblock.processing": "Kondensiert...",
   "gui.forever_skyblock.blocked": "Ausgang voll",
-  "gui.forever_skyblock.idle": "Holz oder Bretter einlegen",
+  "gui.forever_skyblock.idle": "Warte auf Zutaten",
   "gui.forever_skyblock.no_power": "Kein Strom erforderlich",
   "jei.forever_skyblock.condensing": "Kondensieren",
   "jei.forever_skyblock.duration": "%s Sekunden",
@@ -81,5 +81,16 @@
   "gui.forever_skyblock.skills.jetpack_summary_2": "Tier 2–3 · %s SP",
   "gui.forever_skyblock.skills.jetpack_summary_3": "Tier 4+ · %s SP",
   "gui.forever_skyblock.skills.jetpack_summary_4": "Creative · %s SP",
-  "gui.forever_skyblock.skills.jetpack_details_hint": "Komponenten enthalten. Details beim Hover über den Button."
+  "gui.forever_skyblock.skills.jetpack_details_hint": "Komponenten enthalten. Details beim Hover über den Button.",
+  "block.forever_skyblock.mixing_chamber_mark_i": "Mischkammer Mark I",
+  "item.forever_skyblock.mortar": "Mörser",
+  "item.forever_skyblock.stone_meal": "Steinmehl",
+  "gui.forever_skyblock.edit_filters": "Filter bearbeiten",
+  "gui.forever_skyblock.finish_filters": "Fertig · Filter bleiben aktiv",
+  "gui.forever_skyblock.filter_help": "Inventar-Item kopieren oder aus JEI ziehen.",
+  "gui.forever_skyblock.filter_clear": "Rechtsklick auf Eingang: Filter entfernen.",
+  "gui.forever_skyblock.filter_empty": "Kein Filter gesetzt",
+  "gui.forever_skyblock.filter_set": "Filter: %s",
+  "jei.forever_skyblock.module_required": "Kammer anbauen",
+  "jei.forever_skyblock.inputs_swappable": "Eingänge tauschbar"
 }

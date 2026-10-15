@@ -1,0 +1,14 @@
+{
+  "type": "forever_skyblock:condensing",
+  "ingredient": {
+    "item": "forever_skyblock:stone_meal"
+  },
+  "secondary_ingredient": {
+    "tag": "minecraft:saplings"
+  },
+  "result": {
+    "id": "minecraft:dirt",
+    "count": 1
+  },
+  "processing_time": 160
+}

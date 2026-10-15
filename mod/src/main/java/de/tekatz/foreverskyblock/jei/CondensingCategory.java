@@ -25,21 +25,30 @@ public final class CondensingCategory implements IRecipeCategory<RecipeHolder<Co
     @Override public Component getTitle() { return Component.translatable("jei.forever_skyblock.condensing"); }
     @Override public IDrawable getIcon() { return icon; }
     @Override public int getWidth() { return 150; }
-    @Override public int getHeight() { return 68; }
+    @Override public int getHeight() { return 90; }
     @Override public void setRecipe(IRecipeLayoutBuilder builder, RecipeHolder<CondenserRecipe> holder, IFocusGroup focuses) {
-        builder.addInputSlot(22, 10).addIngredients(holder.value().ingredient());
+        builder.addInputSlot(10, 10).addIngredients(holder.value().ingredient());
+        if (holder.value().requiresModule()) {
+            builder.addInputSlot(32, 10).addIngredients(holder.value().secondaryIngredient());
+            builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 10, 67).addItemStack(new net.minecraft.world.item.ItemStack(ForeverSkyblock.MIXING_CHAMBER_MARK_I.get()));
+        }
         builder.addOutputSlot(112, 10).addItemStack(holder.value().result());
     }
     @Override public void draw(RecipeHolder<CondenserRecipe> holder, IRecipeSlotsView slots, GuiGraphics g, double mouseX, double mouseY) {
         g.fill(0, 0, getWidth(), getHeight(), 0xFF19242C);
-        slot.draw(g, 21, 9);
+        slot.draw(g, 9, 9);
         slot.draw(g, 111, 9);
-        g.fill(51, 15, 98, 21, 0xFF46545C);
+        if (holder.value().requiresModule()) slot.draw(g, 31, 9);
+        g.fill(59, 15, 98, 21, 0xFF46545C);
         int ticks = holder.value().processingTime();
-        int width = (int) ((System.currentTimeMillis() / 50 % ticks) * 47 / ticks);
-        g.fill(51, 15, 51 + width, 21, 0xFF36A9B8);
+        int width = (int) ((System.currentTimeMillis() / 50 % ticks) * 39 / ticks);
+        g.fill(59, 15, 59 + width, 21, 0xFF36A9B8);
         var font = Minecraft.getInstance().font;
         g.drawCenteredString(font, Component.translatable("jei.forever_skyblock.duration", ticks / 20.0F), 75, 36, 0xFFE6EDF0);
         g.drawCenteredString(font, Component.translatable("gui.forever_skyblock.no_power"), 75, 51, 0xFFB0D7DD);
+        if (holder.value().requiresModule()) {
+            g.drawString(font, Component.translatable("jei.forever_skyblock.module_required"), 31, 67, 0xFFFFCB69, false);
+            g.drawString(font, Component.translatable("jei.forever_skyblock.inputs_swappable"), 31, 78, 0xFFB0D7DD, false);
+        }
     }
 }

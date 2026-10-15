@@ -31,16 +31,16 @@ The GUI shows progress, moving cyan indicators and idle/processing/output-full s
 
 The standard NeoForge item-handler block capability is exposed for hoppers and compatible pipes:
 
-- Top and horizontal sides: insert supported input into slot 0.
-- Bottom: extract produced fragments from slot 1.
+- Top and horizontal sides: insert supported, filter-matching inputs into slot 0 and, while a Mixing Chamber is adjacent, slot 2.
+- Bottom: extract the produced output from slot 1.
 - Unsided access: insert input and extract output.
 - Automation cannot extract input or insert output. Simulated operations do not change inventory.
 
-The input and output each hold at most one stack of 64 items. Tagged wood from other mods works when included in the corresponding Minecraft tags.
+Each input and the output hold at most one stack of 64 items. Tagged wood from other mods works when included in the corresponding Minecraft tags.
 
 ## Stone Fragments and crafting
 
-`forever_skyblock:stone_fragment` uses a custom transparent 16×16 pixel texture depicting one angular stone shard and appears in the Ingredients creative tab. Four fragments in a 2×2 crafting recipe produce one cobblestone. This update does not change tool recipes or add a mortar, machine frame or later condenser tiers.
+`forever_skyblock:stone_fragment` uses a custom transparent 16×16 pixel texture depicting one angular stone shard and appears in the Ingredients creative tab. Four fragments in a 2×2 crafting recipe produce one cobblestone. Version 0.6.0 adds the reusable Mortar, Stone Meal and Mixing Chamber Mark I; see [mixing and filters](../docs/CONDENSER_MIXING.md). Later condenser tiers and tool recipes remain unchanged.
 
 The condenser remains in Functional Blocks. Its registered ID and original cube textures are preserved. It drops itself with a pickaxe; stored inventory is dropped separately when the block is removed. Existing placed condensers acquire their new block entity when loaded; test a copy of the starter template before replacing a distributed pack.
 
@@ -48,7 +48,7 @@ The condenser remains in Functional Blocks. Its registered ID and original cube 
 
 JEI is optional. The integration is compiled against **19.64.0.454**, with a declared client compatibility range of `[19.64.0.454,20)`. The mod also loads without JEI and on a dedicated server.
 
-The Condensing category lists the actual machine recipes, cycles tagged inputs and shows output quantities, duration and zero power requirement. The condenser is the recipe catalyst; clicking the progress area in its GUI opens this category. The cobblestone recipe appears in JEI's standard crafting category.
+The Condensing category lists the actual machine recipes, cycles tagged inputs and shows output quantities, duration and zero power requirement. The condenser is the recipe catalyst; clicking the progress area in its GUI opens this category. The mortar, meal, module and cobblestone recipes appear in JEI's standard crafting category.
 
 Recipes use the custom serializer `forever_skyblock:condensing`:
 
@@ -61,11 +61,11 @@ Recipes use the custom serializer `forever_skyblock:condensing`:
 }
 ```
 
-`fragment_count` accepts 1–64; `processing_time` accepts 1–32767 ticks and defaults to 160. Output is always Stone Fragments. Bundled recipes live under `data/forever_skyblock/recipe/condensing/`; datapacks can override them. Changes take effect through the server recipe manager after `/reload`; reopening JEI or rejoining may be necessary to refresh its recipe display. Recipe Editor currently edits crafting recipes, not this machine recipe type.
+`fragment_count` accepts 1–64; `processing_time` accepts 1–32767 ticks and defaults to 160. Legacy recipes without `result` produce Stone Fragments. An explicit `result` permits other outputs, and an optional `secondary_ingredient` requires an adjacent Mixing Chamber with both real inputs. Bundled recipes live under `data/forever_skyblock/recipe/condensing/`; datapacks can override them. Changes take effect through the server recipe manager after `/reload`; reopening JEI or rejoining may be necessary to refresh its recipe display. Recipe Editor currently edits crafting recipes, not this machine recipe type.
 
 ## Install and build
 
-Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.5.0.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
+Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.6.0.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
 
 With Java 21 installed:
 
@@ -84,3 +84,7 @@ Run the isolated dedicated-server integration tests with:
 ```
 
 Test classes and their empty structure are in `src/gameTest/` and are excluded from the production JAR. See [validation status](../docs/VALIDATION.md) for completed checks and remaining manual tests.
+
+## Condenser mixing in 0.6.0
+
+See [CONDENSER_MIXING.md](../docs/CONDENSER_MIXING.md) for recipes, the live second input, persistent filters, automation and migration. Filter editing copies items without consuming them; right-click clears an input filter. JEI is optional.

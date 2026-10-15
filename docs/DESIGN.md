@@ -44,3 +44,7 @@ Expert difficulty will be developed through connected crafting steps, new proces
 - Integration of Production Monitor, AE2 expansion and possible AE2 add-ons.
 
 A complete Expert recipe progression has not been approved yet.
+
+## Approved condenser mixing — version 0.6.0
+
+TeKatz requested the reusable Mortar, Stone Meal, an adjacent Mixing Chamber that exposes one additional input, two-input dirt processing, and persistent ghost filters editable using inventory items or JEI. Shared block faces count; diagonals do not. Removing the module preserves the hidden input and filter. No changes to the fixed island or skills are authorized by this feature. Details: [CONDENSER_MIXING.md](CONDENSER_MIXING.md).

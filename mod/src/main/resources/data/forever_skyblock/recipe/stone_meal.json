@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "forever_skyblock:mortar"
+    },
+    {
+      "item": "forever_skyblock:stone_fragment"
+    },
+    {
+      "item": "forever_skyblock:stone_fragment"
+    },
+    {
+      "item": "forever_skyblock:stone_fragment"
+    },
+    {
+      "item": "forever_skyblock:stone_fragment"
+    }
+  ],
+  "result": {
+    "id": "forever_skyblock:stone_meal",
+    "count": 1
+  }
+}
