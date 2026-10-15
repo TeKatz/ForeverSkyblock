@@ -2,13 +2,15 @@
 
 ## Skill cards, refunds and reward shortcut — 0.4.0
 
-Implementation is on `feature/skills-menu-reset`, based on `feature/persistent-skills`. [Java 21 build, all eleven profile-storage tests and all eleven dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38700037140) for source commit `08c2de1a85a4358a8c27937d3ebe0a7ac686d68b`. Added coverage verifies persistent and idempotent refunds, preserved unspent points/task claims/unknown skill IDs, separate player profiles, balance-limit refusal, failed-write rollback, immediate reach removal, reset payload round trips and chat reward styling/command. All six condenser GameTests remain passing.
+Implementation originated on `feature/skills-menu-reset`, based on `feature/persistent-skills`. [Java 21 build, all eleven profile-storage tests and all eleven dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38700037140) for source commit `08c2de1a85a4358a8c27937d3ebe0a7ac686d68b`. Added coverage verifies persistent and idempotent refunds, preserved unspent points/task claims/unknown skill IDs, separate player profiles, balance-limit refusal, failed-write rollback, immediate reach removal, reset payload round trips and chat reward styling/command. All six condenser GameTests remain passing.
 
 The delivered 0.4.0 JAR was checked for its archive digest, version/author metadata, new client/common classes, EN/DE labels and exclusion of test/profile data. Thirty-three condenser recipe/texture/implementation entries match 0.3.1 byte-for-byte. JSON/TOML, translation parity, relative Markdown links and the fixed-island hash passed. JAR SHA-256: `f8d238093b0bd05a3f052380c278c1045126cbad74cd4aa84550b071bd7d7327`.
 
 TeKatz reported successful testing of the preceding 0.3.1 feature across two worlds: the configured task completes, the skill can be purchased, and its effect remains active in the next save as intended. This is user-reported gameplay validation. It does not validate the new card layout, reset flow or clickable chat reward introduced in 0.4.0.
 
-Manual checks for 0.4.0: both tabs and scrolling at multiple GUI scales, clear cost/action states, reset Cancel/Escape/Confirm, immediate effect removal, reset persistence across worlds/restarts, no repeated milestone payout and clicking the green chat reward.
+TeKatz subsequently reported that 0.4.0 works and the revised GUI looks better, and authorized merging the tested changes. This is user-reported in-game acceptance of the update; individual reset and chat-click test steps were not enumerated.
+
+Remaining detailed acceptance checks, where not covered by that report: both tabs and scrolling at multiple GUI scales, reset Cancel/Escape/Confirm, immediate effect removal, reset persistence across worlds/restarts, no repeated milestone payout and clicking the green chat reward.
 
 
 ## Skills menu readability — 0.3.1

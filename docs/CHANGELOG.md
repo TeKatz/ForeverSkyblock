@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-15 — 0.4.0 accepted for merge
+
+- Record TeKatz's successful in-game acceptance of 0.4.0 and the improved Skills GUI.
+- Consolidate the tested condenser, fixed-island pack files and persistent skills through 0.4.0 into the main development baseline.
+- Preserve the distinction between general user acceptance and individually enumerated manual test steps.
+
 ## 2026-10-15 — Clearer skill cards, refunds and reward shortcut (0.4.0)
 
 - Replace the selected-row/detail layout with full-width skill/task cards and inline effect/objective, rank/reward and action.
