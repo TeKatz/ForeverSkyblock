@@ -1,32 +1,44 @@
-# Prüfstand
+# Validation status
 
-## Forever Skyblock Mod 0.1.0
+## Forever Skyblock mod 0.1.1
 
-- Java-21-Gradle-Build erfolgreich.
-- JAR-Inhalt, Minecraft-/NeoForge-Metadaten sowie JSON-Ressourcen geprüft.
-- Dedizierter Entwicklungsserver mit Minecraft 1.21.1 und NeoForge 21.1.249 erfolgreich gestartet.
-- Block per Serverkommando platziert und anschließend per `execute if block` geprüft.
-- Loot-Tabelle mit Diamantspitzhacke abgefragt: ein `Condenser Mark I` ausgegeben.
-- Server ordnungsgemäß beendet und Welt gespeichert.
-- Timos spätere Screenshots zeigen die Textur ingame; er bestätigte funktionierende Welt, Spawn und platzierte Maschinen.
+- The Java package and Gradle group now use `de.tekatz.foreverskyblock`.
+- Author metadata and project licenses identify TeKatz.
+- Registered mod, block and item IDs remain unchanged.
+- [Java 21 CI build succeeded](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38681195245) for source commit `038e7cbc4c3a67dda232a46d49ae506c8c27d0ae`.
+- Inspected the actual CI JAR: version `0.1.1`, author `TeKatz`, compiled class `de/tekatz/foreverskyblock/ForeverSkyblock.class`, stable registered IDs and retained German localization.
+- Checked every repository file path and file's bytes, plus every JAR entry name and its decompressed bytes, for remnants of the previous personal name: no matches.
+- Parsed all JSON and TOML files and verified relative Markdown links.
+- JAR SHA-256: `be393e77bc3408f494d035cc601d08c859a54ef3fecf5b24c91e9c7548e9f84c`.
+- No new in-game test is claimed for 0.1.1.
 
-Die lokalen Serverprüfungen fanden im Entwicklungsmodus statt. Der vollständige importierte Pack-Export wurde noch nicht in einer frischen Instanz getestet. Die anfänglichen Container-Anpassungen des Buildwerkzeugs sind nicht Teil des Mod-Quellcodes und wurden nicht übernommen.
+## Previous Forever Skyblock mod 0.1.0 checks
+
+- Java 21 Gradle build succeeded.
+- JAR contents, Minecraft/NeoForge metadata and JSON resources were checked.
+- A dedicated development server started successfully with Minecraft 1.21.1 and NeoForge 21.1.249.
+- The block was placed through a server command and verified with `execute if block`.
+- The loot table returned one `Condenser Mark I` when queried with a diamond pickaxe.
+- The server shut down cleanly and saved its world.
+- TeKatz's later screenshots show the texture in game; TeKatz confirmed working world generation, spawn and placed machines.
+
+The local server checks used development mode. The complete imported pack export has not been tested in a fresh instance. Initial container-specific build-tool adjustments are not part of the mod source and were not imported.
 
 ## Forever Recipe Editor 1.4.3-skyblock.1
 
-- Eigener Branch `skyblock`, Commit `3dbaa50e8f0a59b900f8b5e5ac68f3cac73ea32f`.
-- [Java-21-Build erfolgreich](https://github.com/TeKatz/ForeverRecipeEditor/actions/runs/38678418057).
-- Die neun für die JEI-Integration geprüften öffentlichen API-Interfaces sind zwischen 19.53.0.425 und 19.64.0.454 unverändert.
-- Heruntergeladenes Build-Artefakt per SHA-256 geprüft; JAR geprüft: Version, Klassen und genaue JEI-Ladebedingung `[19.64.0.454]`.
-- Interaktive Prüfung von Öffnen, Hover, Ghost-Drag, Speichern/Reload, Rename und Delete in Timos aktuellem Pack steht noch aus.
+- Separate branch `skyblock`, commit `3dbaa50e8f0a59b900f8b5e5ac68f3cac73ea32f`.
+- [Java 21 build succeeded](https://github.com/TeKatz/ForeverRecipeEditor/actions/runs/38678418057).
+- The nine public API interfaces checked for JEI integration are unchanged between 19.53.0.425 and 19.64.0.454.
+- The downloaded build artifact was verified using SHA-256; the JAR was checked for version, classes and the exact JEI requirement `[19.64.0.454]`.
+- Interactive testing of opening, hover, ghost dragging, save/reload, rename and delete in TeKatz's current pack remains pending.
 
-## Vor der Pack-Veröffentlichung
+## Before publishing the pack
 
-1. Fehlende echte Dateien aus [FILES_TO_IMPORT.md](FILES_TO_IMPORT.md) übernehmen.
-2. Expert-Startvorrat in der Inselvorlage überarbeiten.
-3. Vollständige Modliste und Versionen erfassen.
-4. Frische Instanz aus dem späteren Pack-Export erstellen.
-5. Insel, Spawn, Energie, ME-Inhalt und Welttyp-Sperre prüfen.
-6. Tatsächlich implementierte Ressourcenwege, Rezepte und Quests vollständig durchspielen.
+1. Import the actual missing files listed in [FILES_TO_IMPORT.md](FILES_TO_IMPORT.md).
+2. Revise the Expert starter inventory in the island template.
+3. Record the full mod list and versions.
+4. Create a fresh instance from the eventual pack export.
+5. Check the island, spawn, power, ME contents and world-type restriction.
+6. Play through all implemented resource paths, recipes and quests.
 
-Ein erfolgreicher Mod-Build allein bestätigt keinen vollständigen Pack-Export.
+A successful mod build alone does not validate a complete pack export.

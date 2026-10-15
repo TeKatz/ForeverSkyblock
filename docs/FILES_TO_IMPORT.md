@@ -1,17 +1,17 @@
-# Noch zu übernehmende lokale Dateien
+# Local files still to import
 
-Der initiale Import enthält alle aktuell hier vorliegenden, relevanten Quellen und Projektdateien. Für einen vollständigen Pack-Stand fehlen noch:
+The initial import includes all relevant source and project files currently available here. A complete pack still requires:
 
-| Datei oder Stand | Ziel | Bedeutung |
+| File or information | Destination | Purpose |
 | --- | --- | --- |
-| Tatsächliche exportierte `forever.nbt` | `pack/config/skyblockbuilder/templates/islands/forever.nbt` | Enthält Insel, Maschinen und gespeicherte Inventare; derzeitiger Hauptblocker |
-| Weitere tatsächlich verwendete Skyblock-Builder-Configs | `pack/config/skyblockbuilder/` | Unter anderem Worldgen, Dimensionen, Spawn, Strukturen und gegebenenfalls Startinventar |
-| Lokale Default-World-Type-Konfiguration | Abgleich mit `pack/config/defaultworldtype/client-config.toml` | Der eingecheckte Stand enthält die besprochenen Werte, ist aber nicht aus der Instanz kopiert |
-| Vollständige Skyblock-Modliste oder Launcher-Manifest | Pack-Bestandsaufnahme bzw. späteres Exportformat | Alle tatsächlichen Versionen, Abhängigkeiten und Bezugsquellen festhalten |
-| Tatsächlich gespeicherte Recipe-Editor-Rezepte, sobald angelegt | `pack/config/forever_recipe_editor/generated_pack/` | Packweite eigene Rezeptänderungen |
-| FTB-Questdateien, sobald angelegt | Passende Pfade unter `pack/config/ftbquests/` | Timos manuell aufgebautes Questbuch |
-| Zusätzliche tatsächlich eingesetzte Ressourcen/Configs | Entsprechende Pfade unter `pack/` | Erst nach Sichtung übernehmen |
+| Actual exported `forever.nbt` | `pack/config/skyblockbuilder/templates/islands/forever.nbt` | Contains the island, machines and saved inventories; the main current blocker |
+| Remaining Skyblock Builder configuration files actually in use | `pack/config/skyblockbuilder/` | Includes world generation, dimensions, spawn, structures and optional starting inventory |
+| Local Default World Type configuration | Compare with `pack/config/defaultworldtype/client-config.toml` | The tracked file records agreed values but was not copied from the instance |
+| Full Skyblock mod list or launcher manifest | Pack inventory and eventual export format | Record all actual versions, dependencies and sources |
+| Actual saved Recipe Editor recipes, once created | `pack/config/forever_recipe_editor/generated_pack/` | Custom recipes applied across the pack |
+| FTB quest files, once created | Appropriate paths under `pack/config/ftbquests/` | Quest book manually authored by TeKatz |
+| Additional resources and configuration actually in use | Corresponding paths under `pack/` | Import after inspection |
 
-Keine leere oder erfundene `forever.nbt` als Platzhalter erzeugen. Der vollständige Ordner `config/skyblockbuilder/` und die Default-World-Type-Datei aus der Instanz sind für die nächste Übernahme besonders hilfreich.
+Do not create an empty or invented `forever.nbt` placeholder. The complete `config/skyblockbuilder/` directory and the instance's Default World Type file are especially useful for the next import.
 
-Die Creative-Bauwelt bleibt Timos Arbeitskopie und wird nicht für die Pack-Verteilung benötigt. Weltstände und Logs werden nicht ins Repo eingecheckt.
+The Creative build world remains TeKatz's working copy and is not required for pack distribution. Do not commit world saves or logs.

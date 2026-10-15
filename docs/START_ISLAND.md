@@ -1,42 +1,42 @@
-# Startinsel und Startvorrat
+# Starting island and inventory
 
-## Getesteter Snapshot
+## Tested snapshot
 
-Timo bestätigte am 15. Oktober 2026, dass Welt, Spawn und platzierte Maschinen funktionieren. Die Insel wurde leicht vergrößert. Aufgestelltes ME-Netz und Kondensator sind in den beigefügten Referenzbildern sichtbar:
+On October 15, 2026, TeKatz confirmed that the world, spawn and placed machines work. The island was slightly enlarged. The prebuilt ME network and condenser are visible in these reference images:
 
-![Startinsel](images/starting-island-2026-10-15.png)
+![Starting island](images/starting-island-2026-10-15.png)
 
-![Startvorrat im ME-System](images/starting-inventory-2026-10-15.png)
+![Starting inventory in the ME system](images/starting-inventory-2026-10-15.png)
 
-Das ME Drive enthält laut sichtbarer Anzeige **eine 1k ME Item Storage Cell**. Die frühere Empfehlung einer 4k-Zelle wurde nicht in diesen Snapshot übernommen.
+The visible ME Drive readout shows **one 1k ME Item Storage Cell**. The earlier recommendation of a 4k cell was not adopted in this snapshot.
 
-## Vorrat im Screenshot
+## Inventory shown in the screenshot
 
-| Gegenstand | Menge |
+| Item | Quantity |
 | --- | ---: |
-| Bambus | 1 |
-| Kaktus | 1 |
-| Kisten als Items | 2 |
-| Eis | 1 |
-| Lavaeimer | 1 |
-| Melonenscheibe | 1 |
+| Bamboo | 1 |
+| Cactus | 1 |
+| Chests as items | 2 |
+| Ice | 1 |
+| Lava bucket | 1 |
+| Melon slice | 1 |
 | Obsidian | 1 |
-| Samen, genaue Sorte ohne Tooltip nicht zuverlässig bestimmt | 1 |
+| Seeds; exact type cannot be reliably identified without a tooltip | 1 |
 | Sand | 1 |
-| Zuckerrohr | 1 |
+| Sugar cane | 1 |
 
-Die Angaben sind eine visuelle Bestandsaufnahme, keine aus der NBT ausgelesenen Item-IDs. Die zwei Kisten-Items im Netz sind von der entfernten, zuvor aufgestellten Startkiste zu unterscheiden.
+This is a visual inventory, not item IDs read from the NBT. The two chest items in the network are distinct from the previously placed starter chest that was removed.
 
-## Danach festgelegt
+## Subsequent decisions
 
-Timo entschied anschließend für Expert und möchte die Gegenstände für einen sofortigen Cobblestone-Generator entfernen. Der Screenshot zeigt daher **nicht den endgültigen Startvorrat**. Eis und Lavaeimer sind für die nächste Revision zu entfernen bzw. die genaue verbleibende Ausstattung festzulegen. Das Entfernen von Obsidian war ein Vorschlag, keine bestätigte Entscheidung.
+TeKatz subsequently chose Expert difficulty and wants to remove items that enable an immediate cobblestone generator. The screenshot therefore **does not show the final starter inventory**. Remove ice and the lava bucket in the next revision and decide the remaining contents. Removing obsidian was a suggestion, not a confirmed decision.
 
-## Gespeicherte Template-Konfiguration
+## Stored template configuration
 
-- Datei: `pack/config/skyblockbuilder/templates.json5`
-- Einzige Vorlage: `forever`
-- Strukturdatei: `forever.nbt`
-- Spawn: `[8, 3, 4]`, relativ zur Struktur; Blickrichtung Osten
-- `mainSpawnIsland`: `null`, wodurch die erste und einzige Vorlage verwendet wird
+- File: `pack/config/skyblockbuilder/templates.json5`
+- Only template: `forever`
+- Structure file: `forever.nbt`
+- Spawn: `[8, 3, 4]`, relative to the structure, facing east
+- `mainSpawnIsland`: `null`, so the first and only template is used
 
-Die Strukturdatei selbst fehlt noch. Nach jeder Revision die Insel in der Bauwelt erneut exportieren und diese echte Datei unter `pack/config/skyblockbuilder/templates/islands/forever.nbt` ersetzen. Änderungen der Startitems müssen an den gespeicherten Maschineninventaren bzw. der Speicherzelle der Vorlage vorgenommen werden; diese Dokumentation ändert das ME-Inventar nicht.
+The structure file itself is still missing. After each revision, export the island again from the build world and replace the actual file at `pack/config/skyblockbuilder/templates/islands/forever.nbt`. Starter item changes must be applied to the saved machine inventories or storage cell in the template; this document does not modify the ME inventory.

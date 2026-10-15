@@ -1,34 +1,34 @@
-# Beschlossene Ausrichtung
+# Agreed design
 
-Stand: 15. Oktober 2026. Maßgeblich sind Timos ausdrücklich getroffene Entscheidungen. Nicht bestätigte Ausarbeitung steht unter [PROGRESSION.md](PROGRESSION.md).
+As of October 15, 2026. TeKatz's explicit decisions are authoritative. Unconfirmed proposals are recorded in [PROGRESSION.md](PROGRESSION.md).
 
-## Festgelegt
+## Confirmed decisions
 
-- Eigenes Projekt **Forever Skyblock**, getrennt vom normalen Forever-Modpack.
-- **Minecraft 1.21.1 / NeoForge**, mit der Möglichkeit, Forever Production Monitor einzubinden.
-- **Expert** als Schwierigkeitsgrad. Die anfängliche Empfehlung für Normal ist damit überholt.
-- Individuelle Startinsel mit Skyblock Builder; Inspiration ist der Einstieg von Cuboid Outpost.
-- Bereits aufgebautes, betriebsbereites AE2-Netz am Start: ME Controller, ME Drive, eine Item-Zelle, Crystal Resonance Generator, ein Smart Cable und ein ME Crafting Terminal. Im getesteten Snapshot ist eine **1k-Zelle** verbaut.
-- Die Insel wurde gegenüber dem ersten Aufbau vergrößert. Die aufgestellte Kiste wurde entfernt und ihr Inhalt ins ME-System gelegt.
-- Ausschließlich die eigene Inselvorlage `forever.nbt`. Skyblock soll der einzige über den normalen Auswahlknopf verfügbare Welttyp sein.
-- **Keine Sieb-Progression.** Create gehört entsprechend Timos Modpack-Präferenz nicht zur Planung.
-- Eigene Pack-Mod mit **Kondensator Mark I** als erstem Block. Der aktuelle 0.1.0-Stand enthält ausschließlich diesen Block und sein Item.
-- Der Mark I soll **kein Eisen direkt generieren**.
-- Die Startgegenstände für einen sofortigen Wasser-/Lava-Cobblestone-Generator sollen entfernt werden. Diese Entscheidung ist noch in die endgültige Insel-NBT zu übertragen bzw. dort zu überprüfen.
-- Timo erstellt und organisiert die **FTB-Questreihe eigenhändig**. Die technische Progression und Tutorial-Inhalte können gemeinsam ausgearbeitet werden.
-- Craftingrezepte werden mit dem **Forever Recipe Editor** ingame angepasst. Seine Skyblock-Version liegt auf einem eigenen Branch.
+- **Forever Skyblock** is a separate project from the regular Forever modpack.
+- **Minecraft 1.21.1 / NeoForge**, with support for integrating Forever Production Monitor.
+- **Expert** difficulty. This supersedes the initial recommendation of Normal.
+- A custom starting island created with Skyblock Builder, inspired by the opening of Cuboid Outpost.
+- A prebuilt, operational AE2 network: ME Controller, ME Drive, one item storage cell, Crystal Resonance Generator, one Smart Cable and an ME Crafting Terminal. The tested snapshot uses a **1k cell**.
+- The island was enlarged after the first build. The placed chest was removed and its contents moved into the ME system.
+- Use only the custom `forever.nbt` island template. Skyblock should be the only world type available through the normal selection button.
+- **No sieve progression.** Create is excluded in line with TeKatz's modpack preference.
+- A custom pack mod with **Condenser Mark I** as its first block. Version 0.1.0 introduced only this block and its item; 0.1.1 updates project identity without changing gameplay.
+- Mark I must **not generate iron directly**.
+- Remove starter items that enable an immediate water/lava cobblestone generator. This decision still needs to be applied to, or verified in, the final island NBT.
+- TeKatz creates and organizes the **FTB quest line manually**. Technical progression and tutorial content can be developed together.
+- Crafting recipes are adjusted in game using **Forever Recipe Editor**. Its Skyblock version is maintained on a separate branch.
 
-## Arbeitsrichtung für das Pacing
+## Pacing direction
 
-Der Expert-Anspruch wird über zusammenhängende Herstellungsschritte, neue Verfahren und später skalierende Produktionsanlagen ausgearbeitet. Das fertige ME-Netz bleibt die zentrale Arbeitsstation. Konkrete Zeitziele, Kosten, Energiebedarf und Freischaltungen sind noch nicht beschlossen.
+Expert difficulty will be developed through connected crafting steps, new processes and production facilities that scale over time. The prebuilt ME network remains the central workstation. Specific time targets, costs, energy requirements and unlocks have not been agreed yet.
 
-## Noch offen
+## Open questions
 
-- Welche Ressource der Mark I erzeugt, mit welchem Takt, welcher Bedienung und welchem Puffer.
-- Der vollständige Weg zu Wasser, Lava, Stein, ersten Metallen und den ersten Verarbeitungsmaschinen.
-- Endgültiger Startvorrat; insbesondere die weiteren Pflanzen und Obsidian.
-- Verbindliche Haupttechnikmods, weitere Ressourcenwege, Nether/End und das Endziel.
-- Die Rolle von DeepCore in einer Void-Welt. Survey und Ressourcenverteilung müssen zuvor am tatsächlichen Code geprüft werden.
-- Konkrete Einbindung von Production Monitor, AE2-Ausbau und eventuell weiteren AE2-Addons.
+- Mark I's output resource, production interval, interaction and buffer size.
+- The complete route to water, lava, stone, initial metals and processing machines.
+- Final starter inventory, particularly additional plants and obsidian.
+- Core technology mods, other resource paths, Nether/End progression and the final goal.
+- DeepCore's role in a void world. Survey behavior and resource distribution must first be checked against its actual code.
+- Integration of Production Monitor, AE2 expansion and possible AE2 add-ons.
 
-Es existiert bislang keine verabschiedete vollständige Expert-Rezeptprogression.
+A complete Expert recipe progression has not been approved yet.

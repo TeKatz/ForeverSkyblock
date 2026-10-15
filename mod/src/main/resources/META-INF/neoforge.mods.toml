@@ -4,10 +4,10 @@ license="MIT"
 
 [[mods]]
 modId="forever_skyblock"
-version="0.1.0"
+version="0.1.1"
 displayName="Forever Skyblock"
 authors="TeKatz"
-description='''The foundation for Forever Skyblock. Version 0.1.0 adds the Condenser Mark I block.'''
+description='''The foundation for Forever Skyblock. Version 0.1.1 adds the Condenser Mark I block.'''
 
 [[dependencies.forever_skyblock]]
 modId="neoforge"

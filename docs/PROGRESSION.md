@@ -1,31 +1,31 @@
-# Entwürfe für die erste Progression
+# Early progression proposals
 
-**Status: Vorschlag, noch nicht von Timo bestätigt und nicht implementiert.**
+**Status: proposed, not yet confirmed by TeKatz and not implemented.**
 
-Die Diskussion wurde nach dem folgenden Vorschlag durch die Einrichtung des Repositories unterbrochen. Ein Auftrag, alle bisherigen Dinge zu übernehmen, bestätigt diese Gameplay-Idee nicht automatisch.
+The discussion paused after the following proposal to set up the repository. A request to import previous work does not automatically approve this gameplay idea.
 
-## Letzter konkreter Vorschlag
+## Latest concrete proposal
 
-| Schritt | Entwurf |
+| Step | Proposal |
 | --- | --- |
-| Ausgangsstoff | Neues Item **Steinfragmente** |
-| Mark I | Ein fester Ausgangsstoff, langsam und ohne externe Energie |
-| Testwert | Ein Fragment alle zwei Sekunden |
-| Cobblestone | Vier Fragmente im 2×2-Rezept ergeben einen Cobblestone |
-| Erster Ofen | Zunächst das normale Rezept aus acht Cobblestone |
-| Stone | Cobblestone mit Holz bzw. Holzkohle im Ofen schmelzen |
-| Entnahme | Anfangs manuell aus einem kleinen, begrenzten Ausgabepuffer |
-| Volles Inventar | Produktion pausiert |
-| Späterer Ausbau | Transport, weitere Verarbeitung und ein Wasser-/Lava-Cobblestone-Generator als höherer Durchsatz |
+| Starting material | New **Stone Fragments** item |
+| Mark I | One fixed output, produced slowly without external power |
+| Initial test rate | One fragment every two seconds |
+| Cobblestone | Four fragments in a 2×2 recipe produce one cobblestone |
+| First furnace | Initially use the normal recipe requiring eight cobblestone |
+| Stone | Smelt cobblestone in a furnace using wood or charcoal |
+| Extraction | Initially manual, from a small, bounded output buffer |
+| Full inventory | Production pauses |
+| Later expansion | Item transport, further processing and a water/lava cobblestone generator for higher throughput |
 
-Rechnerisch ergibt der Testwert einen Cobblestone alle acht Sekunden und acht Cobblestone nach 64 Sekunden, ohne Handhabungszeit. Das sind Entwurfswerte und keine gemessenen Laufzeiten.
+At the proposed rate, one cobblestone takes eight seconds and eight cobblestone take 64 seconds, excluding handling time. These are calculated proposal values, not measured production times.
 
-## Vor der Umsetzung entscheiden
+## Decide before implementation
 
-1. Passt dieser Einstieg zum gewünschten Expert-Anspruch?
-2. Welches Verfahren führt zu ersten Metallen, ohne direkten Eisen-Output des Mark I?
-3. Welche Materialien benötigt die erste neue Verarbeitungsmaschine?
-4. Wie wird Wasser früh genug erreichbar, und wann folgt Lava?
-5. Wie lässt sich die Grundversorgung nach Verlust oder Abbau einzelner Startgegenstände wiederherstellen?
+1. Does this opening fit the intended Expert difficulty?
+2. Which process provides the first metals without direct iron output from Mark I?
+3. Which materials are required for the first new processing machine?
+4. How does water become available early enough, and when does lava follow?
+5. How can players recover basic resource production after losing or dismantling individual starter items?
 
-Neue Materialien und Maschinenfunktionen entstehen in `mod/`. Passende Craftingrezepte kann Timo im Recipe Editor anlegen; deren tatsächlich generierte Dateien werden anschließend unter `pack/config/forever_recipe_editor/generated_pack/` übernommen.
+New materials and machine behavior belong in `mod/`. TeKatz can create the corresponding crafting recipes in Recipe Editor; the actual generated files are then imported into `pack/config/forever_recipe_editor/generated_pack/`.
