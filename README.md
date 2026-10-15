@@ -27,7 +27,7 @@ The fixed island and actual world configuration are now included. The current ru
 | `docs/PROGRESSION.md` | Unconfirmed proposals for early material progression |
 | `docs/START_ISLAND.md` | Starting island, tested snapshot and planned changes |
 | `docs/MODS.md` | Runtime/build versions, separate repositories and snapshot policy |
-| `docs/MODLIST_SNAPSHOT.md` | Complete observed development mod-ID/version table |
+| `docs/MODLIST_SNAPSHOT.md` | Current enabled artifact list and historical runtime snapshot |
 | `docs/VALIDATION.md` | Completed checks and reproducibility limits |
 | `docs/CHANGELOG.md` | Project changes |
 
@@ -48,4 +48,4 @@ Copy the **contents** of `pack/` into the instance directory with the dependenci
 
 The initial import into `main` did not introduce new gameplay. Further features and balancing changes use working branches; see [AGENTS.md](AGENTS.md).
 
-The current source includes the 0.5.0 Iron Jetpacks research system, 0.6.0 condenser mixing and the 0.6.1 chamber-rendering, JEI-transfer and Vanilla-tutorial updates; see [JETPACK_RESEARCH.md](docs/JETPACK_RESEARCH.md) and [CONDENSER_MIXING.md](docs/CONDENSER_MIXING.md). The observed pack inventory remains the supplied 0.2.1 runtime snapshot until TeKatz supplies an update.
+The current source includes the 0.5.0 Iron Jetpacks research system, 0.6.0 condenser mixing and the 0.6.1 chamber-rendering, JEI-transfer and Vanilla-tutorial updates; see [JETPACK_RESEARCH.md](docs/JETPACK_RESEARCH.md) and [CONDENSER_MIXING.md](docs/CONDENSER_MIXING.md). The current provisional inventory comes from TeKatz's 80-entry `Modliste.txt`, including Forever Skyblock 0.6.1; the earlier runtime log snapshot is archived separately.

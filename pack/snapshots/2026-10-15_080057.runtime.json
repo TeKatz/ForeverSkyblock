@@ -1,0 +1,581 @@
+{
+  "schema_version": 2,
+  "status": "development_runtime_snapshot_not_a_launcher_manifest",
+  "snapshot_date": "2026-10-15",
+  "source": {
+    "file_name": "latest.log",
+    "log_start_local": "2026-10-15 08:00:57.610",
+    "sha256": "166a66550a3add3af618c0602813112585d1832692fcecbe06e20cb40ed312de",
+    "raw_log_committed": false
+  },
+  "update_policy": "Mods are experimental and may change frequently. Refresh this snapshot from a newly supplied log when requested; inclusion is not a final design decision.",
+  "minecraft": "1.21.1",
+  "loader": {
+    "name": "NeoForge",
+    "installed_version": "21.1.259",
+    "version_policy": "Pinned pack runtime; change only when TeKatz reports a new version.",
+    "custom_mod_build_version": "21.1.249"
+  },
+  "java": 21,
+  "loaded_entry_count": 79,
+  "mods": [
+    {
+      "name": "AE2WTLib",
+      "version": "19.5.1",
+      "mod_id": "ae2wtlib",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "AE2WTLib API",
+      "version": "19.5.1",
+      "mod_id": "ae2wtlib_api",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Apotheosis",
+      "version": "8.9.0",
+      "mod_id": "apotheosis",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Apothic Attributes",
+      "version": "2.11.0",
+      "mod_id": "apothic_attributes",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Apothic Enchanting",
+      "version": "1.6.4",
+      "mod_id": "apothic_enchanting",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Apothic Spawners",
+      "version": "1.4.0",
+      "mod_id": "apothic_spawners",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "AppleSkin",
+      "version": "3.0.9+mc1.21",
+      "mod_id": "appleskin",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Applied Energistics 2",
+      "version": "19.2.18",
+      "mod_id": "ae2",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Applied Mekanistics",
+      "version": "1.6.3",
+      "mod_id": "appmek",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Architectury",
+      "version": "13.0.11",
+      "mod_id": "architectury",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "BadOptimizations",
+      "version": "2.4.1",
+      "mod_id": "badoptimizations",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Balm",
+      "version": "21.0.66",
+      "mod_id": "balm",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Better Advanced Tooltips",
+      "version": "2101.1.0-build.5",
+      "mod_id": "betteradvancedtooltips",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Bookshelf",
+      "version": "21.1.81",
+      "mod_id": "bookshelf",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Cloth Config v15 API",
+      "version": "15.0.140",
+      "mod_id": "cloth_config",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Clumps",
+      "version": "19.0.0.1",
+      "mod_id": "clumps",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Configured",
+      "version": "2.6.3",
+      "mod_id": "configured",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Controlling",
+      "version": "19.0.5",
+      "mod_id": "controlling",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Cucumber Library",
+      "version": "8.0.16",
+      "mod_id": "cucumber",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Curios API",
+      "version": "9.5.1+1.21.1",
+      "mod_id": "curios",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Default World Type",
+      "version": "1.21-5.0.4",
+      "mod_id": "defaultworldtype",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "EnchantmentDescriptions",
+      "version": "21.1.11",
+      "mod_id": "enchdesc",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "EntityCulling",
+      "version": "1.11.3",
+      "mod_id": "entityculling",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Euphoria Patcher",
+      "version": "1.10.5-r5.9.3-neoforge",
+      "mod_id": "euphoria_patcher",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "ExtendedAE",
+      "version": "1.21-2.2.35-neoforge",
+      "mod_id": "extendedae",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Ferrite Core",
+      "version": "7.0.3",
+      "mod_id": "ferritecore",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Forever Production Monitor",
+      "version": "5.0.1",
+      "mod_id": "forever_production_monitor",
+      "status": "observed_in_runtime_log",
+      "repository": "TeKatz/ForeverProductionMonitor"
+    },
+    {
+      "name": "Forever Recipe Editor",
+      "version": "1.4.3-skyblock.1",
+      "mod_id": "forever_recipe_editor",
+      "status": "observed_in_runtime_log",
+      "repository": "TeKatz/ForeverRecipeEditor",
+      "branch": "skyblock",
+      "commit": "3dbaa50e8f0a59b900f8b5e5ac68f3cac73ea32f",
+      "required_jei": "19.64.0.454"
+    },
+    {
+      "name": "Forever Skyblock",
+      "version": "0.2.1",
+      "mod_id": "forever_skyblock",
+      "status": "observed_in_runtime_log",
+      "repository": "TeKatz/ForeverSkyblock",
+      "source": "mod/"
+    },
+    {
+      "name": "Forgified Fabric API Base",
+      "version": "0.4.42+d1308ded19",
+      "mod_id": "fabric_api_base",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Forgified Fabric BlockView API (v2)",
+      "version": "1.0.10+9afaaf8c19",
+      "mod_id": "fabric_block_view_api_v2",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Forgified Fabric Renderer API (v1)",
+      "version": "3.4.1+9125b6dc19",
+      "mod_id": "fabric_renderer_api_v1",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Forgified Fabric Rendering Data Attachment (v1)",
+      "version": "0.3.48+73761d2e19",
+      "mod_id": "fabric_rendering_data_attachment_v1",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "FTB Backups 3",
+      "version": "21.1.5",
+      "mod_id": "ftbbackups3",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "FTB Chunks",
+      "version": "2101.1.22",
+      "mod_id": "ftbchunks",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "FTB Essentials",
+      "version": "2101.1.10",
+      "mod_id": "ftbessentials",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "FTB Library",
+      "version": "2101.1.37",
+      "mod_id": "ftblibrary",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "FTB Quests",
+      "version": "2101.1.36",
+      "mod_id": "ftbquests",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "FTB Teams",
+      "version": "2101.1.11",
+      "mod_id": "ftbteams",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "FTB Ultimine",
+      "version": "2101.1.15",
+      "mod_id": "ftbultimine",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Functional Storage",
+      "version": "1.21.1-1.5.7",
+      "mod_id": "functionalstorage",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Glodium",
+      "version": "1.21-2.2-neoforge",
+      "mod_id": "glodium",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "GuideME",
+      "version": "21.1.19",
+      "mod_id": "guideme",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "ImmediatelyFast",
+      "version": "1.6.15+1.21.1",
+      "mod_id": "immediatelyfast",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Industrial Foregoing",
+      "version": "1.21-3.6.39",
+      "mod_id": "industrialforegoing",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Iris",
+      "version": "1.8.14-beta.1+mc1.21.1",
+      "mod_id": "iris",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Jade",
+      "version": "15.10.6+neoforge",
+      "mod_id": "jade",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Just Enough Items",
+      "version": "19.64.0.454",
+      "mod_id": "jei",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "KubeJS",
+      "version": "2101.7.2-build.377",
+      "mod_id": "kubejs",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "KubeJS Mekanism",
+      "version": "2101.1.7-build.18",
+      "mod_id": "kubejs_mekanism",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "KubeJSCurios",
+      "version": "1.0.4",
+      "mod_id": "kubejs_curios",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "KumaAPI",
+      "version": "21.0.8",
+      "mod_id": "kuma_api",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "LibX",
+      "version": "1.21.1-6.0.15",
+      "mod_id": "libx",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Lithium",
+      "version": "0.15.4+mc1.21.1",
+      "mod_id": "lithium",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Mekanism",
+      "version": "10.7.19",
+      "mod_id": "mekanism",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "MezzConfig",
+      "version": "0.6.8",
+      "mod_id": "mezz_config",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Minecraft",
+      "version": "1.21.1",
+      "mod_id": "minecraft",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Mob Grinding Utils",
+      "version": "1.1.10+mc1.21.1",
+      "mod_id": "mob_grinding_utils",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "ModernFix",
+      "version": "5.27.26+mc1.21.1",
+      "mod_id": "modernfix",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Mouse Tweaks",
+      "version": "2.26.1",
+      "mod_id": "mousetweaks",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Mystical Agriculture",
+      "version": "8.0.28",
+      "mod_id": "mysticalagriculture",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "NeoForge",
+      "version": "21.1.259",
+      "mod_id": "neoforge",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Patchouli",
+      "version": "1.21.1-93-NEOFORGE",
+      "mod_id": "patchouli",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Placebo",
+      "version": "9.9.4",
+      "mod_id": "placebo",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Polymorph",
+      "version": "1.2.0+1.21.1",
+      "mod_id": "polymorph",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Powah",
+      "version": "6.2.10",
+      "mod_id": "powah",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "PrickleMC",
+      "version": "21.1.11",
+      "mod_id": "prickle",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Rhino",
+      "version": "2101.2.8-build.91",
+      "mod_id": "rhino",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Searchables",
+      "version": "1.0.2",
+      "mod_id": "searchables",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Skyblock Builder",
+      "version": "21.1.37",
+      "mod_id": "skyblockbuilder",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Sodium",
+      "version": "0.8.13+mc1.21.1",
+      "mod_id": "sodium",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Sophisticated Backpacks",
+      "version": "3.26.12",
+      "mod_id": "sophisticatedbackpacks",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Sophisticated Core",
+      "version": "1.5.12",
+      "mod_id": "sophisticatedcore",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Sophisticated Storage",
+      "version": "1.6.6",
+      "mod_id": "sophisticatedstorage",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "spark",
+      "version": "1.10.124",
+      "mod_id": "spark",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Titanium",
+      "version": "4.0.51",
+      "mod_id": "titanium",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "TRansition",
+      "version": "1.0.26",
+      "mod_id": "transition",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "TRender",
+      "version": "1.0.17",
+      "mod_id": "trender",
+      "status": "observed_in_runtime_log"
+    },
+    {
+      "name": "Waystones",
+      "version": "21.1.46",
+      "mod_id": "waystones",
+      "status": "observed_in_runtime_log"
+    }
+  ],
+  "mods_folder_jar_count": 67,
+  "mods_folder_jars": [
+    "ae2wtlib-19.5.1.jar",
+    "Apotheosis-1.21.1-8.9.0.jar",
+    "ApothicAttributes-1.21.1-2.11.0.jar",
+    "ApothicEnchanting-1.21.1-1.6.4.jar",
+    "ApothicSpawners-1.21.1-1.4.0.jar",
+    "appleskin-neoforge-mc1.21-3.0.9.jar",
+    "Applied-Mekanistics-1.6.3.jar",
+    "appliedenergistics2-19.2.18.jar",
+    "architectury-13.0.11-neoforge.jar",
+    "BadOptimizations-2.4.1-1.21.1.jar",
+    "balm-neoforge-1.21.1-21.0.66.jar",
+    "better-advanced-tooltips-2101.1.0-build.5.jar",
+    "bookshelf-neoforge-1.21.1-21.1.81.jar",
+    "cloth-config-15.0.140-neoforge.jar",
+    "Clumps-neoforge-1.21.1-19.0.0.1.jar",
+    "configured-neoforge-1.21.1-2.6.3.jar",
+    "Controlling-neoforge-1.21.1-19.0.5.jar",
+    "Cucumber-1.21.1-8.0.16.jar",
+    "curios-neoforge-9.5.1+1.21.1.jar",
+    "DefaultWorldType-1.21-5.0.4.jar",
+    "enchdesc-neoforge-1.21.1-21.1.11.jar",
+    "entityculling-neoforge-1.11.3-mc1.21.1.jar",
+    "EuphoriaPatcher-1.10.5-r5.9.3-neoforge.jar",
+    "ExtendedAE-1.21-2.2.35-neoforge.jar",
+    "ferritecore-7.0.3-neoforge.jar",
+    "ForeverProductionMonitor-1.21.1-NeoForge-5.0.1.jar",
+    "ForeverRecipeEditor-1.21.1-NeoForge-1.4.3-skyblock.1.jar",
+    "ForeverSkyblock-1.21.1-NeoForge-0.2.1.jar",
+    "ftb-backups-3-21.1.5.jar",
+    "ftb-chunks-neoforge-2101.1.22.jar",
+    "ftb-essentials-neoforge-2101.1.10.jar",
+    "ftb-library-neoforge-2101.1.37.jar",
+    "ftb-quests-neoforge-2101.1.36.jar",
+    "ftb-teams-neoforge-2101.1.11.jar",
+    "ftb-ultimine-neoforge-2101.1.15.jar",
+    "functionalstorage-1.21.1-1.5.7.jar",
+    "Glodium-1.21-2.2-neoforge.jar",
+    "guideme-21.1.19.jar",
+    "ImmediatelyFast-NeoForge-1.6.15+1.21.1.jar",
+    "industrialforegoing-1.21-3.6.39.jar",
+    "iris-neoforge-1.8.14-beta.1+mc1.21.1.jar",
+    "Jade-1.21.1-NeoForge-15.10.6.jar",
+    "jei-1.21.1-neoforge-19.64.0.454.jar",
+    "kubejs-mekanism-neoforge-2101.1.7-build.18.jar",
+    "kubejs-neoforge-2101.7.2-build.377.jar",
+    "kubejs_curios_neoforge_1.21.1-1.0.4.jar",
+    "LibX-1.21.1-6.0.15.jar",
+    "lithium-neoforge-0.15.4+mc1.21.1.jar",
+    "Mekanism-1.21.1-10.7.19.85.jar",
+    "mob_grinding_utils-1.1.10+mc1.21.1.jar",
+    "modernfix-neoforge-5.27.26+mc1.21.1.jar",
+    "MouseTweaks-neoforge-mc1.21-2.26.1.jar",
+    "MysticalAgriculture-1.21.1-8.0.28.jar",
+    "Patchouli-1.21.1-93-NEOFORGE.jar",
+    "Placebo-1.21.1-9.9.4.jar",
+    "polymorph-neoforge-1.2.0+1.21.1.jar",
+    "Powah-6.2.10.jar",
+    "prickle-neoforge-1.21.1-21.1.11.jar",
+    "rhino-2101.2.8-build.91.jar",
+    "Searchables-neoforge-1.21.1-1.0.2.jar",
+    "SkyblockBuilder-21.1.37.jar",
+    "sophisticatedbackpacks-1.21.1-3.26.12.2208.jar",
+    "sophisticatedcore-1.21.1-1.5.12.2400.jar",
+    "sophisticatedstorage-1.21.1-1.6.6.2181.jar",
+    "spark-1.10.124-neoforge.jar",
+    "titanium-1.21-4.0.51.jar",
+    "waystones-neoforge-1.21.1-21.1.46.jar"
+  ],
+  "not_observed_candidates": [
+    {
+      "name": "ForeverDeepCore",
+      "repository": "TeKatz/ForeverDeepCore",
+      "status": "not_installed_in_this_snapshot_inclusion_undecided"
+    }
+  ]
+}
