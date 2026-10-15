@@ -39,6 +39,7 @@ public final class SkillScreen extends Screen {
             String key = milestones ? MilestoneCatalog.MILESTONES.get(row + scroll).titleKey() : SkillCatalog.SKILLS.get(row + scroll).titleKey();
             Button button = Button.builder(Component.translatable(key), clicked -> { selected = id; refresh(); })
                     .bounds(x + 12, y + 78 + row * 32, leftWidth - 4, 26).build();
+            button.setTooltip(Tooltip.create(Component.translatable(key + ".description")));
             rows.add(addRenderableWidget(button));
         }
         purchase = addRenderableWidget(Button.builder(Component.empty(), button -> {
@@ -132,6 +133,9 @@ public final class SkillScreen extends Screen {
             if (owned) g.fill(x + leftWidth + 9, rows.get(i).getY() + 10, x + leftWidth + 12, rows.get(i).getY() + 16, 0xFF85D992);
         }
         super.render(g, mouseX, mouseY, partialTick);
+        if (mouseX >= detailX && mouseX < detailX + detailWidth && mouseY >= y + 85
+                && mouseY < y + panelHeight - 90)
+            g.renderTooltip(font, Component.translatable(descriptionKey), mouseX, mouseY);
     }
     private void text(GuiGraphics g, Component text, int x, int y, int width, int color, int maxLines) {
         var lines = font.split(text, Math.max(20, width));

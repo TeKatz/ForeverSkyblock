@@ -1,5 +1,14 @@
 # Validation status
 
+## Persistent skills — 0.3.0
+
+Implementation is on `feature/persistent-skills`, based on the current condenser branch. Build validation is in progress.
+
+Automated coverage includes eight profile-storage tests (restart/world independence, deduplication, purchases, insufficient funds, player separation, backup recovery, corrupt/future schemas, failed writes and concurrent claims) and three additional server GameTests (non-stacking reach application, exact milestone ingredients and packet round trips). Existing six condenser GameTests remain enabled.
+
+Manual client testing remains pending: remappable key, GUI layout and purchase states, crafting through AE2, exact reach behavior, death/respawn, new-world carryover and a full game restart. These are not claimed as completed.
+
+
 ## Fixed island and actual pack configuration — October 15, 2026
 
 - Parsed all 10 supplied Skyblock Builder JSON5 configuration files and the actual Default World Type TOML.

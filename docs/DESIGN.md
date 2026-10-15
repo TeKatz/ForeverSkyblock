@@ -20,6 +20,15 @@ As of October 15, 2026. TeKatz's explicit decisions are authoritative. Unconfirm
 - TeKatz creates and organizes the **FTB quest line manually**. Technical progression and tutorial content can be developed together.
 - Crafting recipes are adjusted in game using **Forever Recipe Editor**. Its Skyblock version is maintained on a separate branch.
 
+## Persistent progression — initial implementation requested
+
+- Add a player-wide skill point/shop system shared across singleplayer worlds in the same instance.
+- Version 0.3.0 provides a dedicated GUI, remappable K shortcut, one test milestone and one test skill.
+- First Foundations awards one point once per profile when personally crafting cobblestone from four Stone Fragments.
+- Extended Reach costs one point and adds one block interaction range. The island NBT is unchanged.
+- Dedicated servers own separate profiles; online/cross-PC synchronization and FTB quest integration are not part of this first version.
+- Global tool-durability removal and expensive tool recipes remain a separate discussion, not an implemented change.
+
 ## Pacing direction
 
 Expert difficulty will be developed through connected crafting steps, new processes and production facilities that scale over time. The prebuilt ME network remains the central workstation. Specific time targets, costs, energy requirements and unlocks have not been agreed yet.

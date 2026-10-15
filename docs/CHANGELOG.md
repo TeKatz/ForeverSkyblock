@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-15 — Persistent skills (0.3.0)
+
+- Add UUID-based profiles outside world saves, with atomic persistence, validated backups and explicit failure handling.
+- Add the once-per-profile First Foundations milestone and one-point Extended Reach skill.
+- Apply a stable, non-stacking +1 block interaction modifier on purchase/login/respawn/dimension changes.
+- Add server-authoritative open/purchase packets, a custom scrollable Skills/Milestones screen and a remappable K shortcut.
+- Add the `/foreverskills` fallback and operator-only point-grant command.
+- Add English/German labels, profile-storage tests and dedicated-server effect/recipe/packet tests.
+- Preserve the fixed island, existing condenser functionality and observed mod inventory snapshot.
+
+
 ## 2026-10-15 — Fixed island, actual configuration and development inventory
 
 - Import the actual Skyblock Builder settings and approved final `forever_me_start.nbt` without modifying the supplied files.

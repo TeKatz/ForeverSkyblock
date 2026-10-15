@@ -25,6 +25,10 @@ public final class ProgressionService {
             return new ProgressionService(new ProfileStore(path), local);
         });
     }
+    public static void logout(MinecraftServer server, java.util.UUID player) {
+        var service = SERVICES.get(server);
+        if (service != null) service.store.evict(player);
+    }
     public static void stop(MinecraftServer server) { SERVICES.remove(server); }
     public void login(ServerPlayer player) {
         try { SkillCatalog.apply(player, store.load(player.getUUID())); }

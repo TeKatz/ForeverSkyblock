@@ -47,6 +47,7 @@ neoForge {
 
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testImplementation 'com.google.code.gson:gson:2.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     compileOnly 'mezz.jei:jei-1.21.1-common-api:19.64.0.454'
     compileOnly 'mezz.jei:jei-1.21.1-neoforge-api:19.64.0.454'
@@ -63,4 +64,7 @@ tasks.withType(AbstractArchiveTask).configureEach {
     reproducibleFileOrder = true
 }
 
-tasks.named('test') { useJUnitPlatform() }
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging { exceptionFormat = 'full'; events 'passed', 'failed', 'skipped' }
+}

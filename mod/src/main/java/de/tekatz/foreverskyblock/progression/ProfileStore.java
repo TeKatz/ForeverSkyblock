@@ -60,6 +60,7 @@ public final class ProfileStore {
         cache.put(player, next);
         return next;
     }
+    public synchronized void evict(UUID player) { cache.remove(player); }
     public Path file(UUID player) { return directory.resolve(player + ".json"); }
     private Path backup(UUID player) { return directory.resolve(player + ".json.bak"); }
     private static byte[] encode(UUID player, ProgressionProfile profile) {

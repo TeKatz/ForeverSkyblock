@@ -17,6 +17,9 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 public final class ProgressionEvents {
     private ProgressionEvents() { }
     @SubscribeEvent public static void login(PlayerEvent.PlayerLoggedInEvent event) { refresh(event); }
+    @SubscribeEvent public static void logout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) ProgressionService.logout(player.server, player.getUUID());
+    }
     @SubscribeEvent public static void respawn(PlayerEvent.PlayerRespawnEvent event) { refresh(event); }
     @SubscribeEvent public static void dimension(PlayerEvent.PlayerChangedDimensionEvent event) { refresh(event); }
     private static void refresh(PlayerEvent event) {
