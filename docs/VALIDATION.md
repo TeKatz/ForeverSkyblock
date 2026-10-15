@@ -1,5 +1,12 @@
 # Validation status
 
+## Iron Jetpacks research — 0.5.0
+
+Build and focused integration checks are pending. The integration baseline is Iron Jetpacks 8.0.11, separately from the not-yet-supplied installed version. Automated checks cover material/creative classification, ordered stages, persistent purchases/refunds, prerequisite refusal and actual registered recipe/flight checks when the optional mod is present. Existing condenser/profile tests remain enabled.
+
+Manual client acceptance remains pending: Jetpacks tab readability at multiple GUI scales, temporary test points with a non-cheat singleplayer owner, JEI runtime hiding/restoring including typed components, manual ME-terminal crafting, Curios flight and reset/rejoin/world-switch behavior. Shared playerless automation semantics are documented in [JETPACK_RESEARCH.md](JETPACK_RESEARCH.md); arbitrary modded crafting paths are not claimed as validated.
+
+
 ## Skill cards, refunds and reward shortcut — 0.4.0
 
 Implementation originated on `feature/skills-menu-reset`, based on `feature/persistent-skills`. [Java 21 build, all eleven profile-storage tests and all eleven dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38700037140) for source commit `08c2de1a85a4358a8c27937d3ebe0a7ac686d68b`. Added coverage verifies persistent and idempotent refunds, preserved unspent points/task claims/unknown skill IDs, separate player profiles, balance-limit refusal, failed-write rollback, immediate reach removal, reset payload round trips and chat reward styling/command. All six condenser GameTests remain passing.

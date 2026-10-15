@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-15 — Iron Jetpacks research test (0.5.0)
+
+- Add four sequential profile-wide flight research stages with costs 5/10/20/40 SP and a dedicated Jetpacks tab.
+- Map actual jetpack definitions and typed components to their research stage; keep Iron Jetpacks optional.
+- Add crafting, cached AE2 pattern and chest/Curios flight restrictions; update JEI items/recipes at runtime as research changes.
+- Add an explicitly temporary +10 SP test button for singleplayer owners/operators and a conditional Creative Jetpack recipe.
+- Preserve existing profiles and the confirmed reset, including repeatable refunds/relocking for testing.
+- Record Iron Jetpacks and Iron Furnaces as user-reported additions with versions awaiting a new snapshot; do not alter the historical runtime inventory.
+
+
 ## 2026-10-15 — 0.4.0 accepted for merge
 
 - Record TeKatz's successful in-game acceptance of 0.4.0 and the improved Skills GUI.

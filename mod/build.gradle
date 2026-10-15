@@ -9,6 +9,7 @@ base.archivesName = 'ForeverSkyblock-1.21.1-NeoForge'
 
 repositories {
     mavenCentral()
+    maven { url = 'https://maven.neoforged.net/releases' }
     maven { url = 'https://cursemaven.com'; content { includeGroup 'curse.maven' } }
     maven { url = 'https://maven.blamejared.com' }
 }
@@ -24,7 +25,7 @@ sourceSets {
 }
 
 neoForge {
-    version = '21.1.249'
+    version = project.findProperty('packRuntime') ?: '21.1.249'
     addModdingDependenciesTo sourceSets.gameTest
     runs {
         server {
@@ -35,6 +36,7 @@ neoForge {
         gameTestServer {
             type = 'gameTestServer'
             systemProperty 'neoforge.enabledGameTestNamespaces', 'forever_skyblock'
+            systemProperty 'forever_skyblock.expectJetpacks', project.hasProperty('jetpackTests').toString()
             gameDirectory = project.file('runs/gametest')
         }
     }
@@ -49,9 +51,12 @@ neoForge {
 dependencies {
     compileOnly 'curse.maven:iron-jetpacks-284497:7105279'
     gameTestCompileOnly 'curse.maven:iron-jetpacks-284497:7105279'
+    gameTestCompileOnly('org.appliedenergistics:appliedenergistics2:19.2.18') { transitive = false }
     if (project.hasProperty('jetpackTests')) {
         runtimeOnly 'curse.maven:iron-jetpacks-284497:7105279'
         runtimeOnly 'curse.maven:cucumber-272335:8035802'
+        runtimeOnly 'org.appliedenergistics:appliedenergistics2:19.2.18'
+        runtimeOnly 'org.appliedenergistics:guideme:21.1.19'
     }
     clientAdditionalRuntimeClasspath 'curse.maven:iron-jetpacks-284497:7105279'
     clientAdditionalRuntimeClasspath 'curse.maven:cucumber-272335:8035802' 

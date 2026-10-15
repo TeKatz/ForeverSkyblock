@@ -36,3 +36,7 @@ Do not duplicate these mods' sources here. Create and recipe-sieve progression r
 ## Distribution
 
 Do not commit third-party mod JARs. A real launcher/export manifest still needs project/file download identifiers and the selected distribution format; a log does not supply these. Before publication, follow selected mods' licenses/distribution rules and test a fresh installation from the export.
+
+## User-reported additions after the log snapshot
+
+TeKatz added **Iron Jetpacks** and **Iron Furnaces**. Their installed versions await a new log or supplied JAR metadata. The 0.5.0 research integration is tested separately against Iron Jetpacks 8.0.11; this does not assert that exact version is installed.

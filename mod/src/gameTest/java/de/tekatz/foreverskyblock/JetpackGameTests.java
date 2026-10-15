@@ -38,6 +38,7 @@ public final class JetpackGameTests {
     }
     @GameTest(template = "empty")
     public static void actualJetpacksComponentsRecipesAndFlightUnlockByStage(GameTestHelper h) {
+        if (Boolean.getBoolean("forever_skyblock.expectJetpacks")) h.assertTrue(JetpackGate.installed(), "Integration run must actually load Iron Jetpacks");
         if (!JetpackGate.installed()) { h.succeed(); return; }
         var player = FakePlayerFactory.get(h.getLevel(), new GameProfile(UUID.randomUUID(), "FlightTest"));
         var other = FakePlayerFactory.get(h.getLevel(), new GameProfile(UUID.randomUUID(), "OtherTest"));
@@ -77,4 +78,30 @@ public final class JetpackGameTests {
         h.assertTrue(JetpackGate.canUse(player, new ItemStack(Items.IRON_PICKAXE)), "Unrelated items remain usable");
         h.succeed();
     }
+    @GameTest(template = "empty")
+    public static void cachedAe2PatternsRelockAfterReset(GameTestHelper h) throws Exception {
+        if (!Boolean.getBoolean("forever_skyblock.expectJetpacks")) { h.succeed(); return; }
+        h.assertTrue(JetpackGate.installed() && net.neoforged.fml.ModList.get().isLoaded("ae2"), "Integration run requires both mods");
+        // Force transformation of the manual terminal hook as well as the pattern implementation.
+        Class.forName("appeng.menu.slot.CraftingTermSlot").getDeclaredMethods();
+        var player = FakePlayerFactory.get(h.getLevel(), new GameProfile(UUID.randomUUID(), "PatternTest"));
+        var service = ProgressionService.get(player.server);
+        service.grant(player, 100); service.buy(player, JetpackResearch.IDS.getFirst());
+        CommonHooks.setCraftingPlayer(player);
+        try {
+            var holder = h.getLevel().getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING).stream()
+                    .filter(r -> r.id().equals(ResourceLocation.parse("ironjetpacks:strap"))).findFirst().orElseThrow();
+            var inputs = holder.value().getIngredients().stream().map(i -> i.isEmpty() ? ItemStack.EMPTY : i.getItems()[0].copy()).toList();
+            var grid = CraftingInput.of(3, 3, inputs);
+            var output = holder.value().assemble(grid, h.getLevel().registryAccess());
+            var encoded = appeng.api.crafting.PatternDetailsHelper.encodeCraftingPattern(holder, inputs.toArray(ItemStack[]::new), output, false, false);
+            var pattern = new appeng.crafting.pattern.AECraftingPattern(appeng.api.stacks.AEItemKey.of(encoded), h.getLevel());
+            h.assertTrue(!pattern.assemble(grid, h.getLevel()).isEmpty(), "Unlocked AE2 pattern crafts successfully");
+            service.reset(player);
+            h.assertTrue(pattern.assemble(grid, h.getLevel()).isEmpty(), "Previously cached AE2 pattern refuses locked output after reset");
+            h.assertTrue(inputs.stream().filter(s -> !s.isEmpty()).allMatch(s -> s.getCount() == 1), "Gate does not consume input items");
+        } finally { CommonHooks.setCraftingPlayer(null); }
+        h.succeed();
+    }
+
 }
