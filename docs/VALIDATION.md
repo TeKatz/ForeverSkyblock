@@ -2,7 +2,17 @@
 
 ## Iron Jetpacks research — 0.5.0
 
-Build and focused integration checks are pending. The integration baseline is Iron Jetpacks 8.0.11, separately from the not-yet-supplied installed version. Automated checks cover material/creative classification, ordered stages, persistent purchases/refunds, prerequisite refusal and actual registered recipe/flight checks when the optional mod is present. Existing condenser/profile tests remain enabled.
+[Java 21 build, fourteen profile/research tests and fourteen dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38711112494) for source commit `cfafa994f2e676de7a3828fe1830f8aa7dc91358`. Baseline GameTests run without optional mods on NeoForge 21.1.249. A second required integration run loads Iron Jetpacks 8.0.11, Cucumber 8.0.16, AE2 19.2.18 and GuideME 21.1.19 on the actual pack loader, NeoForge 21.1.259.
+
+- Verified material/creative classification, sequential stages, persistent purchases/refunds and prerequisite refusal.
+- With Iron Jetpacks present, checked actual generated shaped recipes at each of the five access states, including component/upgrade recipes and the Creative recipe. Each stage checks at least twenty registered, satisfiable recipes.
+- Verified a locked equipped chest jetpack is excluded from flight, an unlocked one is usable, another player's research does not grant personal flight, and reset revokes eligibility.
+- Loaded/transformed the AE2 manual crafting-slot hook and verified an actual encoded AE2 crafting pattern works after unlock but produces no output after reset, without consuming its supplied inputs.
+- All previous condenser/profile tests pass. Optional-target mixins skip absent mods; fresh game-test directories emit the vanilla missing-server.properties initialization message.
+- Inspected the delivered JAR: 0.5.0/TeKatz metadata, optional Iron Jetpacks dependency, all six declared mixins, new classes/recipe, EN/DE key parity, no bundled third-party classes or test/profile data. Thirty condenser recipe/texture/implementation entries match 0.4.0 byte-for-byte. JSON/TOML, relative links, four-card layout bounds and the unchanged fixed-island hash passed.
+- JAR SHA-256: `99d1ab1cc8be3beb1267a360da9e66538298f9b79f7f2bb478126c3ff8fcac4f`.
+
+The integration baseline is separate from TeKatz's not-yet-supplied installed Iron Jetpacks version. No claim is made that these are the installed versions of the newly added mods.
 
 Manual client acceptance remains pending: Jetpacks tab readability at multiple GUI scales, temporary test points with a non-cheat singleplayer owner, JEI runtime hiding/restoring including typed components, manual ME-terminal crafting, Curios flight and reset/rejoin/world-switch behavior. Shared playerless automation semantics are documented in [JETPACK_RESEARCH.md](JETPACK_RESEARCH.md); arbitrary modded crafting paths are not claimed as validated.
 
