@@ -1,6 +1,10 @@
 package de.tekatz.foreverskyblock;
 
 import de.tekatz.foreverskyblock.blockentity.CondenserBlockEntity;
+import de.tekatz.foreverskyblock.menu.CondenserMenu;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -120,4 +124,41 @@ public final class CondenserGameTests {
             h.succeed();
         });
     }
+    @GameTest(template = "empty")
+    public static void shiftClickAndRemovalPreserveItems(GameTestHelper h) {
+        var machine = machine(h, POS);
+        var player = FakePlayerFactory.getMinecraft(h.getLevel());
+        player.getInventory().clearContent();
+        var absolute = h.absolutePos(POS);
+        player.setPos(absolute.getX() + 0.5, absolute.getY(), absolute.getZ() + 0.5);
+        var menu = new CondenserMenu(1, player.getInventory(), machine);
+        player.getInventory().setItem(9, new ItemStack(Items.OAK_LOG, 3));
+        menu.quickMoveStack(player, 2);
+        check(h, player.getInventory().getItem(9).isEmpty() && machine.inventory().getStackInSlot(0).getCount() == 3,
+                "Shift-click moves wood into the input only");
+        machine.inventory().setStackInSlot(1, new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), 4));
+        menu.quickMoveStack(player, 1);
+        int collected = 0;
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            var stack = player.getInventory().getItem(i);
+            if (stack.is(ForeverSkyblock.STONE_FRAGMENT.get())) collected += stack.getCount();
+        }
+        check(h, collected == 4 && output(machine) == 0, "Shift-click extracts exact output");
+        check(h, menu.stillValid(player), "Nearby menu remains valid");
+        player.setPos(absolute.getX() + 20, absolute.getY(), absolute.getZ());
+        check(h, !menu.stillValid(player), "Menu closes out of range");
+        machine.inventory().setStackInSlot(0, new ItemStack(Items.OAK_PLANKS, 2));
+        machine.inventory().setStackInSlot(1, new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), 3));
+        h.getLevel().destroyBlock(absolute, true);
+        int wood = 0, fragments = 0;
+        for (var entity : h.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(absolute).inflate(1))) {
+            var stack = entity.getItem();
+            if (stack.is(Items.OAK_PLANKS)) wood += stack.getCount();
+            if (stack.is(ForeverSkyblock.STONE_FRAGMENT.get())) fragments += stack.getCount();
+        }
+        check(h, wood == 2 && fragments == 3, "Breaking drops each stored item exactly once");
+        player.getInventory().clearContent();
+        h.succeed();
+    }
+
 }
