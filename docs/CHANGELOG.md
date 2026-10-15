@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-15 — Clearer skill cards, refunds and reward shortcut (0.4.0)
+
+- Replace the selected-row/detail layout with full-width skill/task cards and inline effect/objective, rank/reward and action.
+- Keep available points visible, mark the active tab and scroll long/future card lists.
+- Add confirmed skill reset with server-side point refunds, immediate effect removal and persistent task claims.
+- Make only the chat point reward green and clickable to open the Skills menu.
+- Keep schema 1 and existing profiles compatible; update the skill payload protocol to require matching client/server versions.
+- Record TeKatz's successful two-world milestone, purchase and carried-over skill test of 0.3.1.
+
+
 ## 2026-10-15 — Skills menu readability (0.3.1)
 
 - Draw the custom panel in the background phase, before widgets, so the inherited screen render does not blur the finished UI a second time.

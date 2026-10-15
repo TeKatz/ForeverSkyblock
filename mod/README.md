@@ -6,7 +6,7 @@ Minecraft 1.21.1 / NeoForge 21.1.249 or newer 21.1.x. Requires Java 21. Maintain
 
 Press **K** to open the new Skills menu, or remap **Open Skills** in the **Forever Skyblock** keybind category. Craft cobblestone from four Stone Fragments to earn one profile-wide point. Buy **Extended Reach** for one point to gain +1 block interaction range across singleplayer worlds in this instance.
 
-Points, milestone claims and purchases are saved outside world folders. Dedicated servers keep their own profiles; no client profile is imported. The catalog-based GUI has Skills/Milestones tabs, scrolling, details and purchase states. See [SKILLS.md](../docs/SKILLS.md) for scope, storage, commands, extension points and manual test steps.
+Points, milestone claims and purchases are saved outside world folders. Dedicated servers keep their own profiles; no client profile is imported. The card-based GUI has Skills/Tasks tabs. Each card shows its effect or objective, rank/reward, price and action together. Reset skills opens a confirmation dialog and refunds purchased ranks while keeping completed tasks. The green point reward in chat links directly to the menu. See [SKILLS.md](../docs/SKILLS.md) for scope, storage, commands, extension points and manual test steps.
 
 ## Condenser Mark I
 
