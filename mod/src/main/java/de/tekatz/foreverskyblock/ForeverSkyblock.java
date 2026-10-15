@@ -4,6 +4,9 @@ import de.tekatz.foreverskyblock.block.CondenserBlock;
 import de.tekatz.foreverskyblock.blockentity.CondenserBlockEntity;
 import de.tekatz.foreverskyblock.menu.CondenserMenu;
 import de.tekatz.foreverskyblock.network.SkillNetwork;
+import de.tekatz.foreverskyblock.network.CondenserNetwork;
+import de.tekatz.foreverskyblock.item.MortarItem;
+import net.minecraft.world.level.block.Block;
 import de.tekatz.foreverskyblock.recipe.CondenserRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.flag.FeatureFlags;
@@ -42,6 +45,11 @@ public final class ForeverSkyblock {
                     .strength(2.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()
                     .lightLevel(state -> state.getValue(CondenserBlock.ACTIVE) ? 5 : 0)));
     public static final DeferredItem<BlockItem> CONDENSER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(CONDENSER_MARK_I);
+    public static final DeferredBlock<Block> MIXING_CHAMBER_MARK_I = BLOCKS.registerSimpleBlock("mixing_chamber_mark_i",
+            BlockBehaviour.Properties.of().mapColor(MapColor.STONE).strength(2.0F, 6.0F).sound(SoundType.STONE).requiresCorrectToolForDrops());
+    public static final DeferredItem<BlockItem> MIXING_CHAMBER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(MIXING_CHAMBER_MARK_I);
+    public static final DeferredItem<Item> STONE_MEAL = ITEMS.registerSimpleItem("stone_meal");
+    public static final DeferredItem<MortarItem> MORTAR = ITEMS.register("mortar", () -> new MortarItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> STONE_FRAGMENT = ITEMS.registerSimpleItem("stone_fragment");
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CondenserBlockEntity>> CONDENSER_ENTITY =
             BLOCK_ENTITIES.register("condenser_mark_i", () -> BlockEntityType.Builder.of(CondenserBlockEntity::new, CONDENSER_MARK_I.get()).build(null));
@@ -64,6 +72,7 @@ public final class ForeverSkyblock {
         modBus.addListener(ForeverSkyblock::addCreativeContents);
         modBus.addListener(ForeverSkyblock::registerCapabilities);
         modBus.addListener(SkillNetwork::register);
+        modBus.addListener(CondenserNetwork::register);
     }
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
@@ -71,7 +80,7 @@ public final class ForeverSkyblock {
     }
 
     private static void addCreativeContents(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) event.accept(CONDENSER_MARK_I_ITEM.get());
-        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) event.accept(STONE_FRAGMENT.get());
+        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) { event.accept(CONDENSER_MARK_I_ITEM.get()); event.accept(MIXING_CHAMBER_MARK_I_ITEM.get()); }
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) { event.accept(STONE_FRAGMENT.get()); event.accept(STONE_MEAL.get()); event.accept(MORTAR.get()); }
     }
 }

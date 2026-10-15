@@ -32,6 +32,7 @@ public final class CondenserJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(ForeverSkyblock.CONDENSER_MARK_I.get(), TYPE);
     }
     @Override public void registerGuiHandlers(IGuiHandlerRegistration registration) {
-        registration.addRecipeClickArea(CondenserScreen.class, 71, 40, 34, 18, TYPE);
+        registration.addGhostIngredientHandler(CondenserScreen.class, new CondenserGhostHandler());
+        registration.addRecipeClickArea(CondenserScreen.class, 77, 40, 38, 18, TYPE);
     }
 }

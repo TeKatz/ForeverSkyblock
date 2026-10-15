@@ -22,14 +22,17 @@ A log and its four planks give the same material yield, but processing four plan
 
 The earlier passive-generation proposal is superseded. Mark I does not produce iron. Its current machine recipes can be overridden with datapacks; Recipe Editor continues to handle crafting recipes.
 
+## Implemented in 0.6.0
+
+The approved next step adds a reusable Mortar (two fragments, two cobblestone and one stick), four fragments plus the mortar into one Stone Meal, and a Mixing Chamber made from four planks, four fragments and one meal. One meal plus one sapling produces one dirt in the condenser in 160 ticks while a chamber shares a face with it. See [CONDENSER_MIXING.md](CONDENSER_MIXING.md). The quantities are initial test balancing values.
+
 ## Further uses discussed, not implemented
 
 - Stone tools using fragments in place of cobblestone.
-- A mortar for an early manual processing step.
 - A wood-and-fragment machine frame once a concrete machine needs it.
 - Later condenser tiers.
 
-These remain proposals. The current task does not approve their implementation.
+These remaining entries are proposals.
 
 ## Remaining progression decisions
 

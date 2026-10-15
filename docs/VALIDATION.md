@@ -131,3 +131,12 @@ The local server checks used development mode. The complete imported pack export
 6. Play through all implemented resource paths, recipes and quests.
 
 A successful mod build alone does not validate a complete pack export.
+
+## Condenser mixing 0.6.0 — October 15, 2026
+
+- Tested source: `11c602b5a0df0daa9106c1797643db3e8042613c`, on `feature/condenser-mixing-chamber`, based on the unmerged Iron Jetpacks feature branch.
+- [CI run 38718605502](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38718605502) passed the build, 14 JUnit tests and 21 GameTests in each loader run: NeoForge 21.1.249 without optional mods; NeoForge 21.1.259 with Iron Jetpacks, Cucumber, AE2 and GuideME.
+- Seven new integration tests exercise every face/diagonal adjacency, the same open menu becoming active/inactive, swapped ingredients, module removal and reattachment, persistent exact-item filters, simulated automation and real hopper routing into dirt, ghost safety/rejection, legacy two-slot NBT, hidden-item drops, blocked dirt output, single-input fallback, mortar remainders and recipe network codecs. Existing skill/Jetpack tests remain included.
+- Inspected the built JAR metadata, Java 21 classes, new assets/recipes, absence of test classes and identical existing progression/mixin bytecode compared with the delivered 0.5.0 JAR. Full pack files and fixed island bytes are unchanged.
+- Client visual review, actual JEI drag/drop and inventory mouse gestures are pending TeKatz's in-game test. No new manual client test is claimed.
+- JAR: `ForeverSkyblock-1.21.1-NeoForge-0.6.0.jar`, 132,387 bytes; SHA-256 `19b32bf4c9855d46262f6cca4ca3bc8bd0969d4bee109d1748d8232f56a7065b`; artifact `11963717159`.

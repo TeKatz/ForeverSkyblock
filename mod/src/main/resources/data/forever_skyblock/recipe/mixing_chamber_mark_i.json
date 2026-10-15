@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "FWF",
+    "WMW",
+    "FWF"
+  ],
+  "key": {
+    "F": {
+      "item": "forever_skyblock:stone_fragment"
+    },
+    "W": {
+      "tag": "minecraft:planks"
+    },
+    "M": {
+      "item": "forever_skyblock:stone_meal"
+    }
+  },
+  "result": {
+    "id": "forever_skyblock:mixing_chamber_mark_i",
+    "count": 1
+  }
+}

@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "forever_skyblock:condenser_mark_i"
+    "forever_skyblock:condenser_mark_i",
+    "forever_skyblock:mixing_chamber_mark_i"
   ]
 }

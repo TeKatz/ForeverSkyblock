@@ -5,7 +5,7 @@
   "gui.forever_skyblock.output": "Output",
   "gui.forever_skyblock.processing": "Condensing...",
   "gui.forever_skyblock.blocked": "Output full",
-  "gui.forever_skyblock.idle": "Insert logs or planks",
+  "gui.forever_skyblock.idle": "Waiting for input",
   "gui.forever_skyblock.no_power": "No power required",
   "jei.forever_skyblock.condensing": "Condensing",
   "jei.forever_skyblock.duration": "%s seconds",
@@ -81,5 +81,16 @@
   "gui.forever_skyblock.skills.jetpack_summary_2": "Tier 2–3 · %s SP",
   "gui.forever_skyblock.skills.jetpack_summary_3": "Tier 4+ · %s SP",
   "gui.forever_skyblock.skills.jetpack_summary_4": "Creative · %s SP",
-  "gui.forever_skyblock.skills.jetpack_details_hint": "Components included. Hover a button for details."
+  "gui.forever_skyblock.skills.jetpack_details_hint": "Components included. Hover a button for details.",
+  "block.forever_skyblock.mixing_chamber_mark_i": "Mixing Chamber Mark I",
+  "item.forever_skyblock.mortar": "Mortar",
+  "item.forever_skyblock.stone_meal": "Stone Meal",
+  "gui.forever_skyblock.edit_filters": "Edit filters",
+  "gui.forever_skyblock.finish_filters": "Done · filters remain active",
+  "gui.forever_skyblock.filter_help": "Copy an inventory item or drag from JEI.",
+  "gui.forever_skyblock.filter_clear": "Right-click an input to clear its filter.",
+  "gui.forever_skyblock.filter_empty": "No filter set",
+  "gui.forever_skyblock.filter_set": "Filter: %s",
+  "jei.forever_skyblock.module_required": "Adjacent chamber",
+  "jei.forever_skyblock.inputs_swappable": "Inputs swappable"
 }
