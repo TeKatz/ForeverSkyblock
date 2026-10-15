@@ -1,13 +1,5 @@
 # Changelog
 
-> Project status: this document includes development work tracked in [PR #2](https://github.com/TeKatz/ForeverSkyblock/pull/2). Its implementation and actual pack files are in the [development snapshot](https://github.com/TeKatz/ForeverSkyblock/tree/8d9f4136f6427893aeac0fc8f47857d19646e0a9); see the [main README](../README.md#project-status) for branch availability.
-
-## 2026-10-15 — Update main documentation
-
-- Publish the latest agreed design, fixed island baseline, runtime snapshot and validation results on main.
-- Distinguish the 0.1.1 source on main from the delivered 0.2.1 development build.
-- Keep implementation and pack-data changes in PR #2 until a merge is requested.
-
 ## 2026-10-15 — Fixed island, actual configuration and development inventory
 
 - Import the actual Skyblock Builder settings and approved final `forever_me_start.nbt` without modifying the supplied files.

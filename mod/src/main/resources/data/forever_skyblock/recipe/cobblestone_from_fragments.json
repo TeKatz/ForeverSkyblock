@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "FF",
+    "FF"
+  ],
+  "key": {
+    "F": {
+      "item": "forever_skyblock:stone_fragment"
+    }
+  },
+  "result": {
+    "id": "minecraft:cobblestone",
+    "count": 1
+  }
+}

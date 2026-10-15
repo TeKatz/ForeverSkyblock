@@ -40,3 +40,6 @@
 *.key
 .DS_Store
 Thumbs.db
+
+# Skyblock Builder regenerates these registry-reference lists
+/pack/config/skyblockbuilder/data/

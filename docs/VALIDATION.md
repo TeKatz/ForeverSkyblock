@@ -1,7 +1,5 @@
 # Validation status
 
-> Project status: this document includes development work tracked in [PR #2](https://github.com/TeKatz/ForeverSkyblock/pull/2). Its implementation and actual pack files are in the [development snapshot](https://github.com/TeKatz/ForeverSkyblock/tree/8d9f4136f6427893aeac0fc8f47857d19646e0a9); see the [main README](../README.md#project-status) for branch availability.
-
 ## Fixed island and actual pack configuration — October 15, 2026
 
 - Parsed all 10 supplied Skyblock Builder JSON5 configuration files and the actual Default World Type TOML.
@@ -17,7 +15,7 @@
 
 - Texture-only gameplay update: one angular stone shard replaces the three-pebble image; texture remains transparent and 16×16.
 - No Java sources or recipe data changed; build metadata, version inventory and documentation identify 0.2.1.
-- [Java 21 build and all six server GameTests passed for 0.2.1](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38689634298). The downloaded archive checksum, JAR version and exact sprite bytes were verified; compiled classes and recipe data are byte-identical to 0.2.0.
+- Build/artifact checks are performed for the new JAR before delivery; the existing server test suite also runs through CI.
 - Manual visual approval of the revised texture remains pending.
 
 

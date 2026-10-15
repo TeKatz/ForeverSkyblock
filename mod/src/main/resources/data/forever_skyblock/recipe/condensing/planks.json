@@ -1,0 +1,8 @@
+{
+  "type": "forever_skyblock:condensing",
+  "ingredient": {
+    "tag": "minecraft:planks"
+  },
+  "fragment_count": 1,
+  "processing_time": 160
+}

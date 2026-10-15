@@ -4,10 +4,10 @@ license="MIT"
 
 [[mods]]
 modId="forever_skyblock"
-version="0.1.1"
+version="0.2.1"
 displayName="Forever Skyblock"
 authors="TeKatz"
-description='''The foundation for Forever Skyblock. Version 0.1.1 adds the Condenser Mark I block.'''
+description='''The foundation for Forever Skyblock. Condenser Mark I converts logs and planks into Stone Fragments without power.'''
 
 [[dependencies.forever_skyblock]]
 modId="neoforge"
@@ -22,3 +22,10 @@ type="required"
 versionRange="[1.21.1]"
 ordering="NONE"
 side="BOTH"
+
+[[dependencies.forever_skyblock]]
+modId="jei"
+type="optional"
+versionRange="[19.64.0.454,20)"
+ordering="AFTER"
+side="CLIENT"

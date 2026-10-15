@@ -1,7 +1,5 @@
 # Agreed design
 
-> Project status: this document includes development work tracked in [PR #2](https://github.com/TeKatz/ForeverSkyblock/pull/2). Its implementation and actual pack files are in the [development snapshot](https://github.com/TeKatz/ForeverSkyblock/tree/8d9f4136f6427893aeac0fc8f47857d19646e0a9); see the [main README](../README.md#project-status) for branch availability.
-
 As of October 15, 2026. TeKatz's explicit decisions are authoritative. Unconfirmed proposals are recorded in [PROGRESSION.md](PROGRESSION.md).
 
 ## Confirmed decisions

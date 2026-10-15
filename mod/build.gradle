@@ -4,23 +4,50 @@ plugins {
 }
 
 group = 'de.tekatz.foreverskyblock'
-version = '0.1.1'
+version = '0.2.1'
 base.archivesName = 'ForeverSkyblock-1.21.1-NeoForge'
+
+repositories {
+    maven { url = 'https://maven.blamejared.com' }
+}
+
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+sourceSets {
+    gameTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
 neoForge {
     version = '21.1.249'
+    addModdingDependenciesTo sourceSets.gameTest
     runs {
         server {
             server()
             programArgument '--nogui'
         }
         client { client() }
+        gameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'forever_skyblock'
+            gameDirectory = project.file('runs/gametest')
+        }
     }
     mods {
-        forever_skyblock { sourceSet(sourceSets.main) }
+        forever_skyblock {
+            sourceSet sourceSets.main
+            if (project.hasProperty('condenserTests')) sourceSet sourceSets.gameTest
+        }
     }
+}
+
+dependencies {
+    compileOnly 'mezz.jei:jei-1.21.1-common-api:19.64.0.454'
+    compileOnly 'mezz.jei:jei-1.21.1-neoforge-api:19.64.0.454'
+    clientAdditionalRuntimeClasspath 'mezz.jei:jei-1.21.1-neoforge:19.64.0.454'
 }
 
 tasks.withType(JavaCompile).configureEach {

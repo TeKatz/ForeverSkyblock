@@ -1,7 +1,5 @@
 # Fixed starting island
 
-> Project status: this document includes development work tracked in [PR #2](https://github.com/TeKatz/ForeverSkyblock/pull/2). Its implementation and actual pack files are in the [development snapshot](https://github.com/TeKatz/ForeverSkyblock/tree/8d9f4136f6427893aeac0fc8f47857d19646e0a9); see the [main README](../README.md#project-status) for branch availability.
-
 ## Authoritative baseline
 
 On October 15, 2026, TeKatz declared the supplied starting island **final**. Preserve its layout, stored inventories and exact NBT bytes. Do not redesign, resize, regenerate or change starter items unless TeKatz explicitly requests a revision.

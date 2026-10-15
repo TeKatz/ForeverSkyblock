@@ -1,10 +1,8 @@
 # Development mod snapshot — October 15, 2026
 
-> Project status: this document includes development work tracked in [PR #2](https://github.com/TeKatz/ForeverSkyblock/pull/2). Its implementation and actual pack files are in the [development snapshot](https://github.com/TeKatz/ForeverSkyblock/tree/8d9f4136f6427893aeac0fc8f47857d19646e0a9); see the [main README](../README.md#project-status) for branch availability.
-
 Extracted from the supplied `latest.log`, starting at local time 08:00:57.610. This is an **experimental development snapshot**, not the final mod selection, a compatibility audit or a launcher manifest. TeKatz expects the mod list to change and will supply updates periodically.
 
-The table contains **79 loaded IDs**, including Minecraft, NeoForge, libraries and embedded modules. The scanner also identified **67 JARs through the mods-folder locator**; their filenames are recorded in [the inventory](https://github.com/TeKatz/ForeverSkyblock/tree/8d9f4136f6427893aeac0fc8f47857d19646e0a9/pack/mods.inventory.json). Loaded IDs and installable JARs are different counts.
+The table contains **79 loaded IDs**, including Minecraft, NeoForge, libraries and embedded modules. The scanner also identified **67 JARs through the mods-folder locator**; their filenames are recorded in [the inventory](../pack/mods.inventory.json). Loaded IDs and installable JARs are different counts.
 
 | Name | Version | Mod ID |
 | --- | --- | --- |

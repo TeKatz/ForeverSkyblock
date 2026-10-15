@@ -1,7 +1,5 @@
 # Remaining files and information
 
-> Project status: this document includes development work tracked in [PR #2](https://github.com/TeKatz/ForeverSkyblock/pull/2). Its implementation and actual pack files are in the [development snapshot](https://github.com/TeKatz/ForeverSkyblock/tree/8d9f4136f6427893aeac0fc8f47857d19646e0a9); see the [main README](../README.md#project-status) for branch availability.
-
 ## Received and imported on October 15, 2026
 
 - Actual Skyblock Builder configuration folder and fixed `forever_me_start.nbt` island template.

@@ -1,12 +1,10 @@
 # Mods and versions
 
-> Project status: this document includes development work tracked in [PR #2](https://github.com/TeKatz/ForeverSkyblock/pull/2). Its implementation and actual pack files are in the [development snapshot](https://github.com/TeKatz/ForeverSkyblock/tree/8d9f4136f6427893aeac0fc8f47857d19646e0a9); see the [main README](../README.md#project-status) for branch availability.
-
 ## Current development snapshot
 
 The actual pack runtime is **Minecraft 1.21.1 / NeoForge 21.1.259**, confirmed by TeKatz and the supplied October 15, 2026 log. Java 21 is the mod's build/runtime baseline. The mod project still compiles and runs its CI server tests against NeoForge 21.1.249; this is a separate build baseline, not the installed pack version.
 
-[Full observed mod table](MODLIST_SNAPSHOT.md) · [Machine-readable inventory and JAR filenames](https://github.com/TeKatz/ForeverSkyblock/tree/8d9f4136f6427893aeac0fc8f47857d19646e0a9/pack/mods.inventory.json)
+[Full observed mod table](MODLIST_SNAPSHOT.md) · [Machine-readable inventory and JAR filenames](../pack/mods.inventory.json)
 
 The log lists 79 loaded IDs, including Minecraft, NeoForge and embedded modules, and 67 JARs discovered through the mods-folder locator. **This is an evolving development snapshot.** TeKatz experiments with mods and will periodically provide an updated log. Installed status does not approve a permanent progression role. Keep the runtime version at 21.1.259 until TeKatz reports a change; do not infer it from the mod project's build dependency.
 
