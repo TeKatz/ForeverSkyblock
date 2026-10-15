@@ -6,7 +6,7 @@ Players start on a small island with a tree, an operational AE2 network and the 
 
 ## Current status
 
-- Development mod **0.3.1**: persistent cross-world skill points and purchases, a remappable K shortcut, a skill/milestone menu and a +1 block reach test skill. The first fragment-to-cobblestone craft awards one point per profile. Also includes the condenser features from 0.2.1: Condenser Mark I turns logs into four Stone Fragments or planks into one, without power. Includes a two-slot animated GUI, hopper/pipe support, a custom fragment texture, a 2×2 cobblestone recipe and optional JEI integration.
+- Development mod **0.4.0**: persistent cross-world skill points and purchases, a remappable K shortcut, a skill/milestone menu and a +1 block reach test skill. The first fragment-to-cobblestone craft awards one point per profile. Also includes the condenser features from 0.2.1: Condenser Mark I turns logs into four Stone Fragments or planks into one, without power. Includes a two-slot animated GUI, hopper/pipe support, a custom fragment texture, a 2×2 cobblestone recipe and optional JEI integration.
 - TeKatz successfully tested the starting world, spawn and placed machines in game using mod 0.1.0.
 - The island has a tree, wooden equipment platform and open workspace. The latest ME inventory contains bread and one seed; spare saplings and dirt were removed. The original chest is no longer placed.
 - The fixed starting template is `forever_me_start.nbt`, with spawn `[8, 4, 5]` facing east. The actual NBT is included; its 1k cell stores eight bread and one wheat seed.

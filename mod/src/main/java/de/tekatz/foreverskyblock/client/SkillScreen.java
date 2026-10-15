@@ -1,78 +1,74 @@
 package de.tekatz.foreverskyblock.client;
 
+import com.mojang.blaze3d.vertex.Tesselator;
 import de.tekatz.foreverskyblock.progression.MilestoneCatalog;
 import de.tekatz.foreverskyblock.progression.SkillCatalog;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.narration.NarratedElementType;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
+import net.neoforged.neoforge.client.gui.widget.ScrollPanel;
 
-/** Catalog-backed rows and scrolling allow more skills/milestones without changing the layout. */
+/** Self-contained cards put each effect, price and action together in a scrollable catalog. */
 public final class SkillScreen extends Screen {
-    private static final int CYAN = 0xFF74D5DD, LIGHT = 0xFFE0E9ED, MUTED = 0xFFA3B3BE;
-    private int x, y, panelWidth, panelHeight, leftWidth, scroll, descriptionScroll;
-    private boolean milestones;
-    private String selected = SkillCatalog.SKILLS.getFirst().id();
-    private final List<Button> rows = new ArrayList<>();
-    private Button purchase;
-    public SkillScreen() { super(Component.translatable("gui.forever_skyblock.skills.title")); }
+    private static final int LIGHT = 0xFFE8EFF4, MUTED = 0xFFABBBC7, CYAN = 0xFF7DDDE2, GREEN = 0xFF89DBA5;
+    private int x, y, panelWidth, panelHeight;
+    private boolean tasks;
+    private Button skillsTab, tasksTab, reset;
+    private CatalogPanel catalog;
+
+    public SkillScreen() { super(label("title")); }
+    private static Component label(String key, Object... arguments) {
+        return Component.translatable("gui.forever_skyblock.skills." + key, arguments);
+    }
     @Override protected void init() {
         panelWidth = Math.min(520, width - 16);
-        panelHeight = Math.min(324, height - 16);
+        panelHeight = Math.min(344, height - 16);
         x = (width - panelWidth) / 2;
         y = (height - panelHeight) / 2;
-        leftWidth = Math.min(176, Math.max(118, panelWidth * 2 / 5));
-        clearWidgets(); rows.clear();
-        addRenderableWidget(Button.builder(Component.translatable("gui.forever_skyblock.skills.skills"), button -> selectTab(false))
-                .bounds(x + 12, y + 49, (leftWidth - 16) / 2, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.forever_skyblock.skills.milestones"), button -> selectTab(true))
-                .bounds(x + 14 + (leftWidth - 16) / 2, y + 49, (leftWidth - 16) / 2, 20).build());
-        int count = milestones ? MilestoneCatalog.MILESTONES.size() : SkillCatalog.SKILLS.size();
-        int visible = Math.max(1, (panelHeight - 125) / 32);
-        scroll = Math.max(0, Math.min(scroll, Math.max(0, count - visible)));
-        for (int row = 0; row < visible && row + scroll < count; row++) {
-            String id = milestones ? MilestoneCatalog.MILESTONES.get(row + scroll).id() : SkillCatalog.SKILLS.get(row + scroll).id();
-            String key = milestones ? MilestoneCatalog.MILESTONES.get(row + scroll).titleKey() : SkillCatalog.SKILLS.get(row + scroll).titleKey();
-            Button button = Button.builder(Component.translatable(key), clicked -> { selected = id; descriptionScroll = 0; refresh(); })
-                    .bounds(x + 12, y + 78 + row * 32, leftWidth - 4, 26).build();
-            rows.add(addRenderableWidget(button));
-        }
-        purchase = addRenderableWidget(Button.builder(Component.empty(), button -> {
-            if (!milestones) { ClientSkills.buy(selected); refresh(); }
-        }).bounds(x + leftWidth + 24, y + panelHeight - 62, panelWidth - leftWidth - 36, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
-                .bounds(x + panelWidth - 74, y + panelHeight - 28, 62, 18).build());
+        clearWidgets();
+        int tabWidth = (panelWidth - 26) / 2;
+        skillsTab = addRenderableWidget(Button.builder(label("skills_tab", SkillCatalog.SKILLS.size()), b -> changeTab(false))
+                .bounds(x + 12, y + 44, tabWidth, 20).build());
+        tasksTab = addRenderableWidget(Button.builder(label("tasks_tab", MilestoneCatalog.MILESTONES.size()), b -> changeTab(true))
+                .bounds(x + 14 + tabWidth, y + 44, tabWidth, 20).build());
+        catalog = addRenderableWidget(new CatalogPanel());
+        reset = addRenderableWidget(Button.builder(label("reset"), b -> confirmReset())
+                .bounds(x + 12, y + panelHeight - 26, Math.min(164, panelWidth - 104), 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
+                .bounds(x + panelWidth - 84, y + panelHeight - 26, 72, 20).build());
         refresh();
     }
-    private void selectTab(boolean value) {
-        milestones = value;
-        scroll = 0;
-        descriptionScroll = 0;
-        selected = value ? MilestoneCatalog.MILESTONES.getFirst().id() : SkillCatalog.SKILLS.getFirst().id();
-        init();
+    private void changeTab(boolean value) {
+        tasks = value;
+        rebuildWidgets();
+    }
+    private void confirmReset() {
+        var state = ClientSkills.snapshot();
+        if (state == null || !state.available() || ClientSkills.pending()) return;
+        int refund = 0;
+        for (var skill : SkillCatalog.SKILLS) refund += state.rank(skill.id()) * skill.cost();
+        minecraft.setScreen(new ConfirmScreen(confirmed -> {
+            minecraft.setScreen(this);
+            if (confirmed) { ClientSkills.reset(); refresh(); }
+        }, label("reset_title"), label("reset_description", refund), label("reset_confirm"), Component.translatable("gui.cancel")));
     }
     public void refresh() {
-        if (purchase == null) return;
+        if (catalog == null) return;
         var state = ClientSkills.snapshot();
         boolean available = state != null && state.available();
-        if (milestones) {
-            boolean complete = available && state.milestones().contains(selected);
-            purchase.setMessage(Component.translatable("gui.forever_skyblock.skills." + (complete ? "completed" : "not_reached")));
-            purchase.active = false;
-        } else {
-            var skill = SkillCatalog.find(selected);
-            boolean owned = available && state.rank(selected) >= skill.maxRank();
-            purchase.setMessage(Component.translatable("gui.forever_skyblock.skills." + (owned ? "unlocked" : "unlock"), skill.cost()));
-            purchase.active = available && !owned && !ClientSkills.pending() && state.points() >= skill.cost();
-            purchase.setTooltip(Tooltip.create(Component.translatable(owned ? "gui.forever_skyblock.skills.already_owned"
-                    : !available ? "gui.forever_skyblock.skills.storage_error"
-                    : state.points() < skill.cost() ? "gui.forever_skyblock.skills.not_enough_points"
-                    : "gui.forever_skyblock.skills.purchase_hint")));
-        }
+        reset.active = available && !ClientSkills.pending() && SkillCatalog.SKILLS.stream().anyMatch(s -> state.rank(s.id()) > 0);
+        skillsTab.active = tasks;
+        tasksTab.active = !tasks;
+        catalog.refresh();
     }
     @Override public void tick() { refresh(); }
     @Override public boolean isPauseScreen() { return false; }
@@ -80,80 +76,137 @@ public final class SkillScreen extends Screen {
         if (ClientSkills.OPEN.matches(keyCode, scanCode)) { onClose(); return true; }
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
-    @Override public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
-        if (vertical == 0) return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
-        if (mouseX >= x + leftWidth + 20 && mouseX < x + panelWidth - 12
-                && mouseY >= y + 89 && mouseY < y + panelHeight - 96) {
-            descriptionScroll += vertical < 0 ? 1 : -1;
-            return true;
-        }
-        if (mouseX >= x + 8 && mouseX < x + leftWidth + 12 && mouseY >= y + 75 && mouseY < y + panelHeight - 40) {
-            scroll += vertical < 0 ? 1 : -1;
-            init();
-            return true;
-        }
-        return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
-    }
     @Override public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        // Screen.render calls this before rendering widgets. Blur only the world, then draw the panel.
+        // The inherited Screen.render draws this background once, then all widgets.
         super.renderBackground(g, mouseX, mouseY, partialTick);
-        g.fill(x, y, x + panelWidth, y + panelHeight, 0xFF0D171F);
-        g.fill(x + 1, y + 1, x + panelWidth - 1, y + panelHeight - 1, 0xFF344753);
-        g.fill(x + 3, y + 3, x + panelWidth - 3, y + panelHeight - 3, 0xFF182630);
-        g.fill(x + 12, y + 41, x + panelWidth - 12, y + 42, 0xFF3B5866);
+        g.fill(x, y, x + panelWidth, y + panelHeight, 0xFF314653);
+        g.fill(x + 1, y + 1, x + panelWidth - 1, y + panelHeight - 1, 0xFF101D27);
+        g.fill(x + 1, y + 1, x + panelWidth - 1, y + 3, CYAN);
         g.drawString(font, title, x + 12, y + 12, LIGHT, false);
+        g.drawString(font, label("overview"), x + 12, y + 27, MUTED, false);
+        g.fill(x + panelWidth - 116, y + 8, x + panelWidth - 12, y + 38, 0xFF203444);
+        g.drawCenteredString(font, label("available_points"), x + panelWidth - 64, y + 11, MUTED);
         var state = ClientSkills.snapshot();
-        Component points = Component.translatable("gui.forever_skyblock.skills.points", state == null ? 0 : state.points());
-        g.drawString(font, points, x + panelWidth - 12 - font.width(points), y + 13, 0xFFF2CC77, false);
-        g.drawString(font, Component.translatable("gui.forever_skyblock.skills.subtitle"), x + 12, y + 28, MUTED, false);
-        int detailX = x + leftWidth + 20, detailWidth = panelWidth - leftWidth - 32;
-        g.fill(detailX - 4, y + 49, x + panelWidth - 12, y + panelHeight - 69, 0xFF111D26);
-        Item icon;
-        String titleKey, descriptionKey;
-        Component reward;
-        if (milestones) {
-            var milestone = MilestoneCatalog.MILESTONES.stream().filter(value -> value.id().equals(selected)).findFirst().orElseThrow();
-            icon = milestone.icon(); titleKey = milestone.titleKey(); descriptionKey = milestone.descriptionKey();
-            reward = Component.translatable("gui.forever_skyblock.skills.reward", milestone.reward());
-        } else {
-            var skill = SkillCatalog.find(selected);
-            icon = skill.icon(); titleKey = skill.titleKey(); descriptionKey = skill.descriptionKey();
-            reward = Component.translatable("gui.forever_skyblock.skills.rank", state == null ? 0 : state.rank(selected), skill.maxRank());
-        }
-        g.renderItem(icon.getDefaultInstance(), detailX + 2, y + 57);
-        text(g, Component.translatable(titleKey), detailX + 24, y + 55, detailWidth - 28, LIGHT, 2);
-        var description = font.split(Component.translatable(descriptionKey), Math.max(20, detailWidth - 14));
-        int visibleLines = Math.max(1, (panelHeight - 185) / 10);
-        int maxScroll = Math.max(0, description.size() - visibleLines);
-        descriptionScroll = Math.max(0, Math.min(descriptionScroll, maxScroll));
-        for (int i = 0; i < visibleLines && i + descriptionScroll < description.size(); i++) {
-            g.drawString(font, description.get(i + descriptionScroll), detailX + 2, y + 89 + i * 10, MUTED, false);
-        }
-        if (maxScroll > 0) {
-            int trackX = detailX + detailWidth - 5, trackY = y + 89, trackHeight = visibleLines * 10;
-            int thumbHeight = Math.max(6, trackHeight * visibleLines / description.size());
-            int thumbY = trackY + (trackHeight - thumbHeight) * descriptionScroll / maxScroll;
-            g.fill(trackX, trackY, trackX + 2, trackY + trackHeight, 0xFF344753);
-            g.fill(trackX, thumbY, trackX + 2, thumbY + thumbHeight, CYAN);
-        }
-        g.drawString(font, reward, detailX + 2, y + panelHeight - 85, CYAN, false);
-        String scope = state != null && !state.local() ? "server_scope" : "local_scope";
-        text(g, Component.translatable("gui.forever_skyblock.skills." + scope), x + 12, y + panelHeight - 28,
-                panelWidth - 100, MUTED, 2);
-        if (state != null && !state.message().isEmpty()) {
-            text(g, Component.translatable("gui.forever_skyblock.skills." + state.message()), detailX + 2,
-                    y + panelHeight - 39, detailWidth - 6, state.available() ? CYAN : 0xFFFFAC92, 1);
-        }
-        for (int i = 0; i < rows.size(); i++) {
-            int index = scroll + i;
-            String id = milestones ? MilestoneCatalog.MILESTONES.get(index).id() : SkillCatalog.SKILLS.get(index).id();
-            boolean owned = state != null && (milestones ? state.milestones().contains(id) : state.rank(id) > 0);
-            if (id.equals(selected)) g.fill(x + 8, rows.get(i).getY(), x + 10, rows.get(i).getY() + 26, CYAN);
-            if (owned) g.fill(x + leftWidth + 9, rows.get(i).getY() + 10, x + leftWidth + 12, rows.get(i).getY() + 16, 0xFF85D992);
-        }
+        Component points = state == null || !state.available() ? Component.literal("—") : label("points", state.points());
+        g.drawCenteredString(font, points, x + panelWidth - 64, y + 24, 0xFFFFDA82);
+        int activeTabX = tasks ? x + 14 + (panelWidth - 26) / 2 : x + 12;
+        g.fill(activeTabX, y + 64, activeTabX + (panelWidth - 26) / 2, y + 66, CYAN);
+        g.drawString(font, label(tasks ? "tasks_hint" : "skills_hint"), x + 12, y + 71, MUTED, false);
+        g.fill(x + 12, y + 82, x + panelWidth - 12, y + panelHeight - 48, 0xFF0B151D);
+        String footer = state != null && !state.available() ? "storage_error"
+                : state != null && !state.message().isEmpty() ? state.message()
+                : state != null && !state.local() ? "server_scope" : "local_scope";
+        var lines = font.split(label(footer), panelWidth - 24);
+        if (!lines.isEmpty()) g.drawString(font, lines.getFirst(), x + 12, y + panelHeight - 40,
+                state != null && !state.available() ? 0xFFFFAE94 : MUTED, false);
     }
-    private void text(GuiGraphics g, Component text, int x, int y, int width, int color, int maxLines) {
-        var lines = font.split(text, Math.max(20, width));
-        for (int i = 0; i < Math.min(lines.size(), maxLines); i++) g.drawString(font, lines.get(i), x, y + i * 10, color, false);
+
+    private record Card(String id, String titleKey, String descriptionKey, Item icon, int cost, int maxRank, boolean task) { }
+
+    private final class CatalogPanel extends ScrollPanel {
+        private final List<Card> cards = new ArrayList<>();
+        private final List<Button> actions = new ArrayList<>();
+        private final List<Integer> offsets = new ArrayList<>(), heights = new ArrayList<>();
+        private int contentHeight;
+        CatalogPanel() {
+            super(SkillScreen.this.minecraft, panelWidth - 24, panelHeight - 132, y + 84, x + 12, 0, 4,
+                    0xFF1B2B38, CYAN, 0xFFA6EAF0);
+            if (tasks) for (var entry : MilestoneCatalog.MILESTONES)
+                cards.add(new Card(entry.id(), entry.titleKey(), entry.descriptionKey(), entry.icon(), entry.reward(), 0, true));
+            else for (var entry : SkillCatalog.SKILLS)
+                cards.add(new Card(entry.id(), entry.titleKey(), entry.descriptionKey(), entry.icon(), entry.cost(), entry.maxRank(), false));
+            for (Card card : cards) {
+                offsets.add(contentHeight);
+                int titleHeight = Math.max(16, font.split(Component.translatable(card.titleKey()), cardWidth() - 48).size() * 10);
+                int cardHeight = 52 + titleHeight + font.split(Component.translatable(card.descriptionKey()), cardWidth() - 20).size() * 10;
+                heights.add(cardHeight);
+                contentHeight += cardHeight + 6;
+                actions.add(Button.builder(Component.empty(), b -> { ClientSkills.buy(card.id()); SkillScreen.this.refresh(); })
+                        .bounds(left + cardWidth() - 124, top, 114, 20).build());
+            }
+            contentHeight = Math.max(height, contentHeight);
+            positionButtons();
+        }
+        private int cardWidth() { return width - 8; }
+        private void positionButtons() {
+            for (int i = 0; i < actions.size(); i++) {
+                Button button = actions.get(i);
+                button.setY(top - (int) scrollDistance + offsets.get(i) + heights.get(i) - 28);
+                button.visible = button.getY() + 20 > top && button.getY() < bottom;
+            }
+        }
+        void refresh() {
+            var state = ClientSkills.snapshot();
+            boolean available = state != null && state.available();
+            for (int i = 0; i < cards.size(); i++) {
+                Card card = cards.get(i);
+                Button button = actions.get(i);
+                boolean complete = available && (card.task() ? state.milestones().contains(card.id()) : state.rank(card.id()) >= card.maxRank());
+                String key = card.task() ? complete ? "completed" : "task_open" : complete ? "unlocked"
+                        : !available ? "unavailable" : ClientSkills.pending() ? "waiting"
+                        : state.points() < card.cost() ? "need_points" : "unlock";
+                button.setMessage(label(key, card.cost()));
+                button.active = !card.task() && available && !complete && !ClientSkills.pending() && state.points() >= card.cost();
+            }
+        }
+        @Override protected int getContentHeight() { return contentHeight; }
+        @Override protected void drawBackground(GuiGraphics g, Tesselator tess, float partialTick) { }
+        @Override protected void drawPanel(GuiGraphics g, int entryRight, int baseY, Tesselator tess, int mouseX, int mouseY) {
+            positionButtons();
+            var state = ClientSkills.snapshot();
+            for (int i = 0; i < cards.size(); i++) {
+                Card card = cards.get(i);
+                int cardY = baseY + offsets.get(i), cardHeight = heights.get(i), cardWidth = cardWidth();
+                if (cardY >= bottom || cardY + cardHeight <= top) continue;
+                boolean complete = state != null && state.available() && (card.task() ? state.milestones().contains(card.id()) : state.rank(card.id()) >= card.maxRank());
+                g.fill(left, cardY, left + cardWidth, cardY + cardHeight, 0xFF2C4352);
+                g.fill(left + 1, cardY + 1, left + cardWidth - 1, cardY + cardHeight - 1, complete ? 0xFF152E2A : 0xFF1A2A38);
+                g.fill(left, cardY, left + 3, cardY + cardHeight, complete ? GREEN : CYAN);
+                g.renderItem(card.icon().getDefaultInstance(), left + 10, cardY + 8);
+                int titleY = cardY + 8;
+                var titles = font.split(Component.translatable(card.titleKey()), cardWidth - 48);
+                for (var line : titles) { g.drawString(font, line, left + 34, titleY, LIGHT, false); titleY += 10; }
+                int descriptionY = cardY + 14 + Math.max(16, titles.size() * 10);
+                for (var line : font.split(Component.translatable(card.descriptionKey()), cardWidth - 20)) {
+                    g.drawString(font, line, left + 10, descriptionY, MUTED, false); descriptionY += 10;
+                }
+                Component status = card.task() ? label("reward", card.cost()) : label("rank", state == null ? 0 : state.rank(card.id()), card.maxRank());
+                g.drawString(font, status, left + 10, cardY + cardHeight - 22, complete ? GREEN : CYAN, false);
+                actions.get(i).render(g, mouseX, mouseY, 0);
+            }
+            // ScrollPanel uses a raw GL scissor. Flush buffered GUI text before it disables clipping.
+            g.flush();
+        }
+        @Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            return isMouseOver(mouseX, mouseY) && super.mouseClicked(mouseX, mouseY, button);
+        }
+        @Override public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
+            if (!isMouseOver(mouseX, mouseY)) return false;
+            boolean handled = super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
+            positionButtons();
+            return handled;
+        }
+        @Override public void setFocused(GuiEventListener listener) {
+            super.setFocused(listener);
+            int index = actions.indexOf(listener);
+            if (index >= 0) {
+                int buttonBottom = offsets.get(index) + heights.get(index) - 8;
+                if (buttonBottom - scrollDistance > height) scrollDistance = buttonBottom - height;
+                if (buttonBottom - 20 - scrollDistance < 0) scrollDistance = Math.max(0, buttonBottom - 20);
+                positionButtons();
+            }
+        }
+        @Override public List<? extends GuiEventListener> children() { return actions; }
+        @Override public NarratableEntry.NarrationPriority narrationPriority() {
+            return getFocused() != null ? NarratableEntry.NarrationPriority.FOCUSED : NarratableEntry.NarrationPriority.NONE;
+        }
+        @Override public void updateNarration(NarrationElementOutput output) {
+            output.add(NarratedElementType.TITLE, label(tasks ? "tasks_tab" : "skills_tab", cards.size()));
+            for (int i = 0; i < actions.size(); i++) if (actions.get(i).isFocused()) {
+                Card card = cards.get(i);
+                output.add(NarratedElementType.USAGE, Component.translatable(card.titleKey()).append(". ")
+                        .append(Component.translatable(card.descriptionKey())).append(". ").append(actions.get(i).getMessage()));
+            }
+        }
     }
 }

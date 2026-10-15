@@ -86,4 +86,45 @@ class ProfileStoreTest {
         }
         assertEquals(1, store.load(id).points());
     }
+    @Test void resetRefundsOncePersistsAndKeepsMilestoneClaims() throws Exception {
+        UUID id = UUID.randomUUID();
+        ProfileStore store = new ProfileStore(root);
+        var costs = java.util.Map.of(SKILL, 1);
+        store.update(id, state -> state.award(MILESTONE, 1).purchase(SKILL, 1, 1));
+        var reset = store.update(id, state -> state.resetSkills(costs));
+        assertEquals(1, reset.points()); assertEquals(0, reset.rank(SKILL));
+        assertTrue(reset.milestones().contains(MILESTONE));
+        assertEquals(reset, new ProfileStore(root).load(id));
+        assertEquals(reset, store.update(id, state -> state.resetSkills(costs)));
+        assertEquals(reset, store.update(id, state -> state.award(MILESTONE, 1)));
+        assertEquals(0, store.update(id, state -> state.purchase(SKILL, 1, 1)).points());
+    }
+    @Test void resetPreservesUnspentPointsOtherProfilesAndUnknownSkills() throws Exception {
+        UUID id = UUID.randomUUID(), other = UUID.randomUUID();
+        ProfileStore store = new ProfileStore(root);
+        var original = new ProgressionProfile(7, java.util.Set.of(MILESTONE),
+                java.util.Map.of(SKILL, 2, "other:future_skill", 1));
+        store.update(id, state -> original);
+        var reset = store.update(id, state -> state.resetSkills(java.util.Map.of(SKILL, 3)));
+        assertEquals(13, reset.points()); assertEquals(0, reset.rank(SKILL));
+        assertEquals(1, reset.rank("other:future_skill"));
+        assertEquals(ProgressionProfile.empty(), store.load(other));
+    }
+    @Test void resetLimitAndFailedWriteKeepPurchasedProfile() throws Exception {
+        UUID id = UUID.randomUUID(); ProfileStore store = new ProfileStore(root);
+        var purchased = new ProgressionProfile(ProgressionProfile.MAX_POINTS, java.util.Set.of(MILESTONE), java.util.Map.of(SKILL, 1));
+        store.update(id, state -> purchased);
+        assertThrows(IllegalArgumentException.class, () -> store.update(id, state -> state.resetSkills(java.util.Map.of(SKILL, 1))));
+        assertEquals(purchased, store.load(id));
+        assertEquals(purchased, new ProfileStore(root).load(id));
+        store.update(id, state -> new ProgressionProfile(7, state.milestones(), state.skills()));
+        var before = store.load(id);
+        Files.delete(root.resolve(id + ".json.bak"));
+        Files.createDirectory(root.resolve(id + ".json.bak"));
+        Files.writeString(root.resolve(id + ".json.bak/block"), "prevent replacement");
+        assertThrows(IOException.class, () -> store.update(id, state -> state.resetSkills(java.util.Map.of(SKILL, 1))));
+        assertEquals(before, store.load(id));
+        assertEquals(before, new ProfileStore(root).load(id));
+    }
+
 }

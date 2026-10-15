@@ -51,12 +51,20 @@ public final class ProgressionService {
             sync(player, false, message);
         } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); }
     }
+    public void reset(ServerPlayer player) {
+        try {
+            ProgressionProfile next = store.update(player.getUUID(), SkillCatalog::reset);
+            SkillCatalog.apply(player, next);
+            sync(player, false, "reset_done");
+        } catch (IOException e) { error(player, false, e); }
+        catch (IllegalArgumentException | ArithmeticException e) { sync(player, false, "reset_limit"); }
+    }
     public boolean award(ServerPlayer player, MilestoneCatalog.Milestone milestone) {
         try {
             ProgressionProfile previous = store.load(player.getUUID());
             ProgressionProfile next = store.update(player.getUUID(), state -> state.award(milestone.id(), milestone.reward()));
             if (next.equals(previous)) return false;
-            player.sendSystemMessage(Component.translatable("message.forever_skyblock.milestone", Component.translatable(milestone.titleKey()), milestone.reward()));
+            player.sendSystemMessage(SkillMessages.milestone(milestone));
             sync(player, false, "milestone_earned");
             return true;
         } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); return false; }
