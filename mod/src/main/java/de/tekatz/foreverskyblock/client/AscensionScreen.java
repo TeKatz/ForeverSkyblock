@@ -44,7 +44,7 @@ public final class AscensionScreen extends AbstractContainerScreen<AscensionMenu
             var info = minecraft.getConnection().getPlayerInfo(menu.owner());
             recipient = info == null ? text("offline_player") : Component.literal(info.getProfile().getName());
         }
-        g.drawCenteredString(font, font.substrByWidth(text("recipient", recipient), 154), x + 88, y + 85, 0xFFAFBFCB);
+        g.drawCenteredString(font, font.plainSubstrByWidth(text("recipient", recipient).getString(), 154), x + 88, y + 85, 0xFFAFBFCB);
         for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++) slot(g, x + 8 + col * 18, y + 144 + row * 18);
         for (int col = 0; col < 9; col++) slot(g, x + 8 + col * 18, y + 202);
         if (menu.status() == AscensionChamberBlockEntity.RUNNING) {

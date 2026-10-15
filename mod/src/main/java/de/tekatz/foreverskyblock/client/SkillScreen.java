@@ -98,8 +98,8 @@ public final class SkillScreen extends Screen {
         g.fill(x, y, x + panelWidth, y + panelHeight, 0xFF314653);
         g.fill(x + 1, y + 1, x + panelWidth - 1, y + panelHeight - 1, 0xFF101D27);
         g.fill(x + 1, y + 1, x + panelWidth - 1, y + 3, CYAN);
-        g.drawString(font, font.substrByWidth(title, panelWidth - 164), x + 12, y + 12, LIGHT, false);
-        g.drawString(font, font.substrByWidth(label("overview"), panelWidth - 164), x + 12, y + 27, MUTED, false);
+        g.drawString(font, font.plainSubstrByWidth(title.getString(), panelWidth - 164), x + 12, y + 12, LIGHT, false);
+        g.drawString(font, font.plainSubstrByWidth(label("overview").getString(), panelWidth - 164), x + 12, y + 27, MUTED, false);
         g.fill(x + panelWidth - 140, y + 8, x + panelWidth - 12, y + 38, 0xFF203444);
         g.drawCenteredString(font, label("available_points"), x + panelWidth - 76, y + 11, MUTED);
         var state = ClientSkills.snapshot();
@@ -107,7 +107,7 @@ public final class SkillScreen extends Screen {
         g.drawCenteredString(font, points, x + panelWidth - 76, y + 24, 0xFFFFDA82);
         int activeTabX = x + 12 + (perks ? 3 : tasks ? 2 : jetpacks ? 1 : 0) * (2 + (panelWidth - 30) / 4);
         g.fill(activeTabX, y + 64, activeTabX + (panelWidth - 30) / 4, y + 66, CYAN);
-        g.drawString(font, font.substrByWidth(perks ? label("perks_hint") : jetpacks ? label("jetpacks_hint", ClientSkills.jetpackStage()) : label(tasks ? "tasks_hint" : "skills_hint"), panelWidth - 24), x + 12, y + 71, MUTED, false);
+        g.drawString(font, font.plainSubstrByWidth((perks ? label("perks_hint") : jetpacks ? label("jetpacks_hint", ClientSkills.jetpackStage()) : label(tasks ? "tasks_hint" : "skills_hint")).getString(), panelWidth - 24), x + 12, y + 71, MUTED, false);
         g.fill(x + 12, y + 82, x + panelWidth - 12, y + panelHeight - 48, 0xFF0B151D);
         String footer = state != null && !state.available() ? "storage_error"
                 : state != null && !state.message().isEmpty() ? state.message()
@@ -131,7 +131,6 @@ public final class SkillScreen extends Screen {
                     "gui.forever_skyblock.skills.perk_info_description", new ItemStack(de.tekatz.foreverskyblock.ForeverSkyblock.FOREVER_CORE.get()),
                     1, 0, 0, true, "", label("perk_info_description")));
             if (tasks) for (var entry : MilestoneCatalog.MILESTONES)
-                if (entry.perkCost() > 0) description.append("\n").append(label("perk_requirement", entry.perkCost()));
                 cards.add(new Card(entry.id(), entry.titleKey(), entry.descriptionKey(), entry.icon().getDefaultInstance(), entry.reward(), 0, 0, true, "", Component.translatable(entry.descriptionKey())));
             else for (var entry : SkillCatalog.SKILLS) {
                 if (perks ? entry.perkCost() == 0 : entry.jetpack() != jetpacks) continue;

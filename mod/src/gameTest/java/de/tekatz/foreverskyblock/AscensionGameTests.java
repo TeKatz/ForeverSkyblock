@@ -24,6 +24,33 @@ import net.neoforged.neoforge.gametest.*;
 @GameTestHolder(ForeverSkyblock.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class AscensionGameTests {
+    @GameTest(template = "empty")
+    public static void actualCoreRecipeAutomatesWithCrafterAndCannotReuseAe2CachedIdentity(GameTestHelper h) throws Exception {
+        if (!Boolean.getBoolean("forever_skyblock.expectAscension")) { h.succeed(); return; }
+        var holder = h.getLevel().getRecipeManager().byKey(net.minecraft.resources.ResourceLocation.parse("forever_skyblock:forever_core")).orElseThrow();
+        var recipe = (ForeverCoreRecipe) holder.value();
+        var pos = new BlockPos(4, 1, 4); h.setBlock(pos, Blocks.CRAFTER);
+        var absolute = h.absolutePos(pos);
+        var crafter = (net.minecraft.world.level.block.entity.CrafterBlockEntity) h.getBlockEntity(pos);
+        var inputs = recipe.getIngredients().stream().map(i -> i.getItems()[0].copyWithCount(1)).toList();
+        for (int i = 0; i < 9; i++) crafter.setItem(i, inputs.get(i).copyWithCount(2));
+        var dispense = net.minecraft.world.level.block.CrafterBlock.class.getDeclaredMethod("dispenseFrom",
+                net.minecraft.world.level.block.state.BlockState.class, net.minecraft.server.level.ServerLevel.class, BlockPos.class);
+        dispense.setAccessible(true);
+        dispense.invoke(Blocks.CRAFTER, h.getLevel().getBlockState(absolute), h.getLevel(), absolute);
+        dispense.invoke(Blocks.CRAFTER, h.getLevel().getBlockState(absolute), h.getLevel(), absolute);
+        var outputs = h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                new net.minecraft.world.phys.AABB(absolute).inflate(3), e -> e.getItem().is(ForeverSkyblock.FOREVER_CORE.get()));
+        h.assertTrue(outputs.size() == 2 && !ForeverCore.identity(outputs.get(0).getItem()).equals(ForeverCore.identity(outputs.get(1).getItem())), "Two real Crafter operations produce two independent Cores");
+        for (int i = 0; i < 9; i++) h.assertTrue(crafter.getItem(i).isEmpty(), "Crafter consumes both complete recipe sets");
+        var typed = new RecipeHolder<CraftingRecipe>(holder.id(), recipe);
+        var grid = CraftingInput.of(3, 3, inputs);
+        var encoded = appeng.api.crafting.PatternDetailsHelper.encodeCraftingPattern(typed, inputs.toArray(ItemStack[]::new),
+                recipe.assemble(grid, h.getLevel().registryAccess()), false, false);
+        var pattern = new appeng.crafting.pattern.AECraftingPattern(appeng.api.stacks.AEItemKey.of(encoded), h.getLevel());
+        h.assertTrue(pattern.assemble(grid, h.getLevel()).isEmpty(), "Cached Core patterns fail before the Molecular Assembler consumes inputs");
+        h.succeed();
+    }
     private static AscensionChamberBlockEntity place(GameTestHelper h) {
         h.setBlock(new BlockPos(1, 1, 1), ForeverSkyblock.ASCENSION_CHAMBER.get());
         return (AscensionChamberBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(new BlockPos(1, 1, 1)));
