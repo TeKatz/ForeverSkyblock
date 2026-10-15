@@ -1,4 +1,4 @@
-# Persistent skills — first version (0.3.0)
+# Persistent skills — first version (0.3.1)
 
 ## Scope
 
@@ -12,7 +12,7 @@ The fixed island and its stored inventory are unchanged. Players gain profile ef
 
 Press **K** in game. Remap **Open Skills** under **Options → Controls → Key Binds → Forever Skyblock**. A conflicting binding can be changed there. The same key or Escape closes the menu. `/foreverskills` opens it as a command fallback.
 
-The custom screen includes a point balance, scrollable Skills and Milestones lists, selected-entry details, current rank/reward, purchase state and profile-scope label. Descriptions are also available as tooltips for small GUI scales. The world continues running while the menu is open.
+The custom screen includes a point balance, scrollable Skills and Milestones lists, selected-entry details, current rank/reward, purchase state and profile-scope label. Descriptions wrap inside the detail panel; use the mouse wheel over that text when a scrollbar appears. Hovering the panel does not create a description tooltip. The world continues running while the menu is open.
 
 ## Earn and spend the first point
 
@@ -63,7 +63,7 @@ This administrative command adds 1–1000 points per invocation, up to the profi
 
 ## Manual acceptance test
 
-1. Open the menu with K; check the Controls entry and rebind it.
+1. Open the menu with K; check the Controls entry and rebind it. With background blur enabled, confirm the panel, text, icons and buttons stay sharp. Hover the details and rows: no description tooltip should cover the screen. Check both tabs at multiple GUI scales; scroll the details when a scrollbar appears.
 2. Process wood and craft cobblestone from four fragments, including a test through the ME Crafting Terminal.
 3. Verify one point is awarded; repeat the craft and confirm no second reward.
 4. Buy Extended Reach and confirm the point is spent and a block can be interacted with one block farther away.

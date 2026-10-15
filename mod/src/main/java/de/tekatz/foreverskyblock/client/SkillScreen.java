@@ -14,7 +14,7 @@ import net.minecraft.world.item.Item;
 /** Catalog-backed rows and scrolling allow more skills/milestones without changing the layout. */
 public final class SkillScreen extends Screen {
     private static final int CYAN = 0xFF74D5DD, LIGHT = 0xFFE0E9ED, MUTED = 0xFFA3B3BE;
-    private int x, y, panelWidth, panelHeight, leftWidth, scroll;
+    private int x, y, panelWidth, panelHeight, leftWidth, scroll, descriptionScroll;
     private boolean milestones;
     private String selected = SkillCatalog.SKILLS.getFirst().id();
     private final List<Button> rows = new ArrayList<>();
@@ -37,9 +37,8 @@ public final class SkillScreen extends Screen {
         for (int row = 0; row < visible && row + scroll < count; row++) {
             String id = milestones ? MilestoneCatalog.MILESTONES.get(row + scroll).id() : SkillCatalog.SKILLS.get(row + scroll).id();
             String key = milestones ? MilestoneCatalog.MILESTONES.get(row + scroll).titleKey() : SkillCatalog.SKILLS.get(row + scroll).titleKey();
-            Button button = Button.builder(Component.translatable(key), clicked -> { selected = id; refresh(); })
+            Button button = Button.builder(Component.translatable(key), clicked -> { selected = id; descriptionScroll = 0; refresh(); })
                     .bounds(x + 12, y + 78 + row * 32, leftWidth - 4, 26).build();
-            button.setTooltip(Tooltip.create(Component.translatable(key + ".description")));
             rows.add(addRenderableWidget(button));
         }
         purchase = addRenderableWidget(Button.builder(Component.empty(), button -> {
@@ -52,6 +51,7 @@ public final class SkillScreen extends Screen {
     private void selectTab(boolean value) {
         milestones = value;
         scroll = 0;
+        descriptionScroll = 0;
         selected = value ? MilestoneCatalog.MILESTONES.getFirst().id() : SkillCatalog.SKILLS.getFirst().id();
         init();
     }
@@ -81,6 +81,12 @@ public final class SkillScreen extends Screen {
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
     @Override public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
+        if (vertical == 0) return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
+        if (mouseX >= x + leftWidth + 20 && mouseX < x + panelWidth - 12
+                && mouseY >= y + 89 && mouseY < y + panelHeight - 96) {
+            descriptionScroll += vertical < 0 ? 1 : -1;
+            return true;
+        }
         if (mouseX >= x + 8 && mouseX < x + leftWidth + 12 && mouseY >= y + 75 && mouseY < y + panelHeight - 40) {
             scroll += vertical < 0 ? 1 : -1;
             init();
@@ -88,8 +94,9 @@ public final class SkillScreen extends Screen {
         }
         return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
     }
-    @Override public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        renderBackground(g, mouseX, mouseY, partialTick);
+    @Override public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        // Screen.render calls this before rendering widgets. Blur only the world, then draw the panel.
+        super.renderBackground(g, mouseX, mouseY, partialTick);
         g.fill(x, y, x + panelWidth, y + panelHeight, 0xFF0D171F);
         g.fill(x + 1, y + 1, x + panelWidth - 1, y + panelHeight - 1, 0xFF344753);
         g.fill(x + 3, y + 3, x + panelWidth - 3, y + panelHeight - 3, 0xFF182630);
@@ -115,8 +122,20 @@ public final class SkillScreen extends Screen {
         }
         g.renderItem(icon.getDefaultInstance(), detailX + 2, y + 57);
         text(g, Component.translatable(titleKey), detailX + 24, y + 55, detailWidth - 28, LIGHT, 2);
-        text(g, Component.translatable(descriptionKey), detailX + 2, y + 89, detailWidth - 8, MUTED,
-                Math.max(1, (panelHeight - 198) / 10));
+        var description = font.split(Component.translatable(descriptionKey), Math.max(20, detailWidth - 14));
+        int visibleLines = Math.max(1, (panelHeight - 185) / 10);
+        int maxScroll = Math.max(0, description.size() - visibleLines);
+        descriptionScroll = Math.max(0, Math.min(descriptionScroll, maxScroll));
+        for (int i = 0; i < visibleLines && i + descriptionScroll < description.size(); i++) {
+            g.drawString(font, description.get(i + descriptionScroll), detailX + 2, y + 89 + i * 10, MUTED, false);
+        }
+        if (maxScroll > 0) {
+            int trackX = detailX + detailWidth - 5, trackY = y + 89, trackHeight = visibleLines * 10;
+            int thumbHeight = Math.max(6, trackHeight * visibleLines / description.size());
+            int thumbY = trackY + (trackHeight - thumbHeight) * descriptionScroll / maxScroll;
+            g.fill(trackX, trackY, trackX + 2, trackY + trackHeight, 0xFF344753);
+            g.fill(trackX, thumbY, trackX + 2, thumbY + thumbHeight, CYAN);
+        }
         g.drawString(font, reward, detailX + 2, y + panelHeight - 85, CYAN, false);
         String scope = state != null && !state.local() ? "server_scope" : "local_scope";
         text(g, Component.translatable("gui.forever_skyblock.skills." + scope), x + 12, y + panelHeight - 28,
@@ -132,10 +151,6 @@ public final class SkillScreen extends Screen {
             if (id.equals(selected)) g.fill(x + 8, rows.get(i).getY(), x + 10, rows.get(i).getY() + 26, CYAN);
             if (owned) g.fill(x + leftWidth + 9, rows.get(i).getY() + 10, x + leftWidth + 12, rows.get(i).getY() + 16, 0xFF85D992);
         }
-        super.render(g, mouseX, mouseY, partialTick);
-        if (mouseX >= detailX && mouseX < detailX + detailWidth && mouseY >= y + 85
-                && mouseY < y + panelHeight - 90)
-            g.renderTooltip(font, Component.translatable(descriptionKey), mouseX, mouseY);
     }
     private void text(GuiGraphics g, Component text, int x, int y, int width, int color, int maxLines) {
         var lines = font.split(text, Math.max(20, width));

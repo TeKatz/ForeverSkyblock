@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-15 — Skills menu readability (0.3.1)
+
+- Draw the custom panel in the background phase, before widgets, so the inherited screen render does not blur the finished UI a second time.
+- Remove description tooltips from the detail area and catalog rows. Wrap descriptions inline and allow mouse-wheel scrolling with a visible scrollbar when space is limited.
+- Preserve profiles, milestone rewards, purchases, packets and condenser behavior.
+
 ## 2026-10-15 — Persistent skills (0.3.0)
 
 - Add UUID-based profiles outside world saves, with atomic persistence, validated backups and explicit failure handling.
