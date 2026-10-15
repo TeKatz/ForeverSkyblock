@@ -2,7 +2,12 @@
 
 ## Persistent skills — 0.3.0
 
-Implementation is on `feature/persistent-skills`, based on the current condenser branch. Build validation is in progress.
+Implementation is on `feature/persistent-skills`, based on the current condenser branch. [Java 21 build, all eight storage tests and all nine dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38696790035) for commit `127009ef9aded0f203ea14b295d1e2970a4178a2`.
+
+- Storage tests verified persistence after store recreation/world-directory deletion, once-per-profile rewards, persistent non-duplicated purchases, insufficient funds, independent player UUIDs, backup recovery, corrupt/future schema refusal, failed-write rollback and concurrent duplicate claims.
+- Server tests verified exactly +1 block interaction range without stacking, removal/reapplication of the modifier, the fragment-crafting milestone predicate and payload round trips.
+- All six existing condenser integration tests also passed. No JEI dependency was required on the dedicated test server.
+- JSON/TOML, translation-key parity, relative links, common/client separation and the unchanged fixed-island hash were checked.
 
 Automated coverage includes eight profile-storage tests (restart/world independence, deduplication, purchases, insufficient funds, player separation, backup recovery, corrupt/future schemas, failed writes and concurrent claims) and three additional server GameTests (non-stacking reach application, exact milestone ingredients and packet round trips). Existing six condenser GameTests remain enabled.
 
