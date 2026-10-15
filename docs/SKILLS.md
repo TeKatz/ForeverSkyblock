@@ -49,7 +49,7 @@ Relative to the instance/server working directory:
 - Dedicated server: `forever_skyblock/progression/server/<player-uuid>.json`.
 - Last validated state: the corresponding `.json.bak` file.
 
-Profiles use schema version 1. Writes use a flushed temporary file and atomic replacement where supported. A purchase/reward is committed to memory only after a successful save. The last validated profile is backed up before replacement. A corrupted primary file can recover from a valid backup; if neither is readable, purchases/rewards stop and an error is shown instead of silently resetting progression. Unsupported schemas are never overwritten.
+Current profiles use schema version 2 with separate SP/PP balances, paid-perk investments and Core receipts. Schema-1 profiles migrate as documented in [ASCENSION.md](ASCENSION.md). Writes use a flushed temporary file and atomic replacement where supported. A purchase/reward is committed to memory only after a successful save. The last validated profile is backed up before replacement. A corrupted primary file can recover from a valid backup; if neither is readable, purchases/rewards stop and an error is shown instead of silently resetting progression. Unsupported schemas are never overwritten.
 
 Back up the progression directory separately from world saves. Deleting the entire Minecraft instance also deletes these local profiles. Files are loaded on demand, cached during a session and evicted when players leave; they are not polled from disk every tick. No account backend, cross-PC synchronization or cryptographic anti-cheat is included.
 

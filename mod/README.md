@@ -10,7 +10,7 @@ Points, milestone claims and purchases are saved outside world folders. Dedicate
 
 ## Iron Jetpacks research test
 
-The **Jetpacks** tab adds Beginner (5 SP), Mid-Game (10 SP), End-Game (20 SP) and Creative (40 SP), in order. Locked jetpacks and components are hidden from JEI; supported crafting and flight paths enforce the research on the server. The temporary **TEST: +10 SP** button is available to the singleplayer owner or server operators. Existing profiles remain compatible. See [JETPACK_RESEARCH.md](../docs/JETPACK_RESEARCH.md) for tier mapping, shared automation policy, reset behavior and the conditional Creative crafting recipe.
+The **Jetpacks** tab adds Beginner (5 SP), Mid-Game (10 SP), End-Game (20 SP) and Creative (40 SP + 1 PP), in order. Locked jetpacks and components are hidden from JEI; supported crafting and flight paths enforce the research on the server. The temporary **TEST: +10 SP** button is available to the singleplayer owner or server operators. Existing profiles migrate as described in the Ascension section. See [JETPACK_RESEARCH.md](../docs/JETPACK_RESEARCH.md) for tier mapping, shared automation policy, reset behavior and the conditional Creative crafting recipe.
 
 Integration baseline: Iron Jetpacks 8.0.11, optional at runtime; JEI 19.64.0.454 remains optional. Client and server must both use 0.8.0. TeKatz's supplied list specifies Iron Jetpacks 8.0.11 and Iron Furnaces 4.3.2; Iron Furnaces is not modified.
 
@@ -40,7 +40,7 @@ Each input and the output hold at most one stack of 64 items. Tagged wood from o
 
 ## Stone Fragments and crafting
 
-`forever_skyblock:stone_fragment` uses a custom transparent 16×16 pixel texture depicting one angular stone shard and appears in the Ingredients creative tab. Four fragments in a 2×2 crafting recipe produce one cobblestone. Version 0.8.0 adds the reusable Mortar, Stone Meal and Mixing Chamber Mark I; see [mixing and filters](../docs/CONDENSER_MIXING.md). Later condenser tiers and tool recipes remain unchanged.
+`forever_skyblock:stone_fragment` uses a custom transparent 16×16 pixel texture depicting one angular stone shard and appears in the Ingredients creative tab. Four fragments in a 2×2 crafting recipe produce one cobblestone. Version 0.6.0 added the reusable Mortar, Stone Meal and Mixing Chamber Mark I; see [mixing and filters](../docs/CONDENSER_MIXING.md). Later condenser tiers are not implemented; permanent-tool progression is documented below.
 
 The condenser remains in Functional Blocks. Its registered ID and original cube textures are preserved. It drops itself with a pickaxe; stored inventory is dropped separately when the block is removed. Existing placed condensers acquire their new block entity when loaded; test a copy of the starter template before replacing a distributed pack.
 
@@ -85,7 +85,7 @@ Run the isolated dedicated-server integration tests with:
 
 Test classes and their empty structure are in `src/gameTest/` and are excluded from the production JAR. See [validation status](../docs/VALIDATION.md) for completed checks and remaining manual tests.
 
-## Condenser mixing in 0.8.0
+## Condenser mixing in 0.6.0
 
 See [CONDENSER_MIXING.md](../docs/CONDENSER_MIXING.md) for recipes, the live second input, persistent filters, automation and migration. Filter editing copies items without consuming them; right-click clears an input filter. JEI is optional.
 
@@ -97,7 +97,7 @@ Vanilla's initial movement, tree, inventory and crafting tutorial sequence is se
 
 The Mixing Chamber model now uses disjoint solid partitions with only exposed faces, cull tags only on actual block boundaries and a non-occluding block state, preventing overlapping wood/stone surfaces and missing neighboring log faces.
 
-## Permanent tools in 0.8.0
+## Permanent tools in 0.7.0
 
 The 24 Vanilla pickaxes, axes, shovels and hoes have infinite durability and replacement progression recipes. Gold branches from Stone; Diamond needs Iron and Obsidian; Netherite uses the smithing table with the new Reinforced Netherite Ingot. Standard recipe JSON is bundled in this JAR and mirrored in the pack Recipe Editor directory. See [TOOL_PROGRESSION.md](../docs/TOOL_PROGRESSION.md) for exact patterns, scope, recipe replacement rules, open resource dependencies and validation. No separate datapack installation is needed for the JAR test.
 
