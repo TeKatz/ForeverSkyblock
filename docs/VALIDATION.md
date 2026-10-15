@@ -14,7 +14,9 @@
 
 The integration baseline is separate from TeKatz's not-yet-supplied installed Iron Jetpacks version. No claim is made that these are the installed versions of the newly added mods.
 
-Manual client acceptance remains pending: Jetpacks tab readability at multiple GUI scales, temporary test points with a non-cheat singleplayer owner, JEI runtime hiding/restoring including typed components, manual ME-terminal crafting, Curios flight and reset/rejoin/world-switch behavior. Shared playerless automation semantics are documented in [JETPACK_RESEARCH.md](JETPACK_RESEARCH.md); arbitrary modded crafting paths are not claimed as validated.
+TeKatz reported successful in-game testing of 0.5.0 on October 15, 2026: unlocked jetpacks appear in JEI only after purchase, resetting points hides them again, and jetpack functionality is disabled without the required research. A specifically tested Creative Jetpack works only after buying the final Creative stage. TeKatz stated that the system behaves exactly as intended. This is user-reported client validation, separate from the automated tests above.
+
+Remaining individually unconfirmed checks: multiple GUI scales, temporary test points with a non-cheat singleplayer owner, separate coverage of every typed component, manual ME-terminal crafting, Curios-specific equipment behavior and 0.5.0 research/reset persistence after rejoining, changing worlds and restarting. Shared playerless automation semantics are documented in [JETPACK_RESEARCH.md](JETPACK_RESEARCH.md); arbitrary modded crafting paths are not claimed as validated.
 
 
 ## Skill cards, refunds and reward shortcut — 0.4.0
