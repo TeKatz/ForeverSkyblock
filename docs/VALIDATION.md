@@ -140,3 +140,13 @@ A successful mod build alone does not validate a complete pack export.
 - Inspected the built JAR metadata, Java 21 classes, new assets/recipes, absence of test classes and identical existing progression/mixin bytecode compared with the delivered 0.5.0 JAR. Full pack files and fixed island bytes are unchanged.
 - Client visual review, actual JEI drag/drop and inventory mouse gestures are pending TeKatz's in-game test. No new manual client test is claimed.
 - JAR: `ForeverSkyblock-1.21.1-NeoForge-0.6.0.jar`, 132,387 bytes; SHA-256 `19b32bf4c9855d46262f6cca4ca3bc8bd0969d4bee109d1748d8232f56a7065b`; artifact `11963717159`.
+
+## Chamber model, JEI transfer and tutorial update 0.6.1 — October 15, 2026
+
+Source commit `1301e71854eefbad5f15ab61ba8aaacf14c828f5` passed [CI run 38724723640](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38724723640): build, all 15 JUnit tests and all 27 GameTests on each of NeoForge 21.1.249 without optional mods and NeoForge 21.1.259 with Iron Jetpacks 8.0.11, Cucumber 8.0.16, AE2 19.2.18 and GuideME 21.1.19. Six new GameTests cover read-only preview and one-set transfers, filtered/reversed maximum transfers, missing/stale/invalid requests, full-inventory rollback and replacement, component and hidden-input preservation, and all six adjacent log faces. The new geometry JUnit test rejects overlapping solids, coplanar face overlaps and incorrect inset cull tags.
+
+The production JAR is `ForeverSkyblock-1.21.1-NeoForge-0.6.1.jar`, 152,138 bytes; SHA-256 `8cfdfbc8291c6fca539610409f284dacab8230ce0b4002742709ab5a4a1a9ff5`. Artifact ID: `11967371878`. Its metadata, Java 21 classes, new handlers/model and absence of test classes were inspected. Prior progression/mixin class bytes and texture PNG bytes match the delivered 0.6.0 JAR. Pack files, including the fixed island, remain unchanged.
+
+The Vanilla `Tutorial.setStep` implementation was inspected in the SHA-1-verified official Minecraft 1.21.1 client bytecode using Mojang's mappings: it updates the tutorial option, saves Options and clears/replaces an active step. This is source/bytecode verification, not a manual client test. Documentation-only follow-ups do not alter the tested mod source.
+
+Client visual verification beside the condenser/log/fence, actual JEI plus/Shift-plus clicks and fresh-instance tutorial behavior remain for TeKatz's in-game test. No manual client test is claimed.
