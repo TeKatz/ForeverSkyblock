@@ -2,59 +2,81 @@
 
 A standalone **Expert Skyblock modpack for Minecraft 1.21.1 / NeoForge** by TeKatz.
 
-Players start on a small island with a tree, an operational AE2 network and the custom **Condenser Mark I**. TeKatz builds the quest book manually using FTB Quests. This repository contains the mod source, available pack files and authoritative project documentation.
+This repository contains the Forever Skyblock mod, the pack-owned configuration and data that are already available, the fixed starting island, and the authoritative project documentation. TeKatz authors the FTB Quests book separately.
 
-## Current status
+## Current baseline
 
-- Current mod **0.8.0**: Forever Core, Ascension Chamber and separate cross-world Perk Points; Creative Jetpack research costs 40 SP + 1 PP. Includes a Perks tab, dual-currency refunds and idempotent redemption. See [Ascension](docs/ASCENSION.md) for recipes, automation and migration. Includes 0.7.0: 24 permanent Vanilla mining/farming tools with the approved tiered crafting/smithing overhaul and Reinforced Netherite Ingot. See [tool progression](docs/TOOL_PROGRESSION.md). Includes the 0.6.1 features: corrected chamber geometry/neighbor visibility, server-validated JEI recipe transfer with disabled unavailable recipes and suppressed Vanilla introduction hints. Includes the 0.6.0 features: reusable Mortar, Stone Meal, adjacent Mixing Chamber Mark I, two-input dirt processing and persistent ghost filters for inventory/JEI/automation. Preserves the 0.5.0 features: four ordered Iron Jetpacks research stages, optional runtime JEI hiding, server crafting/flight restrictions and a temporary +10 SP test button. Includes the previous features: persistent cross-world skill points and purchases, a remappable K shortcut, a card-based Skills/Tasks menu with confirmed skill refunds, a clickable green chat reward and a +1 block reach test skill. The first fragment-to-cobblestone craft awards one point per profile. Also includes the condenser features from 0.2.1: Condenser Mark I turns logs into four Stone Fragments or planks into one, without power. Includes an animated GUI, hopper/pipe support, a custom fragment texture, a 2×2 cobblestone recipe and optional JEI integration.
-- TeKatz confirmed 0.4.0 works in game and the revised Skills GUI is clearer. The earlier milestone, purchase and active skill were also tested successfully across two worlds. See [validation status](docs/VALIDATION.md) for the scope of these reports.
-- TeKatz successfully tested the starting world, spawn and placed machines in game using mod 0.1.0.
-- The island has a tree, wooden equipment platform and open workspace. The latest ME inventory contains bread and one seed; spare saplings and dirt were removed. The original chest is no longer placed.
-- The fixed starting template is `forever_me_start.nbt`, with spawn `[8, 4, 5]` facing east. The actual NBT is included; its 1k cell stores eight bread and one wheat seed.
-- Actual Skyblock Builder and Default World Type configuration files have been imported from the instance. The world-type restriction selects only Skyblock.
-- Forever Recipe Editor **1.4.3-skyblock.1** is maintained in its own repository on branch `skyblock` and was built against **JEI 19.64.0.454**.
+- **Main mod version:** `0.13.4`
+- **Minecraft:** 1.21.1
+- **Java:** 21
+- **Pack runtime:** NeoForge 21.1.259
+- **Default development/build baseline:** NeoForge 21.1.249 unless `-PpackRuntime=21.1.259` is supplied
+- **Profile schema:** 4
+- **Progression network protocol:** `skills-6`
+- **Latest integrated development stack:** PR #11, merged into `main` on October 16, 2026
+- **Last pre-merge verified feature head:** `f5a7bdadfab0d4480c45898b0b0f288bc7dbbc46`; GitHub Actions run #151 passed
+- **Release status:** no release publication is implied by the merge
 
-The fixed island and actual world configuration are now included. The current runtime is **NeoForge 21.1.259**; [the observed mod list](docs/MODLIST_SNAPSHOT.md) is an experimental snapshot that TeKatz will update periodically. A complete distributable export still needs a launcher manifest and any future recipes, quests, scripts and other required overrides. See [remaining files](docs/FILES_TO_IMPORT.md).
+Start with [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) for the live implementation boundary and [docs/README.md](docs/README.md) for the documentation map.
+
+## Active systems
+
+The current source includes:
+
+- Condenser Mark I, Stone Fragments, Mortar, Stone Meal and the adjacent Mixing Chamber with persistent filters and JEI recipe transfer;
+- the permanent Vanilla tool progression and Reinforced Netherite smithing path;
+- Forever Core, Ascension Chamber and persistent Perk Points;
+- persistent cross-world progression profiles with Skill Points, purchases, research, refunds and accounting;
+- the six-section K menu: Overview, Challenges, Shop, Research, Perks and Profile;
+- 20 active personal challenges worth 58 SP across Forever, AE2, Mekanism, Powah, Mystical Agriculture and combat/dimensions;
+- permanent Tier 0/I progression;
+- stable current-world identity, claims, purchase receipts and write-ahead transaction recovery;
+- the development-only Phase 3 current-world test entitlement;
+- the Design-2 K-menu visual/navigation overhaul through 0.13.4;
+- the corrected Condenser and Ascension machine models, animated internals and GUIs.
+
+Still deliberately inactive: repeatable contracts, Tier II-IV, valuable current-world shop packages/delivery, unresolved shared-machine challenge attribution and unapproved early-resource shortcuts.
+
+## Fixed pack state
+
+The final starting template is `pack/config/skyblockbuilder/templates/islands/forever_me_start.nbt`. Its layout, spawn and ME contents are protected by the repository rules unless TeKatz explicitly requests a revision. The selected spawn is `[8, 4, 5]` facing east; the 1k cell contains eight bread and one wheat seed.
+
+`pack/mods.inventory.json` and the mod-list documentation are **development snapshots**, not a launcher lockfile. The supplied 80-entry list predates the current Forever Skyblock mod version, so its `0.6.1` Forever Skyblock entry is historical evidence rather than the repository's current mod version.
 
 ## Repository layout
 
-| Path | Contents |
+| Path | Purpose |
 | --- | --- |
-| `mod/` | Complete standalone Gradle project for the Forever Skyblock mod |
-| `pack/` | Files to copy into the modpack instance directory |
-| `docs/ASCENSION.md` | Forever Core, Chamber, Perk Points, reset and profile migration |
-| `docs/SKILLS.md` | Persistent skills, scope, controls, storage and test steps |
-| `docs/WORLD_SHOP.md` | Stable world identity, purchase journal, test entitlement and phase-3 checks |
-| `docs/DESIGN.md` | Agreed direction and Expert pacing |
-| `docs/PROGRESSION.md` | Unconfirmed proposals for early material progression |
-| `docs/START_ISLAND.md` | Starting island, tested snapshot and planned changes |
-| `docs/MODS.md` | Runtime/build versions, separate repositories and snapshot policy |
-| `docs/MODLIST_SNAPSHOT.md` | Current enabled artifact list and historical runtime snapshot |
-| `docs/VALIDATION.md` | Completed checks and reproducibility limits |
-| `docs/CHANGELOG.md` | Project changes |
+| `mod/` | Standalone Gradle project for the Forever Skyblock mod |
+| `pack/` | Pack-owned configuration, data and fixed island files |
+| `docs/README.md` | Documentation index and source-of-truth rules |
+| `docs/CURRENT_STATE.md` | Current integrated implementation boundary |
+| `docs/DESIGN.md` | Agreed project direction and Expert pacing |
+| `docs/CHALLENGES.md` | Active challenge catalog and attribution rules |
+| `docs/K_MENU_DESIGN2.md` | Current K-menu visual/navigation design |
+| `docs/WORLD_SHOP.md` | Stable world identity and transaction safety |
+| `docs/VALIDATION.md` | Detailed automated and user-reported validation history |
+| `docs/CHANGELOG.md` | Version-level change summary |
+| `AGENTS.md` | Repository working rules |
 
-## Build the mod
+## Build and test
 
-Install Java 21, then run:
+Install Java 21, then run from `mod/`:
 
 ```sh
-cd mod
 ./gradlew build
 ```
 
-On Windows, use `gradlew.bat build`. The JAR is written to `mod/build/libs/`. A GitHub Actions workflow also builds the mod with Java 21 and provides the JAR as a build artifact.
+Windows:
 
-## Use the pack files
+```bat
+gradlew.bat build
+```
 
-Copy the **contents** of `pack/` into the instance directory with the dependencies matching the current snapshot. Consult [FILES_TO_IMPORT.md](docs/FILES_TO_IMPORT.md) before preparing a complete distribution. `mods.inventory.json` is an inventory, not a launcher manifest. Third-party mods will be included through the launcher and distribution platform selected later.
+The production JAR is written to `mod/build/libs/`. The GitHub Actions workflow also runs the dedicated Condenser tests and the NeoForge 21.1.259 integration suite with the current optional integrations.
 
-The initial import into `main` did not introduce new gameplay. Further features and balancing changes use working branches; see [AGENTS.md](AGENTS.md).
+## Pack completeness
 
-The current source includes the 0.5.0 Iron Jetpacks research system, 0.6.0 condenser mixing and the 0.6.1 chamber-rendering, JEI-transfer and Vanilla-tutorial updates; see [JETPACK_RESEARCH.md](docs/JETPACK_RESEARCH.md) and [CONDENSER_MIXING.md](docs/CONDENSER_MIXING.md). The current provisional inventory comes from TeKatz's 80-entry `Modliste.txt`, including Forever Skyblock 0.6.1; the earlier runtime log snapshot is archived separately.
+The fixed island and current world configuration are present. A complete distributable pack still needs the final launcher/export manifest plus any future authored quests, scripts and intentional configuration overrides. See [docs/FILES_TO_IMPORT.md](docs/FILES_TO_IMPORT.md).
 
-Version 0.8.0 combines the permanent-tool update from [PR #9](https://github.com/TeKatz/ForeverSkyblock/pull/9) with Ascension and Perk Points from [PR #10](https://github.com/TeKatz/ForeverSkyblock/pull/10). TeKatz authorized their integration into `main` on October 15, 2026; no release is published by this integration. The installed-mod snapshot remains the supplied 0.6.1 evidence until TeKatz provides a new list.
-
-
-## Meta-progression foundation branch
-
-The `feature/persistent-meta-progression` branch now contains 0.12.0. It retains the six-section K menu, 11 personal challenges, permanent Tier 0/I and the unmerged 0.9.1 machine GUI fixes. Phase 3 adds schema-4 world claims and receipts, a stable save identity, write-ahead purchase recovery and one harmless Tier-I/5-SP test entitlement with no item reward. Valuable products, item delivery, contracts, optional technology adapters and higher tiers remain later phases. See [WORLD_SHOP.md](docs/WORLD_SHOP.md), [CHALLENGES.md](docs/CHALLENGES.md) and [META_PROGRESSION.md](docs/META_PROGRESSION.md). Main remains separate until an explicitly requested merge.
+Feature work should happen on a bounded working branch. Merging into `main`, publishing releases and changing the protected starting island require TeKatz's explicit request; see [AGENTS.md](AGENTS.md).
