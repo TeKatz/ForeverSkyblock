@@ -61,11 +61,22 @@ public final class SkillGameTests {
             h.assertTrue(reset.equals(SkillNetwork.Request.CODEC.decode(buffer)), "Reset request round trips");
             buffer.clear();
             var state = new SkillNetwork.Snapshot(3, 2, Map.of(SkillCatalog.EXTENDED_REACH, 1),
-                    Set.of(MilestoneCatalog.FIRST_FOUNDATIONS.id()), true, true, true, "purchased", true);
+                    Set.of(MilestoneCatalog.FIRST_FOUNDATIONS.id()), true, true, true, "purchased", true, 1,
+                    Map.of("forever_skyblock:veteran", 630, "forever_skyblock:permanent_tools_i", 3),
+                    new de.tekatz.foreverskyblock.progression.MetaProgress.Accounting(12, 1, 5, 0, 1, 0, 10, true),
+                    true, "Phase 3 Test", Set.of(de.tekatz.foreverskyblock.progression.ShopCatalog.TEST_WORLD_ENTITLEMENT));
             SkillNetwork.Snapshot.CODEC.encode(buffer, state);
             h.assertTrue(state.equals(SkillNetwork.Snapshot.CODEC.decode(buffer)), "Authoritative profile snapshot round trips");
             h.succeed();
         } finally { buffer.release(); }
+    }
+    @GameTest(template = "empty")
+    public static void runningServerWorldIdentityIsStable(GameTestHelper h) throws Exception {
+        var root=h.getLevel().getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT);
+        var first=new de.tekatz.foreverskyblock.progression.WorldIdentityStore().loadOrCreate(root);
+        var second=new de.tekatz.foreverskyblock.progression.WorldIdentityStore().loadOrCreate(root);
+        h.assertTrue(first.equals(second),"The running save keeps one stable world identity");
+        h.succeed();
     }
     @GameTest(template = "empty")
     public static void resetRefundsAndRemovesReachWithoutRearmingMilestone(GameTestHelper h) {

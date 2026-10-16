@@ -20,14 +20,14 @@ public final class AscensionMenu extends AbstractContainerMenu {
         data = machine == null ? new SimpleContainerData(11) : machine.menuData();
         access = machine == null ? ContainerLevelAccess.NULL : ContainerLevelAccess.create(machine.getLevel(), machine.getBlockPos());
         var input = machine == null ? new ItemStackHandler(1) : machine.inventory();
-        addSlot(new SlotItemHandler(input, 0, 25, 38) {
+        addSlot(new SlotItemHandler(input, 0, 54, 58) {
             @Override public boolean mayPlace(ItemStack stack) { return !busy() && stack.is(ForeverSkyblock.FOREVER_CORE.get()) && stack.getCount() >= 1; }
             @Override public boolean mayPickup(Player player) { return !busy(); }
             @Override public int getMaxStackSize() { return 1; }
         });
         for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++)
-            addSlot(new Slot(player, col + row * 9 + 9, 8 + col * 18, 144 + row * 18));
-        for (int col = 0; col < 9; col++) addSlot(new Slot(player, col, 8 + col * 18, 202));
+            addSlot(new Slot(player, col + row * 9 + 9, MachineLayout.ASCENSION.inventoryX(col), MachineLayout.ASCENSION.inventoryRowY(row)));
+        for (int col = 0; col < 9; col++) addSlot(new Slot(player, col, MachineLayout.ASCENSION.inventoryX(col), MachineLayout.ASCENSION.hotbarY()));
         addDataSlots(data);
     }
     public int progress() { return data.get(0); }

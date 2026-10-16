@@ -1,53 +1,40 @@
 package de.tekatz.foreverskyblock;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class AscensionModelTest {
-    private record Box(double[] lo, double[] hi) { }
-    private record Face(int axis, double plane, double[] lo, double[] hi) { }
-    private static double[] vector(JsonArray values) { return new double[]{values.get(0).getAsDouble(), values.get(1).getAsDouble(), values.get(2).getAsDouble()}; }
-    @Test void exposedMeshHasNoOverlappingSolidsOrCoplanarFacesAndOnlyBoundaryCulling() throws Exception {
-        try (var stream = getClass().getResourceAsStream("/assets/forever_skyblock/models/block/ascension_chamber.json")) {
-            assertNotNull(stream);
-            var model = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
-            List<Box> boxes = new ArrayList<>(); List<Face> faces = new ArrayList<>(); double volume = 0;
-            for (var raw : model.getAsJsonArray("elements")) {
-                JsonObject element = raw.getAsJsonObject(); double[] lo = vector(element.getAsJsonArray("from")), hi = vector(element.getAsJsonArray("to"));
-                for (int axis = 0; axis < 3; axis++) assertTrue(lo[axis] >= 0 && hi[axis] <= 16 && lo[axis] < hi[axis]);
-                volume += (hi[0] - lo[0]) * (hi[1] - lo[1]) * (hi[2] - lo[2]);
-                boxes.add(new Box(lo, hi));
-                for (var entry : element.getAsJsonObject("faces").entrySet()) {
-                    String direction = entry.getKey(); int axis = switch (direction) { case "west", "east" -> 0; case "down", "up" -> 1; default -> 2; };
-                    boolean positive = List.of("east", "up", "south").contains(direction);
-                    double plane = positive ? hi[axis] : lo[axis];
-                    var face = entry.getValue().getAsJsonObject();
-                    if (face.has("cullface")) {
-                        assertEquals(direction, face.get("cullface").getAsString());
-                        assertEquals(positive ? 16 : 0, plane, "Inset surfaces must not be culled by unrelated neighbor faces");
+    private record Face(int axis,double plane,boolean positive,double[] lo,double[] hi) { }
+    private static double[] vector(JsonArray a) { return new double[]{a.get(0).getAsDouble(),a.get(1).getAsDouble(),a.get(2).getAsDouble()}; }
+    @Test void bothRecessedHousingsHaveDisjointExteriorFacesAndOnlyBoundaryCulling() throws Exception {
+        for(String name:List.of("condenser_mark_i","ascension_chamber")) for(String suffix:List.of("","_active")) {
+            try(var stream=getClass().getResourceAsStream("/assets/forever_skyblock/models/block/"+name+suffix+".json")) {
+                assertNotNull(stream);var model=JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
+                List<Face> faces=new ArrayList<>();double volume=0,backArea=0;
+                assertTrue(model.getAsJsonArray("elements").size()<180,"Greedy meshing must not retain thousands of voxel faces");
+                for(var raw:model.getAsJsonArray("elements")) {
+                    var e=raw.getAsJsonObject();double[] lo=vector(e.getAsJsonArray("from")),hi=vector(e.getAsJsonArray("to"));
+                    for(int a=0;a<3;a++)assertTrue(lo[a]>=0&&hi[a]<=16&&lo[a]<=hi[a]);
+                    for(var entry:e.getAsJsonObject("faces").entrySet()) {
+                        String d=entry.getKey();int axis=switch(d){case "east","west"->0;case "up","down"->1;default->2;};
+                        boolean positive=List.of("east","up","south").contains(d);double plane=lo[axis];assertEquals(plane,hi[axis]);
+                        double area=1;for(int a=0;a<3;a++)if(a!=axis){assertTrue(hi[a]>lo[a]);area*=hi[a]-lo[a];}
+                        var face=entry.getValue().getAsJsonObject();if(face.has("cullface")){assertEquals(d,face.get("cullface").getAsString());assertEquals(positive?16:0,plane);}
+                        for(var uv:face.getAsJsonArray("uv"))assertTrue(uv.getAsDouble()>=0&&uv.getAsDouble()<=16);
+                        faces.add(new Face(axis,plane,positive,lo,hi));volume+=(positive?1:-1)*plane*area/3;
+                        if(d.equals("south")&&plane==16)backArea+=area;
                     }
-                    faces.add(new Face(axis, plane, lo, hi));
                 }
-            }
-            assertEquals(4096, volume, "Closed housing fills exactly one block");
-            for (int i = 0; i < boxes.size(); i++) for (int k = i + 1; k < boxes.size(); k++) {
-                Box a = boxes.get(i), b = boxes.get(k); boolean intersects = true;
-                for (int axis = 0; axis < 3; axis++) intersects &= Math.min(a.hi()[axis], b.hi()[axis]) > Math.max(a.lo()[axis], b.lo()[axis]);
-                assertFalse(intersects, "Wood and stone volumes must not overlap");
-            }
-            for (int i = 0; i < faces.size(); i++) for (int k = i + 1; k < faces.size(); k++) {
-                Face a = faces.get(i), b = faces.get(k);
-                if (a.axis() != b.axis() || a.plane() != b.plane()) continue;
-                boolean overlaps = true;
-                for (int axis = 0; axis < 3; axis++) if (axis != a.axis()) overlaps &= Math.min(a.hi()[axis], b.hi()[axis]) > Math.max(a.lo()[axis], b.lo()[axis]);
-                assertFalse(overlaps, "Coplanar overlapping faces cause z-fighting");
+                assertEquals(256,backArea,.00001,"The chamber must have a fully closed solid rear wall");
+                assertTrue(volume>3000&&volume<4096,"A real front recess must remain inside an otherwise solid housing");
+                for(int i=0;i<faces.size();i++)for(int j=i+1;j<faces.size();j++) {
+                    Face a=faces.get(i),b=faces.get(j);if(a.axis()!=b.axis()||a.plane()!=b.plane())continue;
+                    boolean overlap=true;for(int axis=0;axis<3;axis++)if(axis!=a.axis())overlap&=Math.min(a.hi()[axis],b.hi()[axis])-Math.max(a.lo()[axis],b.lo()[axis])>1e-6;
+                    assertFalse(overlap,"Coplanar overlaps cause flickering faces: "+name);
+                }
             }
         }
     }

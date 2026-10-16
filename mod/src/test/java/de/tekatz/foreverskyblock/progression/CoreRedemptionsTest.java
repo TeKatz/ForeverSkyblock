@@ -72,7 +72,7 @@ final class CoreRedemptionsTest {
         assertEquals(1, migrated.rank("forever_skyblock:jetpacks_end_game")); assertEquals(1, migrated.milestones().size());
         store.update(id, state -> state.grant(1));
         assertEquals(48, new ProfileStore(root).load(id).points());
-        assertTrue(Files.readString(root.resolve(id + ".json")).contains("\"schema_version\": 2"));
+        assertTrue(Files.readString(root.resolve(id + ".json")).contains("\"schema_version\": 4"));
     }
     @Test void racingRedemptionsAndFailedLimitCannotDuplicateOrLoseTheClaim() throws Exception {
         var profiles = new ProfileStore(root.resolve("profiles"));

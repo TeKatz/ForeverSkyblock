@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.12.0 — Current-world shop safety (phase 3)
+
+- Persist one stable hidden UUID in each save with independent primary/backup validation. Restarts and folder renames retain identity; copies intentionally retain claims; genuinely new saves receive a new identity. Conflicts fail closed.
+- Extend profiles to bounded schema 4 world claims and immutable purchase receipts while preserving valid schema-1/2/3 migration, balances, purchases, challenge evidence, tiers, accounting and Core receipts.
+- Add write-ahead purchase journals so a committed SP debit, claim and receipt recover together after every tested crash cut. Repeated and concurrent requests resolve to one purchase.
+- Add an owner/operator-only Phase 3 Test Entitlement in Shop → Current World: Tier I, 5 SP, one claim per world, confirmation required, non-refundable and deliberately no item/gameplay reward.
+- Update the bounded network protocol to `skills-6` with authoritative friendly world status and claim summaries. Raw world UUIDs are not displayed or sent for ordinary UI decisions.
+- Pass the Java 21 build, pure identity/purchase tests and all 48 required GameTests in both the baseline and NeoForge 21.1.259 integration runs. No condenser, Ascension, recipe, texture or fixed-island content changed. Real package contents, prices and item delivery remain deferred; no main merge or release.
+
+## 0.11.0 — Personal challenge progression (phase 2)
+
+- Activate 11 unique challenges / 34 SP including the existing Foundations point; track distinct Stone/Iron tools and 1,000 personally credited Monster kills across worlds.
+- Verify real recipe IDs/ingredients and use personal crafting/smithing and kill triggers, including AE2 manual crafting. Reject FakePlayers, automatic crafts and nearby-player boss credit.
+- Migrate valid v1/v2 profiles to schema 3 without re-awarding existing claims; preserve balances, purchases, research, Core receipts and unknown IDs. Keep the established v1 Creative refund.
+- Persist monotonic Tier 0/I independently of currency and respec; track new earned/spent/refunded/admin currency with honest legacy-history status.
+- Show live progress, combat categories, permanent tier status and accounting in EN/DE. Protocol skills-5 requires matching client/server versions.
+- Refuse ambiguous corrupt/missing-primary recovery instead of silently accepting stale backups; phase-3 journal recovery remains pending.
+- Add migration, failure, replay and real-menu/combat integration tests. Source `9349cae` passed the Java 21 build, pure tests and all 46 required GameTests in both loader runs; the verified artifact details are in VALIDATION.md. Retain all machine GUI fixes; no main merge or release.
+
+## 0.10.0 — Persistent progression navigation foundation (phase 1)
+
+- Add the architecture and staged acceptance gates in [META_PROGRESSION.md](META_PROGRESSION.md), based on the complete Shop/Challenges handoff.
+- Replace the four flat K-menu tabs with Overview, Challenges, Shop, Research, Perks and Profile; use compact navigation at narrow GUI sizes.
+- Add a live overview, populated challenge categories, title/description search, open/completed filters, a challenge detail view, and clearly separated Permanent/Current World/Tier Progress shop sections.
+- Keep Extended Reach, all four Jetpack research stages, dual-currency Creative research and confirmed refunds working through the unchanged server handlers. Show long descriptions inline and move owner/operator test controls to Profile.
+- Describe contracts, future world purchases and tier design as not active; do not fabricate tier/history/claim data. Preserve schema 2, protocol skills-4, all progression rules, machine visuals and pack files.
+- Add responsive-layout checks. Build, unit/layout checks and both dedicated-server suites passed (42 required GameTests each); client EN/DE, GUI-scale, search and JEI checks remain manual. No main merge or release.
+
+## 0.9.1 — Machine GUI corrections (test branch)
+
+- Follow up on TeKatz's 0.9.0 screenshots: restore native 16-pixel machine items and counts, raise and center the Forever Core label, and replace the distorted inner core-slot border with a symmetric inset.
+- Remove both Inventory headings; move every player inventory row and hotbar up together (6 logical pixels for the Condenser, 8 for Ascension), using the same coordinates for rendering and menu interaction.
+- Center input/output labels above their actual slots, including the optional Mixing Chamber input; make enabled button hover/focus visible through a brighter fill and full inset border.
+- Retain the 0.9.0 block models, animations, recipes and progression. This update is on feature/machine-visual-overhaul, not main.
+- Validation: build and existing layout/GameTest checks are required for the delivered artifact. Actual client appearance and mouse interaction await TeKatz's next in-game test.
+
 ## 0.8.0 — Ascension and Perk Points
 
 - Add a Forever Core, an animated Ascension Chamber and personal conversion of one Core to one persistent Perk Point.

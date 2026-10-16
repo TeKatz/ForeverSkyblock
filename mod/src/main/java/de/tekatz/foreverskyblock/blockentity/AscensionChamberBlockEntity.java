@@ -25,13 +25,34 @@ public final class AscensionChamberBlockEntity extends BlockEntity implements Me
     public static final int READY = 0, RUNNING = 1, OFFLINE = 2, STORAGE_ERROR = 3, INVALID = 4, CLAIMED = 5, COMPLETE = 6;
     private UUID owner, core;
     private int progress, status;
+    private boolean visualDirty = true;
+    private long lastVisualSync, visualReceivedAt;
+    public float visualProgress(float partialTick) {
+        if (level == null) return progress;
+        boolean active = getBlockState().getValue(AscensionChamberBlock.ACTIVE);
+        float elapsed = level.isClientSide && active ? Math.max(0, level.getGameTime() - visualReceivedAt) + partialTick : 0;
+        return Math.min(DURATION, progress + elapsed);
+    }
+    private void syncVisual() {
+        if (level == null || level.isClientSide) return;
+        long now = level.getGameTime();
+        boolean active = getBlockState().getValue(AscensionChamberBlock.ACTIVE);
+        if (visualDirty || active && now - lastVisualSync >= 20) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2);
+            visualDirty = false; lastVisualSync = now;
+        }
+    }
+    @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    }
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) { return saveWithoutMetadata(registries); }
     private final ItemStackHandler inventory = new ItemStackHandler(1) {
         @Override public int getSlotLimit(int slot) { return 1; }
         @Override public boolean isItemValid(int slot, ItemStack stack) { return !busy() && stack.is(ForeverSkyblock.FOREVER_CORE.get()); }
         @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
             return busy() ? ItemStack.EMPTY : super.extractItem(slot, amount, simulate);
         }
-        @Override protected void onContentsChanged(int slot) { setChanged(); }
+        @Override protected void onContentsChanged(int slot) { setChanged(); visualDirty = true; }
     };
     // Expose the read/insert/extract contract only; external pipes cannot replace a locked stack directly.
     private final IItemHandler automation = new IItemHandler() {
@@ -64,10 +85,14 @@ public final class AscensionChamberBlockEntity extends BlockEntity implements Me
         if (level == null || level.isClientSide || player.server != level.getServer() || busy()) return false;
         UUID identity = ForeverCore.identity(inventory.getStackInSlot(0));
         if (identity == null) { status = INVALID; setChanged(); return false; }
-        owner = player.getUUID(); core = identity; progress = 0; status = RUNNING; setChanged();
+        visualDirty = true; owner = player.getUUID(); core = identity; progress = 0; status = RUNNING; setChanged();
         return true;
     }
     public static void tick(Level level, BlockPos pos, BlockState state, AscensionChamberBlockEntity chamber) {
+        tickOperation(level, chamber);
+        chamber.syncVisual();
+    }
+    private static void tickOperation(Level level, AscensionChamberBlockEntity chamber) {
         if (!chamber.busy()) { chamber.active(false); return; }
         var player = level.getServer().getPlayerList().getPlayer(chamber.owner);
         if (player == null) { chamber.status = OFFLINE; chamber.active(false); return; }
@@ -93,10 +118,10 @@ public final class AscensionChamberBlockEntity extends BlockEntity implements Me
             com.mojang.logging.LogUtils.getLogger().error("Ascension could not commit the Core at {}", worldPosition, e);
         }
     }
-    private void finish(int result) { owner = null; core = null; progress = 0; status = result; active(false); setChanged(); }
+    private void finish(int result) { visualDirty = true; owner = null; core = null; progress = 0; status = result; active(false); setChanged(); }
     private void active(boolean value) {
         if (level != null && getBlockState().getValue(AscensionChamberBlock.ACTIVE) != value)
-            level.setBlock(worldPosition, getBlockState().setValue(AscensionChamberBlock.ACTIVE, value), 3);
+            { visualDirty = true; level.setBlock(worldPosition, getBlockState().setValue(AscensionChamberBlock.ACTIVE, value), 3); }
     }
     @Override protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
@@ -105,6 +130,7 @@ public final class AscensionChamberBlockEntity extends BlockEntity implements Me
     }
     @Override protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        visualReceivedAt = level == null ? 0 : level.getGameTime();
         owner = null; core = null; progress = 0; status = READY;
         inventory.deserializeNBT(registries, tag.getCompound("Inventory"));
         if (tag.hasUUID("Owner") && tag.hasUUID("Core")) {

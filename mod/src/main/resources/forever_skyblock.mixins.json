@@ -10,9 +10,20 @@
     "JetpackFlightMixin",
     "Ae2CraftingSlotMixin",
     "Ae2PatternMixin",
+    "Ae2CraftingCpuMixin",
+    "MekanismDigitalMinerMixin",
+    "PowahEnergizingOrbMixin",
     "InfiniteToolMixin",
     "ToolRecipeManagerMixin",
-    "ToolRepairRecipeMixin"
+    "ToolRepairRecipeMixin",
+    "PersonalCraftMixin",
+    "PersonalKillMixin"
+  ],
+  "client": [
+    "PremiumSkillScreenVisualMixin",
+    "PremiumChallengeCardVisualMixin",
+    "PremiumCategoryButtonVisualMixin",
+    "PremiumChromeButtonVisualMixin"
   ],
   "injectors": {
     "defaultRequire": 1

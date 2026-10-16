@@ -37,13 +37,34 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     private ResourceLocation progressRecipe;
     private final ItemStack[] filters = { ItemStack.EMPTY, ItemStack.EMPTY };
     private final RecipeManager.CachedCheck<CondenserInput, CondenserRecipe> recipeCheck = RecipeManager.createCheck(ForeverSkyblock.CONDENSING.get());
+    private boolean visualDirty = true;
+    private long lastVisualSync, visualReceivedAt;
+    public float visualProgress(float partialTick) {
+        if (level == null) return progress;
+        boolean active = getBlockState().getValue(CondenserBlock.ACTIVE);
+        float elapsed = level.isClientSide && active ? Math.max(0, level.getGameTime() - visualReceivedAt) + partialTick : 0;
+        return (progress + elapsed) % Math.max(1, duration);
+    }
+    private void syncVisual() {
+        if (level == null || level.isClientSide) return;
+        long now = level.getGameTime();
+        boolean active = getBlockState().getValue(CondenserBlock.ACTIVE);
+        if (visualDirty || active && now - lastVisualSync >= 20) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2);
+            visualDirty = false; lastVisualSync = now;
+        }
+    }
+    @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    }
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) { return saveWithoutMetadata(registries); }
     private final ItemStackHandler inventory = new ItemStackHandler(3) {
         @Override public int getSlotLimit(int slot) { return 64; }
         @Override public boolean isItemValid(int slot, ItemStack stack) {
             return isInput(slot) && (slot != SECOND_INPUT || hasModule()) && level != null
                     && acceptsInput(level, stack, hasModule()) && acceptsFilter(slot, stack);
         }
-        @Override protected void onContentsChanged(int slot) { setChanged(); }
+        @Override protected void onContentsChanged(int slot) { setChanged(); visualDirty = true; }
     };
     private final IItemHandler inputAccess = new Automation(true, false);
     private final IItemHandler outputAccess = new Automation(false, true);
@@ -63,6 +84,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         @Override public int getCount() { return DATA_COUNT; }
     };
     public CondenserBlockEntity(BlockPos pos, BlockState state) { super(ForeverSkyblock.CONDENSER_ENTITY.get(), pos, state); }
+    public int visualDuration() { return duration; }
     public ItemStackHandler inventory() { return inventory; }
     public ContainerData menuData() { return data; }
     public static boolean isInput(int slot) { return slot == INPUT || slot == SECOND_INPUT; }
@@ -100,7 +122,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         return recipeCheck.getRecipeFor(new CondenserInput(inventory.getStackInSlot(INPUT),
                 hasModule() ? inventory.getStackInSlot(SECOND_INPUT) : ItemStack.EMPTY), level).orElse(null);
     }
-    public static void tick(Level level, BlockPos pos, BlockState state, CondenserBlockEntity machine) { machine.process(); }
+    public static void tick(Level level, BlockPos pos, BlockState state, CondenserBlockEntity machine) { machine.process(); machine.syncVisual(); }
     private void process() {
         RecipeHolder<CondenserRecipe> holder = findRecipe();
         if (holder == null) {
@@ -130,7 +152,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     }
     private void setActive(boolean active) {
         if (level != null && getBlockState().getValue(CondenserBlock.ACTIVE) != active)
-            level.setBlock(worldPosition, getBlockState().setValue(CondenserBlock.ACTIVE, active), 3);
+            { visualDirty = true; level.setBlock(worldPosition, getBlockState().setValue(CondenserBlock.ACTIVE, active), 3); }
     }
     @Override protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
@@ -142,6 +164,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     }
     @Override protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        visualReceivedAt = level == null ? 0 : level.getGameTime();
         CompoundTag saved = tag.getCompound("Inventory").copy();
         saved.putInt("Size", 3);
         inventory.deserializeNBT(registries, saved);

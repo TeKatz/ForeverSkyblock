@@ -20,8 +20,12 @@ public final class CondenserJeiPlugin implements IModPlugin {
     public static final RecipeType<RecipeHolder<CondenserRecipe>> TYPE = RecipeType.createRecipeHolderType(
             ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "condensing"));
     @Override public ResourceLocation getPluginUid() { return ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "jei"); }
-    @Override public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime runtime) { JetpackJeiVisibility.available(runtime); }
-    @Override public void onRuntimeUnavailable() { JetpackJeiVisibility.unavailable(); if (transfers != null) transfers.clearPending(); }
+    @Override public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime runtime) { JetpackJeiVisibility.available(runtime);
+        de.tekatz.foreverskyblock.client.ClientMachineRecipes.install(
+                () -> runtime.getRecipesGui().showTypes(java.util.List.of(TYPE)),
+                () -> runtime.getRecipesGui().showTypes(java.util.List.of(AscensionCategory.TYPE)));
+    }
+    @Override public void onRuntimeUnavailable() { de.tekatz.foreverskyblock.client.ClientMachineRecipes.clear(); JetpackJeiVisibility.unavailable(); if (transfers != null) transfers.clearPending(); }
     @Override public void registerCategories(IRecipeCategoryRegistration registration) {
         registration.addRecipeCategories(new AscensionCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CondensingCategory(registration.getJeiHelpers().getGuiHelper()));
@@ -41,8 +45,6 @@ public final class CondenserJeiPlugin implements IModPlugin {
         registration.addRecipeTransferHandler(transfers, TYPE);
     }
     @Override public void registerGuiHandlers(IGuiHandlerRegistration registration) {
-        registration.addRecipeClickArea(de.tekatz.foreverskyblock.client.AscensionScreen.class, 50, 59, 107, 6, AscensionCategory.TYPE);
         registration.addGhostIngredientHandler(CondenserScreen.class, new CondenserGhostHandler());
-        registration.addRecipeClickArea(CondenserScreen.class, 77, 40, 38, 18, TYPE);
     }
 }

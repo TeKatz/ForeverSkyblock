@@ -47,16 +47,17 @@ class ProfileStoreTest {
         assertEquals(0, store.load(second).points());
         assertEquals(1, new ProfileStore(root).load(first).points());
     }
-    @Test void corruptPrimaryRecoversValidatedBackup() throws Exception {
-        UUID id = UUID.randomUUID();
-        ProfileStore store = new ProfileStore(root);
+    @Test void corruptPrimaryDoesNotSilentlyRollbackToStaleBackup() throws Exception {
+        UUID id = UUID.randomUUID(); ProfileStore store = new ProfileStore(root);
         store.update(id, state -> state.award(MILESTONE, 1));
         store.update(id, state -> state.purchase(SKILL, 1, 1));
+        String previousBackup = Files.readString(root.resolve(id + ".json.bak"));
         Files.writeString(store.file(id), "corrupted");
-        ProfileStore recovered = new ProfileStore(root);
-        assertEquals(1, recovered.load(id).points());
-        assertEquals(1, recovered.update(id, state -> state.purchase(SKILL, 1, 1)).rank(SKILL));
-        assertEquals(1, new ProfileStore(root).load(id).rank(SKILL));
+        assertThrows(IOException.class, () -> new ProfileStore(root).load(id));
+        assertEquals("corrupted", Files.readString(store.file(id)));
+        assertEquals(previousBackup, Files.readString(root.resolve(id + ".json.bak")));
+        Files.delete(store.file(id));
+        assertThrows(IOException.class, () -> new ProfileStore(root).load(id));
     }
     @Test void corruptOrFutureProfilesAreNeverSilentlyReset() throws Exception {
         UUID id = UUID.randomUUID();
@@ -64,9 +65,9 @@ class ProfileStoreTest {
         Files.writeString(store.file(id), "corrupt");
         assertThrows(IOException.class, () -> store.update(id, state -> state.award(MILESTONE, 1)));
         assertEquals("corrupt", Files.readString(store.file(id)));
-        Files.writeString(store.file(id), "{\"schema_version\":3}");
+        Files.writeString(store.file(id), "{\"schema_version\":5}");
         assertThrows(IOException.class, () -> new ProfileStore(root).update(id, state -> state.award(MILESTONE, 1)));
-        assertEquals("{\"schema_version\":3}", Files.readString(store.file(id)));
+        assertEquals("{\"schema_version\":5}", Files.readString(store.file(id)));
     }
     @Test void failedWriteDoesNotCommitAnInMemoryReward() throws Exception {
         Path blocked = root.resolve("blocked"); Files.writeString(blocked, "not a directory");

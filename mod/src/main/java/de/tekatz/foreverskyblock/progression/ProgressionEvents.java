@@ -10,6 +10,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
@@ -21,7 +22,19 @@ public final class ProgressionEvents {
         if (event.getEntity() instanceof ServerPlayer player) ProgressionService.logout(player.server, player.getUUID());
     }
     @SubscribeEvent public static void respawn(PlayerEvent.PlayerRespawnEvent event) { refresh(event); }
-    @SubscribeEvent public static void dimension(PlayerEvent.PlayerChangedDimensionEvent event) { refresh(event); }
+    @SubscribeEvent public static void dimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player && ChallengeEvents.realPlayer(player)) {
+            var definition = event.getTo().equals(net.minecraft.world.level.Level.NETHER) ? ChallengeRules.NETHER
+                    : event.getTo().equals(net.minecraft.world.level.Level.END) ? ChallengeRules.END : null;
+            if (definition != null) ProgressionService.get(player.server).evidence(player,
+                    java.util.List.of(ChallengeEvents.Evidence.completed(definition)));
+        }
+        refresh(event);
+    }
+    @SubscribeEvent public static void containerOpened(PlayerContainerEvent.Open event) {
+        if (event.getEntity() instanceof ServerPlayer player)
+            TechChallengeEvents.wirelessCraftingOpened(player, event.getContainer());
+    }
     private static void refresh(PlayerEvent event) {
         if (event.getEntity() instanceof ServerPlayer player && !(player instanceof FakePlayer))
             ProgressionService.get(player.server).login(player);
@@ -29,7 +42,7 @@ public final class ProgressionEvents {
     @SubscribeEvent public static void crafted(PlayerEvent.ItemCraftedEvent event) {
         if (event.getEntity() instanceof ServerPlayer player && !(player instanceof FakePlayer)
                 && MilestoneCatalog.isFragmentCraft(event.getCrafting(), event.getInventory()))
-            ProgressionService.get(player.server).award(player, MilestoneCatalog.FIRST_FOUNDATIONS);
+            ProgressionService.get(player.server).evidence(player, java.util.List.of(ChallengeEvents.Evidence.completed(ChallengeRules.FOUNDATIONS)));
     }
     @SubscribeEvent public static void stopped(ServerStoppedEvent event) { ProgressionService.stop(event.getServer()); }
     @SubscribeEvent public static void commands(RegisterCommandsEvent event) {

@@ -30,11 +30,14 @@ public final class ClientSkills {
     public static void accept(SkillNetwork.Snapshot value) {
         var minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.level == null) return;
+        boolean firstSnapshot = snapshot == null;
+        int oldStage = jetpackStage();
         snapshot = value;
         pending = false;
-        visibilityChanged.run();
-        if (value.open() && !(minecraft.screen instanceof SkillScreen)) minecraft.setScreen(new SkillScreen());
-        if (minecraft.screen instanceof SkillScreen screen) screen.refresh();
+        // Counter-only snapshots must not rebuild JEI's research visibility on every mob kill.
+        if (firstSnapshot || oldStage != jetpackStage()) visibilityChanged.run();
+        if (value.open() && !(minecraft.screen instanceof PremiumSkillScreen)) minecraft.setScreen(new PremiumSkillScreen());
+        if (minecraft.screen instanceof PremiumSkillScreen screen) screen.refresh();
     }
     public static void buy(String skill) {
         if (pending) return;
@@ -50,6 +53,11 @@ public final class ClientSkills {
         if (pending || snapshot == null || !snapshot.canTestPoints()) return;
         pending = true;
         PacketDistributor.sendToServer(new SkillNetwork.Request(3, ""));
+    }
+    public static void buyProduct(String product) {
+        if (pending) return;
+        pending = true;
+        PacketDistributor.sendToServer(new SkillNetwork.Request(4, product));
     }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         var minecraft = Minecraft.getInstance();

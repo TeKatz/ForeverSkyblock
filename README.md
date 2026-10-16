@@ -24,6 +24,7 @@ The fixed island and actual world configuration are now included. The current ru
 | `pack/` | Files to copy into the modpack instance directory |
 | `docs/ASCENSION.md` | Forever Core, Chamber, Perk Points, reset and profile migration |
 | `docs/SKILLS.md` | Persistent skills, scope, controls, storage and test steps |
+| `docs/WORLD_SHOP.md` | Stable world identity, purchase journal, test entitlement and phase-3 checks |
 | `docs/DESIGN.md` | Agreed direction and Expert pacing |
 | `docs/PROGRESSION.md` | Unconfirmed proposals for early material progression |
 | `docs/START_ISLAND.md` | Starting island, tested snapshot and planned changes |
@@ -52,3 +53,8 @@ The initial import into `main` did not introduce new gameplay. Further features 
 The current source includes the 0.5.0 Iron Jetpacks research system, 0.6.0 condenser mixing and the 0.6.1 chamber-rendering, JEI-transfer and Vanilla-tutorial updates; see [JETPACK_RESEARCH.md](docs/JETPACK_RESEARCH.md) and [CONDENSER_MIXING.md](docs/CONDENSER_MIXING.md). The current provisional inventory comes from TeKatz's 80-entry `Modliste.txt`, including Forever Skyblock 0.6.1; the earlier runtime log snapshot is archived separately.
 
 Version 0.8.0 combines the permanent-tool update from [PR #9](https://github.com/TeKatz/ForeverSkyblock/pull/9) with Ascension and Perk Points from [PR #10](https://github.com/TeKatz/ForeverSkyblock/pull/10). TeKatz authorized their integration into `main` on October 15, 2026; no release is published by this integration. The installed-mod snapshot remains the supplied 0.6.1 evidence until TeKatz provides a new list.
+
+
+## Meta-progression foundation branch
+
+The `feature/persistent-meta-progression` branch now contains 0.12.0. It retains the six-section K menu, 11 personal challenges, permanent Tier 0/I and the unmerged 0.9.1 machine GUI fixes. Phase 3 adds schema-4 world claims and receipts, a stable save identity, write-ahead purchase recovery and one harmless Tier-I/5-SP test entitlement with no item reward. Valuable products, item delivery, contracts, optional technology adapters and higher tiers remain later phases. See [WORLD_SHOP.md](docs/WORLD_SHOP.md), [CHALLENGES.md](docs/CHALLENGES.md) and [META_PROGRESSION.md](docs/META_PROGRESSION.md). Main remains separate until an explicitly requested merge.
