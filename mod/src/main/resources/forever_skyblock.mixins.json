@@ -20,7 +20,9 @@
     "PersonalKillMixin"
   ],
   "client": [
-    "PremiumSkillScreenVisualMixin"
+    "PremiumSkillScreenVisualMixin",
+    "PremiumChallengeCardVisualMixin",
+    "PremiumCategoryButtonVisualMixin"
   ],
   "injectors": {
     "defaultRequire": 1
