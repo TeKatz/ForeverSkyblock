@@ -18,11 +18,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Final Design-2 polish layer for the K-menu.
+ * Design-2 presentation layer for the K-menu.
  *
- * <p>The underlying screen keeps owning layout, controls and data flow. This mixin deliberately
- * changes only presentation: the mockup-style header, richer panel depth, glow treatment and
- * progress bars. Keeping the visual pass isolated avoids touching progression behaviour.</p>
+ * <p>The underlying screen continues to own layout, controls and authoritative progression data.
+ * This mixin only refines visual hierarchy, spacing, depth and mockup-style header treatment.</p>
  */
 @Mixin(PremiumSkillScreen.class)
 public abstract class PremiumSkillScreenVisualMixin {
@@ -31,11 +30,7 @@ public abstract class PremiumSkillScreenVisualMixin {
     private static final int MUTED = 0xFF93A9BC;
     private static final int DIM = 0xFF60788D;
     private static final int CYAN = 0xFF2CCBFF;
-    private static final int CYAN_LIGHT = 0xFF7DEBFF;
     private static final int GOLD = 0xFFFFC447;
-    private static final int GREEN = 0xFF48E58A;
-    private static final int NAVY = 0xE607121E;
-    private static final int PANEL = 0xE80A1825;
     private static final int BORDER = 0xFF25455D;
 
     @Shadow private PremiumMenuLayout layout;
@@ -51,7 +46,6 @@ public abstract class PremiumSkillScreenVisualMixin {
         int headerBottom = y + layout.navTop() - 5;
         int headerHeight = Math.max(34, headerBottom - top);
 
-        // Deep translucent shell with a cool inner rim and a real drop shadow.
         g.fill(x - 3, y + 4, x + layout.width() + 3, y + layout.height() + 5, 0x76000000);
         g.fill(x - 1, y - 1, x + layout.width() + 1, y + layout.height() + 1, 0xA9000710);
         panel(g, x, y, layout.width(), layout.height(), 0xE405101B, 0xFF284A62);
@@ -60,25 +54,23 @@ public abstract class PremiumSkillScreenVisualMixin {
 
         boolean compact = layout.compact();
         int closeSpace = 22;
-        int infoW = !layout.tiny() && layout.width() >= 600 ? (compact ? 74 : 98) : 0;
+        int infoW = !layout.tiny() && layout.width() >= 600 ? (compact ? 76 : 98) : 0;
         int brandW = compact ? Math.min(146, layout.width() / 4) : 198;
 
-        // Logo / identity area. The larger type hierarchy mirrors the approved mockup instead of
-        // looking like two ordinary text labels.
+        // Brand panel: keep the hierarchy clean. The previous decorative sparkles looked detached
+        // from the logo at scale 3, so the visual weight now comes from the block, type and glow.
         panel(g, left, top, brandW, headerHeight, 0xB9091825, 0x00234258);
-        ambientGlow(g, left + 17, top + headerHeight / 2, Math.min(54, brandW / 3), 0x2A1DCAFF);
-        renderScaledItem(g, Items.GRASS_BLOCK.getDefaultInstance(), left + 7, top + Math.max(5, (headerHeight - 23) / 2), 1.35F);
-        float logoScale = compact ? 0.92F : 1.08F;
+        ambientGlow(g, left + 18, top + headerHeight / 2, Math.min(50, brandW / 3), 0x241DCAFF);
+        renderScaledItem(g, Items.GRASS_BLOCK.getDefaultInstance(), left + 7,
+                top + Math.max(5, (headerHeight - 23) / 2), compact ? 1.35F : 1.48F);
         text(g, font, Component.literal("FOREVER").withStyle(ChatFormatting.BOLD), left + 34, top + 7,
-                WHITE, logoScale, brandW - 39, true);
+                WHITE, compact ? 0.90F : 1.08F, brandW - 39, true);
         text(g, font, Component.literal("SKYBLOCK").withStyle(ChatFormatting.BOLD), left + 34,
-                top + (compact ? 22 : 25), CYAN, compact ? 0.96F : 1.14F, brandW - 39, true);
+                top + (compact ? 21 : 25), CYAN, compact ? 1.02F : 1.14F, brandW - 39, true);
         if (!compact) {
             text(g, font, Component.literal("SKILLS  •  CHALLENGES  •  PROGRESS"), left + 34, top + 45,
                     DIM, 0.52F, brandW - 40, false);
         }
-        sparkle(g, left + brandW - 17, top + 8, CYAN_LIGHT);
-        sparkle(g, left + brandW - 29, top + headerHeight - 13, 0xFF6AAFD0);
 
         var state = ClientSkills.snapshot();
         boolean ready = state != null && state.available();
@@ -92,23 +84,28 @@ public abstract class PremiumSkillScreenVisualMixin {
 
         statCard(g, font, statLeft, top, spW, headerHeight,
                 Items.DIAMOND.getDefaultInstance(), "SKILL POINTS", ready ? Integer.toString(state.points()) : "—",
-                compact ? null : "Use SP to unlock skills.", CYAN, 0x2419BFEF);
+                "Use SP to unlock skills.", CYAN, 0x2419BFEF);
         statCard(g, font, statLeft + spW + gap, top, ppW, headerHeight,
                 Items.NETHER_STAR.getDefaultInstance(), "PERK POINTS", ready ? Integer.toString(state.perkPoints()) : "—",
-                compact ? null : "Spend PP on global perks.", GOLD, 0x2AFFB72A);
+                "Spend PP on global perks.", GOLD, 0x2AFFB72A);
         tierCard(g, font, statLeft + spW + ppW + gap * 2, top, tierW, headerHeight, state);
 
         if (infoW > 0) {
             int ix = statRight + 5;
             panel(g, ix, top, infoW, headerHeight, 0xDA102237, 0xFF294D69);
             g.fill(ix + 1, top + 1, ix + infoW - 1, top + 2, 0x4437CFFF);
-            renderScaledItem(g, Items.CLOCK.getDefaultInstance(), ix + 5, top + 6, 0.82F);
-            text(g, font, Component.literal("PLAYTIME"), ix + 22, top + 5, MUTED, 0.50F, infoW - 25, false);
-            text(g, font, Component.literal("—").withStyle(ChatFormatting.BOLD), ix + 22, top + 14, WHITE, 0.69F, infoW - 25, true);
-            if (headerHeight >= 48) {
-                renderScaledItem(g, Items.GRASS_BLOCK.getDefaultInstance(), ix + 5, top + 29, 0.82F);
-                text(g, font, Component.literal("ISLAND LEVEL"), ix + 22, top + 28, MUTED, 0.50F, infoW - 25, false);
-                text(g, font, Component.literal("—").withStyle(ChatFormatting.BOLD), ix + 22, top + 37, WHITE, 0.69F, infoW - 25, true);
+
+            renderScaledItem(g, Items.CLOCK.getDefaultInstance(), ix + 5, top + 5, 0.78F);
+            text(g, font, Component.literal("PLAYTIME"), ix + 21, top + 5, MUTED, 0.48F, infoW - 24, false);
+            text(g, font, Component.literal("—").withStyle(ChatFormatting.BOLD), ix + 21, top + 14,
+                    WHITE, 0.66F, infoW - 24, true);
+
+            if (headerHeight >= 46) {
+                renderScaledItem(g, Items.GRASS_BLOCK.getDefaultInstance(), ix + 5, top + 29, 0.76F);
+                text(g, font, Component.literal("ISLAND LEVEL"), ix + 21, top + 28, MUTED, 0.46F,
+                        infoW - 24, false);
+                text(g, font, Component.literal("—").withStyle(ChatFormatting.BOLD), ix + 21, top + 37,
+                        WHITE, 0.66F, infoW - 24, true);
             }
         }
 
@@ -127,8 +124,7 @@ public abstract class PremiumSkillScreenVisualMixin {
         int bottom = y + layout.contentBottom();
         if (mw < 80 || bottom - gridTop < 30) return;
 
-        // Faint blocky skyline in the empty space between cards. It gives the challenge area the
-        // layered scenic depth of the mockup while keeping card text perfectly readable.
+        // Low-contrast geometry supplies depth behind the cards without competing with text.
         int base = bottom - 3;
         int start = mx + Math.max(8, mw / 9);
         for (int i = 0; i < 8; i++) {
@@ -136,8 +132,8 @@ public abstract class PremiumSkillScreenVisualMixin {
             int h = 8 + ((i * 7) % Math.max(10, Math.min(34, bottom - gridTop - 6)));
             int px = start + i * Math.max(13, (mw - 30) / 9);
             if (px + w >= mx + mw - 6) break;
-            g.fill(px, base - h, px + w, base, 0x101E6A83);
-            if ((i & 1) == 0) g.fill(px + 2, base - h + 3, px + w - 2, base - h + 4, 0x123AC4E8);
+            g.fill(px, base - h, px + w, base, 0x0C1E6A83);
+            if ((i & 1) == 0) g.fill(px + 2, base - h + 3, px + w - 2, base - h + 4, 0x103AC4E8);
         }
         g.fill(mx + 7, gridTop - 1, mx + mw - 7, gridTop, 0x2737C7F2);
     }
@@ -149,10 +145,10 @@ public abstract class PremiumSkillScreenVisualMixin {
             callback.cancel();
             return;
         }
-        g.fill(px + 2, py + 3, px + pw + 2, py + ph + 3, 0x3F000000);
+        g.fill(px + 2, py + 3, px + pw + 2, py + ph + 3, 0x36000000);
         g.fill(px + 1, py + 1, px + pw - 1, py + ph - 1, fill);
-        g.fill(px + 2, py + 2, px + pw - 2, py + 3, 0x243DB7D8);
-        g.fill(px + 2, py + ph - 3, px + pw - 2, py + ph - 2, 0x38000000);
+        g.fill(px + 2, py + 2, px + pw - 2, py + 3, 0x203DB7D8);
+        g.fill(px + 2, py + ph - 3, px + pw - 2, py + ph - 2, 0x34000000);
         outline(g, px, py, pw, ph, border);
         callback.cancel();
     }
@@ -160,8 +156,8 @@ public abstract class PremiumSkillScreenVisualMixin {
     @Inject(method = "shadowPanel", at = @At("HEAD"), cancellable = true)
     private static void foreverSkyblock$shadowPanel(GuiGraphics g, int px, int py, int pw, int ph, int fill, int border,
                                                      CallbackInfo callback) {
-        g.fill(px - 3, py + 3, px + pw + 3, py + ph + 5, 0x6A000000);
-        g.fill(px - 1, py - 1, px + pw + 1, py + ph + 1, 0x3425BCE8);
+        g.fill(px - 3, py + 3, px + pw + 3, py + ph + 5, 0x64000000);
+        g.fill(px - 1, py - 1, px + pw + 1, py + ph + 1, 0x3025BCE8);
         panel(g, px, py, pw, ph, fill, border);
         callback.cancel();
     }
@@ -170,14 +166,14 @@ public abstract class PremiumSkillScreenVisualMixin {
     private static void foreverSkyblock$glowOutline(GuiGraphics g, int px, int py, int pw, int ph, int color,
                                                      CallbackInfo callback) {
         int rgb = color & 0x00FFFFFF;
-        g.fill(px - 3, py + 1, px - 2, py + ph - 1, rgb | 0x21000000);
-        g.fill(px + pw + 2, py + 1, px + pw + 3, py + ph - 1, rgb | 0x21000000);
-        g.fill(px + 1, py - 3, px + pw - 1, py - 2, rgb | 0x21000000);
-        g.fill(px + 1, py + ph + 2, px + pw - 1, py + ph + 3, rgb | 0x21000000);
-        g.fill(px - 2, py, px - 1, py + ph, rgb | 0x47000000);
-        g.fill(px + pw + 1, py, px + pw + 2, py + ph, rgb | 0x47000000);
-        g.fill(px, py - 2, px + pw, py - 1, rgb | 0x47000000);
-        g.fill(px, py + ph + 1, px + pw, py + ph + 2, rgb | 0x47000000);
+        g.fill(px - 3, py + 1, px - 2, py + ph - 1, rgb | 0x1C000000);
+        g.fill(px + pw + 2, py + 1, px + pw + 3, py + ph - 1, rgb | 0x1C000000);
+        g.fill(px + 1, py - 3, px + pw - 1, py - 2, rgb | 0x1C000000);
+        g.fill(px + 1, py + ph + 2, px + pw - 1, py + ph + 3, rgb | 0x1C000000);
+        g.fill(px - 2, py, px - 1, py + ph, rgb | 0x41000000);
+        g.fill(px + pw + 1, py, px + pw + 2, py + ph, rgb | 0x41000000);
+        g.fill(px, py - 2, px + pw, py - 1, rgb | 0x41000000);
+        g.fill(px, py + ph + 1, px + pw, py + ph + 2, rgb | 0x41000000);
         outline(g, px, py, pw, ph, color);
         callback.cancel();
     }
@@ -186,14 +182,15 @@ public abstract class PremiumSkillScreenVisualMixin {
     private static void foreverSkyblock$progressBar(GuiGraphics g, int px, int py, int pw, int ph, double ratio, int color,
                                                      CallbackInfo callback) {
         int h = Math.max(4, ph);
-        g.fill(px + 1, py + 2, px + pw + 1, py + h + 2, 0x45000000);
+        g.fill(px + 1, py + 2, px + pw + 1, py + h + 2, 0x40000000);
         g.fill(px, py, px + pw, py + h, 0xE1020A11);
         outline(g, px, py, pw, h, 0xFF466980);
         int inner = Math.max(0, pw - 2);
         int fillWidth = (int) Math.round(inner * Math.clamp(ratio, 0D, 1D));
         if (fillWidth > 0) {
             g.fill(px + 1, py + 1, px + 1 + fillWidth, py + h - 1, color);
-            if (h >= 4) g.fill(px + 1, py + 1, px + 1 + fillWidth, py + 2, (color & 0x00FFFFFF) | 0xE8000000);
+            if (h >= 4) g.fill(px + 1, py + 1, px + 1 + fillWidth, py + 2,
+                    (color & 0x00FFFFFF) | 0xE8000000);
         }
         callback.cancel();
     }
@@ -202,30 +199,34 @@ public abstract class PremiumSkillScreenVisualMixin {
                                  de.tekatz.foreverskyblock.network.SkillNetwork.Snapshot state) {
         panel(g, sx, sy, sw, sh, 0xDD0B1A28, 0xFF294D66);
         g.fill(sx + 1, sy + 1, sx + sw - 1, sy + 2, 0x323BCBFA);
-        renderScaledItem(g, Items.COPPER_INGOT.getDefaultInstance(), sx + 6, sy + Math.max(5, (sh - 16) / 2), 1.0F);
-        int tx = sx + 27;
-        text(g, font, Component.literal("TIER STATUS"), tx, sy + 4, MUTED, sh < 48 ? 0.51F : 0.60F, sw - 33, false);
         boolean ready = state != null && state.available();
         int tier = ready ? state.shopTier() : -1;
+
+        drawTierBadge(g, font, sx + 6, sy + Math.max(5, (sh - 18) / 2), tier);
+        int tx = sx + 30;
+        text(g, font, Component.literal("TIER STATUS"), tx, sy + 4, MUTED,
+                sh < 48 ? 0.49F : 0.58F, sw - 36, false);
+
         String tierText = switch (tier) {
-            case 0 -> "0 — Foundations";
-            case 1 -> "1 — Conqueror";
-            case 2 -> "2 — Engineer";
-            case 3 -> "3 — Mastery";
-            case 4 -> "4 — Ascended";
+            case 0 -> "Tier 0 - Foundations";
+            case 1 -> "Tier 1 - Conqueror";
+            case 2 -> "Tier 2 - Engineer";
+            case 3 -> "Tier 3 - Mastery";
+            case 4 -> "Tier 4 - Ascended";
             default -> "—";
         };
-        text(g, font, Component.literal(tierText).withStyle(ChatFormatting.BOLD), tx, sy + (sh < 48 ? 15 : 17), WHITE,
-                sh < 48 ? 0.66F : 0.76F, sw - 33, true);
-        if (ready && sh >= 42) {
+        text(g, font, Component.literal(tierText).withStyle(ChatFormatting.BOLD), tx,
+                sy + (sh < 48 ? 15 : 17), WHITE, sh < 48 ? 0.62F : 0.72F, sw - 36, true);
+
+        if (ready && sh >= 40) {
             int done = (int) MilestoneCatalog.MILESTONES.stream().filter(m -> state.milestones().contains(m.id())).count();
             int total = Math.max(1, MilestoneCatalog.MILESTONES.size());
             int barX = tx;
             int barW = Math.max(22, sw - (tx - sx) - 8);
-            int barY = sy + sh - 10;
-            progress(g, barX, barY, barW, 5, done / (double) total, GOLD);
+            int barY = sy + sh - 9;
+            progress(g, barX, barY, barW, 4, done / (double) total, GOLD);
             text(g, font, Component.literal(done + " / " + total), barX + Math.max(0, barW - 34), barY - 8,
-                    LIGHT, 0.50F, 34, false);
+                    LIGHT, 0.48F, 34, false);
         }
     }
 
@@ -233,15 +234,34 @@ public abstract class PremiumSkillScreenVisualMixin {
                                  String label, String value, String subtitle, int color, int aura) {
         panel(g, sx, sy, sw, sh, 0xDD0B1A28, 0xFF294D66);
         g.fill(sx + 1, sy + 1, sx + sw - 1, sy + 2, aura);
-        ambientGlow(g, sx + 13, sy + sh / 2, 23, aura);
-        renderScaledItem(g, icon, sx + 5, sy + Math.max(5, (sh - 19) / 2), 1.12F);
+        ambientGlow(g, sx + 13, sy + sh / 2, 21, aura);
+        renderScaledItem(g, icon, sx + 5, sy + Math.max(5, (sh - 19) / 2), 1.08F);
         int tx = sx + 26;
-        text(g, font, Component.literal(label), tx, sy + 4, MUTED, sh < 48 ? 0.50F : 0.60F, sw - 31, false);
-        text(g, font, Component.literal(value).withStyle(ChatFormatting.BOLD), tx, sy + (sh < 48 ? 15 : 17), color,
-                sh < 48 ? 0.76F : 0.92F, sw - 31, true);
-        if (subtitle != null && sh >= 54) {
-            text(g, font, Component.literal(subtitle), tx, sy + 34, LIGHT, 0.47F, sw - 31, false);
+        text(g, font, Component.literal(label), tx, sy + 4, MUTED,
+                sh < 48 ? 0.48F : 0.58F, sw - 31, false);
+        text(g, font, Component.literal(value).withStyle(ChatFormatting.BOLD), tx,
+                sy + (sh < 48 ? 15 : 16), color, sh < 48 ? 0.72F : 0.86F, sw - 31, true);
+        if (subtitle != null && sh >= 46) {
+            text(g, font, Component.literal(subtitle), tx, sy + 32, LIGHT, 0.41F, sw - 31, false);
         }
+    }
+
+    private static void drawTierBadge(GuiGraphics g, Font font, int bx, int by, int tier) {
+        int dark = 0xFF6B351A;
+        int bronze = 0xFFC87835;
+        int light = 0xFFFFB464;
+        g.fill(bx + 4, by, bx + 14, by + 18, dark);
+        g.fill(bx + 2, by + 2, bx + 16, by + 16, dark);
+        g.fill(bx, by + 5, bx + 18, by + 13, dark);
+        g.fill(bx + 4, by + 2, bx + 14, by + 16, bronze);
+        g.fill(bx + 2, by + 5, bx + 16, by + 13, bronze);
+        g.fill(bx + 5, by + 3, bx + 13, by + 4, light);
+        String badge = tier < 0 ? "?" : Integer.toString(tier);
+        int raw = Math.max(1, font.width(badge));
+        float scale = 0.56F;
+        int tw = Math.round(raw * scale);
+        text(g, font, Component.literal(badge).withStyle(ChatFormatting.BOLD), bx + 9 - tw / 2, by + 6,
+                WHITE, scale, 12, true);
     }
 
     private static void panel(GuiGraphics g, int px, int py, int pw, int ph, int fill, int border) {
@@ -293,14 +313,8 @@ public abstract class PremiumSkillScreenVisualMixin {
         int rgb = color & 0x00FFFFFF;
         for (int i = 4; i >= 1; i--) {
             int r = Math.max(2, radius * i / 4);
-            int alpha = 7 + (4 - i) * 5;
+            int alpha = 6 + (4 - i) * 4;
             g.fill(cx - r, cy - r / 2, cx + r, cy + r / 2, rgb | (alpha << 24));
         }
-    }
-
-    private static void sparkle(GuiGraphics g, int sx, int sy, int color) {
-        g.fill(sx, sy - 3, sx + 1, sy + 4, color);
-        g.fill(sx - 3, sy, sx + 4, sy + 1, color);
-        g.fill(sx - 1, sy - 1, sx + 2, sy + 2, (color & 0x00FFFFFF) | 0xB0000000);
     }
 }
