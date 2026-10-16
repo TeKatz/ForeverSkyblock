@@ -22,7 +22,8 @@
   "client": [
     "PremiumSkillScreenVisualMixin",
     "PremiumChallengeCardVisualMixin",
-    "PremiumCategoryButtonVisualMixin"
+    "PremiumCategoryButtonVisualMixin",
+    "PremiumChromeButtonVisualMixin"
   ],
   "injectors": {
     "defaultRequire": 1
