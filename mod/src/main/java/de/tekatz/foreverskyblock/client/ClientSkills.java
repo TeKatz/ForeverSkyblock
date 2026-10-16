@@ -44,6 +44,7 @@ public final class ClientSkills {
         pending = true; PacketDistributor.sendToServer(new SkillNetwork.Request(3, ""));
     }
     public static void buyProduct(String product) { if (!pending) { pending = true; PacketDistributor.sendToServer(new SkillNetwork.Request(4, product)); } }
+    public static void claimProduct(String product) { if (!pending) { pending = true; PacketDistributor.sendToServer(new SkillNetwork.Request(5, product)); } }
     public static void submitContract(String contract) {
         if (pending) return;
         pending = true; PacketDistributor.sendToServer(new SkillNetwork.ContractRequest(contract, UUID.randomUUID()));

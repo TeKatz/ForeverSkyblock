@@ -24,7 +24,8 @@
     "PremiumChallengeCardVisualMixin",
     "PremiumCategoryButtonVisualMixin",
     "PremiumChromeButtonVisualMixin",
-    "PremiumContractScreenMixin"
+    "PremiumContractScreenMixin",
+    "PremiumShopScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

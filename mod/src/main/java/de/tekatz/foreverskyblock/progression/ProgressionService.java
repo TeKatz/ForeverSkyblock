@@ -1,10 +1,14 @@
 package de.tekatz.foreverskyblock.progression;
 
 import com.mojang.logging.LogUtils;
+import de.tekatz.foreverskyblock.ForeverSkyblock;
+import de.tekatz.foreverskyblock.item.SupplyCacheItem;
 import de.tekatz.foreverskyblock.network.SkillNetwork;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -13,6 +17,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.fml.loading.FMLPaths;
 import org.slf4j.Logger;
 
@@ -53,14 +58,19 @@ public final class ProgressionService {
     public static void stop(MinecraftServer server) { SERVICES.remove(server); }
     public void login(ServerPlayer player) {
         try {
-            boolean recovered = recoverPendingContract(player);
+            String recovery = recoverState(player);
             SkillCatalog.apply(player, store.load(player.getUUID()));
-            sync(player, false, recovered ? "" : "contract_recovery_required");
+            sync(player, false, recovery);
         } catch (IOException e) { error(player, false, e); }
     }
     public void open(ServerPlayer player) {
-        try { sync(player, true, recoverPendingContract(player) ? "" : "contract_recovery_required"); }
+        try { sync(player, true, recoverState(player)); }
         catch (IOException e) { error(player, true, e); }
+    }
+    private String recoverState(ServerPlayer player) throws IOException {
+        if (!recoverPendingContract(player)) return "contract_recovery_required";
+        if (!recoverPendingDelivery(player)) return "delivery_recovery_required";
+        return "";
     }
     public void buy(ServerPlayer player, String id) {
         SkillCatalog.Skill skill = SkillCatalog.find(id);
@@ -83,6 +93,7 @@ public final class ProgressionService {
         ShopCatalog.Product product = ShopCatalog.find(id);
         if (product == null) { sync(player, false, "unknown_product"); return; }
         if (product.developmentOnly() && !canTestPoints(player)) { sync(player, false, "test_denied"); return; }
+        if (!productAvailable(product)) { sync(player, false, "product_unavailable"); return; }
         UUID world;
         try { world = currentWorld(); }
         catch (IOException e) { LOGGER.error("Could not read world identity for {}", player.getUUID(), e); sync(player, false, "world_unavailable"); return; }
@@ -90,10 +101,67 @@ public final class ProgressionService {
             ProgressionProfile previous = store.load(player.getUUID()); String message;
             if (previous.meta().claimed(world, product.id())) message = "world_already_claimed";
             else if (previous.meta().shopTier() < product.requiredTier()) message = "world_requires_tier";
+            else if (previous.perkPoints() < product.ppCost()) message = "not_enough_perks";
             else if (previous.points() < product.spCost()) message = "not_enough_points";
-            else { store.update(player.getUUID(), state -> state.purchaseWorld(world, product, UUID.randomUUID())); message = "world_purchase_done"; }
+            else {
+                store.update(player.getUUID(), state -> state.purchaseWorld(world, product, UUID.randomUUID()));
+                message = product.deliverable() ? "world_purchase_ready" : "world_purchase_done";
+            }
             sync(player, false, message);
         } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); }
+    }
+
+    /** Claims the durable entitlement into one unique owner/world-bound cache item. */
+    public synchronized void claimProduct(ServerPlayer player, String id) {
+        ShopCatalog.Product product = ShopCatalog.find(id);
+        if (product == null || !product.deliverable()) { sync(player, false, "unknown_product"); return; }
+        if (!productAvailable(product)) { sync(player, false, "product_unavailable"); return; }
+        try {
+            if (!recoverPendingDelivery(player)) { sync(player, false, "delivery_recovery_required"); return; }
+            UUID world = currentWorld();
+            ProgressionProfile profile = store.load(player.getUUID());
+            var entry = profile.meta().delivery(world, product.id());
+            if (entry == null) { sync(player, false, "delivery_not_purchased"); return; }
+            UUID receipt = entry.getKey();
+            switch (entry.getValue().stage()) {
+                case READY -> {
+                    if (firstEmptyMainSlot(player) < 0) { sync(player, false, "delivery_inventory_full"); return; }
+                    store.update(player.getUUID(), state -> state.beginDelivery(receipt));
+                    if (!completeDispatch(player, receipt)) { sync(player, false, "delivery_recovery_required"); return; }
+                    sync(player, false, "delivery_delivered");
+                }
+                case DISPATCHING -> sync(player, false, recoverPendingDelivery(player) ? "delivery_delivered" : "delivery_recovery_required");
+                case DELIVERED -> sync(player, false, "delivery_already_delivered");
+                case OPENING -> sync(player, false, recoverPendingDelivery(player) ? "delivery_opened" : "delivery_recovery_required");
+                case OPENED -> sync(player, false, "delivery_opened");
+            }
+        } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); }
+    }
+
+    /** Right-click path for a unique supply cache. Package contents never come from the client payload. */
+    public synchronized boolean openSupplyCache(ServerPlayer player, ItemStack cache) {
+        SupplyCacheItem.Marker marker = SupplyCacheItem.marker(cache);
+        if (marker == null || !marker.ownerId().equals(player.getUUID())) return false;
+        try {
+            UUID world = currentWorld();
+            if (!world.equals(marker.worldId())) { sync(player, false, "delivery_wrong_world"); return true; }
+            ProgressionProfile profile = store.load(player.getUUID());
+            var delivery = profile.meta().deliveries().get(marker.receiptId());
+            if (delivery == null || !delivery.worldId().equals(world) || !delivery.productId().equals(marker.productId())) return false;
+            ShopCatalog.Product product = ShopCatalog.find(delivery.productId());
+            if (product == null || !product.deliverable() || !productAvailable(product)) { sync(player, false, "product_unavailable"); return true; }
+            if (delivery.stage() == MetaProgress.DeliveryStage.OPENED) { sync(player, false, "delivery_opened"); return true; }
+            if (delivery.stage() != MetaProgress.DeliveryStage.DELIVERED && delivery.stage() != MetaProgress.DeliveryStage.OPENING) {
+                sync(player, false, "delivery_not_ready"); return true;
+            }
+            if (delivery.stage() == MetaProgress.DeliveryStage.DELIVERED) {
+                if (!hasContentSpace(player, product)) { sync(player, false, "delivery_inventory_full"); return true; }
+                store.update(player.getUUID(), state -> state.beginOpening(marker.receiptId()));
+            }
+            if (!completeOpening(player, marker.receiptId())) { sync(player, false, "delivery_recovery_required"); return true; }
+            sync(player, false, "delivery_opened");
+            return true;
+        } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); return true; }
     }
 
     /** Resource turn-ins use a durable intent plus forced player-data checkpoints around inventory removal. */
@@ -108,12 +176,10 @@ public final class ProgressionService {
             if (item == null) { sync(player, false, "contract_unavailable"); return; }
             int inventoryBefore = inventoryCount(player, item);
             if (inventoryBefore < contract.target()) { sync(player, false, "contract_missing_resources"); return; }
-
-            // Persist the exact pre-consumption inventory baseline before the profile intent is committed.
             player.server.getPlayerList().saveAll();
             ProgressionProfile begun = store.update(player.getUUID(), state -> ContractRules.beginTurnIn(state, contract, request, inventoryBefore));
             var pending = begun.meta().pendingContracts().get(request);
-            if (pending == null) { sync(player, false, ""); return; } // processed replay or another guarded request
+            if (pending == null) { sync(player, false, ""); return; }
             if (inventoryCount(player, item) != pending.beforeCount() || !consume(player, item, pending.itemCount())) {
                 LOGGER.error("Contract inventory changed while durable intent {} was being prepared for {}", request, player.getUUID());
                 sync(player, false, "contract_recovery_required"); return;
@@ -127,7 +193,6 @@ public final class ProgressionService {
         } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); }
     }
 
-    /** Atomically applies unique boss credit and any eligible repeatable counter from the same kill event. */
     public boolean killEvidence(ServerPlayer player, boolean wither, boolean dragon, boolean monster, UUID victim) {
         if (!ChallengeEvents.realPlayer(player) || victim == null || (!wither && !dragon && !monster)) return false;
         try {
@@ -193,7 +258,6 @@ public final class ProgressionService {
         catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); return false; }
     }
 
-    /** Recover the one allowed durable resource intent before the player can submit another contract. */
     private synchronized boolean recoverPendingContract(ServerPlayer player) throws IOException {
         ProgressionProfile profile = store.load(player.getUUID());
         if (profile.meta().pendingContracts().isEmpty()) return true;
@@ -213,6 +277,99 @@ public final class ProgressionService {
         store.update(player.getUUID(), state -> ContractRules.finishTurnIn(state, request));
         return true;
     }
+
+    private synchronized boolean recoverPendingDelivery(ServerPlayer player) throws IOException {
+        ProgressionProfile profile = store.load(player.getUUID());
+        for (var entry : profile.meta().deliveries().entrySet()) {
+            if (entry.getValue().stage() == MetaProgress.DeliveryStage.DISPATCHING) return completeDispatch(player, entry.getKey());
+            if (entry.getValue().stage() == MetaProgress.DeliveryStage.OPENING) return completeOpening(player, entry.getKey());
+        }
+        return true;
+    }
+
+    private boolean completeDispatch(ServerPlayer player, UUID receipt) throws IOException {
+        ProgressionProfile profile = store.load(player.getUUID());
+        MetaProgress.DeliveryReceipt delivery = profile.meta().deliveries().get(receipt);
+        if (delivery == null) return false;
+        if (delivery.stage() == MetaProgress.DeliveryStage.DELIVERED || delivery.stage() == MetaProgress.DeliveryStage.OPENING
+                || delivery.stage() == MetaProgress.DeliveryStage.OPENED) return true;
+        if (delivery.stage() != MetaProgress.DeliveryStage.DISPATCHING) return false;
+        ShopCatalog.Product product = ShopCatalog.find(delivery.productId());
+        if (product == null || !product.deliverable() || !productAvailable(product)) return false;
+        ItemStack existing = findCache(player, receipt);
+        if (existing == null) {
+            int slot = firstEmptyMainSlot(player); if (slot < 0) return false;
+            player.getInventory().setItem(slot, SupplyCacheItem.create(product, receipt, player.getUUID(), delivery.worldId()));
+            player.getInventory().setChanged();
+            player.server.getPlayerList().saveAll();
+        }
+        store.update(player.getUUID(), state -> state.finishDelivery(receipt));
+        return true;
+    }
+
+    private boolean completeOpening(ServerPlayer player, UUID receipt) throws IOException {
+        ProgressionProfile profile = store.load(player.getUUID());
+        MetaProgress.DeliveryReceipt delivery = profile.meta().deliveries().get(receipt);
+        if (delivery == null) return false;
+        if (delivery.stage() == MetaProgress.DeliveryStage.OPENED) return true;
+        if (delivery.stage() != MetaProgress.DeliveryStage.OPENING) return false;
+        ShopCatalog.Product product = ShopCatalog.find(delivery.productId());
+        if (product == null || !product.deliverable() || !productAvailable(product)) return false;
+        ItemStack cache = findCache(player, receipt);
+        if (cache != null) {
+            SupplyCacheItem.Marker marker = SupplyCacheItem.marker(cache);
+            if (marker == null || !marker.ownerId().equals(player.getUUID()) || !marker.worldId().equals(delivery.worldId())
+                    || !marker.productId().equals(delivery.productId()) || !hasContentSpace(player, product)) return false;
+            List<ItemStack> contents = productStacks(product);
+            if (contents == null) return false;
+            cache.shrink(1);
+            for (ItemStack stack : contents) {
+                int slot = firstEmptyMainSlot(player);
+                if (slot < 0) throw new IllegalStateException("Validated delivery space disappeared");
+                player.getInventory().setItem(slot, stack);
+            }
+            player.getInventory().setChanged();
+            player.server.getPlayerList().saveAll();
+        }
+        // If the cache is absent after an OPENING intent, the preceding player-data checkpoint
+        // durably stored the consumed cache and package contents. Finalize rather than duplicate.
+        store.update(player.getUUID(), state -> state.finishOpening(receipt));
+        return true;
+    }
+
+    public static boolean productAvailable(ShopCatalog.Product product) { return product != null && (!product.deliverable() || productStacks(product) != null); }
+    private static List<ItemStack> productStacks(ShopCatalog.Product product) {
+        try {
+            var result = new ArrayList<ItemStack>();
+            for (var entry : product.contents()) {
+                Item item = BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(entry.itemId())).orElse(null);
+                if (item == null) return null;
+                ItemStack stack = new ItemStack(item, entry.count());
+                if (entry.count() > stack.getMaxStackSize()) return null;
+                result.add(stack);
+            }
+            return List.copyOf(result);
+        } catch (RuntimeException e) { return null; }
+    }
+    private static boolean hasContentSpace(ServerPlayer player, ShopCatalog.Product product) {
+        int empty = 0; var inventory = player.getInventory();
+        for (int slot = 0; slot < Math.min(36, inventory.getContainerSize()); slot++) if (inventory.getItem(slot).isEmpty()) empty++;
+        return empty >= product.contents().size();
+    }
+    private static int firstEmptyMainSlot(ServerPlayer player) {
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < Math.min(36, inventory.getContainerSize()); slot++) if (inventory.getItem(slot).isEmpty()) return slot;
+        return -1;
+    }
+    private static ItemStack findCache(ServerPlayer player, UUID receipt) {
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack stack = inventory.getItem(slot); SupplyCacheItem.Marker marker = SupplyCacheItem.marker(stack);
+            if (marker != null && marker.receiptId().equals(receipt)) return stack;
+        }
+        return null;
+    }
+
     public static int inventoryCount(ServerPlayer player, String itemId) {
         Item item = contractItem(itemId); return item == null ? 0 : inventoryCount(player, item);
     }
@@ -247,7 +404,7 @@ public final class ProgressionService {
             ProgressionProfile profile = store.load(player.getUUID()); SkillNetwork.WorldState world;
             try {
                 UUID identity = currentWorld();
-                world = new SkillNetwork.WorldState(true, worldName, profile.meta().worldClaims().getOrDefault(identity, java.util.Set.of()));
+                world = new SkillNetwork.WorldState(true, worldName, profile.meta().worldClaims().getOrDefault(identity, java.util.Set.of()), identity);
             } catch (IOException e) {
                 LOGGER.error("Could not read world identity for {}", player.getUUID(), e);
                 world = new SkillNetwork.WorldState(false, worldName, java.util.Set.of());

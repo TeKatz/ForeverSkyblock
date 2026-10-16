@@ -2,11 +2,11 @@ package de.tekatz.foreverskyblock;
 
 import de.tekatz.foreverskyblock.block.CondenserBlock;
 import de.tekatz.foreverskyblock.blockentity.CondenserBlockEntity;
-import de.tekatz.foreverskyblock.menu.CondenserMenu;
-import de.tekatz.foreverskyblock.network.SkillNetwork;
-import de.tekatz.foreverskyblock.network.CondenserNetwork;
 import de.tekatz.foreverskyblock.item.MortarItem;
-import net.minecraft.world.level.block.Block;
+import de.tekatz.foreverskyblock.item.SupplyCacheItem;
+import de.tekatz.foreverskyblock.menu.CondenserMenu;
+import de.tekatz.foreverskyblock.network.CondenserNetwork;
+import de.tekatz.foreverskyblock.network.SkillNetwork;
 import de.tekatz.foreverskyblock.recipe.CondenserRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.flag.FeatureFlags;
@@ -14,8 +14,10 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -45,7 +47,7 @@ public final class ForeverSkyblock {
                     .strength(4.0F, 10.0F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()
                     .lightLevel(state -> state.getValue(de.tekatz.foreverskyblock.block.AscensionChamberBlock.ACTIVE) ? 8 : 0)));
     public static final DeferredItem<BlockItem> ASCENSION_CHAMBER_ITEM = ITEMS.registerSimpleBlockItem(ASCENSION_CHAMBER);
-    public static final DeferredItem<Item> FOREVER_CORE = ITEMS.register("forever_core", () -> new Item(new Item.Properties().stacksTo(1).fireResistant().rarity(net.minecraft.world.item.Rarity.EPIC)));
+    public static final DeferredItem<Item> FOREVER_CORE = ITEMS.register("forever_core", () -> new Item(new Item.Properties().stacksTo(1).fireResistant().rarity(Rarity.EPIC)));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<de.tekatz.foreverskyblock.blockentity.AscensionChamberBlockEntity>> ASCENSION_ENTITY =
             BLOCK_ENTITIES.register("ascension_chamber", () -> BlockEntityType.Builder.of(de.tekatz.foreverskyblock.blockentity.AscensionChamberBlockEntity::new, ASCENSION_CHAMBER.get()).build(null));
     public static final DeferredHolder<MenuType<?>, MenuType<de.tekatz.foreverskyblock.menu.AscensionMenu>> ASCENSION_MENU =
@@ -63,6 +65,9 @@ public final class ForeverSkyblock {
     public static final DeferredItem<Item> STONE_MEAL = ITEMS.registerSimpleItem("stone_meal");
     public static final DeferredItem<MortarItem> MORTAR = ITEMS.register("mortar", () -> new MortarItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> STONE_FRAGMENT = ITEMS.registerSimpleItem("stone_fragment");
+    /** Delivery carrier is intentionally absent from creative tabs; only a committed shop receipt can issue one. */
+    public static final DeferredItem<SupplyCacheItem> WORLD_SUPPLY_CACHE = ITEMS.register("world_supply_cache",
+            () -> new SupplyCacheItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CondenserBlockEntity>> CONDENSER_ENTITY =
             BLOCK_ENTITIES.register("condenser_mark_i", () -> BlockEntityType.Builder.of(CondenserBlockEntity::new, CONDENSER_MARK_I.get()).build(null));
     public static final DeferredHolder<MenuType<?>, MenuType<CondenserMenu>> CONDENSER_MENU =
