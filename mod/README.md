@@ -1,12 +1,14 @@
-# Forever Skyblock — 0.12.0 (world shop safety / phase 3)
+# Forever Skyblock — 0.13.0 (technology challenges / phase 4)
 
 Minecraft 1.21.1 / NeoForge 21.1.249 or newer 21.1.x. Requires Java 21. Maintained by TeKatz; Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
 ## Personal challenges and permanent tiers
 
-The K menu contains Overview, Challenges, Shop, Research, Perks and Profile. Phase 2 activates 11 unique personal challenges (34 SP including existing First Foundations), distinct Stone/Iron tool progress, the 1,000-monster counter and permanent Shop Tiers 0/I. Schema 3 preserves old balances, skills, PP and Core receipts and tracks new accounting without fabricating legacy history. Search, category/status filters and details show the live objective counts. Existing skills, Jetpack research, dual-cost Creative research and confirmed refunds remain functional.
+The K menu contains Overview, Challenges, Shop, Research, Perks and Profile. Phase 4 expands the live catalog to **20 unique personal challenges / 58 SP** while preserving the existing Foundation, tool, combat and dimension objectives. New categories cover Applied Energistics 2, Mekanism, Powah and Mystical Agriculture where the pinned mod versions provide a trustworthy personal action/owner boundary. Shared-machine objectives with unresolved attribution remain disabled instead of paying for item possession or nearby activity.
 
-See [CHALLENGES.md](../docs/CHALLENGES.md) for exact triggers, migration, compatibility and manual checks. Phase 3 adds the safe world-shop foundation described below. Contracts, higher-tier rules, valuable product contents and optional technology challenges are not active. Both client and server need 0.12.0 (`skills-6`).
+Schema 4 preserves old balances, skills, PP, Core receipts, challenge evidence, permanent Shop Tiers 0/I, current-world claims and purchase receipts. Search, category/status filters and details show the live objective counts. Existing skills, Jetpack research, dual-cost Creative research and confirmed refunds remain functional. Phase 4 does not activate repeatable contracts, Tier II–IV, valuable world-shop packages or resource delivery.
+
+See [CHALLENGES.md](../docs/CHALLENGES.md) for exact triggers, pinned integrations, deferred objectives and manual checks. Both client and server need 0.13.0 (`skills-6`).
 
 ## Current-world shop transaction test
 
@@ -22,9 +24,20 @@ This branch includes the 0.9.0 machine models, animated internals and matching G
 
 ## Persistent skills
 
-Press **K** to open the new Skills menu, or remap **Open Skills** in the **Forever Skyblock** keybind category. Craft cobblestone from four Stone Fragments to earn one profile-wide point. Buy **Extended Reach** for one point to gain +1 block interaction range across singleplayer worlds in this instance.
+Press **K** to open the progression menu, or remap **Open Skills** in the **Forever Skyblock** keybind category. Craft cobblestone from four Stone Fragments to earn the existing First Foundations point. Buy **Extended Reach** for one point to gain +1 block interaction range across singleplayer worlds in this instance.
 
-Points, milestone claims and purchases are saved outside world folders. Dedicated servers keep their own profiles; no client profile is imported. The card-based GUI has six main sections. Each card shows its effect or objective, rank/reward, price and action together. Reset skills opens a confirmation dialog and refunds purchased ranks while keeping completed tasks. The green point reward in chat links directly to the menu. See [SKILLS.md](../docs/SKILLS.md) for scope, storage, commands, extension points and manual test steps.
+Points, milestone claims and purchases are saved outside world folders. Dedicated servers keep their own profiles; no client profile is imported. The card-based GUI has six main sections. Each card shows its effect or objective, rank/reward, price and action together. Reset skills opens a confirmation dialog and refunds purchased ranks while keeping completed challenges, partial objective evidence, permanent tiers, world claims and Core receipts. The green point reward in chat links directly to the menu. See [SKILLS.md](../docs/SKILLS.md) for storage and reset details.
+
+## Phase 4 technology challenges
+
+Active technology objectives are deliberately bounded to actions that can be attributed safely on the pinned development mod list:
+
+- **AE2 19.2.18:** personally craft 4k+ / 256k item cells and 64k Crafting Storage, finish a player-requested autocrafting CPU job, and open the Wireless Crafting Terminal.
+- **Mekanism 10.7.19.85:** personally craft the Metallurgic Infuser; an owned Digital Miner must actually mine a block while its owner is connected.
+- **Powah 6.2.10:** personally take a completed Energizing Orb output.
+- **Mystical Agriculture 8.0.28:** personally craft Supremium Essence.
+
+Optional adapters fail closed when their expected runtime API is absent or incompatible. Quantum Bridge use, Mekanism factories/reactors/SPS, Powah reactors, Industrial Foregoing, Mystical Agriculture seed progression and Apotheosis capstones remain inactive until their ownership/target rules are approved. See [CHALLENGES.md](../docs/CHALLENGES.md).
 
 ## Iron Jetpacks research test
 
@@ -83,7 +96,7 @@ Recipes use the custom serializer `forever_skyblock:condensing`:
 
 ## Install and build
 
-Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.12.0.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
+Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.13.0.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
 
 With Java 21 installed:
 
@@ -101,7 +114,7 @@ Run the isolated dedicated-server integration tests with:
 ./gradlew runGameTestServer -PcondenserTests
 ```
 
-Test classes and their empty structure are in `src/gameTest/` and are excluded from the production JAR. See [validation status](../docs/VALIDATION.md) for completed checks and remaining manual tests.
+The Phase 4 pack-integration run additionally enables `-PtechChallengeTests` on NeoForge 21.1.259. Test classes and their empty structure are excluded from the production JAR. See [validation status](../docs/VALIDATION.md) for completed checks and remaining manual tests.
 
 ## Condenser mixing in 0.6.0
 
@@ -109,11 +122,11 @@ See [CONDENSER_MIXING.md](../docs/CONDENSER_MIXING.md) for recipes, the live sec
 
 ## JEI transfer and Vanilla tutorial hints in 0.6.1
 
-Open the Condensing category through the condenser progress area (JEI's **Show all recipes**), then press the recipe **+** to load one set from the player inventory. Shift-click loads the largest complete set count, bounded by stack sizes. Already loaded matching inputs can count toward the recipe. The plus remains visible but disabled if ingredients, the required Mixing Chamber or return space are missing, if filters conflict, while editing ghosts, or while holding a cursor item. Hover for the reason. The server rechecks the recipe, module, filters, distance and current items before changing either inventory; a failed transfer moves nothing. Displaced real inputs are returned to the inventory without dropping items. Hidden secondary inputs, filters and output are retained. The JEI completion callback waits for the server result. JEI remains optional.
+Open the Condensing category through the condenser progress area (JEI's **Show all recipes**), then press the recipe **+** to load one set from the player inventory. Shift-click loads the largest complete sets, bounded by stack sizes. Already loaded matching inputs can count toward the recipe. The plus remains visible but disabled if ingredients, the required Mixing Chamber or return space are missing, if filters conflict, while editing ghosts, or while holding a cursor item. Hover for the reason. The server rechecks the recipe, module, filters, distance and current items before changing either inventory; a failed transfer moves nothing. Displaced real inputs are returned to the inventory without dropping items. Hidden secondary inputs, filters and output are retained. The JEI completion callback waits for the server result. JEI remains optional.
 
 Vanilla's initial movement, tree, inventory and crafting tutorial sequence is set to `none` on client login using Minecraft's Tutorial API, which persists that option. This applies to new worlds, existing worlds and multiplayer clients with this mod. Quest notifications, advancement toasts and other mods' tutorials are unaffected. No complete `options.txt` is shipped or overwritten.
 
-The Mixing Chamber model now uses disjoint solid partitions with only exposed faces, cull tags only on actual block boundaries and a non-occluding block state, preventing overlapping wood/stone surfaces and missing neighboring log faces.
+The Mixing Chamber model uses disjoint solid partitions with only exposed faces, boundary-only cull tags and a non-occluding block state, preventing overlapping surfaces and missing neighboring log faces.
 
 ## Permanent tools in 0.7.0
 
@@ -121,4 +134,4 @@ The 24 Vanilla pickaxes, axes, shovels and hoes have infinite durability and rep
 
 ## Ascension in 0.8.0
 
-Craft a Forever Core and personally redeem it in the Ascension Chamber for one Perk Point. Creative Jetpack research now costs 40 SP + 1 PP after EndGame research. The K menu shows both balances and a Perks tab. Confirmed reset refunds each currency separately. Legacy Creative purchases are removed and their 40 SP refunded without minting PP. See [ASCENSION.md](../docs/ASCENSION.md) for exact recipes, the Vanilla Crafter automation route, intentionally blocked AE2 automatic Core patterns, claim replay and storage requirements. Both client and server need 0.8.0; no extra datapack installation is needed for the test JAR.
+Craft a Forever Core and personally redeem it in the Ascension Chamber for one Perk Point. Creative Jetpack research costs 40 SP + 1 PP after EndGame research. The K menu shows both balances and a Perks section. Confirmed reset refunds each currency separately. Legacy Creative purchases are removed and their 40 SP refunded without minting PP. See [ASCENSION.md](../docs/ASCENSION.md) for exact recipes, the Vanilla Crafter automation route, intentionally blocked AE2 automatic Core patterns, claim replay and storage requirements.
