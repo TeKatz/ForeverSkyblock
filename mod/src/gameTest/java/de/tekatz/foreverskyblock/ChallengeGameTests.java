@@ -27,6 +27,10 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder(ForeverSkyblock.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class ChallengeGameTests {
+    private static ServerPlayer player(GameTestHelper h, String name) {
+        return new ServerPlayer(h.getLevel().getServer(), h.getLevel(), new GameProfile(UUID.randomUUID(), name),
+                net.minecraft.server.level.ClientInformation.createDefault());
+    }
     private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, path); }
     private static ProgressionProfile profile(ServerPlayer player) throws Exception {
         return new ProfileStore(FMLPaths.GAMEDIR.get().resolve("forever_skyblock/progression")
@@ -47,7 +51,7 @@ public final class ChallengeGameTests {
     }
     @GameTest(template="empty")
     public static void personalCraftsAndSmithingUseRealMenus(GameTestHelper h) throws Exception {
-        var player=h.makeMockServerPlayerInLevel();
+        var player=player(h,"ChallengeCrafter");
         craft(h,player,"cobblestone_from_fragments",false);
         h.assertTrue(profile(player).points()==1 && profile(player).meta().shopTier()==0,"Foundations keeps its one reward and unlocks Tier 0");
         craft(h,player,"stone_meal",true);
@@ -69,7 +73,7 @@ public final class ChallengeGameTests {
     }
     @GameTest(template="empty")
     public static void vanillaKillCreditAwardsOnlyActorAndDeduplicatesVictims(GameTestHelper h) throws Exception {
-        var player=h.makeMockServerPlayerInLevel();var spectator=h.makeMockServerPlayerInLevel();
+        var player=player(h,"ChallengeFighter");var spectator=player(h,"ChallengeSpectator");
         var zombie=new net.minecraft.world.entity.monster.Zombie(EntityType.ZOMBIE,h.getLevel());
         zombie.hurt(player.damageSources().playerAttack(player),1000F);
         h.assertTrue(profile(player).meta().progress().get(ChallengeRules.VETERAN.id()).evidence().size()==1,"Actual lethal player damage counts a hostile kill");
@@ -87,7 +91,7 @@ public final class ChallengeGameTests {
     }
     @GameTest(template="empty")
     public static void dimensionsFakePlayersAndWrongRecipesAreGuarded(GameTestHelper h) throws Exception {
-        var player=h.makeMockServerPlayerInLevel();
+        var player=player(h,"ChallengeTraveler");
         NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerChangedDimensionEvent(player,Level.OVERWORLD,Level.NETHER));
         NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerChangedDimensionEvent(player,Level.NETHER,Level.END));
         NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerChangedDimensionEvent(player,Level.OVERWORLD,Level.NETHER));
@@ -107,7 +111,7 @@ public final class ChallengeGameTests {
     @GameTest(template="empty")
     public static void ae2PersonalCraftingUsesTheSameChallengeAdapter(GameTestHelper h) throws Exception {
         if(!net.neoforged.fml.ModList.get().isLoaded("ae2")){h.succeed();return;}
-        var player=h.makeMockServerPlayerInLevel();
+        var player=player(h,"ChallengeAE2");
         // Instantiate the actual optional AE2 slot only in its presence, keeping baseline tests loadable.
         Class<?> invClass=Class.forName("appeng.util.inv.AppEngInternalInventory");
         Object inv=invClass.getConstructor(int.class).newInstance(9);

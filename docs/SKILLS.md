@@ -1,4 +1,4 @@
-# Persistent skills — menu and research test (0.5.0)
+# Persistent skills — current progression scope
 
 ## Scope
 
@@ -12,7 +12,7 @@ The fixed island and its stored inventory are unchanged. Players gain profile ef
 
 Press **K** in game. Remap **Open Skills** under **Options → Controls → Key Binds → Forever Skyblock**. A conflicting binding can be changed there. The same key or Escape closes the menu. `/foreverskills` opens it as a command fallback.
 
-The menu adds a **Jetpacks** research tab in 0.5.0; see [JETPACK_RESEARCH.md](JETPACK_RESEARCH.md). The original two tabs remain: **Skills** for purchases and **Tasks** for earning points. Each full-width card combines its effect/objective, rank/reward and action. The available point balance stays at the top; the selected tab has a cyan underline. Scroll the card list to view later entries or long text at larger GUI scales. Descriptions stay inline rather than appearing as large hover tooltips. The world continues running while the menu is open.
+The K menu now has Overview, Challenges, Shop, Research, Perks and Profile. Existing skills are in Shop → Permanent, Jetpacks in Research and the confirmed reset in Profile. See [CHALLENGES.md](CHALLENGES.md) for live objectives, tiers and accounting. Each full-width card combines its effect/objective, rank/reward and action. The available point balance stays at the top; the selected tab has a cyan underline. Scroll the card list to view later entries or long text at larger GUI scales. Descriptions stay inline rather than appearing as large hover tooltips. The world continues running while the menu is open.
 
 Completing a task sends the usual chat message with a green, underlined **+1 SP** reward. Open chat and click that reward to open the Skills menu through `/foreverskills`. Hovering it explains the shortcut; the link does not claim points or buy a skill.
 
@@ -22,7 +22,7 @@ Completing a task sends the usual chat message with a green, underlined **+1 SP*
 
 The server refunds all ranks of known skills, clears those purchases, saves the profile and immediately removes their effects. Unspent points remain. Completed tasks remain claimed and cannot award points again, including in another world. Reset can be repeated safely without duplicating refunds, and skills can be bought again with the refunded points. The control is disabled when there are no known purchases, a request is pending or storage is unavailable.
 
-Version 0.4.0 keeps schema 1 and reads existing profiles without migration. Refunds use the server catalog's cost per rank; the existing skill still costs one point. A future change to skill prices needs an explicit refund/migration policy. Unknown stored skill IDs are preserved and not refunded. A refund exceeding the balance limit is refused without changing the profile. Failed storage writes retain the existing purchase and effect.
+Version 0.11.0 reads valid legacy profiles and writes schema 3 on the next changed transaction. Refunds use the server catalog's cost per rank; the existing skill still costs one point. A future change to skill prices needs an explicit refund/migration policy. Unknown stored skill IDs are preserved and not refunded. A refund exceeding the balance limit is refused without changing the profile. Failed storage writes retain the existing purchase and effect.
 
 ## Earn and spend the first point
 
@@ -49,7 +49,7 @@ Relative to the instance/server working directory:
 - Dedicated server: `forever_skyblock/progression/server/<player-uuid>.json`.
 - Last validated state: the corresponding `.json.bak` file.
 
-Current profiles use schema version 2 with separate SP/PP balances, paid-perk investments and Core receipts. Schema-1 profiles migrate as documented in [ASCENSION.md](ASCENSION.md). Writes use a flushed temporary file and atomic replacement where supported. A purchase/reward is committed to memory only after a successful save. The last validated profile is backed up before replacement. A corrupted primary file can recover from a valid backup; if neither is readable, purchases/rewards stop and an error is shown instead of silently resetting progression. Unsupported schemas are never overwritten.
+Current profiles use schema version 3 with separate SP/PP balances, paid-perk investments, Core receipts, challenge progress, permanent tier and accounting. Schema-1 profiles migrate as documented in [ASCENSION.md](ASCENSION.md). Writes use a flushed temporary file and atomic replacement where supported. A purchase/reward is committed to memory only after a successful save. The last validated profile is backed up before replacement. A corrupted or missing primary with an existing backup makes progression unavailable: a previous-state backup may predate a payment or claim and is no longer loaded automatically. Files are retained for recovery; journal-based recovery remains phase 3. Unsupported schemas are never overwritten.
 
 Back up the progression directory separately from world saves. Deleting the entire Minecraft instance also deletes these local profiles. Files are loaded on demand, cached during a session and evicted when players leave; they are not polled from disk every tick. No account backend, cross-PC synchronization or cryptographic anti-cheat is included.
 
@@ -66,7 +66,7 @@ This administrative command adds 1–1000 points per invocation, up to the profi
 ## Extend later
 
 - Add skill definitions to `SkillCatalog.SKILLS`: ID, point cost, maximum rank, icon and attribute bonus per rank. The existing list/detail/purchase UI picks up those entries automatically.
-- Add milestone definitions to `MilestoneCatalog.MILESTONES` and connect a server-side trigger. Deduplication uses the stable milestone ID.
+- Add pure definitions to `ChallengeRules`, display metadata to `MilestoneCatalog.MILESTONES` and a verified personal-action adapter to `ChallengeEvents`. Deduplication uses the stable milestone ID.
 - Add English and German title/description translations.
 - New effect kinds can extend the catalog/effect application. Advanced prerequisites, respecs, FTB quest rewards, data-driven definitions and online synchronization are future work.
 - Preserve IDs and serialized profile data when adding entries. Unknown stored IDs survive loading even when they have no effect in the current catalog.

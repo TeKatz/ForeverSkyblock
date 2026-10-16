@@ -56,4 +56,4 @@ Version 0.8.0 combines the permanent-tool update from [PR #9](https://github.com
 
 ## Meta-progression foundation branch
 
-The `feature/persistent-meta-progression` branch contains the 0.10.0 navigation foundation over the unmerged 0.9.1 visual overhaul. It reorganizes the K menu and documents the expanded persistent challenge/shop architecture. New rewards, contracts, world purchases and shop tiers are not active in phase 1. See [the architecture and phased plan](docs/META_PROGRESSION.md). Main remains separate until an explicitly requested merge.
+The `feature/persistent-meta-progression` branch now contains 0.11.0: the six-section K menu, 11 personal challenges (34 SP including First Foundations), persistent tool/monster progress, schema-3 migration and permanent Shop Tiers 0/I. It retains the unmerged 0.9.1 machine GUI fixes. World purchases, contracts, optional technology adapters and higher tiers remain later phases. See [the active challenge implementation](docs/CHALLENGES.md) and [the architecture and phased plan](docs/META_PROGRESSION.md). Main remains separate until an explicitly requested merge.

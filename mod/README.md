@@ -1,10 +1,12 @@
-# Forever Skyblock — 0.10.0 (meta-progression phase 1)
+# Forever Skyblock — 0.11.0 (personal challenges / phase 2)
 
 Minecraft 1.21.1 / NeoForge 21.1.249 or newer 21.1.x. Requires Java 21. Maintained by TeKatz; Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-## Progression navigation foundation
+## Personal challenges and permanent tiers
 
-The K menu now uses six main sections: Overview, Challenges, Shop, Research, Perks and Profile. Existing skills are under Shop → Permanent; Jetpacks are under Research; reset and owner/operator test controls are under Profile. Challenges have category, search and completion filters. This phase adds no new rewards, contracts, world purchases or active Shop Tiers. Profiles retain schema 2. See [META_PROGRESSION.md](../docs/META_PROGRESSION.md) for the architecture, implementation stages and manual acceptance checklist.
+The K menu contains Overview, Challenges, Shop, Research, Perks and Profile. Phase 2 activates 11 unique personal challenges (34 SP including existing First Foundations), distinct Stone/Iron tool progress, the 1,000-monster counter and permanent Shop Tiers 0/I. Schema 3 preserves old balances, skills, PP and Core receipts and tracks new accounting without fabricating legacy history. Search, category/status filters and details show the live objective counts. Existing skills, Jetpack research, dual-cost Creative research and confirmed refunds remain functional.
+
+See [CHALLENGES.md](../docs/CHALLENGES.md) for exact triggers, migration, the changed corrupt-profile recovery policy, compatibility and manual checks. World products, contracts, higher-tier rules and optional technology challenges are not active. Both client and server need 0.11.0 (`skills-5`).
 
 ## Machine visual update
 
@@ -14,11 +16,11 @@ This branch includes the 0.9.0 machine models, animated internals and matching G
 
 Press **K** to open the new Skills menu, or remap **Open Skills** in the **Forever Skyblock** keybind category. Craft cobblestone from four Stone Fragments to earn one profile-wide point. Buy **Extended Reach** for one point to gain +1 block interaction range across singleplayer worlds in this instance.
 
-Points, milestone claims and purchases are saved outside world folders. Dedicated servers keep their own profiles; no client profile is imported. The card-based GUI has Skills/Tasks tabs. Each card shows its effect or objective, rank/reward, price and action together. Reset skills opens a confirmation dialog and refunds purchased ranks while keeping completed tasks. The green point reward in chat links directly to the menu. See [SKILLS.md](../docs/SKILLS.md) for scope, storage, commands, extension points and manual test steps.
+Points, milestone claims and purchases are saved outside world folders. Dedicated servers keep their own profiles; no client profile is imported. The card-based GUI has six main sections. Each card shows its effect or objective, rank/reward, price and action together. Reset skills opens a confirmation dialog and refunds purchased ranks while keeping completed tasks. The green point reward in chat links directly to the menu. See [SKILLS.md](../docs/SKILLS.md) for scope, storage, commands, extension points and manual test steps.
 
 ## Iron Jetpacks research test
 
-The **Jetpacks** tab adds Beginner (5 SP), Mid-Game (10 SP), End-Game (20 SP) and Creative (40 SP + 1 PP), in order. Locked jetpacks and components are hidden from JEI; supported crafting and flight paths enforce the research on the server. The temporary **TEST: +10 SP** button is available to the singleplayer owner or server operators. Existing profiles migrate as described in the Ascension section. See [JETPACK_RESEARCH.md](../docs/JETPACK_RESEARCH.md) for tier mapping, shared automation policy, reset behavior and the conditional Creative crafting recipe.
+**Research → Iron Jetpacks** adds Beginner (5 SP), Mid-Game (10 SP), End-Game (20 SP) and Creative (40 SP + 1 PP), in order. Locked jetpacks and components are hidden from JEI; supported crafting and flight paths enforce the research on the server. The temporary **TEST: +10 SP** button is available to the singleplayer owner or server operators. Existing profiles migrate as described in the Ascension section. See [JETPACK_RESEARCH.md](../docs/JETPACK_RESEARCH.md) for tier mapping, shared automation policy, reset behavior and the conditional Creative crafting recipe.
 
 Integration baseline: Iron Jetpacks 8.0.11, optional at runtime; JEI 19.64.0.454 remains optional. Use matching client/server versions for this test. TeKatz's supplied list specifies Iron Jetpacks 8.0.11 and Iron Furnaces 4.3.2; Iron Furnaces is not modified.
 
@@ -73,7 +75,7 @@ Recipes use the custom serializer `forever_skyblock:condensing`:
 
 ## Install and build
 
-Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.8.0.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
+Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.11.0.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
 
 With Java 21 installed:
 

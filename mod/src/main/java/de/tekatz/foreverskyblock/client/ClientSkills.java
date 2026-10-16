@@ -30,9 +30,12 @@ public final class ClientSkills {
     public static void accept(SkillNetwork.Snapshot value) {
         var minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.level == null) return;
+        boolean firstSnapshot = snapshot == null;
+        int oldStage = jetpackStage();
         snapshot = value;
         pending = false;
-        visibilityChanged.run();
+        // Counter-only snapshots must not rebuild JEI's research visibility on every mob kill.
+        if (firstSnapshot || oldStage != jetpackStage()) visibilityChanged.run();
         if (value.open() && !(minecraft.screen instanceof SkillScreen)) minecraft.setScreen(new SkillScreen());
         if (minecraft.screen instanceof SkillScreen screen) screen.refresh();
     }

@@ -3,6 +3,10 @@
 Architecture proposal and bounded implementation plan, October 16, 2026.
 Owner: TeKatz. Source: the complete 38-section Shop/Challenges handoff supplied by TeKatz.
 
+## Current implementation status
+
+Phase 2 is implemented in **0.11.0** on the same development branch. [CHALLENGES.md](CHALLENGES.md) is authoritative for its 11 active objectives, schema-3 subset, permanent Tier 0/I, vanilla personal-credit policy, accounting and fail-closed recovery. The findings and phase-1 notes below describe the inspected 0.9.1/0.10.0 baseline; the expanded transaction/world/contract schema remains a proposal for subsequent phases.
+
 ## Baseline and immediate boundary
 
 Inspected remote main `d80e535` (0.8.0) and visual-overhaul `e2781ef` (0.9.1), AGENTS.md, the profile/store/service, events, milestone and skill catalogs, Jetpack gates, K screen, network snapshot, CoreRedemptions, Chamber completion, tool/progression/Ascension documentation and the provisional pack inventory.

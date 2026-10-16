@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.0 — Personal challenge progression (phase 2)
+
+- Activate 11 unique challenges / 34 SP including the existing Foundations point; track distinct Stone/Iron tools and 1,000 personally credited Monster kills across worlds.
+- Verify real recipe IDs/ingredients and use personal crafting/smithing and kill triggers, including AE2 manual crafting. Reject FakePlayers, automatic crafts and nearby-player boss credit.
+- Migrate valid v1/v2 profiles to schema 3 without re-awarding existing claims; preserve balances, purchases, research, Core receipts and unknown IDs. Keep the established v1 Creative refund.
+- Persist monotonic Tier 0/I independently of currency and respec; track new earned/spent/refunded/admin currency with honest legacy-history status.
+- Show live progress, combat categories, permanent tier status and accounting in EN/DE. Protocol skills-5 requires matching client/server versions.
+- Refuse ambiguous corrupt/missing-primary recovery instead of silently accepting stale backups; phase-3 journal recovery remains pending.
+- Add migration, failure, replay and real-menu/combat integration tests. Exact validation is recorded in VALIDATION.md before delivery. Retain all machine GUI fixes; no main merge or release.
+
 ## 0.10.0 — Persistent progression navigation foundation (phase 1)
 
 - Add the architecture and staged acceptance gates in [META_PROGRESSION.md](META_PROGRESSION.md), based on the complete Shop/Challenges handoff.

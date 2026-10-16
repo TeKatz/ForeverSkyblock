@@ -65,3 +65,7 @@ TeKatz approved separate Perk Points, earned by personally consuming an endgame 
 ## Persistent shop/challenge expansion — phased instruction (October 16, 2026)
 
 TeKatz supplied the complete Shop/Challenges handoff and requested following it. Architecture and a bounded UI foundation are developed first on a separate branch, preserving all existing features and the final island. Unique profile challenges are the primary SP source; a small mastery-gated repeatable set will provide slower renewable SP. Shop tiers must be independent of currency and permanent across worlds/respecs. Future world products need a stable world identity and safe recoverable transactions. No actual valuable package contents, unresolved production routes, contract quantities or higher-tier requirements are finalized by this instruction. See [META_PROGRESSION.md](META_PROGRESSION.md) for source findings, proposed schema, trigger ownership, transaction limits and phased validation.
+
+## Personal challenges — phase 2 requested (October 16, 2026)
+
+TeKatz requested the next phase after delivery of 0.10.0. Implement the confirmed core crafting objectives, persistent distinct-tool and hostile-kill evidence, dimension/boss objectives, Tier 0/I and schema-3 migration on the development branch. Keep unresolved resource routes and optional technology adapters inactive. Use vanilla personal kill attribution rather than inventing shared boss credit. See [CHALLENGES.md](CHALLENGES.md) for the implemented boundary and compatibility.

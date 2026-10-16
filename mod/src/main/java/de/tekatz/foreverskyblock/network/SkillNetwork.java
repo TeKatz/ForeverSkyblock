@@ -36,6 +36,9 @@ public final class SkillNetwork {
         registrar.playToClient(Snapshot.TYPE, Snapshot.CODEC, (snapshot, context) -> clientReceiver.accept(snapshot));
     }
     public static void send(ServerPlayer player, ProgressionProfile profile, boolean local, boolean open, boolean available, String message) {
+        // Server-side actions can finish while a player has no live connection (disconnect boundary and GameTests).
+        // Persistence remains authoritative; the next login/open request supplies a fresh snapshot.
+        if (player.connection == null || !player.connection.getConnection().isConnected()) return;
         var skills = new LinkedHashMap<String, Integer>();
         for (var skill : SkillCatalog.SKILLS) if (profile.rank(skill.id()) > 0) skills.put(skill.id(), profile.rank(skill.id()));
         var milestones = new LinkedHashSet<String>();
