@@ -40,12 +40,23 @@ public final class ChallengeGameTests {
     }
     private static ServerPlayer packetSinkPlayer(GameTestHelper h, String name) {
         var player = player(h, name);
+        attachPacketSink(h, player);
+        return player;
+    }
+    private static ServerPlayer operatorPacketSinkPlayer(GameTestHelper h, String name) {
+        var player = new ServerPlayer(h.getLevel().getServer(), h.getLevel(), new GameProfile(UUID.randomUUID(), name),
+                net.minecraft.server.level.ClientInformation.createDefault()) {
+            @Override public boolean hasPermissions(int level) { return true; }
+        };
+        attachPacketSink(h, player);
+        return player;
+    }
+    private static void attachPacketSink(GameTestHelper h, ServerPlayer player) {
         var connection = new Connection(PacketFlow.SERVERBOUND);
         player.connection = new ServerGamePacketListenerImpl(h.getLevel().getServer(), connection, player,
                 CommonListenerCookie.createInitial(player.getGameProfile(), false)) {
             @Override public void send(Packet<?> packet) { }
         };
-        return player;
     }
     private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, path); }
     private static ProgressionProfile profile(ServerPlayer player) throws Exception {
@@ -150,20 +161,17 @@ public final class ChallengeGameTests {
     }
     @GameTest(template="empty")
     public static void currentWorldTestEntitlementUsesTheRealServiceBoundary(GameTestHelper h) throws Exception {
-        var player=packetSinkPlayer(h,"WorldShopBuyer");var service=ProgressionService.get(player.server);
-        player.server.getPlayerList().op(player.getGameProfile());
-        try {
-            h.assertTrue(service.grant(player,10),"Test balance grant persists");
-            h.assertTrue(service.evidence(player,List.of(ChallengeEvents.Evidence.completed(ChallengeRules.DRAGON))),"Dragon evidence unlocks Tier I");
-            service.buyProduct(player,ShopCatalog.TEST.id());
-            var bought=profile(player);var world=new WorldIdentityStore().loadOrCreate(
-                    player.server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT));
-            h.assertTrue(bought.points()==11&&bought.meta().claimed(world,ShopCatalog.TEST.id()),"Real service debits five SP and records this world");
-            h.assertTrue(bought.meta().purchaseReceipts().size()==1,"One durable receipt is recorded");
-            service.buyProduct(player,ShopCatalog.TEST.id());
-            var replay=profile(player);
-            h.assertTrue(replay.points()==11&&replay.meta().purchaseReceipts().size()==1,"Repeated requests cannot debit or claim twice");
-        } finally { player.server.getPlayerList().deop(player.getGameProfile()); }
+        var player=operatorPacketSinkPlayer(h,"WorldShopBuyer");var service=ProgressionService.get(player.server);
+        h.assertTrue(service.grant(player,10),"Test balance grant persists");
+        h.assertTrue(service.evidence(player,List.of(ChallengeEvents.Evidence.completed(ChallengeRules.DRAGON))),"Dragon evidence unlocks Tier I");
+        service.buyProduct(player,ShopCatalog.TEST.id());
+        var bought=profile(player);var world=new WorldIdentityStore().loadOrCreate(
+                player.server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT));
+        h.assertTrue(bought.points()==11&&bought.meta().claimed(world,ShopCatalog.TEST.id()),"Real service debits five SP and records this world");
+        h.assertTrue(bought.meta().purchaseReceipts().size()==1,"One durable receipt is recorded");
+        service.buyProduct(player,ShopCatalog.TEST.id());
+        var replay=profile(player);
+        h.assertTrue(replay.points()==11&&replay.meta().purchaseReceipts().size()==1,"Repeated requests cannot debit or claim twice");
         h.succeed();
     }
 }
