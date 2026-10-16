@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Flatter, cleaner category rows matching the Design-2 filter rail. */
+/** Compact Design-2 category rows with a dedicated icon rail and stable text alignment. */
 @Mixin(targets = "de.tekatz.foreverskyblock.client.PremiumSkillScreen$CategoryButton")
 public abstract class PremiumCategoryButtonVisualMixin {
     private static final int WHITE = 0xFFF4FAFF;
@@ -49,19 +49,26 @@ public abstract class PremiumCategoryButtonVisualMixin {
             g.fill(x + 5, y + h - 1, x + w - 5, y + h, 0x45264155);
         }
 
-        int iconY = y + (h - 16) / 2;
-        if (h >= 19) {
-            if (selected) g.fill(x + 5, iconY - 1, x + 23, iconY + 17, 0x54101F2C);
-            g.renderItem(icon, x + 6, iconY);
+        // Scale the category icon instead of hiding it on the 18 px rows used at GUI scale 3.
+        boolean showIcon = h >= 16;
+        int textX = x + 7;
+        if (showIcon) {
+            int iconSize = h <= 18 ? 12 : 14;
+            int iconX = x + 6;
+            int iconY = y + (h - iconSize) / 2;
+            if (selected) g.fill(iconX - 2, iconY - 2, iconX + iconSize + 2, iconY + iconSize + 2, 0x54101F2C);
+            renderScaledItem(g, icon, iconX, iconY, iconSize / 16.0F);
+            textX = iconX + iconSize + 6;
         }
 
-        int textX = x + (h >= 19 ? 29 : 6);
-        float scale = h <= 20 ? 0.57F : 0.66F;
-        text(g, font, self.getMessage(), textX, y + (h - 7) / 2,
-                selected ? WHITE : LIGHT, scale, Math.max(12, w - (textX - x) - 25), selected);
+        float scale = h <= 18 ? 0.54F : h <= 20 ? 0.57F : 0.64F;
+        Component label = "all".equals(category) ? Component.literal("All Categories") : self.getMessage();
+        int countReserve = 24;
+        text(g, font, label, textX, y + (h - 7) / 2,
+                selected ? WHITE : LIGHT, scale, Math.max(12, w - (textX - x) - countReserve), selected);
 
         String number = Integer.toString(count);
-        int numberW = Math.max(12, (int) Math.ceil(font.width(number) * scale));
+        int numberW = Math.max(10, (int) Math.ceil(font.width(number) * scale));
         text(g, font, Component.literal(number), x + w - numberW - 7, y + (h - 7) / 2,
                 selected ? 0xFF9FDFFF : MUTED, scale, numberW + 2, false);
         callback.cancel();
@@ -102,6 +109,14 @@ public abstract class PremiumCategoryButtonVisualMixin {
         g.pose().pushPose();
         g.pose().scale(scale, scale, 1F);
         g.drawString(font, value, Math.round(x / scale), Math.round(y / scale), color, shadow);
+        g.pose().popPose();
+    }
+
+    private static void renderScaledItem(GuiGraphics g, ItemStack stack, int x, int y, float scale) {
+        g.pose().pushPose();
+        g.pose().translate(x, y, 0);
+        g.pose().scale(scale, scale, 1F);
+        g.renderItem(stack, 0, 0);
         g.pose().popPose();
     }
 }
