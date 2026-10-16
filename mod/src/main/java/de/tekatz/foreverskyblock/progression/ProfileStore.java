@@ -23,13 +23,20 @@ import java.util.function.UnaryOperator;
 /** Stored outside saves/: deleting a world does not delete the player's progression. */
 public final class ProfileStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final int SCHEMA = 3;
+    private static final int SCHEMA = 4;
     private static final long MAX_FILE_SIZE = 1_048_576;
     private final Path directory;
     private final Map<UUID, ProgressionProfile> cache = new HashMap<>();
+    private final FaultInjector faults;
 
-    public ProfileStore(Path directory) { this.directory = directory; }
+    enum WriteStage { AFTER_BACKUP, AFTER_JOURNAL, AFTER_PRIMARY }
+    @FunctionalInterface interface FaultInjector { void at(WriteStage stage) throws IOException; }
+
+    public ProfileStore(Path directory) { this(directory, stage -> { }); }
+    ProfileStore(Path directory, FaultInjector faults) { this.directory = directory; this.faults = faults; }
     public synchronized ProgressionProfile load(UUID player) throws IOException {
+        ProgressionProfile recovered = recoverJournal(player);
+        if (recovered != null) { cache.put(player, recovered); return recovered; }
         ProgressionProfile cached = cache.get(player);
         if (cached != null) return cached;
         Path file = file(player);
@@ -52,15 +59,28 @@ public final class ProfileStore {
         byte[] encoded = encode(player, next);
         if (encoded.length > MAX_FILE_SIZE) throw new IOException("Progression profile exceeds size limit");
         Files.createDirectories(directory);
-        // Write only validated data to the backup, even when recovering a corrupted primary file.
-        if (Files.exists(file(player))) writeAtomically(backup(player), encode(player, previous));
-        writeAtomically(file(player), encoded);
-        cache.put(player, next);
-        return next;
+        try {
+            // The backup is established before the journal commit point. Failure here changes nothing.
+            if (Files.exists(file(player))) writeAtomically(backup(player), encode(player, previous));
+            faults.at(WriteStage.AFTER_BACKUP);
+            Files.createDirectories(journal(player).getParent());
+            writeAtomically(journal(player), encodeJournal(player, encoded));
+            faults.at(WriteStage.AFTER_JOURNAL);
+            writeAtomically(file(player), encoded);
+            faults.at(WriteStage.AFTER_PRIMARY);
+            Files.deleteIfExists(journal(player));
+            cache.put(player, next);
+            return next;
+        } catch (IOException | RuntimeException e) {
+            // A durable journal is authoritative and will finish on the next load; stale cache must not mask it.
+            cache.remove(player);
+            throw e;
+        }
     }
     public synchronized void evict(UUID player) { cache.remove(player); }
     public Path file(UUID player) { return directory.resolve(player + ".json"); }
     private Path backup(UUID player) { return directory.resolve(player + ".json.bak"); }
+    Path journal(UUID player) { return directory.resolve("transactions").resolve(player + ".json"); }
     private static byte[] encode(UUID player, ProgressionProfile profile) {
         JsonObject json = new JsonObject();
         json.addProperty("schema_version", SCHEMA);
@@ -80,15 +100,41 @@ public final class ProfileStore {
         });
         meta.add("challenge_progress", progress);
         meta.add("accounting", GSON.toJsonTree(profile.meta().accounting()));
+        JsonObject worldClaims = new JsonObject();
+        profile.meta().worldClaims().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry ->
+                worldClaims.add(entry.getKey().toString(), GSON.toJsonTree(entry.getValue().stream().sorted().toList())));
+        meta.add("world_claims", worldClaims);
+        JsonObject receipts = new JsonObject();
+        profile.meta().purchaseReceipts().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+            JsonObject receipt = new JsonObject();
+            receipt.addProperty("world_uuid", entry.getValue().worldId().toString());
+            receipt.addProperty("product_id", entry.getValue().productId());
+            receipt.addProperty("sp_cost", entry.getValue().spCost());
+            receipt.addProperty("required_tier", entry.getValue().requiredTier());
+            receipts.add(entry.getKey().toString(), receipt);
+        });
+        meta.add("purchase_receipts", receipts);
         json.add("meta", meta);
         return (GSON.toJson(json) + "\n").getBytes(StandardCharsets.UTF_8);
+    }
+    private static byte[] encodeJournal(UUID player, byte[] nextProfile) {
+        JsonObject journal = new JsonObject();
+        journal.addProperty("journal_version", 1);
+        journal.addProperty("player_uuid", player.toString());
+        journal.add("next_profile", JsonParser.parseString(new String(nextProfile, StandardCharsets.UTF_8)));
+        return (GSON.toJson(journal) + "\n").getBytes(StandardCharsets.UTF_8);
     }
     private static ProgressionProfile read(Path file, UUID player) throws IOException {
         if (Files.size(file) > MAX_FILE_SIZE) throw new IOException("Progression profile exceeds size limit");
         try {
-            JsonObject json = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
+            return read(JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject(), player);
+        } catch (UnsupportedSchemaException e) { throw e; }
+        catch (RuntimeException e) { throw new IOException("Invalid progression profile", e); }
+    }
+    private static ProgressionProfile read(JsonObject json, UUID player) throws IOException {
+        try {
             int schema = integer(json, "schema_version");
-            if (schema != 1 && schema != 2 && schema != SCHEMA) throw new UnsupportedSchemaException();
+            if (schema < 1 || schema > SCHEMA) throw new UnsupportedSchemaException();
             if (!player.toString().equals(json.get("player_uuid").getAsString())) throw new IllegalArgumentException("Profile UUID mismatch");
             int points = integer(json, "points");
             var milestones = new LinkedHashSet<String>();
@@ -109,11 +155,12 @@ public final class ProfileStore {
                 paid.put(entry.getKey(), entry.getValue().getAsBigDecimal().intValueExact());
             var receipts = new LinkedHashSet<UUID>();
             for (var core : json.getAsJsonArray("redeemed_cores")) receipts.add(UUID.fromString(core.getAsString()));
-            return new ProgressionProfile(points, milestones, skills, integer(json, "perk_points"), paid, receipts, schema == 2 ? MetaProgress.empty(true) : readMeta(json.getAsJsonObject("meta")));
+            MetaProgress meta = schema == 2 ? MetaProgress.empty(true) : readMeta(json.getAsJsonObject("meta"), schema >= 4);
+            return new ProgressionProfile(points, milestones, skills, integer(json, "perk_points"), paid, receipts, meta);
         } catch (UnsupportedSchemaException e) { throw e; }
         catch (RuntimeException e) { throw new IOException("Invalid progression profile", e); }
     }
-    private static MetaProgress readMeta(JsonObject meta) {
+    private static MetaProgress readMeta(JsonObject meta, boolean worldData) {
         var progress = new LinkedHashMap<String, MetaProgress.Progress>();
         for (var entry : meta.getAsJsonObject("challenge_progress").entrySet()) {
             var state = entry.getValue().getAsJsonObject(); var tokens = new LinkedHashSet<String>();
@@ -126,9 +173,46 @@ public final class ProfileStore {
         var a = meta.getAsJsonObject("accounting");
         if (!a.get("legacyHistoryUnknown").isJsonPrimitive() || !a.get("legacyHistoryUnknown").getAsJsonPrimitive().isBoolean())
             throw new IllegalArgumentException("Invalid history flag");
+        var claims = new LinkedHashMap<UUID, java.util.Set<String>>();
+        var purchaseReceipts = new LinkedHashMap<UUID, MetaProgress.PurchaseReceipt>();
+        if (worldData) {
+            for (var entry : meta.getAsJsonObject("world_claims").entrySet()) {
+                var products = new LinkedHashSet<String>();
+                for (var product : entry.getValue().getAsJsonArray())
+                    if (!product.isJsonPrimitive() || !product.getAsJsonPrimitive().isString() || !products.add(product.getAsString()))
+                        throw new IllegalArgumentException("Invalid or duplicate world claim");
+                claims.put(UUID.fromString(entry.getKey()), products);
+            }
+            for (var entry : meta.getAsJsonObject("purchase_receipts").entrySet()) {
+                var receipt = entry.getValue().getAsJsonObject();
+                purchaseReceipts.put(UUID.fromString(entry.getKey()), new MetaProgress.PurchaseReceipt(
+                        UUID.fromString(receipt.get("world_uuid").getAsString()), receipt.get("product_id").getAsString(),
+                        integer(receipt, "sp_cost"), integer(receipt, "required_tier")));
+            }
+        }
         return new MetaProgress(integer(meta, "shop_tier"), progress, new MetaProgress.Accounting(
                 total(a, "spEarned"), total(a, "ppEarned"), total(a, "spSpent"), total(a, "ppSpent"),
-                total(a, "spRefunded"), total(a, "ppRefunded"), total(a, "spAdmin"), a.get("legacyHistoryUnknown").getAsBoolean()));
+                total(a, "spRefunded"), total(a, "ppRefunded"), total(a, "spAdmin"), a.get("legacyHistoryUnknown").getAsBoolean()),
+                claims, purchaseReceipts);
+    }
+    private ProgressionProfile recoverJournal(UUID player) throws IOException {
+        Path journal = journal(player);
+        if (!Files.exists(journal)) return null;
+        if (Files.size(journal) > MAX_FILE_SIZE + 4096) throw new IOException("Progression journal exceeds size limit");
+        try {
+            JsonObject wrapper = JsonParser.parseString(Files.readString(journal, StandardCharsets.UTF_8)).getAsJsonObject();
+            if (integer(wrapper, "journal_version") != 1 || !player.toString().equals(wrapper.get("player_uuid").getAsString()))
+                throw new IllegalArgumentException("Invalid progression journal identity");
+            JsonObject nextJson = wrapper.getAsJsonObject("next_profile");
+            ProgressionProfile next = read(nextJson, player);
+            byte[] encoded = (GSON.toJson(nextJson) + "\n").getBytes(StandardCharsets.UTF_8);
+            if (encoded.length > MAX_FILE_SIZE) throw new IOException("Progression profile exceeds size limit");
+            Files.createDirectories(directory);
+            writeAtomically(file(player), encoded);
+            Files.delete(journal);
+            return next;
+        } catch (IOException e) { throw e; }
+        catch (RuntimeException e) { throw new IOException("Invalid progression journal", e); }
     }
     private static long total(JsonObject json, String key) { return json.get(key).getAsBigDecimal().longValueExact(); }
     private static int integer(JsonObject json, String key) { return json.get(key).getAsBigDecimal().intValueExact(); }

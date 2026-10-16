@@ -69,6 +69,19 @@ public record ProgressionProfile(int points, Set<String> milestones, Map<String,
         if (perkCost > 0) paid.merge(id, perkCost, Math::addExact);
         return new ProgressionProfile(points - cost, milestones, purchased, perkPoints - perkCost, paid, redeemedCores, meta.account(0, 0, cost, perkCost, 0, 0, 0));
     }
+    public ProgressionProfile purchaseWorld(java.util.UUID world, ShopCatalog.Product product, java.util.UUID transaction) {
+        if (world == null || transaction == null || product == null) throw new IllegalArgumentException("Invalid world purchase");
+        if (meta.purchaseReceipts().containsKey(transaction) || meta.claimed(world, product.id())
+                || meta.shopTier() < product.requiredTier() || points < product.spCost()) return this;
+        var claims = new LinkedHashMap<java.util.UUID, Set<String>>(meta.worldClaims());
+        var products = new LinkedHashSet<>(claims.getOrDefault(world, Set.of()));
+        products.add(product.id()); claims.put(world, Set.copyOf(products));
+        var receipts = new LinkedHashMap<>(meta.purchaseReceipts());
+        receipts.put(transaction, new MetaProgress.PurchaseReceipt(world, product.id(), product.spCost(), product.requiredTier()));
+        var nextMeta = new MetaProgress(meta.shopTier(), meta.progress(),
+                meta.accounting().change(0, 0, product.spCost(), 0, 0, 0, 0), claims, receipts);
+        return new ProgressionProfile(points - product.spCost(), milestones, skills, perkPoints, perkInvestments, redeemedCores, nextMeta);
+    }
     /** Refund known purchases without clearing completed milestones or unknown future skill data. */
     public ProgressionProfile resetSkills(Map<String, Integer> costs) {
         var remaining = new LinkedHashMap<>(skills);

@@ -54,6 +54,11 @@ public final class ClientSkills {
         pending = true;
         PacketDistributor.sendToServer(new SkillNetwork.Request(3, ""));
     }
+    public static void buyProduct(String product) {
+        if (pending) return;
+        pending = true;
+        PacketDistributor.sendToServer(new SkillNetwork.Request(4, product));
+    }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         var minecraft = Minecraft.getInstance();
         while (OPEN.consumeClick()) if (minecraft.player != null && minecraft.screen == null)

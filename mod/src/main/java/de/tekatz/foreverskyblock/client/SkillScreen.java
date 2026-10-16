@@ -35,7 +35,12 @@ public final class SkillScreen extends Screen {
     private Card detail;
     private SkillNetwork.Snapshot lastSnapshot;
     private record Card(Component title, Component description, Component badge, ItemStack icon,
-                        String skill, String milestone, Runnable action, Component actionText) { }
+                        String skill, String milestone, String product, Runnable action, Component actionText) {
+        private Card(Component title, Component description, Component badge, ItemStack icon,
+                     String skill, String milestone, Runnable action, Component actionText) {
+            this(title, description, badge, icon, skill, milestone, "", action, actionText);
+        }
+    }
     public SkillScreen() { super(text("title")); }
     private static Component text(String key,Object... args) { return Component.translatable("gui.forever_skyblock.meta."+key,args); }
     private static Component old(String key,Object... args) { return Component.translatable("gui.forever_skyblock.skills."+key,args); }
@@ -133,7 +138,17 @@ public final class SkillScreen extends Screen {
             }
             case SHOP -> {
                 if(sub()==0)for(var skill:SkillCatalog.SKILLS){if(!skill.jetpack())cards.add(skillCard(skill));}
-                else if(sub()==1)cards.add(info("sub.current_world","world_pending",Items.CHEST.getDefaultInstance()));
+                else if(sub()==1) {
+                    cards.add(new Card(text("sub.current_world"), ready
+                            ? state.worldAvailable() ? text("world_identity",state.worldName()) : text("world_identity_error")
+                            : old("storage_error"), text("current_world_scope"), Items.COMPASS.getDefaultInstance(),"","",null,Component.empty()));
+                    if(ready&&state.canTestPoints()) {
+                        var product=ShopCatalog.TEST;
+                        cards.add(new Card(text("test_product_title"),text("test_product_description"),
+                                text("world_product_badge",product.spCost(),tierName(product.requiredTier())),Items.PAPER.getDefaultInstance(),
+                                "","",product.id(),null,text("purchase")));
+                    } else cards.add(info("world_products_title","world_products_pending",Items.CHEST.getDefaultInstance()));
+                }
                 else {
                     cards.add(new Card(text("sub.tier_progress"),text("tiers_pending"),ready?text("current_tier",tierName(state.shopTier())):old("unavailable"),Items.COMPASS.getDefaultInstance(),"","",null,Component.empty()));
                     cards.add(tierCard(0,"tier_foundations","tier_foundations_description",Items.COBBLESTONE.getDefaultInstance()));
@@ -155,6 +170,9 @@ public final class SkillScreen extends Screen {
                     var a=state.accounting();
                     cards.add(new Card(text("history_title"),text("accounting_values",a.spEarned(),a.ppEarned(),a.spSpent(),a.ppSpent(),a.spRefunded(),a.ppRefunded(),a.spAdmin()),
                             text(a.legacyHistoryUnknown()?"history_legacy":"history_tracked"),Items.BOOK.getDefaultInstance(),"","",null,Component.empty()));
+                    cards.add(new Card(text("current_world_claims"),state.worldAvailable()
+                            ? text("world_profile_values",state.worldName(),state.worldClaims().size()) : text("world_identity_error"),
+                            text("current_world_scope"),Items.COMPASS.getDefaultInstance(),"","",null,Component.empty()));
                 }
                 cards.add(new Card(old("reset_title"),text("reset_scope"),text("permanent_scope"),Items.GRINDSTONE.getDefaultInstance(),"","",this::confirmReset,old("reset")));
                 if(ready&&state.canTestPoints())cards.add(new Card(text("development"),old("test_points_hint"),text("admin_only"),Items.COMMAND_BLOCK.getDefaultInstance(),"","",()->{ClientSkills.testPoints();refresh();},old("test_points")));
@@ -197,6 +215,16 @@ public final class SkillScreen extends Screen {
             if(count<0)return text("objective_revision");
             return text("objective_progress",count,ChallengeRules.find(card.milestone()).target());
         }
+        if(!card.product().isEmpty()) {
+            var product=ShopCatalog.find(card.product());
+            if(state==null||!state.available())return old("unavailable");
+            if(!state.worldAvailable())return text("world_unavailable");
+            if(state.worldClaims().contains(product.id()))return text("world_already_claimed");
+            if(ClientSkills.pending())return old("waiting");
+            if(state.shopTier()<product.requiredTier())return text("world_requires_tier",tierName(product.requiredTier()));
+            if(state.points()<product.spCost())return old("need_points",product.spCost());
+            return text("world_purchase_available");
+        }
         return Component.empty();
     }
     private boolean canBuy(String id) {
@@ -204,12 +232,25 @@ public final class SkillScreen extends Screen {
         return state!=null&&state.available()&&!ClientSkills.pending()&&skill.available()&&state.rank(id)<skill.maxRank()
                 &&(skill.prerequisite().isEmpty()||state.rank(skill.prerequisite())>0)&&state.points()>=skill.cost()&&state.perkPoints()>=skill.perkCost();
     }
+    private boolean canBuyProduct(String id) {
+        var state=ClientSkills.snapshot();var product=ShopCatalog.find(id);
+        return state!=null&&state.available()&&state.worldAvailable()&&!ClientSkills.pending()&&product!=null
+                &&state.canTestPoints()&&!state.worldClaims().contains(id)&&state.shopTier()>=product.requiredTier()&&state.points()>=product.spCost();
+    }
     private void confirmReset() {
         var state=ClientSkills.snapshot();if(state==null||!state.available()||ClientSkills.pending())return;
         rememberScroll();
         int sp=SkillCatalog.SKILLS.stream().mapToInt(s->state.rank(s.id())*s.cost()).sum();
         int pp=SkillCatalog.SKILLS.stream().mapToInt(s->state.rank(s.id())*s.perkCost()).sum();
         minecraft.setScreen(new ConfirmScreen(yes->{minecraft.setScreen(this);if(yes){ClientSkills.reset();refresh();}},old("reset_title"),old("reset_description",sp,pp),old("reset_confirm"),Component.translatable("gui.cancel")));
+    }
+    private void confirmProduct(String id) {
+        var state=ClientSkills.snapshot();var product=ShopCatalog.find(id);
+        if(product==null||!canBuyProduct(id))return;
+        rememberScroll();
+        minecraft.setScreen(new ConfirmScreen(yes->{minecraft.setScreen(this);if(yes){ClientSkills.buyProduct(id);refresh();}},
+                text("purchase_confirm_title"),text("purchase_confirm_description",product.spCost(),state.worldName()),
+                text("purchase_confirm"),Component.translatable("gui.cancel")));
     }
     public void refresh() {
         if(catalog==null)return;
@@ -263,11 +304,12 @@ public final class SkillScreen extends Screen {
                 offsets.add(contentHeight);
                 int h=16+Math.max(18,lines(card.title(),cardWidth()-44)*10)+lines(card.description(),cardWidth()-20)*10
                         +lines(card.badge(),cardWidth()-20)*10+30;
-                boolean actionable=!card.skill().isEmpty()||card.action()!=null||!card.milestone().isEmpty()&&detail==null;
+                boolean actionable=!card.skill().isEmpty()||!card.product().isEmpty()||card.action()!=null||!card.milestone().isEmpty()&&detail==null;
                 if(actionable)h+=26;
                 heights.add(h);contentHeight+=h+7;
                 Button b=Button.builder(card.actionText(),ignored->{
                     if(!card.skill().isEmpty()){ClientSkills.buy(card.skill());refreshActions();}
+                    else if(!card.product().isEmpty())confirmProduct(card.product());
                     else if(card.action()!=null)card.action().run();
                     else if(!card.milestone().isEmpty()){rememberScroll();detail=card;rebuildWidgets();}
                 }).bounds(left+10,top,cardWidth()-20,20).build();
@@ -282,7 +324,7 @@ public final class SkillScreen extends Screen {
         private void positionButtons(){
             for(int i=0;i<actions.size();i++) {
                 var card=cards.get(i);var b=actions.get(i);b.setY(top-(int)scrollDistance+offsets.get(i)+heights.get(i)-28);
-                boolean actionable=!card.skill().isEmpty()||card.action()!=null||!card.milestone().isEmpty()&&detail==null;
+                boolean actionable=!card.skill().isEmpty()||!card.product().isEmpty()||card.action()!=null||!card.milestone().isEmpty()&&detail==null;
                 b.visible=actionable&&b.getY()+20>top&&b.getY()<bottom;
             }
         }
@@ -291,6 +333,7 @@ public final class SkillScreen extends Screen {
             for(int i=0;i<cards.size();i++) {
                 var c=cards.get(i);var b=actions.get(i);
                 if(!c.skill().isEmpty()){b.setMessage(status(c));b.active=canBuy(c.skill());}
+                else if(!c.product().isEmpty()){b.setMessage(status(c));b.active=canBuyProduct(c.product());}
                 else {
                     b.active=true;
                     if(page==Page.PROFILE&&c.action()!=null)b.active=state!=null&&state.available()&&!ClientSkills.pending();
@@ -308,7 +351,8 @@ public final class SkillScreen extends Screen {
             for(int i=0;i<cards.size();i++) {
                 var c=cards.get(i);int cy=baseY+offsets.get(i),h=heights.get(i),w=cardWidth();
                 if(cy>=bottom||cy+h<=top)continue;
-                boolean complete=state!=null&&state.available()&&(!c.milestone().isEmpty()?state.milestones().contains(c.milestone()):!c.skill().isEmpty()&&state.rank(c.skill())>0);
+                boolean complete=state!=null&&state.available()&&(!c.milestone().isEmpty()?state.milestones().contains(c.milestone())
+                        :!c.skill().isEmpty()?state.rank(c.skill())>0:!c.product().isEmpty()&&state.worldClaims().contains(c.product()));
                 g.fill(left,cy,left+w,cy+h,0xFF2C4352);g.fill(left+1,cy+1,left+w-1,cy+h-1,complete?0xFF152E2A:0xFF1A2A38);
                 g.fill(left,cy,left+3,cy+h,complete?GREEN:CYAN);g.renderItem(c.icon(),left+10,cy+9);
                 int dy=drawLines(g,c.title(),left+34,cy+8,w-44,LIGHT);

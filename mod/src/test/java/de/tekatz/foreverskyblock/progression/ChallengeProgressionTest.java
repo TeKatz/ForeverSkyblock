@@ -77,7 +77,7 @@ class ChallengeProgressionTest {
         var next=store.update(id,s -> ChallengeRules.record(s,ChallengeRules.IRON_TOOLS.id(),"minecraft:iron_hoe"));
         assertEquals(p.skills(),next.skills());assertEquals(p.perkInvestments(),next.perkInvestments());assertEquals(p.redeemedCores(),next.redeemedCores());
         assertTrue(next.milestones().contains("future:challenge"));assertEquals(17,next.points());
-        assertEquals(3,JsonParser.parseString(Files.readString(store.file(id))).getAsJsonObject().get("schema_version").getAsInt());
+        assertEquals(4,JsonParser.parseString(Files.readString(store.file(id))).getAsJsonObject().get("schema_version").getAsInt());
         assertEquals(next,new ProfileStore(root).load(id));
     }
     @Test void oldAndNewAccountingDistinguishEarningSpendingRefundsAndAdminPoints() {
