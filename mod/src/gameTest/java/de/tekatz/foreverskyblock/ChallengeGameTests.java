@@ -45,6 +45,7 @@ public final class ChallengeGameTests {
             int slot = recipe instanceof ShapedRecipe ? (i / recipeWidth) * 3 + i % recipeWidth : i;
             menu.getSlot(slot+1).set(ingredients.get(i).getItems()[0].copy());
         }
+        menu.slotsChanged(menu.getSlot(1).container);
         h.assertTrue(!menu.getSlot(0).getItem().isEmpty(), "Real crafting menu must resolve " + path);
         if (shift) menu.quickMoveStack(player, 0); else menu.clicked(0, 0, ClickType.PICKUP, player);
         h.assertTrue(menu.getSlot(0).getItem().isEmpty(), "Taking the output consumes the real recipe ingredients");
