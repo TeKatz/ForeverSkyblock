@@ -8,7 +8,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -16,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Mockup-style challenge card renderer for the Design-2 K-menu. */
+/** Design-2 challenge cards with protected text lanes and mockup-style depth. */
 @Mixin(targets = "de.tekatz.foreverskyblock.client.PremiumSkillScreen$ChallengeCardButton")
 public abstract class PremiumChallengeCardVisualMixin {
     private static final int WHITE = 0xFFF7FBFF;
@@ -49,23 +48,22 @@ public abstract class PremiumChallengeCardVisualMixin {
         int fill = complete ? 0xE20A2824 : hovered ? 0xE7193042 : 0xE30D1D2A;
         int border = complete || hovered ? accent : 0xFF2C4B60;
 
-        // Strong shadow, cool rim, category rail and top light are the main depth cues from the mockup.
+        // Card depth: shadow, dark body, category rail and a faint upper sheen.
         g.fill(bx + 2, by + 3, bx + bw + 2, by + bh + 4, 0x52000000);
         panel(g, bx, by, bw, bh, fill, border);
         g.fill(bx, by + 2, bx + 2, by + bh - 2, accent);
         g.fill(bx + 2, by + 1, bx + bw - 2, by + 2, (accent & 0x00FFFFFF) | 0x36000000);
         if (hovered || complete) glow(g, bx, by, bw, bh, accent);
 
-        // Faded secondary artwork in the upper-right gives every card a small scenic/illustrative layer.
-        int artSize = bh >= 66 ? 30 : 25;
-        int artX = bx + bw - artSize - 5;
-        int artY = by + 3;
-        renderScaledItem(g, milestone.icon().getDefaultInstance(), artX, artY, artSize / 16.0F);
-        g.fill(artX - 2, artY - 1, bx + bw - 2, artY + artSize + 2, 0xA20A1722);
-        g.fill(artX - 4, artY + artSize - 7, bx + bw - 2, artY + artSize + 2,
-                (accent & 0x00FFFFFF) | 0x18000000);
+        // Scenic depth without drawing a second opaque item over the card text.
+        int artW = Math.min(42, Math.max(24, bw / 5));
+        int artX = bx + bw - artW - 3;
+        g.fill(artX, by + 3, bx + bw - 3, by + bh - 3, (accent & 0x00FFFFFF) | 0x0E000000);
+        g.fill(artX + 5, by + 7, bx + bw - 7, by + 9, (accent & 0x00FFFFFF) | 0x12000000);
+        g.fill(artX + 11, by + 13, bx + bw - 4, by + 15, 0x12000000);
+        g.fill(artX + 2, by + bh - 14, bx + bw - 9, by + bh - 12, (accent & 0x00FFFFFF) | 0x10000000);
 
-        int iconBox = bh >= 66 ? 27 : 24;
+        int iconBox = Math.min(bh >= 66 ? 27 : 24, bh - 18);
         int iconX = bx + 7;
         int iconY = by + 6;
         panel(g, iconX, iconY, iconBox, iconBox, 0xD7122938, 0x663A6078);
@@ -74,21 +72,22 @@ public abstract class PremiumChallengeCardVisualMixin {
         g.renderItem(milestone.icon().getDefaultInstance(), iconX + (iconBox - 16) / 2, iconY + (iconBox - 16) / 2);
 
         int textX = iconX + iconBox + 7;
-        int rightReserve = Math.max(19, artSize - 3);
+        int rightInset = complete ? 18 : 8;
         float titleScale = bh >= 66 ? 0.72F : 0.64F;
         float bodyScale = bh >= 66 ? 0.57F : 0.51F;
         float metaScale = bh >= 66 ? 0.56F : 0.50F;
 
         text(g, font, self.getMessage().copy().withStyle(ChatFormatting.BOLD), textX, by + 6, WHITE,
-                titleScale, bw - (textX - bx) - rightReserve, true);
+                titleScale, bw - (textX - bx) - rightInset, true);
 
         int descY = by + (bh >= 66 ? 20 : 18);
-        text(g, font, Component.translatable(milestone.descriptionKey()), textX, descY, LIGHT,
-                bodyScale, bw - (textX - bx) - rightReserve + 5, false);
+        int descWidth = bw - (textX - bx) - 8;
+        wrappedText(g, font, Component.translatable(milestone.descriptionKey()), textX, descY, LIGHT,
+                bodyScale, descWidth, bh >= 66 ? 2 : 1);
 
-        int categoryY = by + (bh >= 66 ? 34 : 30);
+        int categoryY = by + (bh >= 66 ? 39 : 30);
         text(g, font, Component.literal(categoryName(milestone.category())), textX, categoryY, accent,
-                metaScale, bw - (textX - bx) - 7, false);
+                metaScale, bw - (textX - bx) - 8, false);
 
         if (complete) {
             text(g, font, Component.literal("✔").withStyle(ChatFormatting.BOLD), bx + bw - 14, by + 5,
@@ -108,7 +107,7 @@ public abstract class PremiumChallengeCardVisualMixin {
         int barY = by + bh - 8;
         int barW = Math.max(24, rewardX - barX - 7);
         progress(g, barX, barY, barW, 5, current / (double) target, complete ? GREEN : CYAN);
-        String progressText = complete ? target + " / " + target : current + " / " + target;
+        String progressText = current + " / " + target;
         int progressW = Math.max(24, (int) Math.ceil(font.width(progressText) * metaScale) + 2);
         text(g, font, Component.literal(progressText), barX + Math.max(0, barW - progressW), barY - 8,
                 complete ? GREEN : MUTED, metaScale, progressW, false);
@@ -185,11 +184,17 @@ public abstract class PremiumChallengeCardVisualMixin {
         g.pose().popPose();
     }
 
-    private static void renderScaledItem(GuiGraphics g, ItemStack stack, int x, int y, float scale) {
-        g.pose().pushPose();
-        g.pose().translate(x, y, 0);
-        g.pose().scale(scale, scale, 1F);
-        g.renderItem(stack, 0, 0);
-        g.pose().popPose();
+    private static void wrappedText(GuiGraphics g, Font font, Component component, int x, int y, int color,
+                                    float scale, int maxWidth, int maxLines) {
+        int logicalWidth = Math.max(1, (int) (maxWidth / scale));
+        int shown = 0;
+        for (var line : font.split(component, logicalWidth)) {
+            if (shown++ >= maxLines) break;
+            g.pose().pushPose();
+            g.pose().scale(scale, scale, 1F);
+            g.drawString(font, line, Math.round(x / scale), Math.round(y / scale), color, false);
+            g.pose().popPose();
+            y += Math.max(6, Math.round(9 * scale));
+        }
     }
 }
