@@ -90,6 +90,8 @@ Older 0.14.0 and 0.13.4 builds cannot be assumed to read profiles after a schema
 
 Pure tests cover one-time debit/claim/delivery creation, strict delivery-stage transitions, respec preservation and schema-5 → schema-6 persistence. Dedicated GameTests cover the unique supply-cache marker and the expanded network payload. The NeoForge 21.1.259 integration suite checks all six AE2 registry IDs used by the package along with the existing Phase 4 integrations.
 
+The complete 0.15.0 source commit `ae1eba7720e30042b5b2dcf7e57c04ec7b2a8ae7` passed GitHub Actions **run #165** on October 16, 2026: Java 21 build/unit tests, baseline dedicated GameTests, the NeoForge 21.1.259 pack-integration suite and artifact upload all succeeded.
+
 Headless tests cannot prove rendered Shop layout or a real OS-level kill at every exact inventory checkpoint. Those remain manual acceptance items.
 
 ## Manual acceptance
