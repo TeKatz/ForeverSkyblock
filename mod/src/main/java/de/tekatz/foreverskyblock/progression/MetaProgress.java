@@ -5,10 +5,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/** Bounded permanent challenge, accounting, world-entitlement and repeatable-contract state. */
+/** Bounded permanent challenge, accounting, world-entitlement, contract and delivery state. */
 public record MetaProgress(int shopTier, Map<String, Progress> progress, Accounting accounting,
                            Map<UUID, Set<String>> worldClaims, Map<UUID, PurchaseReceipt> purchaseReceipts,
-                           Map<String, ContractState> contracts, Map<UUID, PendingContract> pendingContracts) {
+                           Map<String, ContractState> contracts, Map<UUID, PendingContract> pendingContracts,
+                           Map<UUID, DeliveryReceipt> deliveries) {
     public record Progress(int revision, Set<String> evidence) {
         public Progress {
             if (revision < 1 || revision > 10000 || evidence.size() > 1000) throw new IllegalArgumentException("Invalid objective state");
@@ -30,12 +31,16 @@ public record MetaProgress(int shopTier, Map<String, Progress> progress, Account
                     Math.addExact(spAdmin, admin), legacyHistoryUnknown);
         }
     }
-    public record PurchaseReceipt(UUID worldId, String productId, int spCost, int requiredTier) {
+    public record PurchaseReceipt(UUID worldId, String productId, int spCost, int ppCost, int requiredTier) {
         public PurchaseReceipt {
             if (worldId == null) throw new IllegalArgumentException("Missing receipt world");
             ProgressionProfile.validateId(productId);
-            if (spCost < 1 || spCost > ProgressionProfile.MAX_POINTS || requiredTier < 0 || requiredTier > 4)
+            if (spCost < 1 || spCost > ProgressionProfile.MAX_POINTS || ppCost < 0 || ppCost > ProgressionProfile.MAX_POINTS
+                    || requiredTier < 0 || requiredTier > 4)
                 throw new IllegalArgumentException("Invalid purchase receipt");
+        }
+        public PurchaseReceipt(UUID worldId, String productId, int spCost, int requiredTier) {
+            this(worldId, productId, spCost, 0, requiredTier);
         }
     }
     public record ContractState(int revision, int progress, long completions,
@@ -67,10 +72,20 @@ public record MetaProgress(int shopTier, Map<String, Progress> progress, Account
         public int afterCount() { return beforeCount - itemCount; }
     }
 
+    public enum DeliveryStage { READY, DISPATCHING, DELIVERED, OPENING, OPENED }
+
+    /** Receipt key is the immutable purchase transaction UUID stored in purchaseReceipts. */
+    public record DeliveryReceipt(UUID worldId, String productId, DeliveryStage stage) {
+        public DeliveryReceipt {
+            if (worldId == null || stage == null) throw new IllegalArgumentException("Invalid delivery receipt");
+            ProgressionProfile.validateId(productId);
+        }
+    }
+
     public MetaProgress {
         if (shopTier < -1 || shopTier > 4 || progress.size() > 4096 || accounting == null
                 || worldClaims.size() > 1024 || purchaseReceipts.size() > 4096
-                || contracts.size() > 128 || pendingContracts.size() > 1)
+                || contracts.size() > 128 || pendingContracts.size() > 1 || deliveries.size() > 4096)
             throw new IllegalArgumentException("Invalid meta progression");
         progress = Map.copyOf(progress);
         progress.forEach((id, state) -> {
@@ -118,33 +133,58 @@ public record MetaProgress(int shopTier, Map<String, Progress> progress, Account
         pendingContracts.forEach((id, pending) -> {
             if (id == null || pending == null) throw new IllegalArgumentException("Invalid pending contract entry");
         });
+
+        deliveries = Map.copyOf(deliveries);
+        int activeDelivery = 0;
+        for (var entry : deliveries.entrySet()) {
+            UUID transaction = entry.getKey(); DeliveryReceipt delivery = entry.getValue();
+            PurchaseReceipt purchase = purchaseReceipts.get(transaction);
+            if (transaction == null || delivery == null || purchase == null
+                    || !purchase.worldId().equals(delivery.worldId()) || !purchase.productId().equals(delivery.productId()))
+                throw new IllegalArgumentException("Delivery has no matching purchase receipt");
+            if (delivery.stage() == DeliveryStage.DISPATCHING || delivery.stage() == DeliveryStage.OPENING) activeDelivery++;
+        }
+        if (activeDelivery > 1) throw new IllegalArgumentException("Multiple active delivery transactions");
     }
 
     public MetaProgress(int shopTier, Map<String, Progress> progress, Accounting accounting,
+                        Map<UUID, Set<String>> worldClaims, Map<UUID, PurchaseReceipt> purchaseReceipts,
+                        Map<String, ContractState> contracts, Map<UUID, PendingContract> pendingContracts) {
+        this(shopTier, progress, accounting, worldClaims, purchaseReceipts, contracts, pendingContracts, Map.of());
+    }
+    public MetaProgress(int shopTier, Map<String, Progress> progress, Accounting accounting,
                         Map<UUID, Set<String>> worldClaims, Map<UUID, PurchaseReceipt> purchaseReceipts) {
-        this(shopTier, progress, accounting, worldClaims, purchaseReceipts, Map.of(), Map.of());
+        this(shopTier, progress, accounting, worldClaims, purchaseReceipts, Map.of(), Map.of(), Map.of());
     }
     public MetaProgress(int shopTier, Map<String, Progress> progress, Accounting accounting) {
-        this(shopTier, progress, accounting, Map.of(), Map.of(), Map.of(), Map.of());
+        this(shopTier, progress, accounting, Map.of(), Map.of(), Map.of(), Map.of(), Map.of());
     }
     public static MetaProgress empty(boolean legacy) {
-        return new MetaProgress(-1, Map.of(), Accounting.empty(legacy), Map.of(), Map.of(), Map.of(), Map.of());
+        return new MetaProgress(-1, Map.of(), Accounting.empty(legacy), Map.of(), Map.of(), Map.of(), Map.of(), Map.of());
     }
     public MetaProgress withProgress(Map<String, Progress> value) {
-        return new MetaProgress(shopTier, value, accounting, worldClaims, purchaseReceipts, contracts, pendingContracts);
+        return new MetaProgress(shopTier, value, accounting, worldClaims, purchaseReceipts, contracts, pendingContracts, deliveries);
     }
     public MetaProgress withTier(int qualified) {
-        return new MetaProgress(Math.max(shopTier, qualified), progress, accounting, worldClaims, purchaseReceipts, contracts, pendingContracts);
+        return new MetaProgress(Math.max(shopTier, qualified), progress, accounting, worldClaims, purchaseReceipts, contracts, pendingContracts, deliveries);
     }
     public MetaProgress withContracts(Map<String, ContractState> value) {
-        return new MetaProgress(shopTier, progress, accounting, worldClaims, purchaseReceipts, value, pendingContracts);
+        return new MetaProgress(shopTier, progress, accounting, worldClaims, purchaseReceipts, value, pendingContracts, deliveries);
     }
     public MetaProgress withPendingContracts(Map<UUID, PendingContract> value) {
-        return new MetaProgress(shopTier, progress, accounting, worldClaims, purchaseReceipts, contracts, value);
+        return new MetaProgress(shopTier, progress, accounting, worldClaims, purchaseReceipts, contracts, value, deliveries);
+    }
+    public MetaProgress withDeliveries(Map<UUID, DeliveryReceipt> value) {
+        return new MetaProgress(shopTier, progress, accounting, worldClaims, purchaseReceipts, contracts, pendingContracts, value);
     }
     public MetaProgress account(long earned, long perks, long spent, long perksSpent, long refund, long perksRefund, long admin) {
         return new MetaProgress(shopTier, progress, accounting.change(earned, perks, spent, perksSpent, refund, perksRefund, admin),
-                worldClaims, purchaseReceipts, contracts, pendingContracts);
+                worldClaims, purchaseReceipts, contracts, pendingContracts, deliveries);
     }
     public boolean claimed(UUID world, String product) { return worldClaims.getOrDefault(world, Set.of()).contains(product); }
+    public Map.Entry<UUID, DeliveryReceipt> delivery(UUID world, String product) {
+        for (var entry : deliveries.entrySet())
+            if (entry.getValue().worldId().equals(world) && entry.getValue().productId().equals(product)) return entry;
+        return null;
+    }
 }

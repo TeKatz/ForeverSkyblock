@@ -23,7 +23,7 @@ import java.util.function.UnaryOperator;
 /** Stored outside saves/: deleting a world does not delete the player's progression. */
 public final class ProfileStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final int SCHEMA = 5;
+    private static final int SCHEMA = 6;
     private static final long MAX_FILE_SIZE = 1_048_576;
     private final Path directory;
     private final Map<UUID, ProgressionProfile> cache = new HashMap<>();
@@ -79,10 +79,11 @@ public final class ProfileStore {
     Path journal(UUID player) { return directory.resolve("transactions").resolve(player + ".json"); }
 
     private static byte[] encode(UUID player, ProgressionProfile profile) {
-        JsonObject json = new JsonObject();
-        // Keep untouched/non-contract profiles on schema 4. The first durable contract state upgrades to schema 5.
         boolean hasContracts = !profile.meta().contracts().isEmpty() || !profile.meta().pendingContracts().isEmpty();
-        json.addProperty("schema_version", hasContracts ? 5 : 4);
+        boolean hasDeliveries = !profile.meta().deliveries().isEmpty();
+        int schema = hasDeliveries ? 6 : hasContracts ? 5 : 4;
+        JsonObject json = new JsonObject();
+        json.addProperty("schema_version", schema);
         json.addProperty("player_uuid", player.toString());
         json.addProperty("points", profile.points());
         json.addProperty("perk_points", profile.perkPoints());
@@ -109,11 +110,12 @@ public final class ProfileStore {
             receipt.addProperty("world_uuid", entry.getValue().worldId().toString());
             receipt.addProperty("product_id", entry.getValue().productId());
             receipt.addProperty("sp_cost", entry.getValue().spCost());
+            if (schema >= 6) receipt.addProperty("pp_cost", entry.getValue().ppCost());
             receipt.addProperty("required_tier", entry.getValue().requiredTier());
             receipts.add(entry.getKey().toString(), receipt);
         });
         meta.add("purchase_receipts", receipts);
-        if (hasContracts) {
+        if (schema >= 5) {
             JsonObject contracts = new JsonObject();
             new java.util.TreeMap<>(profile.meta().contracts()).forEach((id, state) -> {
                 JsonObject value = new JsonObject(); value.addProperty("revision", state.revision());
@@ -132,6 +134,15 @@ public final class ProfileStore {
                 pending.add(entry.getKey().toString(), value);
             });
             meta.add("pending_contracts", pending);
+        }
+        if (schema >= 6) {
+            JsonObject deliveries = new JsonObject();
+            profile.meta().deliveries().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+                var state = entry.getValue(); JsonObject value = new JsonObject();
+                value.addProperty("world_uuid", state.worldId().toString()); value.addProperty("product_id", state.productId());
+                value.addProperty("stage", state.stage().name()); deliveries.add(entry.getKey().toString(), value);
+            });
+            meta.add("deliveries", deliveries);
         }
         json.add("meta", meta);
         return (GSON.toJson(json) + "\n").getBytes(StandardCharsets.UTF_8);
@@ -199,9 +210,10 @@ public final class ProfileStore {
             }
             for (var entry : meta.getAsJsonObject("purchase_receipts").entrySet()) {
                 var receipt = entry.getValue().getAsJsonObject();
+                int ppCost = schema >= 6 && receipt.has("pp_cost") ? integer(receipt, "pp_cost") : 0;
                 purchaseReceipts.put(UUID.fromString(entry.getKey()), new MetaProgress.PurchaseReceipt(
                         UUID.fromString(receipt.get("world_uuid").getAsString()), receipt.get("product_id").getAsString(),
-                        integer(receipt, "sp_cost"), integer(receipt, "required_tier")));
+                        integer(receipt, "sp_cost"), ppCost, integer(receipt, "required_tier")));
             }
         }
         var contracts = new LinkedHashMap<String, MetaProgress.ContractState>();
@@ -223,10 +235,19 @@ public final class ProfileStore {
                         integer(state, "before_count"), integer(state, "reward_sp"), integer(state, "required_tier")));
             }
         }
+        var deliveries = new LinkedHashMap<UUID, MetaProgress.DeliveryReceipt>();
+        if (schema >= 6) {
+            for (var entry : meta.getAsJsonObject("deliveries").entrySet()) {
+                var state = entry.getValue().getAsJsonObject();
+                deliveries.put(UUID.fromString(entry.getKey()), new MetaProgress.DeliveryReceipt(
+                        UUID.fromString(state.get("world_uuid").getAsString()), state.get("product_id").getAsString(),
+                        MetaProgress.DeliveryStage.valueOf(state.get("stage").getAsString())));
+            }
+        }
         return new MetaProgress(integer(meta, "shop_tier"), progress, new MetaProgress.Accounting(
                 total(a, "spEarned"), total(a, "ppEarned"), total(a, "spSpent"), total(a, "ppSpent"),
                 total(a, "spRefunded"), total(a, "ppRefunded"), total(a, "spAdmin"), a.get("legacyHistoryUnknown").getAsBoolean()),
-                claims, purchaseReceipts, contracts, pendingContracts);
+                claims, purchaseReceipts, contracts, pendingContracts, deliveries);
     }
     private ProgressionProfile recoverJournal(UUID player) throws IOException {
         Path journal = journal(player);

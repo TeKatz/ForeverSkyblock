@@ -76,16 +76,40 @@ public record ProgressionProfile(int points, Set<String> milestones, Map<String,
     public ProgressionProfile purchaseWorld(java.util.UUID world, ShopCatalog.Product product, java.util.UUID transaction) {
         if (world == null || transaction == null || product == null) throw new IllegalArgumentException("Invalid world purchase");
         if (meta.purchaseReceipts().containsKey(transaction) || meta.claimed(world, product.id())
-                || meta.shopTier() < product.requiredTier() || points < product.spCost()) return this;
+                || meta.shopTier() < product.requiredTier() || points < product.spCost() || perkPoints < product.ppCost()) return this;
         var claims = new LinkedHashMap<java.util.UUID, Set<String>>(meta.worldClaims());
         var products = new LinkedHashSet<>(claims.getOrDefault(world, Set.of())); products.add(product.id()); claims.put(world, Set.copyOf(products));
         var receipts = new LinkedHashMap<>(meta.purchaseReceipts());
-        receipts.put(transaction, new MetaProgress.PurchaseReceipt(world, product.id(), product.spCost(), product.requiredTier()));
+        receipts.put(transaction, new MetaProgress.PurchaseReceipt(world, product.id(), product.spCost(), product.ppCost(), product.requiredTier()));
+        var deliveries = new LinkedHashMap<>(meta.deliveries());
+        if (product.deliverable()) deliveries.put(transaction, new MetaProgress.DeliveryReceipt(world, product.id(), MetaProgress.DeliveryStage.READY));
         var nextMeta = new MetaProgress(meta.shopTier(), meta.progress(),
-                meta.accounting().change(0, 0, product.spCost(), 0, 0, 0, 0), claims, receipts, meta.contracts(), meta.pendingContracts());
-        return new ProgressionProfile(points - product.spCost(), milestones, skills, perkPoints, perkInvestments, redeemedCores, nextMeta);
+                meta.accounting().change(0, 0, product.spCost(), product.ppCost(), 0, 0, 0), claims, receipts,
+                meta.contracts(), meta.pendingContracts(), deliveries);
+        return new ProgressionProfile(points - product.spCost(), milestones, skills, perkPoints - product.ppCost(),
+                perkInvestments, redeemedCores, nextMeta);
     }
-    /** Refund known purchases without clearing completed milestones, contracts, tiers or unknown future skill data. */
+    private ProgressionProfile transitionDelivery(java.util.UUID receipt, MetaProgress.DeliveryStage expected, MetaProgress.DeliveryStage nextStage) {
+        if (receipt == null || expected == null || nextStage == null) throw new IllegalArgumentException("Invalid delivery transition");
+        var current = meta.deliveries().get(receipt);
+        if (current == null || current.stage() != expected) return this;
+        var deliveries = new LinkedHashMap<>(meta.deliveries());
+        deliveries.put(receipt, new MetaProgress.DeliveryReceipt(current.worldId(), current.productId(), nextStage));
+        return withMeta(meta.withDeliveries(deliveries));
+    }
+    public ProgressionProfile beginDelivery(java.util.UUID receipt) {
+        return transitionDelivery(receipt, MetaProgress.DeliveryStage.READY, MetaProgress.DeliveryStage.DISPATCHING);
+    }
+    public ProgressionProfile finishDelivery(java.util.UUID receipt) {
+        return transitionDelivery(receipt, MetaProgress.DeliveryStage.DISPATCHING, MetaProgress.DeliveryStage.DELIVERED);
+    }
+    public ProgressionProfile beginOpening(java.util.UUID receipt) {
+        return transitionDelivery(receipt, MetaProgress.DeliveryStage.DELIVERED, MetaProgress.DeliveryStage.OPENING);
+    }
+    public ProgressionProfile finishOpening(java.util.UUID receipt) {
+        return transitionDelivery(receipt, MetaProgress.DeliveryStage.OPENING, MetaProgress.DeliveryStage.OPENED);
+    }
+    /** Refund known purchases without clearing completed milestones, contracts, deliveries, tiers or unknown future skill data. */
     public ProgressionProfile resetSkills(Map<String, Integer> costs) {
         var remaining = new LinkedHashMap<>(skills);
         int refunded = points, perksRefunded = perkPoints;
