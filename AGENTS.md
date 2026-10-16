@@ -10,21 +10,31 @@
 ## Inspect the actual state first
 
 - Before editing, inspect the branch, HEAD, working directory, existing rules and relevant source files. For other Forever mods, read their own repositories; older recollections do not replace current source code.
+- Read `docs/CURRENT_STATE.md` and `docs/README.md` before relying on older phase documents. Historical branch/baseline paragraphs inside design records describe the state when they were written and do not override the current integrated baseline.
 - `docs/DESIGN.md` contains agreed requirements. `docs/PROGRESSION.md` identifies unconfirmed proposals. Implement proposals only after approval, unless the user has already requested that specific implementation.
 - Before working on the mod, inspect `mod/README.md`, registrations, resources and dependencies.
 - The supplied `pack/config/skyblockbuilder/templates/islands/forever_me_start.nbt` is the final starting island. Preserve its exact bytes, layout, spawn and ME contents unless TeKatz explicitly requests a revision. It supersedes the earlier `forever.nbt` placeholder name.
-- The pack runtime is NeoForge 21.1.259 until TeKatz reports a version change. The mod project's build dependency is tracked separately.
+- The pack runtime is NeoForge 21.1.259 until TeKatz reports a version change. The mod project's default build dependency is tracked separately.
 - `pack/mods.inventory.json` is an experimental runtime snapshot, not a final selection or launcher lockfile. Refresh it from actual supplied logs/files when requested; do not freeze the mod selection or silently substitute versions.
 - Do not infer installed versions from screenshots or unrelated Forever instances. Track remaining files in `docs/FILES_TO_IMPORT.md`.
 
-## Branches and external changes
+## Branches and repository hygiene
 
-- When documenting tested development work before its merge, state which source and pack files are actually available on the current branch. Link to the implementation branch/commit for files not yet present; do not imply a documentation update merges code.
-
-- Implement new features, recipe balancing and fixes on separate working branches.
+- Implement new features, recipe balancing and fixes on separate bounded working branches.
 - The initial project import into `main` was authorized by TeKatz's import request. Later merges into `main`, releases and publishing require a corresponding user request.
+- After an authorized merge, normalize current-state documentation so it no longer says the merged work is still isolated from `main`. Keep historical phase notes only when they are clearly identified as historical context.
+- Keep `README.md`, `mod/README.md`, `docs/CURRENT_STATE.md`, `docs/README.md` and `docs/CHANGELOG.md` aligned with the current integrated version.
+- Do not create multiple overlapping handoff/status files for the same live feature. Prefer the existing feature document and the central current-state index.
 - Preserve existing user changes. Do not overwrite unrelated work or bypass version control.
 - Recipe Editor, Production Monitor and DeepCore retain their own repositories. Make changes there only in the appropriate repository and branch.
+
+## Documentation boundaries
+
+- `docs/CURRENT_STATE.md` is the concise statement of what is currently integrated and active.
+- `docs/README.md` is the navigation/index document.
+- Feature documents such as `CHALLENGES.md`, `WORLD_SHOP.md`, `ASCENSION.md` and `K_MENU_DESIGN2.md` describe implemented behavior and its remaining validation boundary.
+- `META_PROGRESSION.md`, `TOOL_RECIPE_HANDOFF.md` and snapshot documents may retain historical design/baseline context. Do not silently reinterpret historical statements as current repository status.
+- When documenting tested development work before its merge, state which source and pack files are actually available on the current branch. Link to the implementation branch/commit for files not yet present; do not imply a documentation update merges code.
 
 ## Implementation and validation
 

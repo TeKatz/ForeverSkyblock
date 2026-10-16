@@ -1,6 +1,6 @@
-# Current-world shop safety — 0.12.0 / phase 3
+# Current-world shop safety — active in 0.13.4
 
-Development branch: `feature/persistent-meta-progression`. Minecraft 1.21.1, Java 21; pack runtime NeoForge 21.1.259. This phase proves the identity and transaction boundary. It does not approve a valuable product, item delivery or a release.
+**Introduced in 0.12.0 / phase 3 and integrated into `main` through PR #11 on October 16, 2026.** Minecraft 1.21.1, Java 21; pack runtime NeoForge 21.1.259. This system proves the identity/transaction boundary; it still does not approve valuable delivery or imply a release.
 
 ## Active test product
 
@@ -15,19 +15,19 @@ Development branch: `feature/persistent-meta-progression`. Minecraft 1.21.1, Jav
 | Delivery | None; no item, block, command or gameplay benefit |
 | Refund | None |
 
-The card appears in K → Shop → Current World. Its server-authoritative state is locked, available or claimed. Buying requires a confirmation dialog. The client sends only the stable product ID; the server owns price, tier, actor, world identity and duplicate validation.
+The card appears in K → Shop → Current World. Its server-authoritative state is locked, available or claimed. Buying requires confirmation. The client sends only the stable product ID; the server owns price, tier, actor, world identity and duplicate validation.
 
 ## Stable world identity
 
 Each save receives a random UUID stored under its world root in `data/forever_skyblock_world_identity.json`, with an independent `.bak` copy. The UUID is shared by all dimensions and is unrelated to the display name, folder, seed or player. Normal UI shows only a friendly world name and whether world purchases are available.
 
 - Restarting or renaming the save folder retains the UUID.
-- Copying a save intentionally copies the UUID. The copy therefore sees the same existing claim and cannot rebuy it.
+- Copying a save intentionally copies the UUID, so the copy sees the same existing claim and cannot rebuy it.
 - A genuinely new save receives a new UUID and has an independent current-world claim.
 - If one identity copy is missing or corrupt, the valid copy repairs it.
 - Two valid but conflicting UUIDs, or no recoverable registered identity, disable world purchases. The mod never guesses between conflicting histories.
 
-Deleting both identity files is unsupported tampering and may cause a fresh identity to be created when no surviving registration can prove the earlier one. Back up the complete world save, not selected files.
+Deleting both identity files is unsupported tampering and may create a fresh identity when no surviving registration can prove the earlier one. Back up the complete world save, not selected files.
 
 ## Profile schema 4
 
@@ -55,20 +55,22 @@ A valid committed journal can repair a stale or corrupt primary. Without one, an
 
 ## Deferred boundary
 
-No actual package contents, prices, inventory grant, ME insertion, dropped item, block placement or recipient mailbox is implemented. Those require a separately approved and tested delivery protocol that reconciles the profile receipt with player/world inventory at every crash cut. Contracts and Tier II–IV rules also remain inactive.
+No actual package contents, prices, inventory grant, ME insertion, dropped item, block placement or recipient mailbox is implemented. Those require a separately approved and tested delivery protocol that reconciles the profile receipt with player/world inventory at every crash cut. Contracts and Tier II-IV rules also remain inactive.
 
 ## Automated verification
 
-Source `50683be3bf4fd3d1e2261aa15e953c82ae1be3f4` passed CI run `38851560072`: the Java 21 build, pure tests and all 48 required GameTests in both the baseline and NeoForge 21.1.259 pack-integration runs. Coverage includes identity rename/restart/copy/new-save behavior, copy repair/conflict refusal, schema migration, exact accounting and receipts, 64 concurrent requests, every journal crash stage, stale/corrupt primary recovery, packet bounds and an end-to-end service purchase.
+The original phase-3 source `50683be3bf4fd3d1e2261aa15e953c82ae1be3f4` passed CI run `38851560072`: Java 21 build, pure tests and all 48 required GameTests in both baseline and NeoForge 21.1.259 pack-integration runs. Coverage includes identity rename/restart/copy/new-save behavior, repair/conflict refusal, schema migration, accounting/receipts, 64 concurrent requests, every journal crash stage, stale/corrupt primary recovery, packet bounds and an end-to-end service purchase.
+
+The system remains part of the 0.13.4 integrated baseline and is covered by the current integration workflow. Detailed evidence is in [VALIDATION.md](VALIDATION.md).
 
 ## Manual acceptance
 
-1. Back up the progression directory and test world. Install 0.12.0 on both client and server.
+1. Back up the progression directory and test world. Use matching 0.13.4 client/server builds when testing the current baseline.
 2. Load an existing profile and verify SP, PP, skills, research, challenge progress, Tier I and Core receipts before changing anything.
 3. If needed, use the owner/operator `TEST: +10 SP` control. Open Shop → Current World and check the friendly world name, Tier-I requirement and 5-SP price.
 4. Confirm the purchase. Verify exactly 5 SP is removed, the card becomes claimed and Profile accounting/claim count updates. Confirm no item or gameplay effect is delivered.
 5. Reopen the menu and restart the game/server. The same world remains claimed and no second debit is possible.
 6. Copy or rename the world save. It must remain claimed. Create a genuinely new world in the same authority; its test entitlement must be independently available.
-7. Check EN/DE text and GUI scales 2/3/4. Recheck Challenges, Research, Perks, the retained condenser/Ascension GUIs and existing JEI behavior.
+7. Check EN/DE text and GUI scales 2/3/4. Recheck Challenges, Research, Perks, the Condenser/Ascension GUIs and JEI behavior.
 
 No manual client acceptance is claimed until TeKatz reports the result.

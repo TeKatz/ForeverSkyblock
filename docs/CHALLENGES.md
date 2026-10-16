@@ -1,6 +1,6 @@
-# Personal challenge progression — 0.13.0 / phase 4
+# Personal challenge progression — active in 0.13.4
 
-Development branch: `feature/tech-challenges-phase4`, based on the Phase 3 meta-progression branch and retaining the unmerged 0.9.1 machine fixes. Minecraft 1.21.1, Java 21; pack runtime NeoForge 21.1.259. No main merge or release is implied.
+**Introduced in 0.13.0 / phase 4 and integrated into `main` through PR #11 on October 16, 2026.** Minecraft 1.21.1, Java 21; pack runtime NeoForge 21.1.259. No release publication is implied by integration.
 
 ## Active objectives
 
@@ -29,7 +29,7 @@ All rewards are once per player profile, across worlds within the existing autho
 | Combat & Dimensions | Dragon Slayer | Minecraft credits the player with an Ender Dragon kill | 6 |
 | Combat & Dimensions | Veteran | 1,000 distinct personally credited Monster-category kills | 3 |
 
-The live catalog now contains **20 challenges / 58 SP**, including the existing First Foundations point. The complete proposed 38-challenge / 135-SP catalog is still a balancing target, not an active reward list. Existing partial challenge evidence, completed claims, balances and tiers survive this update unchanged.
+The live catalog contains **20 challenges / 58 SP**, including the existing First Foundations point. The complete proposed 38-challenge / 135-SP catalog remains a balancing target, not an active reward list. Existing partial challenge evidence, completed claims, balances and tiers survive updates unchanged.
 
 ## Phase 4 attribution rules
 
@@ -67,7 +67,7 @@ The following proposed rewards remain inactive rather than using an unreliable o
 - Mystical Agriculture **Essence Farmer** and **Master Grower**: the first progression target and altar/seed attribution need an explicit rule.
 - Apotheosis **Mythic Power**: the capstone itself remains an open design decision.
 - First Iron, Dirt ownership and Water/Lava/Obsidian objectives remain tied to unresolved pack-progression routes.
-- Repeatable contracts, Tier II–IV rules and valuable world-shop product delivery remain later phases.
+- Repeatable contracts, Tier II-IV rules and valuable world-shop product delivery remain later phases.
 
 These deferred challenges do not appear as obtainable rewards and do not count toward the live 58-SP total.
 
@@ -82,9 +82,9 @@ These deferred challenges do not appear as obtainable rewards and do not count t
 
 ## Tiers and menu
 
-Tier -1 means no tier yet. First Foundations unlocks **Tier 0 — Foundations**; Dragon Slayer unlocks **Tier I — Conqueror**. Tier increases remain monotonic and independent of balances, admin/test SP and skill respecs. Phase 4 technology challenges do **not** activate Tier II–IV.
+Tier -1 means no tier yet. First Foundations unlocks **Tier 0 — Foundations**; Dragon Slayer unlocks **Tier I — Conqueror**. Tier increases remain monotonic and independent of balances, admin/test SP and skill respecs. Phase 4 technology challenges do **not** activate Tier II-IV.
 
-K → Challenges now offers:
+K → Challenges offers:
 
 - All
 - Forever
@@ -95,11 +95,11 @@ K → Challenges now offers:
 - Combat & Dimensions
 - Contracts
 
-Contracts remains an explanatory inactive page. Existing search, open/completed filters, detail cards, Overview, Shop, Research, Perks and Profile remain in the same hierarchy. The network payload shape and protocol remain **`skills-6`** because Phase 4 only expands the server catalog and known IDs; no new client-authoritative economic fields are added.
+Contracts remains an explanatory inactive page. Search, open/completed filters, details, Overview, Shop, Research, Perks and Profile remain in the same hierarchy. The payload protocol remains **`skills-6`** because Phase 4 expands the server catalog and known IDs without adding client-authoritative economic fields.
 
 ## Persistence and migration
 
-Profile schema remains **4**. The update adds no destructive migration and preserves:
+Profile schema remains **4** and preserves:
 
 - SP / PP balances and accounting
 - completed milestone IDs
@@ -111,27 +111,27 @@ Profile schema remains **4**. The update adds no destructive migration and prese
 - redeemed Core UUIDs
 - unknown valid IDs/revisions for forward compatibility
 
-Existing profiles do not receive retroactive technology rewards from inventory, advancements or machine contents. The first new qualifying action after installing 0.13.0 starts/completes the relevant objective. Ordinary skill reset does not clear challenge claims/progress, tiers, world claims or Core receipts.
+Existing profiles do not receive retroactive technology rewards from inventory, advancements or machine contents. The next qualifying action after upgrading starts/completes the relevant objective. Ordinary skill reset does not clear challenge claims/progress, tiers, world claims or Core receipts.
 
-Back up `forever_skyblock/progression/` and the test world before changing versions. Older mod versions cannot be assumed to read profiles written by a newer schema-compatible implementation if their catalog/protocol expectations differ.
+Back up `forever_skyblock/progression/` and the test world before changing versions. Older mod versions cannot be assumed to read state written by newer versions.
 
 ## Automated verification
 
-The Phase 4 CI matrix includes the normal Java 21 build/unit tests, baseline dedicated GameTests without optional technology mods, and a NeoForge 21.1.259 integration run with the pinned pack integrations. The integration run explicitly checks the runtime IDs/API boundaries used by the AE2, Mekanism, Powah and Mystical Agriculture adapters so an upstream/signature mismatch fails the build rather than silently shipping a dead objective.
+The Phase 4 CI matrix includes the normal Java 21 build/unit tests, baseline dedicated GameTests without optional technology mods, and a NeoForge 21.1.259 integration run with the pinned pack integrations. The integration run explicitly checks runtime IDs/API boundaries for the AE2, Mekanism, Powah and Mystical Agriculture adapters so an upstream/signature mismatch fails the build instead of silently shipping a dead objective.
 
-The final verified commit/run/artifact are recorded in [VALIDATION.md](VALIDATION.md).
+The final 0.13.4 feature head also passed GitHub Actions run #151 before main integration. Detailed version-specific evidence remains in [VALIDATION.md](VALIDATION.md).
 
 ## Manual acceptance
 
 Use a copy of the pack instance and profile:
 
-1. Confirm existing SP, PP, Tier, completed challenges, world claim and Jetpack research remain unchanged after replacing 0.12.0.
+1. Confirm existing SP, PP, Tier, completed challenges, world claim and Jetpack research remain unchanged across the upgrade.
 2. Open K → Challenges and inspect All plus AE2/Mekanism/Powah/Mystical Agriculture categories in English and German at GUI scales 2/3/4.
 3. AE2: personally craft 4k and 256k item cells and a 64k Crafting Storage; run a real player-requested autocraft; open the Wireless Crafting Terminal. Verify each reward pays once and restart/new-world cannot replay it.
 4. Mekanism: personally craft the Metallurgic Infuser. Let a Digital Miner owned by this player actually mine a block while the owner is online; merely craft/place it first and verify no reward occurs.
 5. Powah: complete an Energizing recipe and personally take the output. Verify possession of the same item through another route does not pay.
 6. Mystical Agriculture: personally craft Supremium Essence and verify a handed/given stack alone does not pay.
-7. Recheck existing Forever tool challenges, Veteran/boss/dimension progress, current-world Phase 3 test purchase, skill reset, Jetpack JEI restrictions, Condenser/Ascension GUIs and machine visuals.
-8. Confirm no Tier II–IV unlock occurs from technology SP alone.
+7. Recheck existing Forever tool challenges, Veteran/boss/dimension progress, current-world test purchase, skill reset, Jetpack JEI restrictions, Condenser/Ascension GUIs and machine visuals.
+8. Confirm no Tier II-IV unlock occurs from technology SP alone.
 
-Headless tests do not certify rendered client pixels or every multiplayer/team workflow; those remain TeKatz's in-game acceptance checks.
+Headless tests do not certify rendered client pixels or every multiplayer/team workflow; those remain explicit in-game acceptance checks.
