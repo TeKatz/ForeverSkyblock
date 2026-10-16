@@ -44,8 +44,8 @@ public final class ProfileStore {
         ProgressionProfile result;
         if (!Files.exists(file) && !Files.exists(backup)) result = ProgressionProfile.empty();
         else {
-            // A previous-state backup may precede a reward or debit. Never silently re-arm claims.
-            // Durable journal recovery belongs to phase 3; keep ambiguous profiles unavailable now.
+            // A previous-state backup may precede a reward or debit. Only a durable journal can
+            // establish the next authoritative state; otherwise keep ambiguous profiles unavailable.
             if (!Files.exists(file)) throw new IOException("Primary progression profile missing; recovery required");
             result = read(file, player);
         }

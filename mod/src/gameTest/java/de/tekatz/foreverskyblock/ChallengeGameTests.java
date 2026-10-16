@@ -148,4 +148,22 @@ public final class ChallengeGameTests {
         h.assertTrue(profile(player).milestones().contains(ChallengeRules.STONEWORKER.id()),"Actual AE2 onTake emits personal recipe trigger");
         h.succeed();
     }
+    @GameTest(template="empty")
+    public static void currentWorldTestEntitlementUsesTheRealServiceBoundary(GameTestHelper h) throws Exception {
+        var player=packetSinkPlayer(h,"WorldShopBuyer");var service=ProgressionService.get(player.server);
+        player.server.getPlayerList().op(player.getGameProfile());
+        try {
+            h.assertTrue(service.grant(player,10),"Test balance grant persists");
+            h.assertTrue(service.evidence(player,List.of(ChallengeEvents.Evidence.completed(ChallengeRules.DRAGON))),"Dragon evidence unlocks Tier I");
+            service.buyProduct(player,ShopCatalog.TEST.id());
+            var bought=profile(player);var world=new WorldIdentityStore().loadOrCreate(
+                    player.server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT));
+            h.assertTrue(bought.points()==11&&bought.meta().claimed(world,ShopCatalog.TEST.id()),"Real service debits five SP and records this world");
+            h.assertTrue(bought.meta().purchaseReceipts().size()==1,"One durable receipt is recorded");
+            service.buyProduct(player,ShopCatalog.TEST.id());
+            var replay=profile(player);
+            h.assertTrue(replay.points()==11&&replay.meta().purchaseReceipts().size()==1,"Repeated requests cannot debit or claim twice");
+        } finally { player.server.getPlayerList().deop(player.getGameProfile()); }
+        h.succeed();
+    }
 }
