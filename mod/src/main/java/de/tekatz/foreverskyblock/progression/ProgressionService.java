@@ -25,7 +25,7 @@ public final class ProgressionService {
     public CoreRedemptions.Result redeemCore(ServerPlayer player, java.util.UUID core) throws IOException {
         var result = redemptions.redeem(core, player.getUUID());
         if (result == CoreRedemptions.Result.CREDITED) {
-            player.sendSystemMessage(SkillMessages.perk());
+            if (connected(player)) player.sendSystemMessage(SkillMessages.perk());
             sync(player, false, "perk_earned");
         }
         return result;
@@ -103,10 +103,10 @@ public final class ProgressionService {
             boolean completed = false;
             for (var milestone : MilestoneCatalog.MILESTONES) {
                 if (!previous.milestones().contains(milestone.id()) && next.milestones().contains(milestone.id())) {
-                    player.sendSystemMessage(SkillMessages.milestone(milestone)); completed = true;
+                    if (connected(player)) player.sendSystemMessage(SkillMessages.milestone(milestone)); completed = true;
                 }
             }
-            if (next.meta().shopTier() > previous.meta().shopTier()) player.sendSystemMessage(Component.translatable(
+            if (connected(player) && next.meta().shopTier() > previous.meta().shopTier()) player.sendSystemMessage(Component.translatable(
                     "message.forever_skyblock.tier_unlocked", Component.translatable("gui.forever_skyblock.meta.tier." + next.meta().shopTier())));
             sync(player, false, completed ? "milestone_earned" : "");
             return true;
@@ -116,13 +116,16 @@ public final class ProgressionService {
         try { store.update(player.getUUID(), state -> state.grant(amount)); sync(player, false, "points_granted"); return true; }
         catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); return false; }
     }
+    private static boolean connected(ServerPlayer player) {
+        return player.connection != null && player.connection.getConnection().isConnected();
+    }
     private void sync(ServerPlayer player, boolean open, String message) {
         try { SkillNetwork.send(player, store.load(player.getUUID()), local, open, true, message); }
         catch (IOException e) { error(player, open, e); }
     }
     private void error(ServerPlayer player, boolean open, Exception e) {
         LOGGER.error("Could not read or save progression for {}", player.getUUID(), e);
-        player.sendSystemMessage(Component.translatable("gui.forever_skyblock.skills.storage_error"));
+        if (connected(player)) player.sendSystemMessage(Component.translatable("gui.forever_skyblock.skills.storage_error"));
         SkillNetwork.send(player, ProgressionProfile.empty(), local, open, false, "storage_error");
     }
 }
