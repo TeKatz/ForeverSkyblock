@@ -1,8 +1,9 @@
 package de.tekatz.foreverskyblock.network;
 
 import de.tekatz.foreverskyblock.ForeverSkyblock;
-import de.tekatz.foreverskyblock.progression.MilestoneCatalog;
+import de.tekatz.foreverskyblock.progression.ContractCatalog;
 import de.tekatz.foreverskyblock.progression.MetaProgress;
+import de.tekatz.foreverskyblock.progression.MilestoneCatalog;
 import de.tekatz.foreverskyblock.progression.ProgressionProfile;
 import de.tekatz.foreverskyblock.progression.ProgressionService;
 import de.tekatz.foreverskyblock.progression.SkillCatalog;
@@ -10,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -24,7 +26,7 @@ public final class SkillNetwork {
     private SkillNetwork() { }
     public static void setClientReceiver(Consumer<Snapshot> receiver) { clientReceiver = receiver; }
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("skills-6");
+        var registrar = event.registrar("skills-7");
         registrar.playToServer(Request.TYPE, Request.CODEC, (request, context) -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             var service = ProgressionService.get(player.server);
@@ -34,12 +36,13 @@ public final class SkillNetwork {
             else if (request.action() == 3) service.testPoints(player);
             else if (request.action() == 4) service.buyProduct(player, request.skillId());
         });
+        registrar.playToServer(ContractRequest.TYPE, ContractRequest.CODEC, (request, context) -> {
+            if (context.player() instanceof ServerPlayer player) ProgressionService.get(player.server).submitContract(player, request.contractId(), request.requestId());
+        });
         registrar.playToClient(Snapshot.TYPE, Snapshot.CODEC, (snapshot, context) -> clientReceiver.accept(snapshot));
     }
     public static void send(ServerPlayer player, ProgressionProfile profile, boolean local, boolean open, boolean available,
                             String message, WorldState world) {
-        // Server-side actions can finish while a player has no live connection (disconnect boundary and GameTests).
-        // Persistence remains authoritative; the next login/open request supplies a fresh snapshot.
         if (player.connection == null || !player.connection.getConnection().isConnected()
                 || !net.neoforged.neoforge.network.registration.NetworkRegistry.hasChannel(player.connection, Snapshot.TYPE.id())) return;
         var skills = new LinkedHashMap<String, Integer>();
@@ -52,12 +55,28 @@ public final class SkillNetwork {
             progress.put(milestone.id(), profile.milestones().contains(milestone.id()) ? milestone.target()
                     : state == null ? 0 : state.revision() != 1 ? -1 : Math.min(milestone.target(), state.evidence().size()));
         }
+        var contracts = new LinkedHashMap<String, ContractState>();
+        for (var contract : ContractCatalog.CONTRACTS) {
+            var state = profile.meta().contracts().getOrDefault(contract.id(), MetaProgress.ContractState.empty());
+            boolean pending = profile.meta().pendingContracts().values().stream().anyMatch(value -> value.contractId().equals(contract.id()));
+            boolean itemAvailable = !contract.resource() || ProgressionService.contractItemAvailable(contract.itemId());
+            boolean unlocked = profile.meta().shopTier() >= contract.requiredTier() && itemAvailable;
+            int current = contract.resource() ? Math.min(contract.target(), ProgressionService.inventoryCount(player, contract.itemId())) : state.progress();
+            contracts.put(contract.id(), new ContractState(current, state.completions(), unlocked,
+                    contract.resource() && unlocked && !pending && current >= contract.target(), pending));
+        }
         PacketDistributor.sendToPlayer(player, new Snapshot(profile.points(), profile.perkPoints(), skills, milestones, local, open,
                 available, message, ProgressionService.canTestPoints(player), profile.meta().shopTier(), progress,
-                profile.meta().accounting(), world.available(), world.name(), world.claims()));
+                profile.meta().accounting(), world.available(), world.name(), world.claims(), contracts));
     }
     public record WorldState(boolean available, String name, Set<String> claims) {
         public WorldState { name = name == null ? "" : name; claims = Set.copyOf(claims); }
+    }
+    public record ContractState(int progress, long completions, boolean available, boolean canSubmit, boolean pending) {
+        public ContractState {
+            if (progress < 0 || progress > 1_000_000 || completions < 0 || completions > 1_000_000_000L)
+                throw new IllegalArgumentException("Invalid contract snapshot");
+        }
     }
     public record Request(int action, String skillId) implements CustomPacketPayload {
         public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "skill_request"));
@@ -67,92 +86,78 @@ public final class SkillNetwork {
         };
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
+    public record ContractRequest(String contractId, UUID requestId) implements CustomPacketPayload {
+        public ContractRequest { ProgressionProfile.validateId(contractId); if (requestId == null) throw new IllegalArgumentException("Missing contract request id"); }
+        public static final Type<ContractRequest> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "contract_request"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, ContractRequest> CODEC = new StreamCodec<>() {
+            @Override public ContractRequest decode(RegistryFriendlyByteBuf buffer) { return new ContractRequest(buffer.readUtf(128), buffer.readUUID()); }
+            @Override public void encode(RegistryFriendlyByteBuf buffer, ContractRequest request) { buffer.writeUtf(request.contractId(), 128); buffer.writeUUID(request.requestId()); }
+        };
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
     public record Snapshot(int points, int perkPoints, Map<String, Integer> skills, Set<String> milestones, boolean local, boolean open,
                            boolean available, String message, boolean canTestPoints, int shopTier, Map<String, Integer> progress,
                            MetaProgress.Accounting accounting, boolean worldAvailable, String worldName,
-                           Set<String> worldClaims) implements CustomPacketPayload {
+                           Set<String> worldClaims, Map<String, ContractState> contracts) implements CustomPacketPayload {
         public Snapshot {
-            skills = Map.copyOf(skills); milestones = Set.copyOf(milestones); progress = Map.copyOf(progress); worldClaims = Set.copyOf(worldClaims);
+            skills = Map.copyOf(skills); milestones = Set.copyOf(milestones); progress = Map.copyOf(progress);
+            worldClaims = Set.copyOf(worldClaims); contracts = Map.copyOf(contracts);
             if (shopTier < -1 || shopTier > 4 || progress.size() > 128 || skills.size() > 128 || milestones.size() > 128
-                    || worldClaims.size() > 128 || worldName == null || worldName.length() > 128)
+                    || worldClaims.size() > 128 || contracts.size() > 128 || worldName == null || worldName.length() > 128)
                 throw new IllegalArgumentException("Invalid progression snapshot");
             progress.forEach((id, count) -> {
-                ProgressionProfile.validateId(id);
-                if (count < -1 || count > 1000) throw new IllegalArgumentException("Invalid challenge progress");
+                ProgressionProfile.validateId(id); if (count < -1 || count > 1000) throw new IllegalArgumentException("Invalid challenge progress");
             });
             for (String id : worldClaims) ProgressionProfile.validateId(id);
+            contracts.forEach((id, state) -> { ProgressionProfile.validateId(id); if (state == null) throw new IllegalArgumentException("Missing contract state"); });
         }
         public Snapshot(int points, int perkPoints, Map<String, Integer> skills, Set<String> milestones, boolean local,
                         boolean open, boolean available, String message, boolean canTestPoints) {
             this(points, perkPoints, skills, milestones, local, open, available, message, canTestPoints,
                     de.tekatz.foreverskyblock.progression.ChallengeRules.qualifiedTier(milestones), Map.of(),
-                    MetaProgress.Accounting.empty(true), false, "", Set.of());
+                    MetaProgress.Accounting.empty(true), false, "", Set.of(), Map.of());
         }
         public static final Type<Snapshot> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "skill_snapshot"));
         public static final StreamCodec<RegistryFriendlyByteBuf, Snapshot> CODEC = new StreamCodec<>() {
             @Override public Snapshot decode(RegistryFriendlyByteBuf buffer) {
-                int points = buffer.readVarInt();
-                if (points < 0 || points > ProgressionProfile.MAX_POINTS) throw new IllegalArgumentException("Invalid skill balance");
-                int perks = buffer.readVarInt();
-                if (perks < 0 || perks > ProgressionProfile.MAX_POINTS) throw new IllegalArgumentException("Invalid perk balance");
-                int flags = buffer.readUnsignedByte();
-                String message = buffer.readUtf(128);
-                int size = size(buffer);
-                var skills = new LinkedHashMap<String, Integer>();
-                for (int i = 0; i < size; i++) {
-                    String id = buffer.readUtf(128); ProgressionProfile.validateId(id);
-                    int rank = buffer.readVarInt();
-                    if (rank < 1 || rank > 100) throw new IllegalArgumentException("Invalid skill rank");
-                    skills.put(id, rank);
-                }
-                size = size(buffer);
-                var milestones = new LinkedHashSet<String>();
+                int points = buffer.readVarInt(); if (points < 0 || points > ProgressionProfile.MAX_POINTS) throw new IllegalArgumentException("Invalid skill balance");
+                int perks = buffer.readVarInt(); if (perks < 0 || perks > ProgressionProfile.MAX_POINTS) throw new IllegalArgumentException("Invalid perk balance");
+                int flags = buffer.readUnsignedByte(); String message = buffer.readUtf(128);
+                int size = size(buffer); var skills = new LinkedHashMap<String, Integer>();
+                for (int i = 0; i < size; i++) { String id = buffer.readUtf(128); ProgressionProfile.validateId(id); int rank = buffer.readVarInt(); if (rank < 1 || rank > 100) throw new IllegalArgumentException("Invalid skill rank"); skills.put(id, rank); }
+                size = size(buffer); var milestones = new LinkedHashSet<String>();
                 for (int i = 0; i < size; i++) { String id = buffer.readUtf(128); ProgressionProfile.validateId(id); milestones.add(id); }
-                int tier = buffer.readVarInt();
-                size = size(buffer);
-                var progress = new LinkedHashMap<String, Integer>();
-                for (int i = 0; i < size; i++) {
-                    String id = buffer.readUtf(128); int count = buffer.readVarInt();
-                    if (progress.put(id, count) != null) throw new IllegalArgumentException("Duplicate progress entry");
-                }
+                int tier = buffer.readVarInt(); size = size(buffer); var progress = new LinkedHashMap<String, Integer>();
+                for (int i = 0; i < size; i++) { String id = buffer.readUtf(128); int count = buffer.readVarInt(); if (progress.put(id, count) != null) throw new IllegalArgumentException("Duplicate progress entry"); }
                 var accounting = new MetaProgress.Accounting(buffer.readVarLong(), buffer.readVarLong(), buffer.readVarLong(),
                         buffer.readVarLong(), buffer.readVarLong(), buffer.readVarLong(), buffer.readVarLong(), buffer.readBoolean());
-                boolean worldAvailable = buffer.readBoolean();
-                String worldName = buffer.readUtf(128);
-                size = size(buffer);
-                var worldClaims = new LinkedHashSet<String>();
+                boolean worldAvailable = buffer.readBoolean(); String worldName = buffer.readUtf(128);
+                size = size(buffer); var worldClaims = new LinkedHashSet<String>();
+                for (int i = 0; i < size; i++) { String id = buffer.readUtf(128); ProgressionProfile.validateId(id); if (!worldClaims.add(id)) throw new IllegalArgumentException("Duplicate world claim"); }
+                size = size(buffer); var contracts = new LinkedHashMap<String, ContractState>();
                 for (int i = 0; i < size; i++) {
                     String id = buffer.readUtf(128); ProgressionProfile.validateId(id);
-                    if (!worldClaims.add(id)) throw new IllegalArgumentException("Duplicate world claim");
+                    var state = new ContractState(buffer.readVarInt(), buffer.readVarLong(), buffer.readBoolean(), buffer.readBoolean(), buffer.readBoolean());
+                    if (contracts.put(id, state) != null) throw new IllegalArgumentException("Duplicate contract entry");
                 }
                 return new Snapshot(points, perks, skills, milestones, (flags & 1) != 0, (flags & 2) != 0,
-                        (flags & 4) != 0, message, (flags & 8) != 0, tier, progress, accounting,
-                        worldAvailable, worldName, worldClaims);
+                        (flags & 4) != 0, message, (flags & 8) != 0, tier, progress, accounting, worldAvailable, worldName, worldClaims, contracts);
             }
-            private int size(RegistryFriendlyByteBuf buffer) {
-                int count = buffer.readVarInt();
-                if (count < 0 || count > 128) throw new IllegalArgumentException("Progression packet too large");
-                return count;
-            }
+            private int size(RegistryFriendlyByteBuf buffer) { int count = buffer.readVarInt(); if (count < 0 || count > 128) throw new IllegalArgumentException("Progression packet too large"); return count; }
             @Override public void encode(RegistryFriendlyByteBuf buffer, Snapshot value) {
-                buffer.writeVarInt(value.points());
-                buffer.writeVarInt(value.perkPoints());
+                buffer.writeVarInt(value.points()); buffer.writeVarInt(value.perkPoints());
                 buffer.writeByte((value.local() ? 1 : 0) | (value.open() ? 2 : 0) | (value.available() ? 4 : 0) | (value.canTestPoints() ? 8 : 0));
                 buffer.writeUtf(value.message(), 128);
-                buffer.writeVarInt(value.skills().size());
-                value.skills().forEach((id, rank) -> { buffer.writeUtf(id, 128); buffer.writeVarInt(rank); });
-                buffer.writeVarInt(value.milestones().size());
-                value.milestones().forEach(id -> buffer.writeUtf(id, 128));
-                buffer.writeVarInt(value.shopTier());
-                buffer.writeVarInt(value.progress().size());
-                value.progress().forEach((id, count) -> { buffer.writeUtf(id, 128); buffer.writeVarInt(count); });
-                var a = value.accounting();
-                for (long total : new long[]{a.spEarned(), a.ppEarned(), a.spSpent(), a.ppSpent(), a.spRefunded(), a.ppRefunded(), a.spAdmin()}) buffer.writeVarLong(total);
-                buffer.writeBoolean(a.legacyHistoryUnknown());
-                buffer.writeBoolean(value.worldAvailable());
-                buffer.writeUtf(value.worldName(), 128);
-                buffer.writeVarInt(value.worldClaims().size());
-                value.worldClaims().forEach(id -> buffer.writeUtf(id, 128));
+                buffer.writeVarInt(value.skills().size()); value.skills().forEach((id, rank) -> { buffer.writeUtf(id, 128); buffer.writeVarInt(rank); });
+                buffer.writeVarInt(value.milestones().size()); value.milestones().forEach(id -> buffer.writeUtf(id, 128));
+                buffer.writeVarInt(value.shopTier()); buffer.writeVarInt(value.progress().size()); value.progress().forEach((id, count) -> { buffer.writeUtf(id, 128); buffer.writeVarInt(count); });
+                var a = value.accounting(); for (long total : new long[]{a.spEarned(), a.ppEarned(), a.spSpent(), a.ppSpent(), a.spRefunded(), a.ppRefunded(), a.spAdmin()}) buffer.writeVarLong(total);
+                buffer.writeBoolean(a.legacyHistoryUnknown()); buffer.writeBoolean(value.worldAvailable()); buffer.writeUtf(value.worldName(), 128);
+                buffer.writeVarInt(value.worldClaims().size()); value.worldClaims().forEach(id -> buffer.writeUtf(id, 128));
+                buffer.writeVarInt(value.contracts().size()); value.contracts().forEach((id, state) -> {
+                    buffer.writeUtf(id, 128); buffer.writeVarInt(state.progress()); buffer.writeVarLong(state.completions());
+                    buffer.writeBoolean(state.available()); buffer.writeBoolean(state.canSubmit()); buffer.writeBoolean(state.pending());
+                });
             }
         };
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }

@@ -1,12 +1,14 @@
 package de.tekatz.foreverskyblock.progression;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/** Bounded permanent challenge, accounting and current-world entitlement state. */
+/** Bounded permanent challenge, accounting, world-entitlement and repeatable-contract state. */
 public record MetaProgress(int shopTier, Map<String, Progress> progress, Accounting accounting,
-                           Map<UUID, Set<String>> worldClaims, Map<UUID, PurchaseReceipt> purchaseReceipts) {
+                           Map<UUID, Set<String>> worldClaims, Map<UUID, PurchaseReceipt> purchaseReceipts,
+                           Map<String, ContractState> contracts, Map<UUID, PendingContract> pendingContracts) {
     public record Progress(int revision, Set<String> evidence) {
         public Progress {
             if (revision < 1 || revision > 10000 || evidence.size() > 1000) throw new IllegalArgumentException("Invalid objective state");
@@ -36,9 +38,39 @@ public record MetaProgress(int shopTier, Map<String, Progress> progress, Account
                 throw new IllegalArgumentException("Invalid purchase receipt");
         }
     }
+    public record ContractState(int revision, int progress, long completions,
+                                List<String> recentEvidence, List<UUID> recentRequests) {
+        public ContractState {
+            if (revision < 1 || revision > 10000 || progress < 0 || progress > 1_000_000
+                    || completions < 0 || completions > 1_000_000_000L
+                    || recentEvidence.size() > 32 || recentRequests.size() > 32)
+                throw new IllegalArgumentException("Invalid contract state");
+            recentEvidence = List.copyOf(recentEvidence);
+            recentRequests = List.copyOf(recentRequests);
+            if (new java.util.HashSet<>(recentEvidence).size() != recentEvidence.size()
+                    || new java.util.HashSet<>(recentRequests).size() != recentRequests.size())
+                throw new IllegalArgumentException("Duplicate contract replay guard");
+            for (String token : recentEvidence)
+                if (token == null || token.isBlank() || token.length() > 128) throw new IllegalArgumentException("Invalid contract evidence");
+        }
+        public static ContractState empty() { return new ContractState(1, 0, 0, List.of(), List.of()); }
+    }
+    public record PendingContract(String contractId, String itemId, int itemCount, int beforeCount,
+                                  int rewardSp, int requiredTier) {
+        public PendingContract {
+            ProgressionProfile.validateId(contractId);
+            ProgressionProfile.validateId(itemId);
+            if (itemCount < 1 || itemCount > 1_000_000 || beforeCount < itemCount || beforeCount > 1_000_000
+                    || rewardSp < 1 || rewardSp > 10 || requiredTier < 0 || requiredTier > 4)
+                throw new IllegalArgumentException("Invalid pending contract");
+        }
+        public int afterCount() { return beforeCount - itemCount; }
+    }
+
     public MetaProgress {
         if (shopTier < -1 || shopTier > 4 || progress.size() > 4096 || accounting == null
-                || worldClaims.size() > 1024 || purchaseReceipts.size() > 4096)
+                || worldClaims.size() > 1024 || purchaseReceipts.size() > 4096
+                || contracts.size() > 128 || pendingContracts.size() > 1)
             throw new IllegalArgumentException("Invalid meta progression");
         progress = Map.copyOf(progress);
         progress.forEach((id, state) -> {
@@ -53,6 +85,7 @@ public record MetaProgress(int shopTier, Map<String, Progress> progress, Account
             }
         });
         if (progress.values().stream().mapToInt(p -> p.evidence().size()).sum() > 8192) throw new IllegalArgumentException("Evidence limit reached");
+
         var claims = new java.util.LinkedHashMap<UUID, Set<String>>();
         int totalClaims = 0;
         for (var entry : worldClaims.entrySet()) {
@@ -72,15 +105,46 @@ public record MetaProgress(int shopTier, Map<String, Progress> progress, Account
         }
         worldClaims = finalizedClaims;
         purchaseReceipts = finalizedReceipts;
+
+        contracts = Map.copyOf(contracts);
+        contracts.forEach((id, state) -> {
+            ProgressionProfile.validateId(id);
+            if (state == null) throw new IllegalArgumentException("Missing contract state");
+            var definition = ContractCatalog.find(id);
+            if (definition != null && state.revision() == 1 && state.progress() >= definition.target())
+                throw new IllegalArgumentException("Completed contract progress must reset before persistence");
+        });
+        pendingContracts = Map.copyOf(pendingContracts);
+        pendingContracts.forEach((id, pending) -> {
+            if (id == null || pending == null) throw new IllegalArgumentException("Invalid pending contract entry");
+        });
+    }
+
+    public MetaProgress(int shopTier, Map<String, Progress> progress, Accounting accounting,
+                        Map<UUID, Set<String>> worldClaims, Map<UUID, PurchaseReceipt> purchaseReceipts) {
+        this(shopTier, progress, accounting, worldClaims, purchaseReceipts, Map.of(), Map.of());
     }
     public MetaProgress(int shopTier, Map<String, Progress> progress, Accounting accounting) {
-        this(shopTier, progress, accounting, Map.of(), Map.of());
+        this(shopTier, progress, accounting, Map.of(), Map.of(), Map.of(), Map.of());
     }
-    public static MetaProgress empty(boolean legacy) { return new MetaProgress(-1, Map.of(), Accounting.empty(legacy), Map.of(), Map.of()); }
-    public MetaProgress withProgress(Map<String, Progress> value) { return new MetaProgress(shopTier, value, accounting, worldClaims, purchaseReceipts); }
-    public MetaProgress withTier(int qualified) { return new MetaProgress(Math.max(shopTier, qualified), progress, accounting, worldClaims, purchaseReceipts); }
+    public static MetaProgress empty(boolean legacy) {
+        return new MetaProgress(-1, Map.of(), Accounting.empty(legacy), Map.of(), Map.of(), Map.of(), Map.of());
+    }
+    public MetaProgress withProgress(Map<String, Progress> value) {
+        return new MetaProgress(shopTier, value, accounting, worldClaims, purchaseReceipts, contracts, pendingContracts);
+    }
+    public MetaProgress withTier(int qualified) {
+        return new MetaProgress(Math.max(shopTier, qualified), progress, accounting, worldClaims, purchaseReceipts, contracts, pendingContracts);
+    }
+    public MetaProgress withContracts(Map<String, ContractState> value) {
+        return new MetaProgress(shopTier, progress, accounting, worldClaims, purchaseReceipts, value, pendingContracts);
+    }
+    public MetaProgress withPendingContracts(Map<UUID, PendingContract> value) {
+        return new MetaProgress(shopTier, progress, accounting, worldClaims, purchaseReceipts, contracts, value);
+    }
     public MetaProgress account(long earned, long perks, long spent, long perksSpent, long refund, long perksRefund, long admin) {
-        return new MetaProgress(shopTier, progress, accounting.change(earned, perks, spent, perksSpent, refund, perksRefund, admin), worldClaims, purchaseReceipts);
+        return new MetaProgress(shopTier, progress, accounting.change(earned, perks, spent, perksSpent, refund, perksRefund, admin),
+                worldClaims, purchaseReceipts, contracts, pendingContracts);
     }
     public boolean claimed(UUID world, String product) { return worldClaims.getOrDefault(world, Set.of()).contains(product); }
 }

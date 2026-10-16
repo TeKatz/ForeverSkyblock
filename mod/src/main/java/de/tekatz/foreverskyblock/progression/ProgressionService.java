@@ -6,9 +6,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.UUID;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
 import net.neoforged.fml.loading.FMLPaths;
 import org.slf4j.Logger;
 
@@ -21,15 +25,13 @@ public final class ProgressionService {
     private final WorldIdentityStore worldIdentities;
     private final Path worldRoot;
     private final String worldName;
-    public ProgressionService(ProfileStore store, boolean local) {
-        this(store, local, null, "");
-    }
+    public ProgressionService(ProfileStore store, boolean local) { this(store, local, null, ""); }
     private ProgressionService(ProfileStore store, boolean local, Path worldRoot, String worldName) {
         this.store = store; this.local = local; this.worldRoot = worldRoot; this.worldName = worldName;
         this.worldIdentities = new WorldIdentityStore();
-        this.redemptions = new CoreRedemptions(store.file(new java.util.UUID(0, 0)).getParent().resolve("core_claims"), store);
+        this.redemptions = new CoreRedemptions(store.file(new UUID(0, 0)).getParent().resolve("core_claims"), store);
     }
-    public CoreRedemptions.Result redeemCore(ServerPlayer player, java.util.UUID core) throws IOException {
+    public CoreRedemptions.Result redeemCore(ServerPlayer player, UUID core) throws IOException {
         var result = redemptions.redeem(core, player.getUUID());
         if (result == CoreRedemptions.Result.CREDITED) {
             if (connected(player)) player.sendSystemMessage(SkillMessages.perk());
@@ -45,22 +47,26 @@ public final class ProgressionService {
                     key.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT), key.getWorldData().getLevelName());
         });
     }
-    public static void logout(MinecraftServer server, java.util.UUID player) {
-        var service = SERVICES.get(server);
-        if (service != null) service.store.evict(player);
+    public static void logout(MinecraftServer server, UUID player) {
+        var service = SERVICES.get(server); if (service != null) service.store.evict(player);
     }
     public static void stop(MinecraftServer server) { SERVICES.remove(server); }
     public void login(ServerPlayer player) {
-        try { SkillCatalog.apply(player, store.load(player.getUUID())); sync(player, false, ""); }
-        catch (IOException e) { error(player, false, e); }
+        try {
+            boolean recovered = recoverPendingContract(player);
+            SkillCatalog.apply(player, store.load(player.getUUID()));
+            sync(player, false, recovered ? "" : "contract_recovery_required");
+        } catch (IOException e) { error(player, false, e); }
     }
-    public void open(ServerPlayer player) { sync(player, true, ""); }
+    public void open(ServerPlayer player) {
+        try { sync(player, true, recoverPendingContract(player) ? "" : "contract_recovery_required"); }
+        catch (IOException e) { error(player, true, e); }
+    }
     public void buy(ServerPlayer player, String id) {
         SkillCatalog.Skill skill = SkillCatalog.find(id);
         if (skill == null) { sync(player, false, "unknown_skill"); return; }
         try {
-            ProgressionProfile previous = store.load(player.getUUID());
-            String message;
+            ProgressionProfile previous = store.load(player.getUUID()); String message;
             if (previous.rank(id) >= skill.maxRank()) message = "already_owned";
             else if (!skill.available()) message = "missing_jetpacks";
             else if (!skill.canPurchase(previous)) message = "requires_previous";
@@ -68,8 +74,7 @@ public final class ProgressionService {
             else if (previous.points() < skill.cost()) message = "not_enough_points";
             else {
                 ProgressionProfile next = store.update(player.getUUID(), state -> state.purchase(id, skill.cost(), skill.perkCost(), skill.maxRank()));
-                SkillCatalog.apply(player, next);
-                message = "purchased";
+                SkillCatalog.apply(player, next); message = "purchased";
             }
             sync(player, false, message);
         } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); }
@@ -78,48 +83,83 @@ public final class ProgressionService {
         ShopCatalog.Product product = ShopCatalog.find(id);
         if (product == null) { sync(player, false, "unknown_product"); return; }
         if (product.developmentOnly() && !canTestPoints(player)) { sync(player, false, "test_denied"); return; }
-        java.util.UUID world;
+        UUID world;
         try { world = currentWorld(); }
-        catch (IOException e) {
-            LOGGER.error("Could not read world identity for {}", player.getUUID(), e);
-            sync(player, false, "world_unavailable"); return;
-        }
+        catch (IOException e) { LOGGER.error("Could not read world identity for {}", player.getUUID(), e); sync(player, false, "world_unavailable"); return; }
         try {
-            ProgressionProfile previous = store.load(player.getUUID());
-            String message;
+            ProgressionProfile previous = store.load(player.getUUID()); String message;
             if (previous.meta().claimed(world, product.id())) message = "world_already_claimed";
             else if (previous.meta().shopTier() < product.requiredTier()) message = "world_requires_tier";
             else if (previous.points() < product.spCost()) message = "not_enough_points";
-            else {
-                store.update(player.getUUID(), state -> state.purchaseWorld(world, product, java.util.UUID.randomUUID()));
-                message = "world_purchase_done";
-            }
+            else { store.update(player.getUUID(), state -> state.purchaseWorld(world, product, UUID.randomUUID())); message = "world_purchase_done"; }
             sync(player, false, message);
         } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); }
     }
+
+    /** Resource turn-ins use a durable intent plus forced player-data checkpoints around inventory removal. */
+    public synchronized void submitContract(ServerPlayer player, String id, UUID request) {
+        ContractCatalog.Contract contract = ContractCatalog.find(id);
+        if (contract == null || !contract.resource() || request == null) { sync(player, false, "unknown_contract"); return; }
+        try {
+            if (!recoverPendingContract(player)) { sync(player, false, "contract_recovery_required"); return; }
+            ProgressionProfile before = store.load(player.getUUID());
+            if (before.meta().shopTier() < contract.requiredTier()) { sync(player, false, "contract_locked"); return; }
+            Item item = contractItem(contract.itemId());
+            if (item == null) { sync(player, false, "contract_unavailable"); return; }
+            int inventoryBefore = inventoryCount(player, item);
+            if (inventoryBefore < contract.target()) { sync(player, false, "contract_missing_resources"); return; }
+
+            // Persist the exact pre-consumption inventory baseline before the profile intent is committed.
+            player.server.getPlayerList().saveAll();
+            ProgressionProfile begun = store.update(player.getUUID(), state -> ContractRules.beginTurnIn(state, contract, request, inventoryBefore));
+            var pending = begun.meta().pendingContracts().get(request);
+            if (pending == null) { sync(player, false, ""); return; } // processed replay or another guarded request
+            if (inventoryCount(player, item) != pending.beforeCount() || !consume(player, item, pending.itemCount())) {
+                LOGGER.error("Contract inventory changed while durable intent {} was being prepared for {}", request, player.getUUID());
+                sync(player, false, "contract_recovery_required"); return;
+            }
+            player.server.getPlayerList().saveAll();
+            ProgressionProfile finished = store.update(player.getUUID(), state -> ContractRules.finishTurnIn(state, request));
+            if (finished.meta().pendingContracts().containsKey(request)) { sync(player, false, "contract_recovery_required"); return; }
+            if (connected(player)) player.sendSystemMessage(Component.literal(contract.titleEn() + ": ")
+                    .append(Component.translatable("message.forever_skyblock.skill_points", contract.rewardSp())));
+            sync(player, false, "contract_completed");
+        } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); }
+    }
+
+    /** Atomically applies unique boss credit and any eligible repeatable counter from the same kill event. */
+    public boolean killEvidence(ServerPlayer player, boolean wither, boolean dragon, boolean monster, UUID victim) {
+        if (!ChallengeEvents.realPlayer(player) || victim == null || (!wither && !dragon && !monster)) return false;
+        try {
+            ProgressionProfile previous = store.load(player.getUUID());
+            ProgressionProfile next = store.update(player.getUUID(), state -> {
+                String token = victim.toString();
+                if (wither) state = ContractRules.recordBoss(state, ChallengeRules.WITHER, ContractCatalog.WITHER_HUNTER, token);
+                if (dragon) state = ContractRules.recordBoss(state, ChallengeRules.DRAGON, ContractCatalog.DRAGON_REBORN, token);
+                if (monster) state = ChallengeRules.record(state, ChallengeRules.VETERAN.id(), token);
+                return state;
+            });
+            if (next.equals(previous)) return false;
+            notifyProgress(player, previous, next);
+            sync(player, false, "");
+            return true;
+        } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); return false; }
+    }
+
     public int perkPoints(ServerPlayer player) throws IOException { return store.load(player.getUUID()).perkPoints(); }
     public int jetpackStage(ServerPlayer player) {
-        try { return JetpackResearch.stage(store.load(player.getUUID())::rank); }
-        catch (IOException e) { return 0; }
+        try { return JetpackResearch.stage(store.load(player.getUUID())::rank); } catch (IOException e) { return 0; }
     }
-    public static boolean canTestPoints(ServerPlayer player) {
-        return player.hasPermissions(2) || player.server.isSingleplayerOwner(player.getGameProfile());
-    }
-    /** Temporary developer action: fixed server-side amount, never a client-supplied balance. */
+    public static boolean canTestPoints(ServerPlayer player) { return player.hasPermissions(2) || player.server.isSingleplayerOwner(player.getGameProfile()); }
     public void testPoints(ServerPlayer player) {
         if (!canTestPoints(player)) { sync(player, false, "test_denied"); return; }
-        try {
-            store.update(player.getUUID(), state -> state.grant(10));
-            sync(player, false, "test_points_added");
-        } catch (IOException e) { error(player, false, e); }
+        try { store.update(player.getUUID(), state -> state.grant(10)); sync(player, false, "test_points_added"); }
+        catch (IOException e) { error(player, false, e); }
         catch (IllegalArgumentException | ArithmeticException e) { sync(player, false, "reset_limit"); }
     }
     public void reset(ServerPlayer player) {
-        try {
-            ProgressionProfile next = store.update(player.getUUID(), SkillCatalog::reset);
-            SkillCatalog.apply(player, next);
-            sync(player, false, "reset_done");
-        } catch (IOException e) { error(player, false, e); }
+        try { ProgressionProfile next = store.update(player.getUUID(), SkillCatalog::reset); SkillCatalog.apply(player, next); sync(player, false, "reset_done"); }
+        catch (IOException e) { error(player, false, e); }
         catch (IllegalArgumentException | ArithmeticException e) { sync(player, false, "reset_limit"); }
     }
     public boolean evidence(ServerPlayer player, java.util.List<ChallengeEvents.Evidence> events) {
@@ -131,43 +171,89 @@ public final class ProgressionService {
                 return state;
             });
             if (next.equals(previous)) return false;
-            boolean completed = false;
-            for (var milestone : MilestoneCatalog.MILESTONES) {
-                if (!previous.milestones().contains(milestone.id()) && next.milestones().contains(milestone.id())) {
-                    if (connected(player)) player.sendSystemMessage(SkillMessages.milestone(milestone)); completed = true;
-                }
-            }
-            if (connected(player) && next.meta().shopTier() > previous.meta().shopTier()) player.sendSystemMessage(Component.translatable(
-                    "message.forever_skyblock.tier_unlocked", Component.translatable("gui.forever_skyblock.meta.tier." + next.meta().shopTier())));
-            sync(player, false, completed ? "milestone_earned" : "");
-            return true;
+            notifyProgress(player, previous, next);
+            sync(player, false, ""); return true;
         } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); return false; }
+    }
+    private void notifyProgress(ServerPlayer player, ProgressionProfile previous, ProgressionProfile next) {
+        for (var milestone : MilestoneCatalog.MILESTONES)
+            if (!previous.milestones().contains(milestone.id()) && next.milestones().contains(milestone.id()) && connected(player))
+                player.sendSystemMessage(SkillMessages.milestone(milestone));
+        if (connected(player) && next.meta().shopTier() > previous.meta().shopTier()) player.sendSystemMessage(Component.translatable(
+                "message.forever_skyblock.tier_unlocked", Component.translatable("gui.forever_skyblock.meta.tier." + next.meta().shopTier())));
+        for (var contract : ContractCatalog.CONTRACTS) {
+            long oldCount = previous.meta().contracts().getOrDefault(contract.id(), MetaProgress.ContractState.empty()).completions();
+            long newCount = next.meta().contracts().getOrDefault(contract.id(), MetaProgress.ContractState.empty()).completions();
+            if (newCount > oldCount && connected(player)) player.sendSystemMessage(Component.literal(contract.titleEn() + ": ")
+                    .append(Component.translatable("message.forever_skyblock.skill_points", contract.rewardSp())));
+        }
     }
     public boolean grant(ServerPlayer player, int amount) {
         try { store.update(player.getUUID(), state -> state.grant(amount)); sync(player, false, "points_granted"); return true; }
         catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); return false; }
     }
-    private static boolean connected(ServerPlayer player) {
-        return player.connection != null && player.connection.getConnection().isConnected();
+
+    /** Recover the one allowed durable resource intent before the player can submit another contract. */
+    private synchronized boolean recoverPendingContract(ServerPlayer player) throws IOException {
+        ProgressionProfile profile = store.load(player.getUUID());
+        if (profile.meta().pendingContracts().isEmpty()) return true;
+        var entry = profile.meta().pendingContracts().entrySet().iterator().next();
+        UUID request = entry.getKey(); MetaProgress.PendingContract pending = entry.getValue();
+        Item item = contractItem(pending.itemId());
+        if (item == null) return false;
+        int current = inventoryCount(player, item);
+        if (current == pending.beforeCount()) {
+            if (!consume(player, item, pending.itemCount()) || inventoryCount(player, item) != pending.afterCount()) return false;
+            player.server.getPlayerList().saveAll();
+        } else if (current != pending.afterCount()) {
+            LOGGER.error("Ambiguous contract recovery for {}: expected item count {} or {}, found {}", player.getUUID(),
+                    pending.beforeCount(), pending.afterCount(), current);
+            return false;
+        }
+        store.update(player.getUUID(), state -> ContractRules.finishTurnIn(state, request));
+        return true;
     }
-    private java.util.UUID currentWorld() throws IOException {
+    public static int inventoryCount(ServerPlayer player, String itemId) {
+        Item item = contractItem(itemId); return item == null ? 0 : inventoryCount(player, item);
+    }
+    public static boolean contractItemAvailable(String itemId) { return contractItem(itemId) != null; }
+    private static Item contractItem(String id) {
+        try { return BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(id)).orElse(null); }
+        catch (RuntimeException e) { return null; }
+    }
+    private static int inventoryCount(ServerPlayer player, Item item) {
+        int count = 0; var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            var stack = inventory.getItem(slot); if (stack.is(item)) count = Math.addExact(count, stack.getCount());
+        }
+        return count;
+    }
+    private static boolean consume(ServerPlayer player, Item item, int amount) {
+        if (amount < 1 || inventoryCount(player, item) < amount) return false;
+        int remaining = amount; var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize() && remaining > 0; slot++) {
+            var stack = inventory.getItem(slot); if (!stack.is(item)) continue;
+            int take = Math.min(remaining, stack.getCount()); stack.shrink(take); remaining -= take;
+        }
+        inventory.setChanged(); return remaining == 0;
+    }
+    private static boolean connected(ServerPlayer player) { return player.connection != null && player.connection.getConnection().isConnected(); }
+    private UUID currentWorld() throws IOException {
         if (worldRoot == null) throw new IOException("World identity unavailable outside a running server");
         return worldIdentities.loadOrCreate(worldRoot);
     }
     private void sync(ServerPlayer player, boolean open, String message) {
         try {
-            ProgressionProfile profile = store.load(player.getUUID());
-            SkillNetwork.WorldState world;
+            ProgressionProfile profile = store.load(player.getUUID()); SkillNetwork.WorldState world;
             try {
-                java.util.UUID identity = currentWorld();
+                UUID identity = currentWorld();
                 world = new SkillNetwork.WorldState(true, worldName, profile.meta().worldClaims().getOrDefault(identity, java.util.Set.of()));
             } catch (IOException e) {
                 LOGGER.error("Could not read world identity for {}", player.getUUID(), e);
                 world = new SkillNetwork.WorldState(false, worldName, java.util.Set.of());
             }
             SkillNetwork.send(player, profile, local, open, true, message, world);
-        }
-        catch (IOException e) { error(player, open, e); }
+        } catch (IOException e) { error(player, open, e); }
     }
     private void error(ServerPlayer player, boolean open, Exception e) {
         LOGGER.error("Could not read or save progression for {}", player.getUUID(), e);

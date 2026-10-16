@@ -23,7 +23,8 @@
     "PremiumSkillScreenVisualMixin",
     "PremiumChallengeCardVisualMixin",
     "PremiumCategoryButtonVisualMixin",
-    "PremiumChromeButtonVisualMixin"
+    "PremiumChromeButtonVisualMixin",
+    "PremiumContractScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
