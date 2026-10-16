@@ -19,6 +19,9 @@
     "PersonalCraftMixin",
     "PersonalKillMixin"
   ],
+  "client": [
+    "PremiumSkillScreenVisualMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }
