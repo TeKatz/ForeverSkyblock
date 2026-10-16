@@ -2,6 +2,7 @@ package de.tekatz.foreverskyblock.network;
 
 import de.tekatz.foreverskyblock.ForeverSkyblock;
 import de.tekatz.foreverskyblock.progression.MilestoneCatalog;
+import de.tekatz.foreverskyblock.progression.MetaProgress;
 import de.tekatz.foreverskyblock.progression.ProgressionProfile;
 import de.tekatz.foreverskyblock.progression.ProgressionService;
 import de.tekatz.foreverskyblock.progression.SkillCatalog;
@@ -23,7 +24,7 @@ public final class SkillNetwork {
     private SkillNetwork() { }
     public static void setClientReceiver(Consumer<Snapshot> receiver) { clientReceiver = receiver; }
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("skills-4");
+        var registrar = event.registrar("skills-5");
         registrar.playToServer(Request.TYPE, Request.CODEC, (request, context) -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             var service = ProgressionService.get(player.server);
@@ -39,7 +40,13 @@ public final class SkillNetwork {
         for (var skill : SkillCatalog.SKILLS) if (profile.rank(skill.id()) > 0) skills.put(skill.id(), profile.rank(skill.id()));
         var milestones = new LinkedHashSet<String>();
         for (var milestone : MilestoneCatalog.MILESTONES) if (profile.milestones().contains(milestone.id())) milestones.add(milestone.id());
-        PacketDistributor.sendToPlayer(player, new Snapshot(profile.points(), profile.perkPoints(), skills, milestones, local, open, available, message, ProgressionService.canTestPoints(player)));
+        var progress = new LinkedHashMap<String, Integer>();
+        for (var milestone : MilestoneCatalog.MILESTONES) {
+            var state = profile.meta().progress().get(milestone.id());
+            progress.put(milestone.id(), profile.milestones().contains(milestone.id()) ? milestone.target()
+                    : state == null ? 0 : state.revision() != 1 ? -1 : Math.min(milestone.target(), state.evidence().size()));
+        }
+        PacketDistributor.sendToPlayer(player, new Snapshot(profile.points(), profile.perkPoints(), skills, milestones, local, open, available, message, ProgressionService.canTestPoints(player), profile.meta().shopTier(), progress, profile.meta().accounting()));
     }
     public record Request(int action, String skillId) implements CustomPacketPayload {
         public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "skill_request"));
@@ -50,8 +57,22 @@ public final class SkillNetwork {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
     public record Snapshot(int points, int perkPoints, Map<String, Integer> skills, Set<String> milestones, boolean local, boolean open,
-                           boolean available, String message, boolean canTestPoints) implements CustomPacketPayload {
-        public Snapshot { skills = Map.copyOf(skills); milestones = Set.copyOf(milestones); }
+                           boolean available, String message, boolean canTestPoints, int shopTier, Map<String, Integer> progress,
+                           MetaProgress.Accounting accounting) implements CustomPacketPayload {
+        public Snapshot {
+            skills = Map.copyOf(skills); milestones = Set.copyOf(milestones); progress = Map.copyOf(progress);
+            if (shopTier < -1 || shopTier > 4 || progress.size() > 128 || skills.size() > 128 || milestones.size() > 128)
+                throw new IllegalArgumentException("Invalid progression snapshot");
+            progress.forEach((id, count) -> {
+                ProgressionProfile.validateId(id);
+                if (count < -1 || count > 1000) throw new IllegalArgumentException("Invalid challenge progress");
+            });
+        }
+        public Snapshot(int points, int perkPoints, Map<String, Integer> skills, Set<String> milestones, boolean local,
+                        boolean open, boolean available, String message, boolean canTestPoints) {
+            this(points, perkPoints, skills, milestones, local, open, available, message, canTestPoints,
+                    de.tekatz.foreverskyblock.progression.ChallengeRules.qualifiedTier(milestones), Map.of(), MetaProgress.Accounting.empty(true));
+        }
         public static final Type<Snapshot> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "skill_snapshot"));
         public static final StreamCodec<RegistryFriendlyByteBuf, Snapshot> CODEC = new StreamCodec<>() {
             @Override public Snapshot decode(RegistryFriendlyByteBuf buffer) {
@@ -72,7 +93,16 @@ public final class SkillNetwork {
                 size = size(buffer);
                 var milestones = new LinkedHashSet<String>();
                 for (int i = 0; i < size; i++) { String id = buffer.readUtf(128); ProgressionProfile.validateId(id); milestones.add(id); }
-                return new Snapshot(points, perks, skills, milestones, (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, message, (flags & 8) != 0);
+                int tier = buffer.readVarInt();
+                size = size(buffer);
+                var progress = new LinkedHashMap<String, Integer>();
+                for (int i = 0; i < size; i++) {
+                    String id = buffer.readUtf(128); int count = buffer.readVarInt();
+                    if (progress.put(id, count) != null) throw new IllegalArgumentException("Duplicate progress entry");
+                }
+                var accounting = new MetaProgress.Accounting(buffer.readVarLong(), buffer.readVarLong(), buffer.readVarLong(),
+                        buffer.readVarLong(), buffer.readVarLong(), buffer.readVarLong(), buffer.readVarLong(), buffer.readBoolean());
+                return new Snapshot(points, perks, skills, milestones, (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, message, (flags & 8) != 0, tier, progress, accounting);
             }
             private int size(RegistryFriendlyByteBuf buffer) {
                 int count = buffer.readVarInt();
@@ -88,6 +118,12 @@ public final class SkillNetwork {
                 value.skills().forEach((id, rank) -> { buffer.writeUtf(id, 128); buffer.writeVarInt(rank); });
                 buffer.writeVarInt(value.milestones().size());
                 value.milestones().forEach(id -> buffer.writeUtf(id, 128));
+                buffer.writeVarInt(value.shopTier());
+                buffer.writeVarInt(value.progress().size());
+                value.progress().forEach((id, count) -> { buffer.writeUtf(id, 128); buffer.writeVarInt(count); });
+                var a = value.accounting();
+                for (long total : new long[]{a.spEarned(), a.ppEarned(), a.spSpent(), a.ppSpent(), a.spRefunded(), a.ppRefunded(), a.spAdmin()}) buffer.writeVarLong(total);
+                buffer.writeBoolean(a.legacyHistoryUnknown());
             }
         };
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }

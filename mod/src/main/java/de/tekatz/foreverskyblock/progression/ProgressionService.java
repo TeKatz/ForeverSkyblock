@@ -91,13 +91,24 @@ public final class ProgressionService {
         } catch (IOException e) { error(player, false, e); }
         catch (IllegalArgumentException | ArithmeticException e) { sync(player, false, "reset_limit"); }
     }
-    public boolean award(ServerPlayer player, MilestoneCatalog.Milestone milestone) {
+    public boolean evidence(ServerPlayer player, java.util.List<ChallengeEvents.Evidence> events) {
+        if (!ChallengeEvents.realPlayer(player) || events.isEmpty()) return false;
         try {
             ProgressionProfile previous = store.load(player.getUUID());
-            ProgressionProfile next = store.update(player.getUUID(), state -> state.award(milestone.id(), milestone.reward()));
+            ProgressionProfile next = store.update(player.getUUID(), state -> {
+                for (var event : events) state = ChallengeRules.record(state, event.challenge(), event.token());
+                return state;
+            });
             if (next.equals(previous)) return false;
-            player.sendSystemMessage(SkillMessages.milestone(milestone));
-            sync(player, false, "milestone_earned");
+            boolean completed = false;
+            for (var milestone : MilestoneCatalog.MILESTONES) {
+                if (!previous.milestones().contains(milestone.id()) && next.milestones().contains(milestone.id())) {
+                    player.sendSystemMessage(SkillMessages.milestone(milestone)); completed = true;
+                }
+            }
+            if (next.meta().shopTier() > previous.meta().shopTier()) player.sendSystemMessage(Component.translatable(
+                    "message.forever_skyblock.tier_unlocked", Component.translatable("gui.forever_skyblock.meta.tier." + next.meta().shopTier())));
+            sync(player, false, completed ? "milestone_earned" : "");
             return true;
         } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); return false; }
     }

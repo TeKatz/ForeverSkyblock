@@ -61,7 +61,9 @@ public final class SkillGameTests {
             h.assertTrue(reset.equals(SkillNetwork.Request.CODEC.decode(buffer)), "Reset request round trips");
             buffer.clear();
             var state = new SkillNetwork.Snapshot(3, 2, Map.of(SkillCatalog.EXTENDED_REACH, 1),
-                    Set.of(MilestoneCatalog.FIRST_FOUNDATIONS.id()), true, true, true, "purchased", true);
+                    Set.of(MilestoneCatalog.FIRST_FOUNDATIONS.id()), true, true, true, "purchased", true, 1,
+                    Map.of("forever_skyblock:veteran", 630, "forever_skyblock:permanent_tools_i", 3),
+                    new de.tekatz.foreverskyblock.progression.MetaProgress.Accounting(12, 1, 5, 0, 1, 0, 10, true));
             SkillNetwork.Snapshot.CODEC.encode(buffer, state);
             h.assertTrue(state.equals(SkillNetwork.Snapshot.CODEC.decode(buffer)), "Authoritative profile snapshot round trips");
             h.succeed();

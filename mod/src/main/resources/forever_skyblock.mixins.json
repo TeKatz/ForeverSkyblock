@@ -12,7 +12,9 @@
     "Ae2PatternMixin",
     "InfiniteToolMixin",
     "ToolRecipeManagerMixin",
-    "ToolRepairRecipeMixin"
+    "ToolRepairRecipeMixin",
+    "PersonalCraftMixin",
+    "PersonalKillMixin"
   ],
   "injectors": {
     "defaultRequire": 1

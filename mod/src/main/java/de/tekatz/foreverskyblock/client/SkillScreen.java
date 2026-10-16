@@ -19,7 +19,7 @@ import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.client.gui.widget.ScrollPanel;
 import org.lwjgl.glfw.GLFW;
 
-/** Phase-one navigation over the existing server-authoritative progression operations. */
+/** Navigation over server-authoritative balances, personal challenges and permanent tiers. */
 public final class SkillScreen extends Screen {
     private static final int LIGHT=0xFFE8EFF4, MUTED=0xFFABBBC7, CYAN=0xFF7DDDE2, GREEN=0xFF89DBA5;
     private enum Page { OVERVIEW, CHALLENGES, SHOP, RESEARCH, PERKS, PROFILE }
@@ -42,10 +42,10 @@ public final class SkillScreen extends Screen {
     private static Component pageName(Page p) { return text("page."+p.name().toLowerCase(Locale.ROOT)); }
     private int sub() { return subsections.getOrDefault(page,0); }
     private String location() { return page.name()+":"+sub(); }
-    private boolean searchable() { return page==Page.CHALLENGES && sub()!=2 && detail==null; }
+    private boolean searchable() { return page==Page.CHALLENGES && sub()!=3 && detail==null; }
     private List<String> sections() {
         return switch(page) {
-            case CHALLENGES -> List.of("all","forever","contracts");
+            case CHALLENGES -> List.of("all","forever","combat","contracts");
             case SHOP -> List.of("permanent","current_world","tier_progress");
             case RESEARCH -> List.of("jetpacks");
             default -> List.of();
@@ -111,16 +111,17 @@ public final class SkillScreen extends Screen {
             case OVERVIEW -> {
                 long done=ready?MilestoneCatalog.MILESTONES.stream().filter(m->state.milestones().contains(m.id())).count():0;
                 cards.add(new Card(text("profile_summary"),ready?text("summary",state.points(),state.perkPoints(),done,MilestoneCatalog.MILESTONES.size(),ClientSkills.jetpackStage()):old("storage_error"),
-                        text("live_data"),Items.NETHER_STAR.getDefaultInstance(),"","",null,Component.empty()));
+                        ready?text("current_tier",tierName(state.shopTier())):text("live_data"),Items.NETHER_STAR.getDefaultInstance(),"","",null,Component.empty()));
                 cards.add(link("page.challenges","overview_challenges",Items.BOOK.getDefaultInstance(),Page.CHALLENGES,0));
                 cards.add(link("page.shop","overview_shop",Items.CHEST.getDefaultInstance(),Page.SHOP,0));
-                cards.add(link("sub.contracts","contracts_pending",Items.WRITABLE_BOOK.getDefaultInstance(),Page.CHALLENGES,2));
+                cards.add(link("sub.contracts","contracts_pending",Items.WRITABLE_BOOK.getDefaultInstance(),Page.CHALLENGES,3));
                 cards.add(link("page.research","overview_research",Items.FEATHER.getDefaultInstance(),Page.RESEARCH,0));
                 cards.add(info("foundation_title","foundation_description",Items.COMPASS.getDefaultInstance()));
             }
             case CHALLENGES -> {
-                if(sub()==2)cards.add(info("sub.contracts","contracts_pending",Items.WRITABLE_BOOK.getDefaultInstance()));
+                if(sub()==3)cards.add(info("sub.contracts","contracts_pending",Items.WRITABLE_BOOK.getDefaultInstance()));
                 else for(var entry:MilestoneCatalog.MILESTONES) {
+                    if(sub()==1&&!entry.category().equals("forever")||sub()==2&&!entry.category().equals("combat"))continue;
                     boolean completed=ready&&state.milestones().contains(entry.id());
                     if(filter==1&&completed||filter==2&&!completed)continue;
                     var title=Component.translatable(entry.titleKey());var description=Component.translatable(entry.descriptionKey());
@@ -134,9 +135,9 @@ public final class SkillScreen extends Screen {
                 if(sub()==0)for(var skill:SkillCatalog.SKILLS){if(!skill.jetpack())cards.add(skillCard(skill));}
                 else if(sub()==1)cards.add(info("sub.current_world","world_pending",Items.CHEST.getDefaultInstance()));
                 else {
-                    cards.add(info("sub.tier_progress","tiers_pending",Items.COMPASS.getDefaultInstance()));
-                    cards.add(info("tier_foundations","tier_foundations_description",Items.COBBLESTONE.getDefaultInstance()));
-                    cards.add(info("tier_conqueror","tier_conqueror_description",Items.DRAGON_HEAD.getDefaultInstance()));
+                    cards.add(new Card(text("sub.tier_progress"),text("tiers_pending"),ready?text("current_tier",tierName(state.shopTier())):old("unavailable"),Items.COMPASS.getDefaultInstance(),"","",null,Component.empty()));
+                    cards.add(tierCard(0,"tier_foundations","tier_foundations_description",Items.COBBLESTONE.getDefaultInstance()));
+                    cards.add(tierCard(1,"tier_conqueror","tier_conqueror_description",Items.DRAGON_HEAD.getDefaultInstance()));
                     cards.add(info("tier_engineer","tier_engineer_description",Items.REDSTONE.getDefaultInstance()));
                     cards.add(info("tier_mastery","tier_mastery_description",Items.DIAMOND.getDefaultInstance()));
                     cards.add(info("tier_ascended","tier_ascended_description",ForeverSkyblock.FOREVER_CORE.get().getDefaultInstance()));
@@ -150,12 +151,22 @@ public final class SkillScreen extends Screen {
             case PROFILE -> {
                 cards.add(new Card(text("profile_summary"),ready?text("profile_values",state.points(),state.perkPoints(),state.skills().size(),state.milestones().size()):old("storage_error"),
                         ready?old(state.local()?"local_scope":"server_scope"):Component.empty(),Items.PLAYER_HEAD.getDefaultInstance(),"","",null,Component.empty()));
-                cards.add(info("history_title","history_description",Items.BOOK.getDefaultInstance()));
+                if(ready) {
+                    var a=state.accounting();
+                    cards.add(new Card(text("history_title"),text("accounting_values",a.spEarned(),a.ppEarned(),a.spSpent(),a.ppSpent(),a.spRefunded(),a.ppRefunded(),a.spAdmin()),
+                            text(a.legacyHistoryUnknown()?"history_legacy":"history_tracked"),Items.BOOK.getDefaultInstance(),"","",null,Component.empty()));
+                }
                 cards.add(new Card(old("reset_title"),text("reset_scope"),text("permanent_scope"),Items.GRINDSTONE.getDefaultInstance(),"","",this::confirmReset,old("reset")));
                 if(ready&&state.canTestPoints())cards.add(new Card(text("development"),old("test_points_hint"),text("admin_only"),Items.COMMAND_BLOCK.getDefaultInstance(),"","",()->{ClientSkills.testPoints();refresh();},old("test_points")));
             }
         }
         return cards;
+    }
+    private static Component tierName(int tier) { return text("tier."+tier); }
+    private Card tierCard(int tier,String title,String description,ItemStack icon) {
+        var state=ClientSkills.snapshot();
+        Component badge=state==null||!state.available()?old("unavailable"):text(state.shopTier()>=tier?"tier_unlocked":"tier_locked");
+        return new Card(text(title),text(description),badge,icon,"","",null,Component.empty());
     }
     private Card skillCard(SkillCatalog.Skill skill) {
         ItemStack icon=skill.icon().getDefaultInstance();var description=Component.translatable(skill.descriptionKey());
@@ -179,7 +190,13 @@ public final class SkillScreen extends Screen {
                     :ClientSkills.pending()?"waiting":state.perkPoints()<skill.perkCost()?"need_perks":state.points()<skill.cost()?"need_points":"unlock_short";
             return old(key,key.equals("need_perks")?skill.perkCost():skill.cost());
         }
-        if(!card.milestone().isEmpty())return state==null||!state.available()?old("unavailable"):old(state.milestones().contains(card.milestone())?"completed":"task_open");
+        if(!card.milestone().isEmpty()) {
+            if(state==null||!state.available())return old("unavailable");
+            if(state.milestones().contains(card.milestone()))return old("completed");
+            int count=state.progress().getOrDefault(card.milestone(),0);
+            if(count<0)return text("objective_revision");
+            return text("objective_progress",count,ChallengeRules.find(card.milestone()).target());
+        }
         return Component.empty();
     }
     private boolean canBuy(String id) {
