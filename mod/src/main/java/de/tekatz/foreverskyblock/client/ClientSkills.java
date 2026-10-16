@@ -36,8 +36,8 @@ public final class ClientSkills {
         pending = false;
         // Counter-only snapshots must not rebuild JEI's research visibility on every mob kill.
         if (firstSnapshot || oldStage != jetpackStage()) visibilityChanged.run();
-        if (value.open() && !(minecraft.screen instanceof SkillScreen)) minecraft.setScreen(new SkillScreen());
-        if (minecraft.screen instanceof SkillScreen screen) screen.refresh();
+        if (value.open() && !(minecraft.screen instanceof PremiumSkillScreen)) minecraft.setScreen(new PremiumSkillScreen());
+        if (minecraft.screen instanceof PremiumSkillScreen screen) screen.refresh();
     }
     public static void buy(String skill) {
         if (pending) return;
