@@ -1,5 +1,15 @@
 # Validation status
 
+## Personal challenge progression — 0.11.0 / phase 2
+
+Tested source `9349caec4b134fbd383fecb3e50bca8ce6f50dfa` passed [CI run 38848917148](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38848917148), job `116805567107`: the Java 21 build and pure progression/profile tests passed, followed by **all 46 required GameTests in both server runs**. The baseline exercised the mod without optional integrations. The pack-loader run used NeoForge 21.1.259 with AE2 19.2.18, Iron Jetpacks 8.0.11, Cucumber 8.0.16, GuideME 21.1.19, FTB Ultimine 2101.1.15, FTB Library 2101.1.37, Architectury 13.0.11, Mekanism 10.7.19.85, Powah 6.2.10 and Cloth Config 15.0.140.
+
+The progression tests cover schema-2 migration, First Foundations identity without a second reward, accounting, unknown IDs/revisions, distinct tools across reloads, a 630+220+150 Veteran sequence, duplicate/concurrent evidence, failed persistence and monotonic Tier 0/I. GameTests use real Vanilla crafting and smithing result slots, actual hostile/Wither/Dragon lethal damage, fake/passive exclusions, dimension transitions, AE2's actual manual crafting slot and snapshot round trips. Both loader runs reported `All 46 required tests passed :)`.
+
+The verified production JAR is `ForeverSkyblock-1.21.1-NeoForge-0.11.0.jar`, **4,965,610 bytes**, SHA-256 **`fe5c841ad8aa20fff0aab705be2e2042c261fe94e4b7481363f36202a8bbff7b`**. CI artifact ID: `12023818884`; artifact ZIP SHA-256: `88c3a99e55bb4d749a6b01ef65ccc085caa152e81a5157b6ab96036fc6adbadf`. The ZIP and JAR integrity checks passed. Inspection confirmed version 0.11.0, both personal-action mixins, the new progression classes and EN/DE resources, with no removed JAR entries. No condenser, Ascension, recipe or texture entry changed compared with the delivered 0.10.0 JAR.
+
+Manual client acceptance remains pending for migration on a copied profile, K-menu rendering at the preferred GUI scales, normal/Shift ME crafting, multiplayer boss credit, restart/new-world persistence and retained machine visuals. Back up the progression directory before testing: once a changed profile is written as schema 3, older mod versions cannot read it.
+
 ## Iron Jetpacks research — 0.5.0
 
 [Java 21 build, fourteen profile/research tests and fourteen dedicated-server GameTests passed](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38711112494) for source commit `cfafa994f2e676de7a3828fe1830f8aa7dc91358`. Baseline GameTests run without optional mods on NeoForge 21.1.249. A second required integration run loads Iron Jetpacks 8.0.11, Cucumber 8.0.16, AE2 19.2.18 and GuideME 21.1.19 on the actual pack loader, NeoForge 21.1.259.

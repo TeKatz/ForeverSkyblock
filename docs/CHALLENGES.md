@@ -57,7 +57,7 @@ Snapshots use protocol **`skills-5`**, carrying tier, bounded known objective co
 
 ## Verification and manual acceptance
 
-Automated coverage includes legacy migration, one-time rewards, distinct tool evidence, 630+220+150 kills across reloads, duplicate events, concurrent claims, failure-before-commit, monotonic tiers, unknown IDs/revisions, accounting and corrupt-primary refusal. Dedicated GameTests exercise Vanilla crafting result slots and the real smithing menu, actual hostile/boss lethal damage, fake/automated exclusions, dimension dispatch, actual optional AE2 manual slot dispatch and snapshot round trips. Exact completed CI evidence is recorded in VALIDATION.md before artifact delivery.
+Automated coverage includes legacy migration, one-time rewards, distinct tool evidence, 630+220+150 kills across reloads, duplicate events, concurrent claims, failure-before-commit, monotonic tiers, unknown IDs/revisions, accounting and corrupt-primary refusal. Dedicated GameTests exercise Vanilla crafting result slots and the real smithing menu, actual hostile/boss lethal damage, fake/automated exclusions, dimension dispatch, actual optional AE2 manual slot dispatch and snapshot round trips. Source `9349caec4b134fbd383fecb3e50bca8ce6f50dfa` passed [CI run 38848917148](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38848917148): build, pure tests and all 46 required GameTests in both loader runs. The verified JAR details are recorded in [VALIDATION.md](VALIDATION.md).
 
 Manual acceptance on a copy of the test instance:
 

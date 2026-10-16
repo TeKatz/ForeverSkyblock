@@ -8,7 +8,7 @@
 - Persist monotonic Tier 0/I independently of currency and respec; track new earned/spent/refunded/admin currency with honest legacy-history status.
 - Show live progress, combat categories, permanent tier status and accounting in EN/DE. Protocol skills-5 requires matching client/server versions.
 - Refuse ambiguous corrupt/missing-primary recovery instead of silently accepting stale backups; phase-3 journal recovery remains pending.
-- Add migration, failure, replay and real-menu/combat integration tests. Exact validation is recorded in VALIDATION.md before delivery. Retain all machine GUI fixes; no main merge or release.
+- Add migration, failure, replay and real-menu/combat integration tests. Source `9349cae` passed the Java 21 build, pure tests and all 46 required GameTests in both loader runs; the verified artifact details are in VALIDATION.md. Retain all machine GUI fixes; no main merge or release.
 
 ## 0.10.0 — Persistent progression navigation foundation (phase 1)
 
