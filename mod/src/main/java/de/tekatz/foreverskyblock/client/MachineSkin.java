@@ -36,7 +36,14 @@ final class MachineSkin {
     }
     void slot(GuiGraphics g,int x,int y,boolean machine) {
         int padding=machine?4:2,size=machine?24:20;
-        if(ascension)patch(g,x-padding,y-padding,size,size,648,686,82,66);
+        if(ascension && machine) {
+            // A symmetric inset avoids stretching the inventory atlas bevel across the core slot.
+            int left=x-padding,top=y-padding;
+            panel(g,left,top,size,size,0xFF788493);
+            g.fill(left+1,top+1,left+size-1,top+2,0xFFB7C3D0);
+            g.fill(left+1,top+2,left+2,top+size-1,0xFFB7C3D0);
+        }
+        else if(ascension)patch(g,x-padding,y-padding,size,size,648,686,82,66);
         else patch(g,x-padding,y-padding,size,size,632,655,84,76);
     }
     void lock(GuiGraphics g,int x,int y) {
@@ -54,7 +61,15 @@ final class MachineSkin {
         g.setColor(1,1,1,1);
         // Text is drawn live over a clean center; artwork patches contain no example button label.
         g.fill(x+4,y+3,x+width-4,y+height-3,ascension?(enabled?0xFF7837BD:0xFF40354D):0xFF272C32);
-        if(hover&&enabled){int color=ascension?VIOLET:primary?0xFFE5A666:0xFFBCC9D3;g.fill(x+3,y+2,x+width-3,y+3,color);}
+        if(hover&&enabled) {
+            int color=ascension?VIOLET:primary?0xFFFFC183:CYAN;
+            int fill=ascension?0xFF934BD6:primary?0xFF534236:0xFF304D59;
+            g.fill(x+4,y+3,x+width-4,y+height-3,fill);
+            g.fill(x+3,y+2,x+width-3,y+3,color);
+            g.fill(x+3,y+height-3,x+width-3,y+height-2,color);
+            g.fill(x+3,y+3,x+4,y+height-3,color);
+            g.fill(x+width-4,y+3,x+width-3,y+height-3,color);
+        }
     }
     static void text(GuiGraphics g,Font font,Component message,int x,int y,int maxWidth,int color,float maximumScale) {
         float scale=Math.min(maximumScale,(float)maxWidth/Math.max(1,font.width(message)));

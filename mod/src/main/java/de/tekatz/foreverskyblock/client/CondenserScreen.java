@@ -61,9 +61,9 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         MachineSkin.panel(g,x+42,y+31,164,12,0xFF365A66);
         MachineSkin.centered(g,font,text(menu.hasModule()?"module_connected":"module_absent"),x+124,y+34,156,MachineSkin.CYAN,.72F);
         MachineSkin.panel(g,x+14,y+44,220,98,0xFF54616D);
-        MachineSkin.text(g,font,text("input"),x+23,y+48,43,MachineSkin.MUTED,.73F);
-        if(menu.hasModule())MachineSkin.text(g,font,text("module_input"),x+68,y+48,76,MachineSkin.MUTED,.73F);
-        MachineSkin.text(g,font,text("output"),x+190,y+48,41,MachineSkin.MUTED,.73F);
+        MachineSkin.centered(g,font,text("input"),x+CondenserMenu.FIRST_X+8,y+48,43,MachineSkin.MUTED,.73F);
+        if(menu.hasModule())MachineSkin.centered(g,font,text("module_input"),x+CondenserMenu.SECOND_X+8,y+48,49,MachineSkin.MUTED,.73F);
+        MachineSkin.centered(g,font,text("output"),x+CondenserMenu.OUTPUT_X+8,y+48,41,MachineSkin.MUTED,.73F);
         skin.slot(g,x+CondenserMenu.FIRST_X,y+CondenserMenu.INPUT_Y,true);
         if(menu.hasModule()){skin.slot(g,x+CondenserMenu.SECOND_X,y+CondenserMenu.INPUT_Y,true);MachineSkin.text(g,font,Component.literal("+"),x+59,y+67,13,MachineSkin.MUTED,1.25F);}
         skin.slot(g,x+CondenserMenu.OUTPUT_X,y+CondenserMenu.INPUT_Y,true);

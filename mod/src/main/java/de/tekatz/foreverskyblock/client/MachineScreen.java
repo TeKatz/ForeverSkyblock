@@ -7,7 +7,6 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.Slot;
 
 /** One transform applies to every visual and pointer operation, including external JEI ghost targets. */
 public abstract class MachineScreen<M extends AbstractContainerMenu> extends AbstractContainerScreen<M> {
@@ -39,11 +38,6 @@ public abstract class MachineScreen<M extends AbstractContainerMenu> extends Abs
         super.render(g,mx,my,partialTick);renderTooltip(g,mx,my);renderMachineTooltip(g,mx,my);g.flush();g.pose().popPose();
     }
     protected void renderMachineTooltip(GuiGraphics g,int x,int y) { }
-    @Override protected void renderSlot(GuiGraphics g,Slot slot) {
-        if(slot.index>=machineSlots){super.renderSlot(g,slot);return;}
-        g.pose().pushPose();g.pose().translate(slot.x+8,slot.y+8,0);g.pose().scale(1.5F,1.5F,1);g.pose().translate(-slot.x-8,-slot.y-8,0);
-        super.renderSlot(g,slot);g.pose().popPose();
-    }
     @Override protected boolean isHovering(int x,int y,int w,int h,double mx,double my) {
         if(w==16&&h==16)for(int i=0;i<machineSlots;i++)if(menu.getSlot(i).x==x&&menu.getSlot(i).y==y)
             return super.isHovering(x-4,y-4,24,24,mx,my);
@@ -55,7 +49,6 @@ public abstract class MachineScreen<M extends AbstractContainerMenu> extends Abs
     @Override public boolean mouseScrolled(double x,double y,double dx,double dy) { return super.mouseScrolled(viewport().logicalX(x),viewport().logicalY(y),dx,dy); }
     @Override public void mouseMoved(double x,double y) { super.mouseMoved(viewport().logicalX(x),viewport().logicalY(y)); }
     protected void inventory(GuiGraphics g) {
-        MachineSkin.text(g,font,Component.literal(Component.translatable("container.inventory").getString().toUpperCase(java.util.Locale.ROOT)),leftPos+24,topPos+layout.inventoryY()-12,200,MachineSkin.LIGHT,1);
         for(int row=0;row<3;row++)for(int col=0;col<9;col++)skin.slot(g,leftPos+layout.inventoryX(col),topPos+layout.inventoryRowY(row),false);
         for(int col=0;col<9;col++)skin.slot(g,leftPos+layout.inventoryX(col),topPos+layout.hotbarY(),false);
     }

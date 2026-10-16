@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.1 — Machine GUI corrections (test branch)
+
+- Follow up on TeKatz's 0.9.0 screenshots: restore native 16-pixel machine items and counts, raise and center the Forever Core label, and replace the distorted inner core-slot border with a symmetric inset.
+- Remove both Inventory headings; move every player inventory row and hotbar up together (6 logical pixels for the Condenser, 8 for Ascension), using the same coordinates for rendering and menu interaction.
+- Center input/output labels above their actual slots, including the optional Mixing Chamber input; make enabled button hover/focus visible through a brighter fill and full inset border.
+- Retain the 0.9.0 block models, animations, recipes and progression. This update is on feature/machine-visual-overhaul, not main.
+- Validation: build and existing layout/GameTest checks are required for the delivered artifact. Actual client appearance and mouse interaction await TeKatz's next in-game test.
+
 ## 0.8.0 — Ascension and Perk Points
 
 - Add a Forever Core, an animated Ascension Chamber and personal conversion of one Core to one persistent Perk Point.

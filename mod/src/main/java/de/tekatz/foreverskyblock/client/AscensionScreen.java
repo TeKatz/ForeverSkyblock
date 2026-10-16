@@ -29,7 +29,7 @@ public final class AscensionScreen extends MachineScreen<AscensionMenu> {
         MachineSkin.text(g,font,text("ascension_title"),x+41,y+12,142,MachineSkin.VIOLET,1.05F);
         MachineSkin.panel(g,x+190,y+9,40,15,0xFF615372);
         MachineSkin.centered(g,font,text(menu.busy()?"processing":"ready"),x+210,y+13,35,MachineSkin.LIGHT,.73F);
-        MachineSkin.text(g,font,text("forever_core"),x+31,y+36,96,MachineSkin.LIGHT,.85F);
+        MachineSkin.centered(g,font,text("forever_core"),x+62,y+32,96,MachineSkin.LIGHT,.85F);
         for(int i=0;i<2;i++) {
             g.pose().pushPose();g.pose().translate(x+62,y+66,0);
             if(menu.busy())g.pose().mulPose(Axis.ZP.rotationDegrees((float)(System.currentTimeMillis()%6000)/6000*360*(i==0?1:-1)));
