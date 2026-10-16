@@ -11,6 +11,9 @@ public final class ChallengeRules {
     private static Definition single(String id, int reward, String category) {
         return new Definition("forever_skyblock:" + id, reward, category, 1, Set.of("completed"));
     }
+    private static Definition evidence(String id, int reward, String category, String... objectives) {
+        return new Definition("forever_skyblock:" + id, reward, category, 1, Set.of(objectives));
+    }
     private static Definition tools(String id, int reward, String material) {
         return new Definition("forever_skyblock:" + id, reward, "forever", 4, Set.of(
                 "minecraft:" + material + "_pickaxe", "minecraft:" + material + "_axe",
@@ -27,8 +30,25 @@ public final class ChallengeRules {
     public static final Definition END = single("final_dimension", 3, "combat");
     public static final Definition DRAGON = single("dragon_slayer", 6, "combat");
     public static final Definition VETERAN = new Definition("forever_skyblock:veteran", 3, "combat", 1000, Set.of());
+
+    public static final Definition AE2_STORAGE = evidence("beyond_starter_cell", 1, "ae2",
+            "ae2:item_storage_cell_4k", "ae2:item_storage_cell_16k", "ae2:item_storage_cell_64k", "ae2:item_storage_cell_256k");
+    public static final Definition AE2_AUTOCRAFT = single("autocrafting_online", 3, "ae2");
+    public static final Definition AE2_CRAFTING_BRAIN = evidence("crafting_brain", 3, "ae2", "ae2:64k_crafting_storage");
+    public static final Definition AE2_WIRELESS = single("wireless_operator", 2, "ae2");
+    public static final Definition AE2_STORAGE_ARCHITECT = evidence("storage_architect", 4, "ae2", "ae2:item_storage_cell_256k");
+
+    public static final Definition MEKANIZED = evidence("mekanized", 1, "mekanism", "mekanism:metallurgic_infuser");
+    public static final Definition DIGITAL_EXTRACTION = single("digital_extraction", 5, "mekanism");
+
+    public static final Definition ENERGIZED = single("energized", 1, "powah");
+
+    public static final Definition SUPREMIUM = evidence("supremium", 4, "mystical_agriculture", "mysticalagriculture:supremium_essence");
+
     public static final List<Definition> ALL = List.of(FOUNDATIONS, STONEWORKER, STONE_TOOLS, IRON_TOOLS,
-            DIAMOND, NETHERITE, NETHER, WITHER, END, DRAGON, VETERAN);
+            DIAMOND, NETHERITE, NETHER, WITHER, END, DRAGON, VETERAN,
+            AE2_STORAGE, AE2_AUTOCRAFT, AE2_CRAFTING_BRAIN, AE2_WIRELESS, AE2_STORAGE_ARCHITECT,
+            MEKANIZED, DIGITAL_EXTRACTION, ENERGIZED, SUPREMIUM);
     private ChallengeRules() { }
     public static Definition find(String id) { return ALL.stream().filter(d -> d.id().equals(id)).findFirst().orElse(null); }
     public static int qualifiedTier(Set<String> completed) {

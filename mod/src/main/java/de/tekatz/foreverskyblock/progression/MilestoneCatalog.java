@@ -22,9 +22,15 @@ public final class MilestoneCatalog {
     public static final List<Milestone> MILESTONES = List.of(FIRST_FOUNDATIONS,
             entry(ChallengeRules.STONEWORKER, Items.FLINT), entry(ChallengeRules.STONE_TOOLS, Items.STONE_PICKAXE),
             entry(ChallengeRules.IRON_TOOLS, Items.IRON_PICKAXE), entry(ChallengeRules.DIAMOND, Items.DIAMOND_PICKAXE),
-            entry(ChallengeRules.NETHERITE, Items.NETHERITE_PICKAXE), entry(ChallengeRules.NETHER, Items.NETHERRACK),
-            entry(ChallengeRules.WITHER, Items.NETHER_STAR), entry(ChallengeRules.END, Items.END_STONE),
-            entry(ChallengeRules.DRAGON, Items.DRAGON_HEAD), entry(ChallengeRules.VETERAN, Items.IRON_SWORD));
+            entry(ChallengeRules.NETHERITE, Items.NETHERITE_PICKAXE),
+            entry(ChallengeRules.AE2_STORAGE, Items.CHEST), entry(ChallengeRules.AE2_AUTOCRAFT, Items.CRAFTING_TABLE),
+            entry(ChallengeRules.AE2_CRAFTING_BRAIN, Items.REDSTONE), entry(ChallengeRules.AE2_WIRELESS, Items.COMPASS),
+            entry(ChallengeRules.AE2_STORAGE_ARCHITECT, Items.ENDER_CHEST),
+            entry(ChallengeRules.MEKANIZED, Items.IRON_INGOT), entry(ChallengeRules.DIGITAL_EXTRACTION, Items.DIAMOND_PICKAXE),
+            entry(ChallengeRules.ENERGIZED, Items.GLOWSTONE_DUST), entry(ChallengeRules.SUPREMIUM, Items.NETHER_STAR),
+            entry(ChallengeRules.NETHER, Items.NETHERRACK), entry(ChallengeRules.WITHER, Items.NETHER_STAR),
+            entry(ChallengeRules.END, Items.END_STONE), entry(ChallengeRules.DRAGON, Items.DRAGON_HEAD),
+            entry(ChallengeRules.VETERAN, Items.IRON_SWORD));
     private MilestoneCatalog() { }
     public static boolean isFragmentCraft(ItemStack result, Container ingredients) {
         if (!result.is(Items.COBBLESTONE)) return false;

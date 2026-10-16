@@ -14,7 +14,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.util.FakePlayer;
 
-/** Adapts successful vanilla personal-action triggers, also used by AE2's manual crafting slots. */
+/** Adapts successful personal-action triggers, including optional technology integrations. */
 public final class ChallengeEvents {
     public record Evidence(String challenge, String token) {
         public static Evidence completed(ChallengeRules.Definition definition) { return new Evidence(definition.id(), "completed"); }
@@ -23,7 +23,8 @@ public final class ChallengeEvents {
     public static boolean realPlayer(ServerPlayer player) { return player != null && !(player instanceof FakePlayer); }
     public static void crafted(ServerPlayer player, ResourceLocation recipe, List<ItemStack> ingredients) {
         if (!realPlayer(player)) return;
-        var evidence = craftEvidence(player, recipe, ingredients);
+        var evidence = new ArrayList<Evidence>(TechChallengeEvents.crafted(player, recipe));
+        evidence.addAll(craftEvidence(player, recipe, ingredients));
         if (!evidence.isEmpty()) ProgressionService.get(player.server).evidence(player, evidence);
     }
     /** Require the authoritative recipe ID, registered output and its actual consumed ingredient slots. */

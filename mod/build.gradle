@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'de.tekatz.foreverskyblock'
-version = '0.12.0'
+version = '0.13.0'
 base.archivesName = 'ForeverSkyblock-1.21.1-NeoForge'
 
 repositories {
@@ -16,7 +16,6 @@ repositories {
     maven { url = 'https://maven.ftb.dev/releases' }
     maven { url = 'https://maven.architectury.dev' }
 }
-
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
@@ -42,6 +41,7 @@ neoForge {
             systemProperty 'forever_skyblock.expectAscension', project.hasProperty('ascensionTests').toString()
             systemProperty 'forever_skyblock.expectJetpacks', project.hasProperty('jetpackTests').toString()
             systemProperty 'forever_skyblock.expectToolIntegrations', project.hasProperty('toolIntegrationTests').toString()
+            systemProperty 'forever_skyblock.expectTechChallenges', project.hasProperty('techChallengeTests').toString()
             gameDirectory = project.file('runs/gametest')
         }
     }
@@ -63,10 +63,14 @@ dependencies {
         runtimeOnly 'org.appliedenergistics:appliedenergistics2:19.2.18'
         runtimeOnly 'org.appliedenergistics:guideme:21.1.19'
     }
-    if (project.hasProperty('ascensionTests')) {
+    if (project.hasProperty('ascensionTests') || project.hasProperty('techChallengeTests')) {
         runtimeOnly('maven.modrinth:mekanism:5KzzycBT') { transitive = false } // 10.7.19.85
         runtimeOnly('maven.modrinth:powah:1prWLuga') { transitive = false } // 6.2.10
         runtimeOnly('maven.modrinth:cloth-config:izKINKFg') { transitive = false } // 15.0.140 NeoForge
+    }
+    if (project.hasProperty('techChallengeTests')) {
+        runtimeOnly('curse.maven:mystical-agriculture-246640:8796913') { transitive = false } // 8.0.28
+        runtimeOnly 'curse.maven:cucumber-272335:8035802'
     }
     if (project.hasProperty('toolIntegrationTests')) {
         runtimeOnly('dev.ftb.mods:ftb-ultimine-neoforge:2101.1.15') { transitive = false }
@@ -74,7 +78,7 @@ dependencies {
         runtimeOnly('dev.architectury:architectury-neoforge:13.0.11') { transitive = false }
     }
     clientAdditionalRuntimeClasspath 'curse.maven:iron-jetpacks-284497:7105279'
-    clientAdditionalRuntimeClasspath 'curse.maven:cucumber-272335:8035802' 
+    clientAdditionalRuntimeClasspath 'curse.maven:cucumber-272335:8035802'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testImplementation 'com.google.code.gson:gson:2.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

@@ -10,6 +10,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
@@ -29,6 +30,10 @@ public final class ProgressionEvents {
                     java.util.List.of(ChallengeEvents.Evidence.completed(definition)));
         }
         refresh(event);
+    }
+    @SubscribeEvent public static void containerOpened(PlayerContainerEvent.Open event) {
+        if (event.getEntity() instanceof ServerPlayer player)
+            TechChallengeEvents.wirelessCraftingOpened(player, event.getContainer());
     }
     private static void refresh(PlayerEvent event) {
         if (event.getEntity() instanceof ServerPlayer player && !(player instanceof FakePlayer))
