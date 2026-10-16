@@ -1,5 +1,6 @@
 package de.tekatz.foreverskyblock.mixin;
 
+import de.tekatz.foreverskyblock.client.PremiumIconResolver;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -13,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Compact Design-2 category rows with a dedicated icon rail and stable text alignment. */
+/** Design-2 revision 3 category rail with real mod icons and stable text/count lanes. */
 @Mixin(targets = "de.tekatz.foreverskyblock.client.PremiumSkillScreen$CategoryButton")
 public abstract class PremiumCategoryButtonVisualMixin {
     private static final int WHITE = 0xFFF4FAFF;
@@ -22,7 +23,6 @@ public abstract class PremiumCategoryButtonVisualMixin {
     private static final int CYAN = 0xFF2CCBFF;
 
     @Shadow @Final private String category;
-    @Shadow @Final private ItemStack icon;
     @Shadow @Final private int count;
     @Shadow @Final private boolean selected;
 
@@ -39,38 +39,33 @@ public abstract class PremiumCategoryButtonVisualMixin {
         int accent = categoryColor(category);
 
         if (selected) {
-            g.fill(x + 2, y + 2, x + w + 2, y + h + 3, 0x3A000000);
-            g.fill(x + 1, y + 1, x + w - 1, y + h - 1, 0xD5183D58);
+            g.fill(x + 2, y + 2, x + w + 2, y + h + 3, 0x35000000);
+            g.fill(x + 1, y + 1, x + w - 1, y + h - 1, 0xDE15384F);
             outline(g, x, y, w, h, CYAN);
             g.fill(x + 1, y + 1, x + 3, y + h - 1, accent);
             glow(g, x, y, w, h, CYAN);
         } else {
-            if (hovered) g.fill(x + 1, y + 1, x + w - 1, y + h - 1, 0x7A173044);
+            if (hovered) g.fill(x + 1, y + 1, x + w - 1, y + h - 1, 0x8A173044);
             g.fill(x + 5, y + h - 1, x + w - 5, y + h, 0x45264155);
         }
 
-        // Scale the category icon instead of hiding it on the 18 px rows used at GUI scale 3.
-        boolean showIcon = h >= 16;
-        int textX = x + 7;
-        if (showIcon) {
-            int iconSize = h <= 18 ? 12 : 14;
-            int iconX = x + 6;
-            int iconY = y + (h - iconSize) / 2;
-            if (selected) g.fill(iconX - 2, iconY - 2, iconX + iconSize + 2, iconY + iconSize + 2, 0x54101F2C);
-            renderScaledItem(g, icon, iconX, iconY, iconSize / 16.0F);
-            textX = iconX + iconSize + 6;
-        }
+        ItemStack icon = PremiumIconResolver.categoryIcon(category);
+        int iconX = x + 6;
+        int iconY = y + (h - 16) / 2;
+        if (selected) g.fill(iconX - 2, iconY - 1, iconX + 18, iconY + 17, 0x4B0E1E2A);
+        renderScaledItem(g, icon, iconX, iconY, h <= 18 ? 0.82F : 0.92F);
 
-        float scale = h <= 18 ? 0.54F : h <= 20 ? 0.57F : 0.64F;
-        Component label = "all".equals(category) ? Component.literal("All Categories") : self.getMessage();
-        int countReserve = 24;
-        text(g, font, label, textX, y + (h - 7) / 2,
-                selected ? WHITE : LIGHT, scale, Math.max(12, w - (textX - x) - countReserve), selected);
-
+        int textX = x + 28;
+        float scale = h <= 18 ? 0.63F : 0.69F;
         String number = Integer.toString(count);
-        int numberW = Math.max(10, (int) Math.ceil(font.width(number) * scale));
-        text(g, font, Component.literal(number), x + w - numberW - 7, y + (h - 7) / 2,
-                selected ? 0xFF9FDFFF : MUTED, scale, numberW + 2, false);
+        int numberW = Math.max(12, (int) Math.ceil(font.width(number) * scale));
+        int countX = x + w - numberW - 7;
+        int textW = Math.max(18, countX - textX - 6);
+        int textY = y + Math.max(3, (h - Math.round(8 * scale)) / 2);
+
+        text(g, font, self.getMessage(), textX, textY, selected ? WHITE : LIGHT, scale, textW, selected);
+        text(g, font, Component.literal(number), countX, textY,
+                selected ? 0xFFA6E7FF : MUTED, scale, numberW + 2, false);
         callback.cancel();
     }
 
@@ -96,10 +91,8 @@ public abstract class PremiumCategoryButtonVisualMixin {
 
     private static void glow(GuiGraphics g, int x, int y, int w, int h, int color) {
         int rgb = color & 0x00FFFFFF;
-        g.fill(x - 2, y + 1, x - 1, y + h - 1, rgb | 0x3A000000);
-        g.fill(x + w + 1, y + 1, x + w + 2, y + h - 1, rgb | 0x3A000000);
-        g.fill(x + 1, y - 2, x + w - 1, y - 1, rgb | 0x3A000000);
-        g.fill(x + 1, y + h + 1, x + w - 1, y + h + 2, rgb | 0x3A000000);
+        g.fill(x - 2, y + 1, x - 1, y + h - 1, rgb | 0x33000000);
+        g.fill(x + w + 1, y + 1, x + w + 2, y + h - 1, rgb | 0x33000000);
     }
 
     private static void text(GuiGraphics g, Font font, Component component, int x, int y, int color,
