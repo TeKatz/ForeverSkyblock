@@ -47,10 +47,10 @@ public final class SkillScreen extends Screen {
     private static Component pageName(Page p) { return text("page."+p.name().toLowerCase(Locale.ROOT)); }
     private int sub() { return subsections.getOrDefault(page,0); }
     private String location() { return page.name()+":"+sub(); }
-    private boolean searchable() { return page==Page.CHALLENGES && sub()!=3 && detail==null; }
+    private boolean searchable() { return page==Page.CHALLENGES && !sections().get(sub()).equals("contracts") && detail==null; }
     private List<String> sections() {
         return switch(page) {
-            case CHALLENGES -> List.of("all","forever","combat","contracts");
+            case CHALLENGES -> List.of("all","forever","ae2","mekanism","powah","mystical_agriculture","combat","contracts");
             case SHOP -> List.of("permanent","current_world","tier_progress");
             case RESEARCH -> List.of("jetpacks");
             default -> List.of();
@@ -119,14 +119,15 @@ public final class SkillScreen extends Screen {
                         ready?text("current_tier",tierName(state.shopTier())):text("live_data"),Items.NETHER_STAR.getDefaultInstance(),"","",null,Component.empty()));
                 cards.add(link("page.challenges","overview_challenges",Items.BOOK.getDefaultInstance(),Page.CHALLENGES,0));
                 cards.add(link("page.shop","overview_shop",Items.CHEST.getDefaultInstance(),Page.SHOP,0));
-                cards.add(link("sub.contracts","contracts_pending",Items.WRITABLE_BOOK.getDefaultInstance(),Page.CHALLENGES,3));
+                cards.add(link("sub.contracts","contracts_pending",Items.WRITABLE_BOOK.getDefaultInstance(),Page.CHALLENGES,7));
                 cards.add(link("page.research","overview_research",Items.FEATHER.getDefaultInstance(),Page.RESEARCH,0));
                 cards.add(info("foundation_title","foundation_description",Items.COMPASS.getDefaultInstance()));
             }
             case CHALLENGES -> {
-                if(sub()==3)cards.add(info("sub.contracts","contracts_pending",Items.WRITABLE_BOOK.getDefaultInstance()));
+                String section=sections().get(sub());
+                if(section.equals("contracts"))cards.add(info("sub.contracts","contracts_pending",Items.WRITABLE_BOOK.getDefaultInstance()));
                 else for(var entry:MilestoneCatalog.MILESTONES) {
-                    if(sub()==1&&!entry.category().equals("forever")||sub()==2&&!entry.category().equals("combat"))continue;
+                    if(!section.equals("all")&&!entry.category().equals(section))continue;
                     boolean completed=ready&&state.milestones().contains(entry.id());
                     if(filter==1&&completed||filter==2&&!completed)continue;
                     var title=Component.translatable(entry.titleKey());var description=Component.translatable(entry.descriptionKey());
@@ -265,7 +266,6 @@ public final class SkillScreen extends Screen {
         if(search!=null&&search.isFocused()) {
             if(key==GLFW.GLFW_KEY_ESCAPE){search.setFocused(false);setFocused(null);return true;}
             if(super.keyPressed(key,scan,modifiers))return true;
-            // Let subsequent charTyped events handle printable keys, including K.
             return false;
         }
         if(key==GLFW.GLFW_KEY_ESCAPE&&detail!=null){detail=null;rebuildWidgets();return true;}

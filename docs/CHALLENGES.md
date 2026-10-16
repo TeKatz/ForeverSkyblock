@@ -1,68 +1,137 @@
-# Personal challenge progression — retained in 0.12.0
+# Personal challenge progression — 0.13.0 / phase 4
 
-Development branch: `feature/persistent-meta-progression`, based on 0.10.0 and retaining the unmerged 0.9.1 machine fixes. Minecraft 1.21.1, Java 21; pack runtime NeoForge 21.1.259. No main merge or release is implied.
+Development branch: `feature/tech-challenges-phase4`, based on the Phase 3 meta-progression branch and retaining the unmerged 0.9.1 machine fixes. Minecraft 1.21.1, Java 21; pack runtime NeoForge 21.1.259. No main merge or release is implied.
 
 ## Active objectives
 
 All rewards are once per player profile, across worlds within the existing authority. Singleplayer and dedicated-server storage remain separate. No inventory-possession or retrospective inventory scan grants a reward.
 
-| Challenge | Personal action | SP |
-| --- | --- | ---: |
-| First Foundations | Craft Cobblestone from four Stone Fragments; existing ID/claim retained | 1 |
-| Stoneworker | Craft Stone Meal using the Mortar and four fragments | 1 |
-| Permanent Tools I | Craft each of the four Forever Stone tools | 2 |
-| The Iron Age | Craft each of the four Forever Iron tools | 3 |
-| Diamond Standard | Craft the expert Diamond Pickaxe | 3 |
-| Forever Forged | Smith the Netherite Pickaxe with Reinforced Netherite Ingot | 5 |
-| Into the Nether | Enter the Nether | 2 |
-| Withered Away | Minecraft credits the player with a Wither kill | 5 |
-| The Final Dimension | Enter the End | 3 |
-| Dragon Slayer | Minecraft credits the player with an Ender Dragon kill | 6 |
-| Veteran | 1,000 distinct personally credited Monster-category kills | 3 |
+| Category | Challenge | Personal action | SP |
+| --- | --- | --- | ---: |
+| Forever | First Foundations | Craft Cobblestone from four Stone Fragments; existing ID/claim retained | 1 |
+| Forever | Stoneworker | Craft Stone Meal using the Mortar and four fragments | 1 |
+| Forever | Permanent Tools I | Craft each of the four Forever Stone tools | 2 |
+| Forever | The Iron Age | Craft each of the four Forever Iron tools | 3 |
+| Forever | Diamond Standard | Craft the expert Diamond Pickaxe | 3 |
+| Forever | Forever Forged | Smith the Netherite Pickaxe with Reinforced Netherite Ingot | 5 |
+| AE2 | Beyond the Starter Cell | Personally craft a 4k-or-higher AE2 item storage cell | 1 |
+| AE2 | Autocrafting Online | Finish an AE2 crafting-CPU job requested by the connected player | 3 |
+| AE2 | Crafting Brain | Personally craft `ae2:64k_crafting_storage` | 3 |
+| AE2 | Wireless Operator | Open an AE2 Wireless Crafting Terminal | 2 |
+| AE2 | Storage Architect | Personally craft `ae2:item_storage_cell_256k` | 4 |
+| Mekanism | Mekanized | Personally craft `mekanism:metallurgic_infuser` | 1 |
+| Mekanism | Digital Extraction | A Digital Miner owned by the connected player successfully mines a block | 5 |
+| Powah | Energized | Personally take a completed output from a Powah Energizing Orb | 1 |
+| Mystical Agriculture | Supremium | Personally craft `mysticalagriculture:supremium_essence` | 4 |
+| Combat & Dimensions | Into the Nether | Enter the Nether | 2 |
+| Combat & Dimensions | Withered Away | Minecraft credits the player with a Wither kill | 5 |
+| Combat & Dimensions | The Final Dimension | Enter the End | 3 |
+| Combat & Dimensions | Dragon Slayer | Minecraft credits the player with an Ender Dragon kill | 6 |
+| Combat & Dimensions | Veteran | 1,000 distinct personally credited Monster-category kills | 3 |
 
-The live catalog contains **11 challenges / 34 SP**, including the existing First Foundations point. The full proposed 38-challenge / 135-SP catalog is not yet active. Distinct Stone/Iron tool sets and Veteran evidence survive restarts, new worlds and ordinary skill resets. Veteran stops accumulating after completion; its bounded entity UUID evidence prevents the same victim from advancing the counter twice. Earlier kills/crafts are not inferred from inventory, statistics or advancements. The first new qualifying action starts tracking.
+The live catalog now contains **20 challenges / 58 SP**, including the existing First Foundations point. The complete proposed 38-challenge / 135-SP catalog is still a balancing target, not an active reward list. Existing partial challenge evidence, completed claims, balances and tiers survive this update unchanged.
 
-Dirt ownership, first iron and water/lava/Obsidian routes remain unresolved. No challenge or recipe is invented for them. Optional technology adapters, repeatable contracts, valuable product contents/prices and item delivery remain later phases. Version 0.12.0 adds only the harmless current-world test entitlement described in [WORLD_SHOP.md](WORLD_SHOP.md).
+## Phase 4 attribution rules
 
-## Authoritative action adapters
+Phase 4 activates only technology milestones with an authoritative player/action boundary on the pinned pack versions. Optional integrations fail closed: if the expected class/API is missing or changes, the affected challenge gives no reward and logs a compatibility warning instead of guessing.
 
-`ChallengeRules` is a pure immutable catalog/reducer; `ChallengeEvents` normalizes trusted server action evidence; `ProgressionService.evidence` commits a batch of progress, completion, reward, accounting and tier together through `ProfileStore`. Chat and snapshots follow successful persistence only. There is no client award request and no per-tick inventory scan.
+### Applied Energistics 2 — 19.2.18
 
-- **Crafting and smithing:** hook only vanilla `CriteriaTriggers.RECIPE_CRAFTED`, which successful menu `onTake` paths call via `RecipeCraftingHolder`. Check the exact Forever recipe ID, registered result and consumed ingredient slots. Ignore the separate `CRAFTER_RECIPE_CRAFTED` trigger. Standard `PlayerEvent.ItemCraftedEvent` preserves the existing fragment check; duplicate notification is idempotent. Recipe previews and item pickup do not trigger this path. AE2 19.2.18's manual `AppEngCraftingSlot.onTake` calls the same recipe trigger; its automatic crafting jobs are not this adapter.
-- **Combat:** hook only vanilla `CriteriaTriggers.PLAYER_KILLED_ENTITY`. Use Minecraft's attributed player, including attributed projectiles and vanilla recent-player kill credit; never grant to all nearby players or all damage participants. This also follows the Dragon's actual lethal-damage/advancement path despite its extended death animation. Unattributed environmental/machine kills and FakePlayers do not pay. Veteran uses the entity type's `MobCategory.MONSTER`, not current aggression: neutral members of that category count; passive-category animals do not.
-- **Dimensions:** use server `PlayerChangedDimensionEvent` to Nether/End. Login while already in a dimension is not retroactive entry evidence.
-- **Automation and actors:** reject FakePlayer and null actors centrally and at the event boundary. Optional adapters never load absent mod classes. Existing machine recipes and Core redemption are unchanged.
+- Storage-cell and 64k Crafting Storage objectives reuse the server's personal `RECIPE_CRAFTED` evidence. The exact registered output ID is checked; merely receiving a cell does not qualify.
+- A 256k item cell can complete **Beyond the Starter Cell** and **Storage Architect** together if both were still open. Each reward remains once per profile.
+- **Autocrafting Online** hooks AE2's successful crafting-CPU completion. The persisted job requester ID is resolved through AE2's player registry; only the connected requesting player receives credit. Machine-only jobs and an offline requester do not pay.
+- **Wireless Operator** requires opening the actual `WirelessCraftingTermMenu`. Merely crafting, holding or receiving the terminal does not qualify.
+- Existing AE2 manual Crafting Terminal personal crafts continue through the same Vanilla recipe trigger used by the Forever challenges.
+
+### Mekanism — 10.7.19.85
+
+- **Mekanized** is a personal craft of the Metallurgic Infuser.
+- **Digital Extraction** is emitted only after `TileEntityDigitalMiner` reports a successful block replacement/removal. Credit is resolved from the machine's security owner UUID and requires that owner to be connected. Crafting or placing a Digital Miner does not qualify.
+
+### Powah — 6.2.10
+
+- **Energized** requires a real player interaction with an Energizing Orb whose output-only slot contains a completed recipe result. The player receives credit when taking that finished output. Owning the Orb or its output item is not enough.
+
+### Mystical Agriculture — 8.0.28
+
+- **Supremium** uses the personal craft result path and the exact registered Supremium Essence output. Inventory possession and player-to-player handoff do not qualify.
+
+## Deliberately deferred objectives
+
+The following proposed rewards remain inactive rather than using an unreliable ownership shortcut:
+
+- AE2 **Quantum Link**: a shared cross-dimensional grid needs an explicit personal-use/ownership rule.
+- Mekanism **Factory Floor**, **Ultimate Industry**, **Fission Online**, **Fusion Online** and **Matter Transcended**: shared machines and multiblocks need an approved attribution policy.
+- Powah **Reactor Engineer** and **Nitro Age**: reactor ownership/use needs an approved personal rule.
+- Industrial Foregoing technology challenges: operation ownership and the final **Industrial Mastery** target are not yet approved.
+- Mystical Agriculture **Essence Farmer** and **Master Grower**: the first progression target and altar/seed attribution need an explicit rule.
+- Apotheosis **Mythic Power**: the capstone itself remains an open design decision.
+- First Iron, Dirt ownership and Water/Lava/Obsidian objectives remain tied to unresolved pack-progression routes.
+- Repeatable contracts, Tier II–IV rules and valuable world-shop product delivery remain later phases.
+
+These deferred challenges do not appear as obtainable rewards and do not count toward the live 58-SP total.
+
+## Existing personal-action rules retained
+
+`ChallengeRules` remains a pure server-owned catalog/reducer. `ChallengeEvents` and `TechChallengeEvents` normalize trusted evidence; `ProgressionService.evidence` commits progress, completion, SP, accounting and any Tier increase atomically through `ProfileStore`. Chat/snapshots are sent only after persistence succeeds.
+
+- **Crafting and smithing:** use successful personal recipe-result paths; recipe previews and inventory pickup do not qualify. FakePlayer is rejected.
+- **Combat:** use Minecraft's credited player from `PLAYER_KILLED_ENTITY`, including attributed projectiles/recent-player kill credit; nearby players never receive blanket credit.
+- **Dimensions:** use `PlayerChangedDimensionEvent`; login while already in a dimension is not retroactive evidence.
+- **Optional integrations:** no per-tick inventory/world scans are introduced. Absent optional classes are not a reason to weaken an objective into possession detection.
 
 ## Tiers and menu
 
-Tier -1 means no tier yet. First Foundations unlocks **Tier 0 — Foundations**; Dragon Slayer unlocks **Tier I — Conqueror**, even if First Foundations has not been completed. Tier increases use `max(previous, qualified)` and are independent of balances, test/admin points and respecs. Higher stored tiers are retained, but new Tier II–IV rules remain disabled.
+Tier -1 means no tier yet. First Foundations unlocks **Tier 0 — Foundations**; Dragon Slayer unlocks **Tier I — Conqueror**. Tier increases remain monotonic and independent of balances, admin/test SP and skill respecs. Phase 4 technology challenges do **not** activate Tier II–IV.
 
-K → Challenges now offers All, Forever, Combat & Dimensions and Contracts. Existing title/description search and open/completed filters cover the active catalog. Cards and details show current progress; unsupported future objective revisions show an explicit unavailable status. Overview and Shop → Tier Progress show authoritative permanent tiers and their unlock conditions. Profile shows earned, spent, refunded and admin-granted currency since tracking began. Rewards retain the green clickable chat link; a new tier adds an explicit unlock message. Counter-only snapshots do not rebuild JEI research visibility.
+K → Challenges now offers:
 
-## Challenge state in schema 4
+- All
+- Forever
+- Applied Energistics 2
+- Mekanism
+- Powah
+- Mystical Agriculture
+- Combat & Dimensions
+- Contracts
 
-All six schema-2 fields remain: SP, milestone IDs, skill ranks, PP, paid-perk investments, redeemed Core UUIDs. New `meta` fields are:
+Contracts remains an explanatory inactive page. Existing search, open/completed filters, detail cards, Overview, Shop, Research, Perks and Profile remain in the same hierarchy. The network payload shape and protocol remain **`skills-6`** because Phase 4 only expands the server catalog and known IDs; no new client-authoritative economic fields are added.
 
-- `shop_tier`: -1 through 4, monotonic through normal operations.
-- `challenge_progress`: namespaced ID → `{revision, evidence}`; revision 1 uses approved tool IDs, a unique-completion token or victim UUIDs. Limits: 4,096 objective entries, 1,000 tokens per objective, 8,192 tokens overall and 1 MiB encoded profile size. Unknown IDs/revisions survive round trips; unknown objective semantics never award points.
-- `accounting`: nonnegative 64-bit SP/PP earned/spent/refunded totals, SP admin grants and `legacyHistoryUnknown`. Overflow fails the transaction. Legacy history is marked unknown, not guessed from balance or owned skills. New transactions are tracked separately. Known v1 Creative migration refunds are recorded as refunds, not earnings.
+## Persistence and migration
 
-Schema 4 retains all phase-2 challenge fields unchanged and adds the bounded world claims and purchase receipts documented in [WORLD_SHOP.md](WORLD_SHOP.md). Contract records and real product delivery remain absent.
+Profile schema remains **4**. The update adds no destructive migration and preserves:
 
-Valid v2/v3 profiles retain balances, research, purchases, unknown IDs and Core receipts. Existing First Foundations derives Tier 0 with **no second point**. V1 profiles still apply the established removal/refund of legacy SP-only Creative research exactly once after the next successful write. Loading migrates in memory; the first successful changed transaction writes schema 4. No routine respec clears challenge claims, partial objectives, tiers, world claims or Core receipts. Older mod versions cannot load schema-4 profiles: back up the progression directory before testing a downgrade or restoring an older mod.
+- SP / PP balances and accounting
+- completed milestone IDs
+- partial objective evidence
+- skill and Jetpack research ranks
+- permanent Shop Tier
+- world claims and purchase receipts
+- paid PP investments
+- redeemed Core UUIDs
+- unknown valid IDs/revisions for forward compatibility
 
-**Recovery rule:** a missing/corrupt primary with an existing backup and no valid committed transaction journal makes progression unavailable instead of silently loading a previous state. A current-world purchase journal can deterministically finish its exact committed next profile. This does not provide cross-process locking or arbitrary manual backup rollback protection; do not run simultaneous instances against one profile directory.
+Existing profiles do not receive retroactive technology rewards from inventory, advancements or machine contents. The first new qualifying action after installing 0.13.0 starts/completes the relevant objective. Ordinary skill reset does not clear challenge claims/progress, tiers, world claims or Core receipts.
 
-Snapshots use protocol **`skills-6`**, carrying tier, bounded known objective counts, accounting and friendly current-world status/claims; evidence and raw world UUIDs are not sent to clients. A server sends snapshots only after that payload channel is negotiated, so login/disconnect boundaries cannot undo an already committed action. Install 0.12.0 on both client and server.
+Back up `forever_skyblock/progression/` and the test world before changing versions. Older mod versions cannot be assumed to read profiles written by a newer schema-compatible implementation if their catalog/protocol expectations differ.
 
-## Verification and manual acceptance
+## Automated verification
 
-Automated coverage includes legacy migration, one-time rewards, distinct tool evidence, 630+220+150 kills across reloads, duplicate events, concurrent claims, failure-before-commit, monotonic tiers, unknown IDs/revisions, accounting and corrupt-primary refusal. Dedicated GameTests exercise Vanilla crafting result slots and the real smithing menu, actual hostile/boss lethal damage, fake/automated exclusions, dimension dispatch, actual optional AE2 manual slot dispatch and snapshot round trips. Source `9349caec4b134fbd383fecb3e50bca8ce6f50dfa` passed [CI run 38848917148](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38848917148): build, pure tests and all 46 required GameTests in both loader runs. The verified JAR details are recorded in [VALIDATION.md](VALIDATION.md).
+The Phase 4 CI matrix includes the normal Java 21 build/unit tests, baseline dedicated GameTests without optional technology mods, and a NeoForge 21.1.259 integration run with the pinned pack integrations. The integration run explicitly checks the runtime IDs/API boundaries used by the AE2, Mekanism, Powah and Mystical Agriculture adapters so an upstream/signature mismatch fails the build rather than silently shipping a dead objective.
 
-Manual acceptance on a copy of the test instance:
+The final verified commit/run/artifact are recorded in [VALIDATION.md](VALIDATION.md).
 
-1. Load an existing profile. Confirm SP/PP, all research and Core receipts; existing Foundations should show completed and Tier 0 without a new point.
-2. Craft Stone Meal, then three Stone tools, restart or change worlds and craft the fourth. Verify progress and exactly 2 SP for the set; repeat crafts and respec must not re-award.
-3. Test normal and shift crafting through the pack's ME terminal, the Diamond recipe and Netherite smithing. Check completion feedback and unchanged recipe behavior.
-4. Kill monsters, reopen K and inspect Veteran. Enter Nether/End. Kill Wither/Dragon with melee/projectiles in multiplayer; only the vanilla-credited player should receive the personal reward and Dragon Tier I. Confirm Tier I after a new world and skill reset.
-5. Inspect EN/DE categories, search, counters, details, tier cards and Profile accounting at GUI scales 2/3/4. Verify the retained machine GUI fixes, JEI behavior, existing purchases/research and refunds. Server tests do not certify rendered client layout.
+## Manual acceptance
+
+Use a copy of the pack instance and profile:
+
+1. Confirm existing SP, PP, Tier, completed challenges, world claim and Jetpack research remain unchanged after replacing 0.12.0.
+2. Open K → Challenges and inspect All plus AE2/Mekanism/Powah/Mystical Agriculture categories in English and German at GUI scales 2/3/4.
+3. AE2: personally craft 4k and 256k item cells and a 64k Crafting Storage; run a real player-requested autocraft; open the Wireless Crafting Terminal. Verify each reward pays once and restart/new-world cannot replay it.
+4. Mekanism: personally craft the Metallurgic Infuser. Let a Digital Miner owned by this player actually mine a block while the owner is online; merely craft/place it first and verify no reward occurs.
+5. Powah: complete an Energizing recipe and personally take the output. Verify possession of the same item through another route does not pay.
+6. Mystical Agriculture: personally craft Supremium Essence and verify a handed/given stack alone does not pay.
+7. Recheck existing Forever tool challenges, Veteran/boss/dimension progress, current-world Phase 3 test purchase, skill reset, Jetpack JEI restrictions, Condenser/Ascension GUIs and machine visuals.
+8. Confirm no Tier II–IV unlock occurs from technology SP alone.
+
+Headless tests do not certify rendered client pixels or every multiplayer/team workflow; those remain TeKatz's in-game acceptance checks.
