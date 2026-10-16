@@ -53,11 +53,11 @@ Valid v2 profiles retain balances, research, purchases, unknown IDs and Core rec
 
 **Recovery change:** a missing/corrupt primary with an existing backup now makes progression unavailable instead of silently loading a previous-state backup. That backup may predate rewards, debits or claims and cannot safely establish the current balance. Both files are preserved for recovery. The phase-3 journal/recovery protocol is still required before world financial transactions go live. This does not provide cross-process locking or arbitrary backup rollback protection; do not run simultaneous instances against one profile directory.
 
-Snapshots use protocol **`skills-5`**, carrying tier, bounded known objective counts and accounting; evidence UUIDs are not sent to clients. Install 0.11.0 on both client and server.
+Snapshots use protocol **`skills-5`**, carrying tier, bounded known objective counts and accounting; evidence UUIDs are not sent to clients. A server sends snapshots only after that payload channel is negotiated, so login/disconnect boundaries cannot undo an already committed challenge action. Install 0.11.0 on both client and server.
 
 ## Verification and manual acceptance
 
-Automated coverage includes legacy migration, one-time rewards, distinct tool evidence, 630+220+150 kills across reloads, duplicate events, concurrent claims, failure-before-commit, monotonic tiers, unknown IDs/revisions, accounting and corrupt-primary refusal. Dedicated GameTests exercise real Vanilla crafting/smithing menus, actual hostile/boss lethal damage, fake/automated exclusions, dimension dispatch, actual optional AE2 manual slot dispatch and snapshot round trips. Exact completed CI evidence is recorded in VALIDATION.md before artifact delivery.
+Automated coverage includes legacy migration, one-time rewards, distinct tool evidence, 630+220+150 kills across reloads, duplicate events, concurrent claims, failure-before-commit, monotonic tiers, unknown IDs/revisions, accounting and corrupt-primary refusal. Dedicated GameTests exercise Vanilla crafting result slots and the real smithing menu, actual hostile/boss lethal damage, fake/automated exclusions, dimension dispatch, actual optional AE2 manual slot dispatch and snapshot round trips. Exact completed CI evidence is recorded in VALIDATION.md before artifact delivery.
 
 Manual acceptance on a copy of the test instance:
 

@@ -38,7 +38,8 @@ public final class SkillNetwork {
     public static void send(ServerPlayer player, ProgressionProfile profile, boolean local, boolean open, boolean available, String message) {
         // Server-side actions can finish while a player has no live connection (disconnect boundary and GameTests).
         // Persistence remains authoritative; the next login/open request supplies a fresh snapshot.
-        if (player.connection == null || !player.connection.getConnection().isConnected()) return;
+        if (player.connection == null || !player.connection.getConnection().isConnected()
+                || !net.neoforged.neoforge.network.registration.NetworkRegistry.hasChannel(player.connection, Snapshot.TYPE.id())) return;
         var skills = new LinkedHashMap<String, Integer>();
         for (var skill : SkillCatalog.SKILLS) if (profile.rank(skill.id()) > 0) skills.put(skill.id(), profile.rank(skill.id()));
         var milestones = new LinkedHashSet<String>();

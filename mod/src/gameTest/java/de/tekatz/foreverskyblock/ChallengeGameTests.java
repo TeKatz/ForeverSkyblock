@@ -61,7 +61,7 @@ public final class ChallengeGameTests {
     }
     @GameTest(template="empty")
     public static void personalCraftsAndSmithingUseRealResultSlots(GameTestHelper h) throws Exception {
-        var player=player(h,"ChallengeCrafter");
+        var player=h.makeMockServerPlayerInLevel();
         craft(h,player,"cobblestone_from_fragments");
         h.assertTrue(profile(player).points()==1 && profile(player).meta().shopTier()==0,"Foundations keeps its one reward and unlocks Tier 0");
         craft(h,player,"stone_meal");
@@ -121,7 +121,7 @@ public final class ChallengeGameTests {
     @GameTest(template="empty")
     public static void ae2PersonalCraftingUsesTheSameChallengeAdapter(GameTestHelper h) throws Exception {
         if(!net.neoforged.fml.ModList.get().isLoaded("ae2")){h.succeed();return;}
-        var player=player(h,"ChallengeAE2");
+        var player=h.makeMockServerPlayerInLevel();
         // Instantiate the actual optional AE2 slot only in its presence, keeping baseline tests loadable.
         Class<?> invClass=Class.forName("appeng.util.inv.AppEngInternalInventory");
         Object inv=invClass.getConstructor(int.class).newInstance(9);
