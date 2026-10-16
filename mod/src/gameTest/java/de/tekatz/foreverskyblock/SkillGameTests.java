@@ -2,6 +2,7 @@ package de.tekatz.foreverskyblock;
 
 import com.mojang.authlib.GameProfile;
 import de.tekatz.foreverskyblock.network.SkillNetwork;
+import de.tekatz.foreverskyblock.progression.ContractCatalog;
 import de.tekatz.foreverskyblock.progression.MilestoneCatalog;
 import de.tekatz.foreverskyblock.progression.ProgressionProfile;
 import de.tekatz.foreverskyblock.progression.SkillCatalog;
@@ -60,11 +61,16 @@ public final class SkillGameTests {
             SkillNetwork.Request.CODEC.encode(buffer, reset);
             h.assertTrue(reset.equals(SkillNetwork.Request.CODEC.decode(buffer)), "Reset request round trips");
             buffer.clear();
+            var contractRequest = new SkillNetwork.ContractRequest(ContractCatalog.SINGULARITY.id(), UUID.randomUUID());
+            SkillNetwork.ContractRequest.CODEC.encode(buffer, contractRequest);
+            h.assertTrue(contractRequest.equals(SkillNetwork.ContractRequest.CODEC.decode(buffer)), "Contract request round trips");
+            buffer.clear();
+            var contractStates = Map.of(ContractCatalog.SINGULARITY.id(), new SkillNetwork.ContractState(4, 2, true, true, false));
             var state = new SkillNetwork.Snapshot(3, 2, Map.of(SkillCatalog.EXTENDED_REACH, 1),
                     Set.of(MilestoneCatalog.FIRST_FOUNDATIONS.id()), true, true, true, "purchased", true, 1,
                     Map.of("forever_skyblock:veteran", 630, "forever_skyblock:permanent_tools_i", 3),
                     new de.tekatz.foreverskyblock.progression.MetaProgress.Accounting(12, 1, 5, 0, 1, 0, 10, true),
-                    true, "Phase 3 Test", Set.of(de.tekatz.foreverskyblock.progression.ShopCatalog.TEST_WORLD_ENTITLEMENT));
+                    true, "Phase 3 Test", Set.of(de.tekatz.foreverskyblock.progression.ShopCatalog.TEST_WORLD_ENTITLEMENT), contractStates);
             SkillNetwork.Snapshot.CODEC.encode(buffer, state);
             h.assertTrue(state.equals(SkillNetwork.Snapshot.CODEC.decode(buffer)), "Authoritative profile snapshot round trips");
             h.succeed();
@@ -106,5 +112,4 @@ public final class SkillGameTests {
         h.assertTrue(message.getStyle().getClickEvent() == null && message.getStyle().getColor() == null, "Link styling stays on points");
         h.succeed();
     }
-
 }
