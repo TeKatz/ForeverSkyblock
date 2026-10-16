@@ -10,11 +10,14 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.CraftingMenu;
+import net.minecraft.world.inventory.ResultContainer;
+import net.minecraft.world.inventory.ResultSlot;
+import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
 import net.neoforged.fml.loading.FMLPaths;
@@ -36,31 +39,37 @@ public final class ChallengeGameTests {
         return new ProfileStore(FMLPaths.GAMEDIR.get().resolve("forever_skyblock/progression")
                 .resolve(player.server.isDedicatedServer() ? "server" : "local")).load(player.getUUID());
     }
-    private static void craft(GameTestHelper h, ServerPlayer player, String path, boolean shift) {
-        var recipe = h.getLevel().getRecipeManager().byKey(id(path)).orElseThrow().value();
-        var menu = new CraftingMenu(1, player.getInventory()); player.containerMenu = menu;
+    private static void craft(GameTestHelper h, ServerPlayer player, String path) {
+        var holder = h.getLevel().getRecipeManager().byKey(id(path)).orElseThrow();
+        var recipe = (CraftingRecipe) holder.value();
+        // ResultSlot is Vanilla's successful personal crafting dispatch. A detached grid avoids sending
+        // menu packets to this deliberately unconnected server test player.
+        var owner = new CraftingMenu(1, player.getInventory()); player.containerMenu = owner;
+        var crafting = new TransientCraftingContainer(owner, 3, 3);
         var ingredients = recipe.getIngredients();
         int recipeWidth = recipe instanceof ShapedRecipe shaped ? shaped.getWidth() : 3;
         for (int i=0;i<ingredients.size();i++) if (!ingredients.get(i).isEmpty()) {
             int slot = recipe instanceof ShapedRecipe ? (i / recipeWidth) * 3 + i % recipeWidth : i;
-            menu.getSlot(slot+1).set(ingredients.get(i).getItems()[0].copy());
+            crafting.setItem(slot, ingredients.get(i).getItems()[0].copy());
         }
-        menu.slotsChanged(menu.getSlot(1).container);
-        h.assertTrue(!menu.getSlot(0).getItem().isEmpty(), "Real crafting menu must resolve " + path);
-        if (shift) menu.quickMoveStack(player, 0); else menu.clicked(0, 0, ClickType.PICKUP, player);
-        h.assertTrue(menu.getSlot(0).getItem().isEmpty(), "Taking the output consumes the real recipe ingredients");
+        h.assertTrue(recipe.matches(crafting.asCraftInput(), h.getLevel()), "Real crafting input must match " + path);
+        var result = new ResultContainer(); result.setRecipeUsed(holder);
+        result.setItem(0, recipe.assemble(crafting.asCraftInput(), h.getLevel().registryAccess()));
+        var slot = new ResultSlot(player, crafting, result, 0, 0, 0);
+        ItemStack taken = result.removeItemNoUpdate(0); slot.onTake(player, taken);
+        h.assertTrue(!taken.isEmpty() && result.isEmpty(), "Taking the real result dispatches " + path);
     }
     @GameTest(template="empty")
-    public static void personalCraftsAndSmithingUseRealMenus(GameTestHelper h) throws Exception {
+    public static void personalCraftsAndSmithingUseRealResultSlots(GameTestHelper h) throws Exception {
         var player=player(h,"ChallengeCrafter");
-        craft(h,player,"cobblestone_from_fragments",false);
+        craft(h,player,"cobblestone_from_fragments");
         h.assertTrue(profile(player).points()==1 && profile(player).meta().shopTier()==0,"Foundations keeps its one reward and unlocks Tier 0");
-        craft(h,player,"stone_meal",true);
+        craft(h,player,"stone_meal");
         h.assertTrue(profile(player).milestones().contains(ChallengeRules.STONEWORKER.id()),"Mortar craft counts on shift-click");
-        for(String tool:List.of("pickaxe","axe","shovel","hoe")) craft(h,player,"tools/stone_"+tool,true);
+        for(String tool:List.of("pickaxe","axe","shovel","hoe")) craft(h,player,"tools/stone_"+tool);
         h.assertTrue(profile(player).milestones().contains(ChallengeRules.STONE_TOOLS.id()),"All four distinct Stone tools complete the set");
-        for(String tool:List.of("pickaxe","axe","shovel","hoe")) craft(h,player,"tools/iron_"+tool,true);
-        craft(h,player,"tools/diamond_pickaxe",true);
+        for(String tool:List.of("pickaxe","axe","shovel","hoe")) craft(h,player,"tools/iron_"+tool);
+        craft(h,player,"tools/diamond_pickaxe");
         var smith=new SmithingMenu(2,player.getInventory());player.containerMenu=smith;
         smith.getSlot(0).set(new ItemStack(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE));
         smith.getSlot(1).set(new ItemStack(Items.DIAMOND_PICKAXE));
