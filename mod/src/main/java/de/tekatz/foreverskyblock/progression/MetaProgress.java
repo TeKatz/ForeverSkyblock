@@ -63,12 +63,15 @@ public record MetaProgress(int shopTier, Map<String, Progress> progress, Account
             claims.put(entry.getKey(), values);
         }
         if (totalClaims > 4096) throw new IllegalArgumentException("World claim limit reached");
-        worldClaims = Map.copyOf(claims);
-        purchaseReceipts = Map.copyOf(purchaseReceipts);
-        purchaseReceipts.forEach((transaction, receipt) -> {
-            if (transaction == null || receipt == null || !worldClaims.getOrDefault(receipt.worldId(), Set.of()).contains(receipt.productId()))
+        var finalizedClaims = Map.copyOf(claims);
+        var finalizedReceipts = Map.copyOf(purchaseReceipts);
+        for (var entry : finalizedReceipts.entrySet()) {
+            var transaction = entry.getKey(); var receipt = entry.getValue();
+            if (transaction == null || receipt == null || !finalizedClaims.getOrDefault(receipt.worldId(), Set.of()).contains(receipt.productId()))
                 throw new IllegalArgumentException("Receipt has no matching world claim");
-        });
+        }
+        worldClaims = finalizedClaims;
+        purchaseReceipts = finalizedReceipts;
     }
     public MetaProgress(int shopTier, Map<String, Progress> progress, Accounting accounting) {
         this(shopTier, progress, accounting, Map.of(), Map.of());
