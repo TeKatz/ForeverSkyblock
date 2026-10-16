@@ -8,6 +8,11 @@ import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.inventory.CraftingMenu;
@@ -21,7 +26,6 @@ import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
 import net.neoforged.fml.loading.FMLPaths;
-import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -33,6 +37,15 @@ public final class ChallengeGameTests {
     private static ServerPlayer player(GameTestHelper h, String name) {
         return new ServerPlayer(h.getLevel().getServer(), h.getLevel(), new GameProfile(UUID.randomUUID(), name),
                 net.minecraft.server.level.ClientInformation.createDefault());
+    }
+    private static ServerPlayer packetSinkPlayer(GameTestHelper h, String name) {
+        var player = player(h, name);
+        var connection = new Connection(PacketFlow.SERVERBOUND);
+        player.connection = new ServerGamePacketListenerImpl(h.getLevel().getServer(), connection, player,
+                CommonListenerCookie.createInitial(player.getGameProfile(), false)) {
+            @Override public void send(Packet<?> packet) { }
+        };
+        return player;
     }
     private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, path); }
     private static ProgressionProfile profile(ServerPlayer player) throws Exception {
@@ -61,7 +74,7 @@ public final class ChallengeGameTests {
     }
     @GameTest(template="empty")
     public static void personalCraftsAndSmithingUseRealResultSlots(GameTestHelper h) throws Exception {
-        var player=h.makeMockServerPlayerInLevel();
+        var player=packetSinkPlayer(h,"ChallengeCrafter");
         craft(h,player,"cobblestone_from_fragments");
         h.assertTrue(profile(player).points()==1 && profile(player).meta().shopTier()==0,"Foundations keeps its one reward and unlocks Tier 0");
         craft(h,player,"stone_meal");
@@ -102,15 +115,15 @@ public final class ChallengeGameTests {
     @GameTest(template="empty")
     public static void dimensionsFakePlayersAndWrongRecipesAreGuarded(GameTestHelper h) throws Exception {
         var player=player(h,"ChallengeTraveler");
-        NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerChangedDimensionEvent(player,Level.OVERWORLD,Level.NETHER));
-        NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerChangedDimensionEvent(player,Level.NETHER,Level.END));
-        NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerChangedDimensionEvent(player,Level.OVERWORLD,Level.NETHER));
+        ProgressionEvents.dimension(new PlayerEvent.PlayerChangedDimensionEvent(player,Level.OVERWORLD,Level.NETHER));
+        ProgressionEvents.dimension(new PlayerEvent.PlayerChangedDimensionEvent(player,Level.NETHER,Level.END));
+        ProgressionEvents.dimension(new PlayerEvent.PlayerChangedDimensionEvent(player,Level.OVERWORLD,Level.NETHER));
         h.assertTrue(profile(player).points()==5,"Dimension events pay once per personal claim");
         var fake=FakePlayerFactory.get(h.getLevel(),new GameProfile(UUID.randomUUID(),"NoChallenges"));
         var ingredients=List.of(new ItemStack(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE),new ItemStack(Items.DIAMOND_PICKAXE),new ItemStack(ForeverSkyblock.REINFORCED_NETHERITE_INGOT.get()));
         CriteriaTriggers.RECIPE_CRAFTED.trigger(fake,id("tools/netherite_pickaxe_smithing"),ingredients);
         CriteriaTriggers.PLAYER_KILLED_ENTITY.trigger(fake,EntityType.WITHER.create(h.getLevel()),fake.damageSources().playerAttack(fake));
-        NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerChangedDimensionEvent(fake,Level.OVERWORLD,Level.END));
+        ProgressionEvents.dimension(new PlayerEvent.PlayerChangedDimensionEvent(fake,Level.OVERWORLD,Level.END));
         h.assertTrue(profile(fake).equals(ProgressionProfile.empty()),"Fake players cannot earn crafts, kills or dimensions");
         CriteriaTriggers.CRAFTER_RECIPE_CRAFTED.trigger(player,id("tools/netherite_pickaxe_smithing"),ingredients);
         ChallengeEvents.crafted(player,id("tools/netherite_pickaxe_smithing"),List.of(new ItemStack(Items.NETHERITE_INGOT)));
@@ -121,7 +134,7 @@ public final class ChallengeGameTests {
     @GameTest(template="empty")
     public static void ae2PersonalCraftingUsesTheSameChallengeAdapter(GameTestHelper h) throws Exception {
         if(!net.neoforged.fml.ModList.get().isLoaded("ae2")){h.succeed();return;}
-        var player=h.makeMockServerPlayerInLevel();
+        var player=packetSinkPlayer(h,"ChallengeAE2");
         // Instantiate the actual optional AE2 slot only in its presence, keeping baseline tests loadable.
         Class<?> invClass=Class.forName("appeng.util.inv.AppEngInternalInventory");
         Object inv=invClass.getConstructor(int.class).newInstance(9);
