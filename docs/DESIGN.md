@@ -60,3 +60,8 @@ Implement the supplied [tool handoff](TOOL_RECIPE_HANDOFF.md): exact 20 tiered c
 ## Ascension update — 0.8.0
 
 TeKatz approved separate Perk Points, earned by personally consuming an endgame Forever Core in an Ascension Chamber. Creative Jetpack research now requires **40 SP + 1 PP**, retaining its EndGame prerequisite. The menu, confirmed refunds and cross-world persistence support both currencies. Legacy SP-only Creative research is refunded and re-locked. See [ASCENSION.md](ASCENSION.md) for initial recipes, automation, migration, claim replay and test scope. The implementation was developed on `feature/ascension-perk-points` over the permanent-tool work in PR #9. TeKatz authorized integrating PRs #9 and #10 into `main` on October 15, 2026.
+
+
+## Persistent shop/challenge expansion — phased instruction (October 16, 2026)
+
+TeKatz supplied the complete Shop/Challenges handoff and requested following it. Architecture and a bounded UI foundation are developed first on a separate branch, preserving all existing features and the final island. Unique profile challenges are the primary SP source; a small mastery-gated repeatable set will provide slower renewable SP. Shop tiers must be independent of currency and permanent across worlds/respecs. Future world products need a stable world identity and safe recoverable transactions. No actual valuable package contents, unresolved production routes, contract quantities or higher-tier requirements are finalized by this instruction. See [META_PROGRESSION.md](META_PROGRESSION.md) for source findings, proposed schema, trigger ownership, transaction limits and phased validation.

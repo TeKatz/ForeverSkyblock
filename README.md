@@ -52,3 +52,8 @@ The initial import into `main` did not introduce new gameplay. Further features 
 The current source includes the 0.5.0 Iron Jetpacks research system, 0.6.0 condenser mixing and the 0.6.1 chamber-rendering, JEI-transfer and Vanilla-tutorial updates; see [JETPACK_RESEARCH.md](docs/JETPACK_RESEARCH.md) and [CONDENSER_MIXING.md](docs/CONDENSER_MIXING.md). The current provisional inventory comes from TeKatz's 80-entry `Modliste.txt`, including Forever Skyblock 0.6.1; the earlier runtime log snapshot is archived separately.
 
 Version 0.8.0 combines the permanent-tool update from [PR #9](https://github.com/TeKatz/ForeverSkyblock/pull/9) with Ascension and Perk Points from [PR #10](https://github.com/TeKatz/ForeverSkyblock/pull/10). TeKatz authorized their integration into `main` on October 15, 2026; no release is published by this integration. The installed-mod snapshot remains the supplied 0.6.1 evidence until TeKatz provides a new list.
+
+
+## Meta-progression foundation branch
+
+The `feature/persistent-meta-progression` branch contains the 0.10.0 navigation foundation over the unmerged 0.9.1 visual overhaul. It reorganizes the K menu and documents the expanded persistent challenge/shop architecture. New rewards, contracts, world purchases and shop tiers are not active in phase 1. See [the architecture and phased plan](docs/META_PROGRESSION.md). Main remains separate until an explicitly requested merge.
