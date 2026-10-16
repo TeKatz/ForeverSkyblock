@@ -24,6 +24,7 @@ The fixed island and actual world configuration are now included. The current ru
 | `pack/` | Files to copy into the modpack instance directory |
 | `docs/ASCENSION.md` | Forever Core, Chamber, Perk Points, reset and profile migration |
 | `docs/SKILLS.md` | Persistent skills, scope, controls, storage and test steps |
+| `docs/WORLD_SHOP.md` | Stable world identity, purchase journal, test entitlement and phase-3 checks |
 | `docs/DESIGN.md` | Agreed direction and Expert pacing |
 | `docs/PROGRESSION.md` | Unconfirmed proposals for early material progression |
 | `docs/START_ISLAND.md` | Starting island, tested snapshot and planned changes |
@@ -56,4 +57,4 @@ Version 0.8.0 combines the permanent-tool update from [PR #9](https://github.com
 
 ## Meta-progression foundation branch
 
-The `feature/persistent-meta-progression` branch now contains 0.11.0: the six-section K menu, 11 personal challenges (34 SP including First Foundations), persistent tool/monster progress, schema-3 migration and permanent Shop Tiers 0/I. It retains the unmerged 0.9.1 machine GUI fixes. World purchases, contracts, optional technology adapters and higher tiers remain later phases. See [the active challenge implementation](docs/CHALLENGES.md) and [the architecture and phased plan](docs/META_PROGRESSION.md). Main remains separate until an explicitly requested merge.
+The `feature/persistent-meta-progression` branch now contains 0.12.0. It retains the six-section K menu, 11 personal challenges, permanent Tier 0/I and the unmerged 0.9.1 machine GUI fixes. Phase 3 adds schema-4 world claims and receipts, a stable save identity, write-ahead purchase recovery and one harmless Tier-I/5-SP test entitlement with no item reward. Valuable products, item delivery, contracts, optional technology adapters and higher tiers remain later phases. See [WORLD_SHOP.md](docs/WORLD_SHOP.md), [CHALLENGES.md](docs/CHALLENGES.md) and [META_PROGRESSION.md](docs/META_PROGRESSION.md). Main remains separate until an explicitly requested merge.

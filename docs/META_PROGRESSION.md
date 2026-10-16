@@ -5,7 +5,7 @@ Owner: TeKatz. Source: the complete 38-section Shop/Challenges handoff supplied 
 
 ## Current implementation status
 
-Phase 2 is implemented in **0.11.0** on the same development branch. [CHALLENGES.md](CHALLENGES.md) is authoritative for its 11 active objectives, schema-3 subset, permanent Tier 0/I, vanilla personal-credit policy, accounting and fail-closed recovery. The findings and phase-1 notes below describe the inspected 0.9.1/0.10.0 baseline; the expanded transaction/world/contract schema remains a proposal for subsequent phases.
+Phase 3 is implemented in **0.12.0** on the same development branch. [CHALLENGES.md](CHALLENGES.md) remains authoritative for the 11 active objectives and permanent Tier 0/I; [WORLD_SHOP.md](WORLD_SHOP.md) is authoritative for schema 4, stable world identity, current-world claims and write-ahead recovery. Valuable delivery, contracts and higher-tier rules remain proposals for later phases.
 
 ## Baseline and immediate boundary
 
@@ -48,7 +48,7 @@ This is **38 unique challenges / 135 SP**, the lower end of the requested 135–
 
 Contract IDs use `contract/dragon_reborn`, `contract/wither_hunter`, `contract/industrial`, `contract/singularity`, `contract/nitro`, `contract/antimatter`; PP redemption remains the separate Core path. Maximum initial selection: 5–8 types. Dragon +1, three extra Withers +1, four Singularities +1, Nitro 16/32/64 candidates and four Antimatter Pellets +3 are proposals requiring the relevant balancing gate. Industrial inputs remain unspecified. No timed login rewards, clock cooldowns, low-value bulk exchanges or PP/SP exchange.
 
-Product definitions contain stable ID, category, PERMANENT or CURRENT_WORLD scope, SP/PP prices, independent tier requirement, delivery adapter, confirmation and refund policy. Existing skills/research stay in their existing catalog/storage during transition. Reserve `shop/test_entitlement` for a harmless test in phase 3; `shop/advanced_ae2_starter` is only a design identifier. Its example 5-SP price and contents are not activated.
+Product definitions contain stable ID, category, PERMANENT or CURRENT_WORLD scope, SP/PP prices, independent tier requirement, confirmation and refund policy. Existing skills/research stay in their existing catalog/storage during transition. Phase 3 activates only `forever_skyblock:phase3_test_entitlement`: Tier I, 5 SP, CURRENT_WORLD, no delivery. `shop/advanced_ae2_starter` remains only a design identifier; its contents and price are not activated.
 
 ## Event and credit architecture
 
@@ -130,7 +130,7 @@ A future detail screen extends the same card model with full objectives/prerequi
 
 1. **Phase 1 / 0.10.0:** architecture + hierarchical K screen, Overview, category/search/filter shell, existing purchases/research/perks and Profile. Schema/network untouched. Compare production JAR server/profile/recipe classes against 0.9.1; run existing build and both dedicated-server suites. Manual EN/DE, GUI scales, search, respec and JEI test checklist required.
 2. **Phase 2:** schema 3 + generalized personal evidence, core crafts/counters, dimension/combat events and Tier 0/I. Migrate First Foundations by identity, not re-award. Defer dirt ownership until policy is settled. Test v1→v2→v3 and v2→v3 without minted points (except the established v1 Creative refund), restarts, fake players, duplicates, failure-before-commit and monotonic tiers. Unknown IDs preserved.
-3. **Phase 3:** durable world identity, journal/recovery, one harmless test entitlement, claim-per-world and exact tier/cost checks. Test renames/copies/new saves, concurrency, spam, corrupt identity, stale backups and every transaction crash cut. Item-delivery choice remains a separate gate.
+3. **Phase 3 / 0.12.0:** delivered durable world identity, schema-4 claim/receipt records, journal recovery and one harmless Tier-I/5-SP test entitlement. Rename/copy/new-save behavior, concurrency, corrupt identity, stale primary data and every transaction crash cut are covered. Item delivery remains a separate gate.
 4. **Phase 4:** each tech adapter as its own bounded change, verify real installed APIs and optional absence. No awarding for possession where real action evidence is required.
 5. **Phase 5:** mastery-gated boss contracts first; resource contracts only after escrow safety and measured production rates. Select Tier I vs II and quantities through balancing; no arbitrary SP/hour claim.
 6. **Phase 6:** separately design real product contents/prices/scopes/PP requirements and delivery. Never activate the example AE2 package from this handoff alone.

@@ -1,4 +1,4 @@
-# Forever Skyblock — 0.11.0 (personal challenges / phase 2)
+# Forever Skyblock — 0.12.0 (world shop safety / phase 3)
 
 Minecraft 1.21.1 / NeoForge 21.1.249 or newer 21.1.x. Requires Java 21. Maintained by TeKatz; Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
@@ -6,7 +6,15 @@ Minecraft 1.21.1 / NeoForge 21.1.249 or newer 21.1.x. Requires Java 21. Maintain
 
 The K menu contains Overview, Challenges, Shop, Research, Perks and Profile. Phase 2 activates 11 unique personal challenges (34 SP including existing First Foundations), distinct Stone/Iron tool progress, the 1,000-monster counter and permanent Shop Tiers 0/I. Schema 3 preserves old balances, skills, PP and Core receipts and tracks new accounting without fabricating legacy history. Search, category/status filters and details show the live objective counts. Existing skills, Jetpack research, dual-cost Creative research and confirmed refunds remain functional.
 
-See [CHALLENGES.md](../docs/CHALLENGES.md) for exact triggers, migration, the changed corrupt-profile recovery policy, compatibility and manual checks. World products, contracts, higher-tier rules and optional technology challenges are not active. Both client and server need 0.11.0 (`skills-5`).
+See [CHALLENGES.md](../docs/CHALLENGES.md) for exact triggers, migration, compatibility and manual checks. Phase 3 adds the safe world-shop foundation described below. Contracts, higher-tier rules, valuable product contents and optional technology challenges are not active. Both client and server need 0.12.0 (`skills-6`).
+
+## Current-world shop transaction test
+
+Shop → Current World contains one development-only **Phase 3 Test Entitlement** for the singleplayer owner or a server operator. It requires Tier I, costs 5 SP, asks for confirmation and records one non-refundable claim for the current world's stable hidden identity. It intentionally delivers no item and grants no gameplay advantage.
+
+World identities survive restart and save-folder rename. A copied save keeps the original identity and therefore cannot buy the same entitlement again; a genuinely new world gets a new identity. Profile schema 4 stores bounded world claims and immutable purchase receipts. A write-ahead transaction journal recovers a committed purchase after any tested crash cut without duplicating or losing its debit. Identity conflicts and ambiguous profile recovery fail closed.
+
+See [WORLD_SHOP.md](../docs/WORLD_SHOP.md) for the exact identity, recovery and migration rules. Back up both the progression directory and world save before testing. Actual product contents, prices and item delivery remain a later approval gate.
 
 ## Machine visual update
 
@@ -75,7 +83,7 @@ Recipes use the custom serializer `forever_skyblock:condensing`:
 
 ## Install and build
 
-Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.11.0.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
+Replace the previous Forever Skyblock JAR with `ForeverSkyblock-1.21.1-NeoForge-0.12.0.jar` in the instance's `mods` directory. Install on both client and server for multiplayer.
 
 With Java 21 installed:
 

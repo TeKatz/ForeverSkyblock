@@ -69,3 +69,7 @@ TeKatz supplied the complete Shop/Challenges handoff and requested following it.
 ## Personal challenges — phase 2 requested (October 16, 2026)
 
 TeKatz requested the next phase after delivery of 0.10.0. Implement the confirmed core crafting objectives, persistent distinct-tool and hostile-kill evidence, dimension/boss objectives, Tier 0/I and schema-3 migration on the development branch. Keep unresolved resource routes and optional technology adapters inactive. Use vanilla personal kill attribution rather than inventing shared boss credit. See [CHALLENGES.md](CHALLENGES.md) for the implemented boundary and compatibility.
+
+## Current-world transaction safety — phase 3 requested (October 16, 2026)
+
+After phase 2, TeKatz requested the next phase. Implement a stable save UUID, schema-4 per-world claims/receipts and write-ahead recovery before any valuable package is designed. Prove the flow with one owner/operator-only Tier-I/5-SP entitlement that grants no item or gameplay benefit. A copied save intentionally keeps the same identity and claim; a genuinely new save receives a new identity. Real product contents, balancing and recipient-bound delivery remain separate approval gates. See [WORLD_SHOP.md](WORLD_SHOP.md).

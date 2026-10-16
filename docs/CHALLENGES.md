@@ -1,4 +1,4 @@
-# Personal challenge progression — 0.11.0 / phase 2
+# Personal challenge progression — retained in 0.12.0
 
 Development branch: `feature/persistent-meta-progression`, based on 0.10.0 and retaining the unmerged 0.9.1 machine fixes. Minecraft 1.21.1, Java 21; pack runtime NeoForge 21.1.259. No main merge or release is implied.
 
@@ -22,7 +22,7 @@ All rewards are once per player profile, across worlds within the existing autho
 
 The live catalog contains **11 challenges / 34 SP**, including the existing First Foundations point. The full proposed 38-challenge / 135-SP catalog is not yet active. Distinct Stone/Iron tool sets and Veteran evidence survive restarts, new worlds and ordinary skill resets. Veteran stops accumulating after completion; its bounded entity UUID evidence prevents the same victim from advancing the counter twice. Earlier kills/crafts are not inferred from inventory, statistics or advancements. The first new qualifying action starts tracking.
 
-Dirt ownership, first iron and water/lava/Obsidian routes remain unresolved. No challenge or recipe is invented for them. Optional technology adapters, repeatable contracts, product contents/prices and world purchases remain later phases.
+Dirt ownership, first iron and water/lava/Obsidian routes remain unresolved. No challenge or recipe is invented for them. Optional technology adapters, repeatable contracts, valuable product contents/prices and item delivery remain later phases. Version 0.12.0 adds only the harmless current-world test entitlement described in [WORLD_SHOP.md](WORLD_SHOP.md).
 
 ## Authoritative action adapters
 
@@ -39,7 +39,7 @@ Tier -1 means no tier yet. First Foundations unlocks **Tier 0 — Foundations**;
 
 K → Challenges now offers All, Forever, Combat & Dimensions and Contracts. Existing title/description search and open/completed filters cover the active catalog. Cards and details show current progress; unsupported future objective revisions show an explicit unavailable status. Overview and Shop → Tier Progress show authoritative permanent tiers and their unlock conditions. Profile shows earned, spent, refunded and admin-granted currency since tracking began. Rewards retain the green clickable chat link; a new tier adds an explicit unlock message. Counter-only snapshots do not rebuild JEI research visibility.
 
-## Schema 3 and migration
+## Challenge state in schema 4
 
 All six schema-2 fields remain: SP, milestone IDs, skill ranks, PP, paid-perk investments, redeemed Core UUIDs. New `meta` fields are:
 
@@ -47,13 +47,13 @@ All six schema-2 fields remain: SP, milestone IDs, skill ranks, PP, paid-perk in
 - `challenge_progress`: namespaced ID → `{revision, evidence}`; revision 1 uses approved tool IDs, a unique-completion token or victim UUIDs. Limits: 4,096 objective entries, 1,000 tokens per objective, 8,192 tokens overall and 1 MiB encoded profile size. Unknown IDs/revisions survive round trips; unknown objective semantics never award points.
 - `accounting`: nonnegative 64-bit SP/PP earned/spent/refunded totals, SP admin grants and `legacyHistoryUnknown`. Overflow fails the transaction. Legacy history is marked unknown, not guessed from balance or owned skills. New transactions are tracked separately. Known v1 Creative migration refunds are recorded as refunds, not earnings.
 
-World claims, contract records and product receipts are deliberately not allocated before their phase-3+ semantics exist. Schema 3 is the bounded phase-2 implementation of the expanded architecture, not a claim that the entire proposed economy is complete.
+Schema 4 retains all phase-2 challenge fields unchanged and adds the bounded world claims and purchase receipts documented in [WORLD_SHOP.md](WORLD_SHOP.md). Contract records and real product delivery remain absent.
 
-Valid v2 profiles retain balances, research, purchases, unknown IDs and Core receipts. Existing First Foundations derives Tier 0 with **no second point**. V1 profiles still apply the established removal/refund of legacy SP-only Creative research exactly once after the next successful write. Loading migrates in memory; the first successful changed transaction writes schema 3. No routine respec clears challenge claims, partial objectives, tiers or Core receipts. Older mod versions cannot load schema-3 profiles: back up the progression directory before testing a downgrade or restoring an older mod.
+Valid v2/v3 profiles retain balances, research, purchases, unknown IDs and Core receipts. Existing First Foundations derives Tier 0 with **no second point**. V1 profiles still apply the established removal/refund of legacy SP-only Creative research exactly once after the next successful write. Loading migrates in memory; the first successful changed transaction writes schema 4. No routine respec clears challenge claims, partial objectives, tiers, world claims or Core receipts. Older mod versions cannot load schema-4 profiles: back up the progression directory before testing a downgrade or restoring an older mod.
 
-**Recovery change:** a missing/corrupt primary with an existing backup now makes progression unavailable instead of silently loading a previous-state backup. That backup may predate rewards, debits or claims and cannot safely establish the current balance. Both files are preserved for recovery. The phase-3 journal/recovery protocol is still required before world financial transactions go live. This does not provide cross-process locking or arbitrary backup rollback protection; do not run simultaneous instances against one profile directory.
+**Recovery rule:** a missing/corrupt primary with an existing backup and no valid committed transaction journal makes progression unavailable instead of silently loading a previous state. A current-world purchase journal can deterministically finish its exact committed next profile. This does not provide cross-process locking or arbitrary manual backup rollback protection; do not run simultaneous instances against one profile directory.
 
-Snapshots use protocol **`skills-5`**, carrying tier, bounded known objective counts and accounting; evidence UUIDs are not sent to clients. A server sends snapshots only after that payload channel is negotiated, so login/disconnect boundaries cannot undo an already committed challenge action. Install 0.11.0 on both client and server.
+Snapshots use protocol **`skills-6`**, carrying tier, bounded known objective counts, accounting and friendly current-world status/claims; evidence and raw world UUIDs are not sent to clients. A server sends snapshots only after that payload channel is negotiated, so login/disconnect boundaries cannot undo an already committed action. Install 0.12.0 on both client and server.
 
 ## Verification and manual acceptance
 
