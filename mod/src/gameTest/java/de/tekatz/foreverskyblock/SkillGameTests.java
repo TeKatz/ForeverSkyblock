@@ -1,10 +1,12 @@
 package de.tekatz.foreverskyblock;
 
 import com.mojang.authlib.GameProfile;
+import de.tekatz.foreverskyblock.item.SupplyCacheItem;
 import de.tekatz.foreverskyblock.network.SkillNetwork;
 import de.tekatz.foreverskyblock.progression.ContractCatalog;
 import de.tekatz.foreverskyblock.progression.MilestoneCatalog;
 import de.tekatz.foreverskyblock.progression.ProgressionProfile;
+import de.tekatz.foreverskyblock.progression.ShopCatalog;
 import de.tekatz.foreverskyblock.progression.SkillCatalog;
 import de.tekatz.foreverskyblock.progression.SkillMessages;
 import io.netty.buffer.Unpooled;
@@ -66,15 +68,28 @@ public final class SkillGameTests {
             h.assertTrue(contractRequest.equals(SkillNetwork.ContractRequest.CODEC.decode(buffer)), "Contract request round trips");
             buffer.clear();
             var contractStates = Map.of(ContractCatalog.SINGULARITY.id(), new SkillNetwork.ContractState(4, 2, true, true, false));
+            var productStates = Map.of(ShopCatalog.ADVANCED_AE2_STARTER.id(), new SkillNetwork.ProductState(1, true));
             var state = new SkillNetwork.Snapshot(3, 2, Map.of(SkillCatalog.EXTENDED_REACH, 1),
                     Set.of(MilestoneCatalog.FIRST_FOUNDATIONS.id()), true, true, true, "purchased", true, 1,
                     Map.of("forever_skyblock:veteran", 630, "forever_skyblock:permanent_tools_i", 3),
                     new de.tekatz.foreverskyblock.progression.MetaProgress.Accounting(12, 1, 5, 0, 1, 0, 10, true),
-                    true, "Phase 3 Test", Set.of(de.tekatz.foreverskyblock.progression.ShopCatalog.TEST_WORLD_ENTITLEMENT), contractStates);
+                    true, "Phase 6 Test", Set.of(ShopCatalog.ADVANCED_AE2_STARTER.id()), contractStates, productStates);
             SkillNetwork.Snapshot.CODEC.encode(buffer, state);
             h.assertTrue(state.equals(SkillNetwork.Snapshot.CODEC.decode(buffer)), "Authoritative profile snapshot round trips");
             h.succeed();
         } finally { buffer.release(); }
+    }
+    @GameTest(template = "empty")
+    public static void supplyCacheIdentityRoundTripsWithoutTrustingDisplayData(GameTestHelper h) {
+        UUID receipt = UUID.randomUUID(), owner = UUID.randomUUID(), world = UUID.randomUUID();
+        var stack = SupplyCacheItem.create(ShopCatalog.ADVANCED_AE2_STARTER, receipt, owner, world);
+        var marker = SupplyCacheItem.marker(stack);
+        h.assertTrue(marker != null, "A server-issued supply cache has a valid marker");
+        h.assertTrue(marker.receiptId().equals(receipt) && marker.ownerId().equals(owner) && marker.worldId().equals(world),
+                "Supply cache preserves receipt, owner and world identities");
+        h.assertTrue(marker.productId().equals(ShopCatalog.ADVANCED_AE2_STARTER.id()), "Supply cache preserves the server product id");
+        h.assertTrue(stack.getCount() == 1 && stack.getMaxStackSize() == 1, "Supply caches cannot stack together");
+        h.succeed();
     }
     @GameTest(template = "empty")
     public static void runningServerWorldIdentityIsStable(GameTestHelper h) throws Exception {

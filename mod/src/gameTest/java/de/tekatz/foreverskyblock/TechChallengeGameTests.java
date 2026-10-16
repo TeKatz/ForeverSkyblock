@@ -22,6 +22,13 @@ public final class TechChallengeGameTests {
         present(h, "ae2:item_storage_cell_4k");
         present(h, "ae2:item_storage_cell_256k");
         present(h, "ae2:64k_crafting_storage");
+        // Phase 6 package IDs are pinned here as well so a renamed/removed AE2 entry fails the pack-runtime gate.
+        present(h, "ae2:drive");
+        present(h, "ae2:pattern_provider");
+        present(h, "ae2:molecular_assembler");
+        present(h, "ae2:blank_pattern");
+        present(h, "ae2:fluix_smart_cable");
+        present(h, "ae2:dense_energy_cell");
         Class<?> cpu = Class.forName("appeng.crafting.execution.CraftingCpuLogic");
         h.assertTrue(cpu.getDeclaredField("job") != null && cpu.getDeclaredField("cluster") != null,
                 "AE2 CPU keeps the requester-bearing job and cluster fields used by the adapter");
