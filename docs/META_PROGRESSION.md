@@ -139,3 +139,11 @@ First iron; water/lava; pre-Diamond obsidian; IF endgame and Apotheosis objectiv
 ## Manual acceptance for phase 1
 
 Open K at GUI scales 2/3/4, 1920×1080 and a small window; EN and DE. Visit all six sections and every subpage. Search by title/description, type K inside search, clear by right click, switch filters and return from detail/confirmation. Scroll long Jetpack variants, click partially clipped cards and ensure neighboring actions do not fire. Check SP/PP before/after existing buys and refunds, completed First Foundations, chat reward shortcut, optional Jetpacks missing, normal-player absence of admin button and reconnect state. Inspect JEI overlay with the installed client. Automated server tests do not certify rendered client layout.
+
+## Phase-1 delivered build verification
+
+- Source commit: `1e4b2f4c41bba41d9144b6474f20c8313633a092` on `feature/persistent-meta-progression`.
+- [CI run 38844232371](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38844232371) succeeded: compilation and unit/layout checks, baseline dedicated-server suite (42 required GameTests), and exported-pack integration suite (42 required GameTests).
+- Artifact: `ForeverSkyblock-1.21.1-NeoForge-0.10.0.jar`, 4,940,293 bytes. SHA-256: `db4fa21de055c79c6e98674b7a588c6129c5a1f4deea6540ae2e445ce2f1322e`. Downloaded CI artifact ZIP passed its published digest and archive integrity checks; JAR metadata reports version 0.10.0.
+- JAR entry comparison against 0.9.1 found only the progression screen/layout classes, EN/DE translations and mod version metadata changed. All other entries, including server/profile/network logic, machine classes, recipes and textures, are byte-identical; no entries were removed.
+- Rendered client appearance and mouse/JEI interaction still require the manual acceptance above. No main merge or release was performed.

@@ -7,7 +7,7 @@
 - Add a live overview, populated challenge categories, title/description search, open/completed filters, a challenge detail view, and clearly separated Permanent/Current World/Tier Progress shop sections.
 - Keep Extended Reach, all four Jetpack research stages, dual-currency Creative research and confirmed refunds working through the unchanged server handlers. Show long descriptions inline and move owner/operator test controls to Profile.
 - Describe contracts, future world purchases and tier design as not active; do not fabricate tier/history/claim data. Preserve schema 2, protocol skills-4, all progression rules, machine visuals and pack files.
-- Add responsive-layout checks. Build and existing regression suites must pass before delivery; client EN/DE, GUI-scale, search and JEI checks remain manual. No main merge or release.
+- Add responsive-layout checks. Build, unit/layout checks and both dedicated-server suites passed (42 required GameTests each); client EN/DE, GUI-scale, search and JEI checks remain manual. No main merge or release.
 
 ## 0.9.1 — Machine GUI corrections (test branch)
 
