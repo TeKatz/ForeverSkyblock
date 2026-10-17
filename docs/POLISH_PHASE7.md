@@ -12,7 +12,7 @@ Development branch: `chore/general-polish-phase7`, based on the 0.15.0 Phase 6 h
 
 ### Current-world package delivery
 
-The real-product confirmation path is now owned by the Phase 6 shop integration instead of falling through to the old Phase-3 test-entitlement dialog. The dialog describes the actual package, SP cost, current world and non-refundable world scope.
+The real-product confirmation path is now owned by the Phase 6 shop integration instead of falling through to the old Phase-3 test-entitlement dialog. The dialog describes the actual package, SP cost, current world and non-refundable world scope. A purchased package in READY state also remains actionable from the same card, so the visible **Claim Package** action is not accidentally disabled by the new-purchase eligibility check.
 
 Opening a Supply Cache may reuse the main-inventory slot occupied by that cache. A six-stack package therefore needs five additional empty main slots when the cache itself is in the main inventory, rather than incorrectly requiring six extra slots. Offhand/other slots do not create phantom capacity.
 
@@ -20,7 +20,7 @@ The purchase receipt, owner/world binding, READY → DISPATCHING → DELIVERED �
 
 ### Regression coverage
 
-The dedicated GameTest suite now covers the Phase 6 claim request through the network codec and verifies rejection of unknown actions, malformed product IDs, missing IDs and unexpected payload data. Existing schema/journal/contract/delivery tests remain in place.
+The dedicated GameTest suite now covers the Phase 6 claim request through the network codec and verifies rejection of unknown actions, malformed product IDs, missing IDs and unexpected payload data. It also locks in the Supply Cache capacity boundary: the consumed cache slot counts only when the cache actually occupies the main inventory. Existing schema/journal/contract/delivery tests remain in place.
 
 ### Repository polish
 
@@ -58,7 +58,7 @@ Headless CI does not prove client rendering or real pack behavior. Those remain 
 1. Back up progression and the test world before using the JAR.
 2. Confirm an existing Phase 5/6 profile loads with unchanged SP, PP, skills, milestones, contracts, Shop Tier and package receipts.
 3. Check K → Shop → Current World and verify the real product confirmation describes the actual AE2 package rather than the old test entitlement.
-4. Buy/claim only in a disposable test world. Confirm no second debit or second claim becomes possible.
+4. Buy the package and verify the same card changes to an enabled **Claim Package** action. Claim only in a disposable test world and confirm no second debit or second claim becomes possible.
 5. Put the Supply Cache in the main inventory with exactly five other empty main slots and open it. The six configured package stacks should fit by reusing the consumed cache slot.
 6. Repeat with the cache in offhand and only five empty main slots. Opening should remain blocked because the offhand slot cannot receive a package stack.
 7. Restart after delivery and after opening; no package or SP duplication should occur.

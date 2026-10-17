@@ -7,8 +7,9 @@ This file is the concise version history. Detailed test evidence belongs in [VAL
 - Keep pack progression balance intentionally unchanged while the wider modpack structure is still being designed.
 - Harden progression request validation without changing the `skills-8` packet shape or schema 4/5/6 persistence model.
 - Correct the real World Shop purchase confirmation so it describes the actual package instead of the obsolete Phase-3 test entitlement.
-- Allow a consumed Supply Cache to contribute its own main-inventory slot to package delivery capacity.
-- Extend GameTests for claim requests and malformed progression packets.
+- Keep READY package claims actionable from the World Shop instead of disabling the visible Claim Package button with new-purchase rules.
+- Allow a consumed Supply Cache to contribute its own main-inventory slot to package delivery capacity while correctly excluding offhand capacity.
+- Extend GameTests for claim requests, malformed progression packets and Supply Cache slot reuse.
 - Rename CI stages around the current regression/full-pack integration boundary and document deferred balance/K-menu work explicitly.
 
 ## 0.15.0 — Real current-world shop delivery / phase 6 development
