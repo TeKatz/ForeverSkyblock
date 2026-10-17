@@ -1,64 +1,78 @@
-# Forever Skyblock mod — 0.18.1 integrated baseline
+# Forever Skyblock mod — 0.19.0 material-processing development
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-Version **0.18.1** is integrated into `main` through PR #13. It combines the 0.14.0-0.18.1 development stack: repeatable contracts, real current-world package delivery, stability/polish work, early-game/world QoL, the Freezing Chamber Mark I and the Stone Meal Crafting Table progression gate. No release was published by the merge.
+Branch: `feature/material-processing-0.19`, based on the integrated 0.18.1 `main` baseline. It is not merged and no release is implied.
 
-## Condenser family
+## Early material progression
 
-The Condenser Mark I supports counted primary ingredients and persistent input locks. Existing log/plank, Mixing Chamber and JEI transfer behavior remains active.
+The existing Condenser Mark I, Mixing Chamber and Freezing Chamber remain the primitive foundation. Version 0.19.0 adds the first deterministic route from Water/Farming to Iron and then uses Iron to unlock a higher automation tier.
 
-### Bone Meal loop
+### Mud
 
-A Condenser recipe converts **8 items in `minecraft:leaves` into 1 Bone Meal in 160 ticks / 8 seconds**. No Mixing Chamber and no power are required. JEI and recipe transfer use the same counted-input definition.
+Condenser + Mixing Chamber:
 
-### Mixing Chamber Mark I
+- **4 Dirt + 1 Ice -> 4 Mud**;
+- 160 ticks / 8 seconds;
+- no power.
 
-The passive adjacent Mixing Chamber exposes the second Condenser recipe input. Dirt remains the early two-input recipe using Stone Meal plus a Sapling.
+The intended continuation uses Vanilla Wheat + Mud -> Packed Mud -> Mud Bricks.
 
-### Freezing Chamber Mark I
+### Washing Basin
 
-The passive adjacent Freezing Chamber exposes a dedicated input/output pair inside the Condenser. The Chamber itself has no GUI or inventory.
+The new Washing Basin is crafted from 4 Mud Bricks, 2 Cobblestone and 2 Planks. It has one input/output pair and standard item-handler automation.
 
-- every registered item is valid as Freezing input unless the input lock restricts it;
-- one consumed item advances independent material progress;
-- **32 consumed items produce 1 `minecraft:ice`**;
-- Freezing runs in parallel with normal Condenser/Mixing processing;
-- removing the Chamber hides its slots while preserving input, output, partial progress and lock;
-- disconnected module slots are not exposed to automation;
-- the Freezing input is deliberately excluded from generic shift-click routing because an unlocked slot accepts everything.
+It only processes while a directly adjacent block on one of its six faces is a **source-water block**. The water is not consumed. Removing water pauses the operation without losing input or partial progress.
 
-The Condenser screen has four live layouts without reopening: base, Mixing only, Freezing only, and Mixing + Freezing. The 0.18.1 pass increased vertical spacing, separated Condensing and Freezing presentation, removed overlapping lock help tooltips and removed the old hidden JEI click target between the main input/output slots.
+Initial washing recipe:
 
-JEI includes a dedicated Freezing category showing the 32-item wildcard process, Ice output, no-power requirement and adjacent Freezing Chamber requirement.
+- **4 Stone Meal -> 1 Raw Iron**;
+- 160 ticks / 8 seconds;
+- no power.
 
-## Crafting Table gate
+Raw Iron can then be smelted normally.
 
-The normal `minecraft:crafting_table` recipe is replaced by a 3x3 plus-shaped recipe using four Planks around one Stone Meal. The starter ME Crafting Terminal therefore remains the first 3x3 crafting workstation until Stone Meal is reached.
+## Condenser Mark I crafting
 
-The recipe override is shipped by the mod and mirrored into the Forever Recipe Editor generated pack.
+The starter Condenser becomes reproducible before Iron after the player has established Water/Farming/Packed Mud:
 
-## Progression systems
+- 4 Mud Bricks;
+- 2 Cobblestone;
+- 2 Stone Meal;
+- 1 Furnace.
 
-The integrated progression protocol is `skills-8`. Player profiles serialize dynamically as schema 4, 5 or 6 depending on which systems have created state.
+## Condenser Mark II
 
-Current integrated systems include:
+Mark II is the first Iron-gated automation tier. Crafting uses:
 
-- 20 unique personal challenges worth 58 SP;
-- permanent Shop Tier 0 and Tier I;
-- five Tier-I repeatable contracts;
-- the Advanced AE2 Starter Package at Tier I for 12 SP with receipt-bound Supply Cache delivery;
-- world-wide No Phantoms, No More Rain and Permanent Day upgrades;
-- save-wide Wandering Trader unlock after the first real-player Emerald pickup;
-- Jetpack research, permanent skills/refunds, Ascension and Perk Points.
+- 1 Condenser Mark I;
+- 4 Iron Ingots;
+- 4 Mud Bricks.
 
-See `../docs/CURRENT_STATE.md` for the complete active/deferred boundary.
+It shares the Mark I inventory/lock architecture and supports the same adjacent Mixing and Freezing Chambers. It retains all Mark-I recipes and additionally provides:
+
+- **4 Stone Fragments -> 1 Stone Meal**;
+- **8 matching Leaves + 1 Bone Meal -> 1 matching Sapling/Propagule** with a Mixing Chamber.
+
+Oak, Spruce, Birch, Jungle, Acacia, Dark Oak, Cherry and Mangrove are covered. Mark-II-only recipes use a recipe-tier field and cannot run in Mark I. When both Leaves -> Bone Meal and a matching two-input Sapling recipe are possible, the explicit two-input recipe has deterministic priority.
+
+## JEI and GUI
+
+JEI includes a Washing category, Washing Basin catalyst, water-source requirement, non-consumed-water note, duration/output information and a Recipes button in the Basin GUI. Condenser Mark II is registered for Condensing/Freezing and Mark-II-only recipes identify their tier requirement. Condenser recipe transfer refuses Mark-II-only recipes when the open machine is Mark I.
+
+## Automation boundary
+
+0.19.0 removes the permanent manual dependency on the Mortar for Stone Meal and on random tree drops for Saplings once Mark II is reached. The Washing Basin is also automation-capable.
+
+Automatic **Log/Leaf production remains intentionally unresolved in this update and is the next automation obligation**: the pack's primitive resource chain is based on wood, so a later tree-growing/harvesting system must close that loop rather than leaving permanent manual tree farming.
 
 ## Compatibility and fixed pack state
 
-The fixed starter island NBT is unchanged. No third-party Wooden Shears JAR is bundled or committed by Forever Skyblock.
+No progression-profile schema or `skills-8` protocol change is required. The fixed starter-island NBT is unchanged.
 
 Default development baseline: NeoForge 21.1.249. Pack-runtime integration target: NeoForge 21.1.259.
+
+See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the full 0.19.0 behavior and validation boundary.
 
 ## Build
 
@@ -66,8 +80,4 @@ Default development baseline: NeoForge 21.1.249. Pack-runtime integration target
 ./gradlew build
 ```
 
-Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.18.1.jar`.
-
-The final pre-merge feature head `97715f06391339141032c5f0c859b5925f99539d` passed GitHub Actions run #195: Java 21 build/unit tests, headless client mixin smoke, dedicated regression GameTests, full NeoForge 21.1.259 integration GameTests and artifact upload.
-
-TeKatz subsequently confirmed the 0.18.1 in-game cleanup as a good baseline to continue from. This user-reported client acceptance is separate from the automated CI checks.
+Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.19.0.jar`.
