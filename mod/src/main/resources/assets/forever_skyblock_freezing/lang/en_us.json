@@ -9,5 +9,8 @@
   "gui.forever_skyblock.machine.hint_base": "Attach Mixing or Freezing Chambers directly to expand this Condenser",
   "gui.forever_skyblock.machine.hint_mixing": "Mixing active · Freezing Chamber can be attached separately",
   "gui.forever_skyblock.machine.hint_freezing": "Freezing active · Mixing Chamber can be attached separately",
-  "gui.forever_skyblock.machine.hint_full": "Both modules active"
+  "gui.forever_skyblock.machine.hint_full": "Both modules active",
+  "jei.forever_skyblock.freezing": "Freezing",
+  "jei.forever_skyblock.freezing_items": "32 items",
+  "jei.forever_skyblock.freezing_any_item": "Any item accepted"
 }

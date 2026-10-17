@@ -1,5 +1,6 @@
 package de.tekatz.foreverskyblock;
 
+import de.tekatz.foreverskyblock.menu.CondenserMenu;
 import de.tekatz.foreverskyblock.menu.MachineLayout;
 import de.tekatz.foreverskyblock.client.MachineAnimation;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,13 @@ final class MachineLayoutTest {
                 assertTrue(layout.inventoryX(col)>=16&&layout.inventoryX(col)+16<layout.width()-16);assertTrue(y-top+8<layout.height());
             }
         }
+    }
+    @Test void condenserFullLayoutKeepsProcessSectionsSeparatedFromInventory() {
+        assertEquals(296, MachineLayout.CONDENSER.height());
+        assertTrue(CondenserMenu.FREEZING_Y - CondenserMenu.MAIN_Y >= 60, "Freezing row must not crowd timed condensing");
+        assertTrue(MachineLayout.CONDENSER.inventoryY() - (CondenserMenu.FREEZING_Y + 24) >= 50,
+                "Machine controls need breathing room before the player inventory");
+        assertTrue(MachineLayout.CONDENSER.hotbarY() - MachineLayout.CONDENSER.inventoryY() >= 60);
     }
     @Test void movingPressAndCounterRotatingFramesCannotIntersectTheirHousing() {
         for(int i=0;i<=1000;i++) {

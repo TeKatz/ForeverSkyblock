@@ -29,10 +29,10 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
 
     @Override protected void init() {
         super.init();
-        filters = addRenderableWidget(new MachineButton(leftPos + 20, topPos + 119, 111, 19, text("edit_locks"), skin, true,
+        filters = addRenderableWidget(new MachineButton(leftPos + 20, topPos + 162, 120, 20, text("edit_locks"), skin, true,
                 b -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId, 0)));
         filters.setTooltip(Tooltip.create(Component.translatable("gui.forever_skyblock.filter_help")));
-        recipes = addRenderableWidget(new MachineButton(leftPos + 174, topPos + 119, 54, 19, text("recipes"), skin, false,
+        recipes = addRenderableWidget(new MachineButton(leftPos + 168, topPos + 162, 60, 20, text("recipes"), skin, false,
                 b -> ClientMachineRecipes.condenser()));
     }
 
@@ -92,36 +92,39 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         };
         MachineSkin.centered(g, font, text(stateKey), x + 124, y + 34, 156, MachineSkin.CYAN, .72F);
 
-        MachineSkin.panel(g, x + 14, y + 44, 220, 98, 0xFF54616D);
+        // Keep timed condensing and material freezing as visually separate process cards.
+        MachineSkin.panel(g, x + 14, y + 44, 220, 64, 0xFF54616D);
         renderCondensing(g, x, y);
+
+        MachineSkin.panel(g, x + 14, y + 113, 220, 43, 0xFF465A68);
         if (menu.hasFreezingChamber()) renderFreezing(g, x, y);
-        else MachineSkin.centered(g, font, text("freezing_hint"), x + 124, y + 101, 205, MachineSkin.MUTED, .67F);
+        else MachineSkin.centered(g, font, text("freezing_hint"), x + 124, y + 129, 202, MachineSkin.MUTED, .67F);
 
         renderLocks(g, x, y);
-        MachineSkin.panel(g, x + 18, y + 145, 212, 11, 0xFF5D6875);
-        MachineSkin.centered(g, font, text(moduleHintKey()), x + 124, y + 148, 205, MachineSkin.MUTED, .67F);
+        MachineSkin.panel(g, x + 18, y + 187, 212, 12, 0xFF5D6875);
+        MachineSkin.centered(g, font, text(moduleHintKey()), x + 124, y + 190, 204, MachineSkin.MUTED, .67F);
         inventory(g);
     }
 
     private void renderCondensing(GuiGraphics g, int x, int y) {
-        MachineSkin.centered(g, font, text("input"), x + CondenserMenu.MAIN_INPUT_X + 8, y + 47, 43, MachineSkin.MUTED, .73F);
+        MachineSkin.centered(g, font, text("input"), x + CondenserMenu.MAIN_INPUT_X + 8, y + 48, 43, MachineSkin.MUTED, .73F);
         if (menu.hasMixingChamber())
-            MachineSkin.centered(g, font, text("module_input"), x + CondenserMenu.MIXING_INPUT_X + 8, y + 47, 49, MachineSkin.MUTED, .73F);
-        MachineSkin.centered(g, font, text("output"), x + CondenserMenu.MAIN_OUTPUT_X + 8, y + 47, 41, MachineSkin.MUTED, .73F);
+            MachineSkin.centered(g, font, text("module_input"), x + CondenserMenu.MIXING_INPUT_X + 8, y + 48, 49, MachineSkin.MUTED, .73F);
+        MachineSkin.centered(g, font, text("output"), x + CondenserMenu.MAIN_OUTPUT_X + 8, y + 48, 41, MachineSkin.MUTED, .73F);
         skin.slot(g, x + CondenserMenu.MAIN_INPUT_X, y + CondenserMenu.MAIN_Y, true);
         if (menu.hasMixingChamber()) {
             skin.slot(g, x + CondenserMenu.MIXING_INPUT_X, y + CondenserMenu.MAIN_Y, true);
-            MachineSkin.text(g, font, Component.literal("+"), x + 59, y + 64, 13, MachineSkin.MUTED, 1.25F);
+            MachineSkin.text(g, font, Component.literal("+"), x + 59, y + 66, 13, MachineSkin.MUTED, 1.25F);
         }
         skin.slot(g, x + CondenserMenu.MAIN_OUTPUT_X, y + CondenserMenu.MAIN_Y, true);
 
         int barX = x + (menu.hasMixingChamber() ? 111 : 83), barW = menu.hasMixingChamber() ? 70 : 98;
-        MachineSkin.panel(g, barX, y + 64, barW, 8, 0xFF637888);
+        MachineSkin.panel(g, barX, y + 66, barW, 8, 0xFF637888);
         int filled = Math.min(barW - 4, (barW - 4) * menu.progress() / menu.duration());
-        g.fill(barX + 2, y + 66, barX + 2 + filled, y + 70, MachineSkin.CYAN);
-        g.fill(barX + barW, y + 63, barX + barW + 3, y + 73, MachineSkin.CYAN);
+        g.fill(barX + 2, y + 68, barX + 2 + filled, y + 72, MachineSkin.CYAN);
+        g.fill(barX + barW, y + 65, barX + barW + 3, y + 75, MachineSkin.CYAN);
         MachineSkin.centered(g, font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f / %.1f s",
-                menu.progress() / 20F, menu.duration() / 20F)), barX + barW / 2, y + 75, barW + 4, MachineSkin.MUTED, .7F);
+                menu.progress() / 20F, menu.duration() / 20F)), barX + barW / 2, y + 79, barW + 4, MachineSkin.MUTED, .7F);
 
         Component summary = text("wood_recipe");
         if (minecraft.level != null) {
@@ -132,20 +135,20 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
                     + (recipe.get().value().requiresModule() ? " + " + menu.getSlot(CondenserBlockEntity.SECOND_INPUT).getItem().getHoverName().getString() : "")
                     + " → " + recipe.get().value().result().getHoverName().getString());
         }
-        MachineSkin.text(g, font, summary, x + 20, y + 86, 207, MachineSkin.LIGHT, .84F);
+        MachineSkin.text(g, font, summary, x + 20, y + 95, 207, MachineSkin.LIGHT, .84F);
     }
 
     private void renderFreezing(GuiGraphics g, int x, int y) {
-        MachineSkin.text(g, font, text("freezing"), x + 58, y + 96, 60, MachineSkin.CYAN, .72F);
+        MachineSkin.centered(g, font, text("freezing"), x + 124, y + 116, 190, MachineSkin.CYAN, .72F);
         skin.slot(g, x + CondenserMenu.FREEZING_INPUT_X, y + CondenserMenu.FREEZING_Y, true);
         skin.slot(g, x + CondenserMenu.FREEZING_OUTPUT_X, y + CondenserMenu.FREEZING_Y, true);
         int barX = x + 62, barW = 124;
-        MachineSkin.panel(g, barX, y + 105, barW, 9, 0xFF4E6879);
+        MachineSkin.panel(g, barX, y + 132, barW, 8, 0xFF4E6879);
         int filled = (barW - 4) * menu.freezingProgress() / CondenserBlockEntity.FREEZING_REQUIRED_ITEMS;
-        g.fill(barX + 2, y + 107, barX + 2 + filled, y + 112, MachineSkin.CYAN);
+        g.fill(barX + 2, y + 134, barX + 2 + filled, y + 138, MachineSkin.CYAN);
         int freezeColor = menu.freezingStatus() == CondenserBlockEntity.BLOCKED ? 0xFFFFBF76 : MachineSkin.LIGHT;
         MachineSkin.centered(g, font, Component.literal(menu.freezingProgress() + " / " + CondenserBlockEntity.FREEZING_REQUIRED_ITEMS),
-                barX + barW / 2, y + 106, barW - 6, freezeColor, .7F);
+                barX + barW / 2, y + 143, barW - 6, freezeColor, .7F);
     }
 
     private void renderLocks(GuiGraphics g, int x, int y) {
@@ -154,7 +157,7 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
             int sx = menu.getSlot(slot).x, sy = menu.getSlot(slot).y;
             ItemStack filter = menu.filter(slot);
             if (!filter.isEmpty()) {
-                skin.lock(g, x + sx + 12, y + sy - 7);
+                skin.lock(g, x + sx + 12, y + sy - 9);
                 if (menu.getSlot(slot).getItem().isEmpty()) {
                     g.renderItem(filter, x + sx, y + sy);
                     g.fill(x + sx, y + sy, x + sx + 16, y + sy + 16, 0x88404C55);
@@ -172,24 +175,5 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
             case 3 -> "hint_full";
             default -> "hint_base";
         };
-    }
-
-    @Override public boolean mouseClicked(double x, double y, int button) {
-        int mx = logicalMouseX(x) - leftPos, my = logicalMouseY(y) - topPos;
-        int start = menu.hasMixingChamber() ? 111 : 83;
-        if (button == 0 && mx >= start && mx <= 184 && my >= 62 && my <= 84 && ClientMachineRecipes.available()) {
-            ClientMachineRecipes.condenser();
-            return true;
-        }
-        return super.mouseClicked(x, y, button);
-    }
-
-    @Override protected void renderMachineTooltip(GuiGraphics g, int mouseX, int mouseY) {
-        for (int slot : new int[]{CondenserBlockEntity.INPUT, CondenserBlockEntity.SECOND_INPUT, CondenserBlockEntity.FREEZING_INPUT}) {
-            if (!menu.getSlot(slot).isActive() || !menu.editing()) continue;
-            int sx = leftPos + menu.getSlot(slot).x, sy = topPos + menu.getSlot(slot).y;
-            if (mouseX >= sx - 4 && mouseX < sx + 20 && mouseY >= sy - 4 && mouseY < sy + 20)
-                g.renderComponentTooltip(font, java.util.List.of(Component.translatable("gui.forever_skyblock.filter_clear")), mouseX, mouseY);
-        }
     }
 }

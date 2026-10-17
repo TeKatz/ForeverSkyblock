@@ -9,5 +9,8 @@
   "gui.forever_skyblock.machine.hint_base": "Misch- oder Gefrierkammer direkt anbauen, um den Kondensator zu erweitern",
   "gui.forever_skyblock.machine.hint_mixing": "Mischen aktiv · Gefrierkammer kann separat angebaut werden",
   "gui.forever_skyblock.machine.hint_freezing": "Gefrieren aktiv · Mischkammer kann separat angebaut werden",
-  "gui.forever_skyblock.machine.hint_full": "Beide Module aktiv"
+  "gui.forever_skyblock.machine.hint_full": "Beide Module aktiv",
+  "jei.forever_skyblock.freezing": "Gefrieren",
+  "jei.forever_skyblock.freezing_items": "32 Items",
+  "jei.forever_skyblock.freezing_any_item": "Jedes Item akzeptiert"
 }

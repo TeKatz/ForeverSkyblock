@@ -1,4 +1,4 @@
-# Freezing Chamber Mark I and workbench gate — 0.18.0 development
+# Freezing Chamber Mark I and workbench gate — 0.18.1 development
 
 Development branch: `feature/freezing-chamber-workbench`, based on the validated 0.17.1 emergency-hotfix head. No merge or release is implied. The fixed starter-island NBT is unchanged.
 
@@ -24,9 +24,11 @@ The input accepts any registered item unless its input lock restricts it. One re
 
 Freezing runs independently and in parallel with the normal condenser recipe. Removing the module hides and disables its slots but preserves real input, output, partial progress and its lock. Reattaching resumes from the saved state. Breaking the condenser still drops every real stored stack exactly once.
 
+The 0.18.1 visual cleanup raises the four decorative top bolts above the frame plane. They no longer share a coplanar top surface with the surrounding rim, removing the observed top-side z-fighting while retaining Design 3's recessed basin silhouette.
+
 ## Input locks and automation
 
-The existing **Edit input locks** mode now covers all active condenser inputs:
+The existing **Edit input locks** mode covers all active condenser inputs:
 
 - main condenser input;
 - Mixing Chamber input, while connected;
@@ -35,6 +37,8 @@ The existing **Edit input locks** mode now covers all active condenser inputs:
 The Freezing input accepts every item only while unlocked. A lock is enforced by manual insertion, drag/ghost editing, JEI ghost input and NeoForge item-handler automation. Disconnected module slots are not exposed to automation. The bottom capability extracts either real output when its corresponding process is available.
 
 Because an unlocked Freezing input accepts every item, it is deliberately excluded from generic shift-click routing and normal condensing JEI transfers. Automated installations should lock it when deterministic routing matters.
+
+Lock editing no longer renders a second per-slot help tooltip on top of the normal item tooltip. Lock instructions remain on the lock-edit button while the normal item tooltip remains readable.
 
 ## Dynamic condenser menu
 
@@ -46,6 +50,12 @@ The container keeps five stable machine slot indices but presents four live modu
 4. condenser + both modules.
 
 The Mixing input and Freezing input/output activate only for their own adjacent module. The screen renders a separate 0/32 Freezing progress section when applicable, while the original timed condensing progress remains independent. Placing or removing either module while the menu is open changes the state immediately through normal container synchronization.
+
+For 0.18.1 the condenser screen is taller and the timed condensing section, Freezing section, action buttons, module-state hint and player inventory are vertically separated. The logical slot indices and automation semantics are unchanged. The former hidden click target across the upper progress area has been removed; JEI now opens only from the explicit **Recipes** button or normal JEI interactions.
+
+## JEI
+
+Freezing has its own JEI category in the same visual language as Condensing. It shows a wildcard input, 32-item material progress, one Ice output, no power requirement and the adjacent Freezing Chamber requirement. The wildcard is deliberately not registered as every item in the pack, preventing the Freezing recipe from polluting every item's JEI Uses page. Ice and the Freezing Chamber still lead to the entry normally, and the condenser **Recipes** button opens both Condensing and Freezing categories.
 
 ## Crafting Table progression gate
 
@@ -60,4 +70,4 @@ The override is bundled in the mod and mirrored into the Forever Recipe Editor g
 
 ## Validation target
 
-The 0.18.0 branch must retain the existing Java 21 build, client mixin smoke test, dedicated condenser regression GameTests and full NeoForge 21.1.259 integration suite. New tests cover all four live menu states, any-item freezing, exact 32-item output, blocked output safety, persisted progress/locks, automation filtering, module disconnect/reconnect, parallel Mixing + Freezing operation, transfer isolation, the new chamber recipe and the Stone Meal workbench gate.
+The 0.18.1 branch must retain the existing Java 21 build, client mixin smoke test, dedicated condenser regression GameTests and full NeoForge 21.1.259 integration suite. Tests cover all four live menu states, any-item freezing, exact 32-item output, blocked output safety, persisted progress/locks, automation filtering, module disconnect/reconnect, parallel Mixing + Freezing operation, transfer isolation, the chamber recipe, the Stone Meal workbench gate, the expanded condenser layout and the non-coplanar Freezing Chamber top details.
