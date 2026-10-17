@@ -1,28 +1,30 @@
 package de.tekatz.foreverskyblock.mixin;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.tekatz.foreverskyblock.client.PremiumSkillScreen;
-import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
-import org.spongepowered.asm.mixin.injection.Inject;
 
 /** Guards client mixin target names that ordinary dedicated-server GameTests cannot validate. */
 class PremiumShopMixinTargetTest {
     @Test
     void shopMixinTargetsMatchCurrentPremiumScreenMethods() throws Exception {
-        assertNotNull(PremiumSkillScreen.class.getDeclaredMethod("generalCards"));
-        assertNotNull(PremiumSkillScreen.class.getDeclaredMethod("canBuyProduct", String.class));
-        assertNotNull(PremiumSkillScreen.class.getDeclaredMethod("productStatus", String.class));
-        assertNotNull(PremiumSkillScreen.class.getDeclaredMethod("confirmProduct", String.class));
+        String screen = Files.readString(Path.of("src/main/java/de/tekatz/foreverskyblock/client/PremiumSkillScreen.java"));
+        String mixin = Files.readString(Path.of("src/main/java/de/tekatz/foreverskyblock/mixin/PremiumShopScreenMixin.java"));
 
-        Method addProducts = PremiumShopScreenMixin.class.getDeclaredMethod(
-                "foreverSkyblock$addProducts",
-                org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable.class);
-        Inject inject = addProducts.getAnnotation(Inject.class);
-        assertNotNull(inject, "Shop-card handler must remain an @Inject method");
-        assertArrayEquals(new String[]{"generalCards"}, inject.method(),
-                "Shop-card mixin must target the current card factory method");
+        assertTrue(screen.contains("private List<Card> generalCards()"), "PremiumSkillScreen must expose the current card factory");
+        assertTrue(screen.contains("private boolean canBuyProduct(String id)"), "PremiumSkillScreen must expose product eligibility");
+        assertTrue(screen.contains("private Component productStatus(String id)"), "PremiumSkillScreen must expose product status");
+        assertTrue(screen.contains("private void confirmProduct(String id)"), "PremiumSkillScreen must expose product confirmation");
+
+        assertTrue(mixin.contains("@Inject(method = \"generalCards\""),
+                "PremiumShopScreenMixin must inject into the current card factory method");
+        assertTrue(mixin.contains("@Inject(method = \"canBuyProduct\""),
+                "PremiumShopScreenMixin must inject into product eligibility");
+        assertTrue(mixin.contains("@Inject(method = \"productStatus\""),
+                "PremiumShopScreenMixin must inject into product status");
+        assertTrue(mixin.contains("@Inject(method = \"confirmProduct\""),
+                "PremiumShopScreenMixin must inject into product confirmation");
     }
 }
