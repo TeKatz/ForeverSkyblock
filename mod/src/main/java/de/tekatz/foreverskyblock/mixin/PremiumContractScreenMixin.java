@@ -83,7 +83,7 @@ public abstract class PremiumContractScreenMixin {
         var state = snapshot == null ? null : snapshot.contracts().get(contract.id());
         boolean available = state != null && state.available();
         int border = available ? 0xFF385D72 : 0xFF493F42;
-        g.fill(cx, cy, cx + cw, cy + ch, available ? 0xE20C1C29 : 0xD9181A1D); outline(g, cx, cy, cw, ch, border);
+        g.fill(cx, cy, cx + cw, cy + ch, available ? 0xE20C1C29 : 0xD9181A1D); contractOutline(g, cx, cy, cw, ch, border);
         ItemStack icon = icon(contract); g.renderItem(icon, cx + 6, cy + 7);
         String title = german() ? contract.titleDe() : contract.titleEn();
         String description = german() ? contract.descriptionDe() : contract.descriptionEn();
@@ -100,7 +100,7 @@ public abstract class PremiumContractScreenMixin {
         if (!available) g.drawString(font, german() ? "Tier I erforderlich" : "Requires Tier I", cx + Math.max(6, cw - 92), cy + ch - 13, 0xFFFF7777, false);
         else if (contract.resource()) {
             int bx = cx + cw - 61, by = cy + ch - 17; boolean submit = state != null && state.canSubmit();
-            g.fill(bx, by, bx + 55, by + 13, submit ? 0xFF174B5B : 0xFF23323A); outline(g, bx, by, 55, 13, submit ? CYAN : 0xFF4A5D68);
+            g.fill(bx, by, bx + 55, by + 13, submit ? 0xFF174B5B : 0xFF23323A); contractOutline(g, bx, by, 55, 13, submit ? CYAN : 0xFF4A5D68);
             String button = state != null && state.pending() ? (german() ? "LAEUFT" : "PENDING") : (german() ? "ABGEBEN" : "TURN IN");
             int tw = font.width(button); g.drawString(font, button, bx + (55 - tw) / 2, by + 3, submit ? WHITE : MUTED, false);
         } else if (ch >= 50) {
@@ -126,7 +126,7 @@ public abstract class PremiumContractScreenMixin {
         catch (RuntimeException e) { return Items.BARRIER.getDefaultInstance(); }
     }
     private static String trim(Font font, String text, int width) { return font.plainSubstrByWidth(text, Math.max(1, width)); }
-    private static void outline(GuiGraphics g, int x, int y, int w, int h, int color) {
+    private static void contractOutline(GuiGraphics g, int x, int y, int w, int h, int color) {
         g.fill(x, y, x + w, y + 1, color); g.fill(x, y + h - 1, x + w, y + h, color);
         g.fill(x, y, x + 1, y + h, color); g.fill(x + w - 1, y, x + w, y + h, color);
     }
