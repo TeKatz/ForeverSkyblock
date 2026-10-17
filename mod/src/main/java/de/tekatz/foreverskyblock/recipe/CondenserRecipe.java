@@ -4,7 +4,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import de.tekatz.foreverskyblock.ForeverSkyblock;
-import java.util.List;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -32,20 +31,20 @@ public record CondenserRecipe(Ingredient ingredient, int ingredientCount, Ingred
         return ingredient.test(stack) || requiresModule() && secondaryIngredient.test(stack);
     }
     @Override public boolean matches(CondenserInput input, Level level) {
-        if (input.primary().isEmpty()) return false;
-        if (!requiresModule()) return ingredient.test(input.primary()) && input.primary().getCount() >= ingredientCount;
-        if (input.secondary().isEmpty()) return false;
-        boolean direct = ingredient.test(input.primary()) && input.primary().getCount() >= ingredientCount
-                && secondaryIngredient.test(input.secondary());
-        boolean swapped = secondaryIngredient.test(input.primary()) && ingredient.test(input.secondary())
-                && input.secondary().getCount() >= ingredientCount;
+        if (input.first().isEmpty()) return false;
+        if (!requiresModule()) return ingredient.test(input.first()) && input.first().getCount() >= ingredientCount;
+        if (input.second().isEmpty()) return false;
+        boolean direct = ingredient.test(input.first()) && input.first().getCount() >= ingredientCount
+                && secondaryIngredient.test(input.second());
+        boolean swapped = secondaryIngredient.test(input.first()) && ingredient.test(input.second())
+                && input.second().getCount() >= ingredientCount;
         return direct || swapped;
     }
     public int primaryConsumption(CondenserInput input) {
-        return ingredient.test(input.primary()) ? ingredientCount : 1;
+        return ingredient.test(input.first()) ? ingredientCount : 1;
     }
     public int secondaryConsumption(CondenserInput input) {
-        return requiresModule() && ingredient.test(input.secondary()) ? ingredientCount : 1;
+        return requiresModule() && ingredient.test(input.second()) ? ingredientCount : 1;
     }
     public ItemStack result() {
         return output.isEmpty() ? new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), fragmentCount) : output.copy();
