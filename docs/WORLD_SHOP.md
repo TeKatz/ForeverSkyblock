@@ -1,10 +1,10 @@
-# Current-world shop and real package delivery — Phase 6 / 0.15.0 development
+# Current-world shop and world-state progression — integrated baseline
 
-The stable world identity, claim and purchase-receipt foundation was introduced in 0.12.0 / Phase 3 and is integrated in `main` through the 0.13.4 baseline. This document also describes the **0.15.0 Phase 6 development branch** `feature/real-world-shop-phase6`, which is based on the 0.14.0 Phase 5 contract head. Phase 6 is not yet merged or released.
+The stable world identity, claim and purchase-receipt foundation was introduced in 0.12.0. Real package delivery followed in 0.15.0 and world-wide QoL upgrades in 0.17.0. The complete stack is integrated into the current 0.18.1 `main` baseline through PR #13.
 
 Minecraft 1.21.1, Java 21; pack runtime NeoForge 21.1.259.
 
-## Active Phase 6 product
+## Active real package
 
 | Field | Value |
 | --- | --- |
@@ -30,19 +30,35 @@ Package contents are server-owned:
 
 The package is intentionally automation-oriented. It does **not** contain an AE2 item storage cell, 64k Crafting Storage or Wireless Crafting Terminal, so the package cannot satisfy those existing personal challenges merely by being bought. Required item IDs are resolved from the live server registry; a missing/renamed entry makes the product unavailable instead of weakening or substituting its contents.
 
-The old `forever_skyblock:phase3_test_entitlement` remains in the server catalog for regression coverage and operator/development use, but the Phase 6 Current World page hides it in favor of the real package.
+The old `forever_skyblock:phase3_test_entitlement` remains in the server catalog for regression/operator development coverage, but the normal Current World page hides it in favor of real products and upgrades.
+
+## Active world-wide upgrades
+
+World Upgrades are non-delivery Current World products. They are paid through the same stable world-identity transaction system but activate persistent world state instead of creating a Supply Cache.
+
+| Upgrade | Price | Tier | Integrated effect |
+| --- | ---: | --- | --- |
+| No Phantoms | 1 SP | Tier 0 | disables insomnia and blocks new Phantom entity joins |
+| No More Rain | 2 SP | Tier 0 | clears Overworld rain/thunder and disables weather cycling |
+| Permanent Day | 3 SP | Tier 0 | fixes Overworld daytime at 1000 and disables daylight cycling |
+
+Each upgrade is charged once for the stable world identity. Its effect is world-wide; other players mirror the active claim for UI/idempotency purposes without a second SP debit.
+
+World-wide state is persisted separately in `data/forever_skyblock_world_progress.json` with a `.bak` copy. The file stores schema 1, the stable world UUID, the Wandering Trader unlock and active world upgrades. It fails closed if its stored world identity does not match the save's stable identity.
+
+If an SP debit/profile claim commits but world-state activation is interrupted, login or opening progression reconciles the paid claim into the world state. Once global state is active, current players mirror the claim so the same upgrade cannot be repurchased.
 
 ## Stable world identity
 
 Each save receives a random UUID stored under its world root in `data/forever_skyblock_world_identity.json`, with an independent `.bak` copy. Restart/rename retains it; a copied save intentionally retains it and therefore the same claims; a genuinely new save gets a different UUID. One missing/corrupt copy can be repaired from the other, while conflicting valid UUIDs fail closed.
 
-Normal UI shows the friendly world name rather than exposing the identity. The identity itself remains server-authoritative and is used when validating the purchase, delivery entitlement and supply cache.
+Normal UI shows the friendly world name rather than exposing the identity. The identity itself remains server-authoritative and is used when validating purchases, delivery entitlements, Supply Caches and world-upgrade state.
 
-## Purchase transaction
+## Package purchase transaction
 
 The client sends only a product ID. The server owns scope, tier, price, PP cost, contents, player and current world.
 
-A successful real purchase atomically persists:
+A successful real package purchase atomically persists:
 
 1. 12-SP debit and accounting increment;
 2. current-world product claim;
@@ -53,9 +69,9 @@ The profile write-ahead journal remains the economic commit point. A failed prof
 
 ## Recipient-bound delivery protocol
 
-Phase 6 avoids directly granting a set of anonymous valuable stacks during purchase. The committed entitlement moves through a bounded state machine:
+The committed package entitlement moves through a bounded state machine:
 
-`READY → DISPATCHING → DELIVERED → OPENING → OPENED`
+`READY -> DISPATCHING -> DELIVERED -> OPENING -> OPENED`
 
 ### Claiming the package
 
@@ -69,7 +85,7 @@ Phase 6 avoids directly granting a set of anonymous valuable stacks during purch
 
 - Only the matching owner in the matching world can use the cache.
 - The server verifies the delivery receipt and catalog again; item data never supplies package contents.
-- Enough empty main-inventory slots are required before the server commits **OPENING**.
+- Enough empty main-inventory capacity is required before the server commits **OPENING**. The consumed cache's own main-inventory slot counts as available capacity; offhand does not.
 - The cache is consumed and the exact catalog stacks are inserted, then player data is forced to disk and the profile moves to **OPENED**.
 - On restart while OPENING: if the cache is still present, the item mutation was not durably completed and recovery repeats the bounded opening path; if the cache is absent after the checkpoint, recovery finalizes OPENED instead of issuing contents again.
 - Copies/replays of the same cache cannot open after its receipt reaches OPENED.
@@ -78,33 +94,18 @@ This protocol is designed for ordinary process/server crashes around the explici
 
 ## Schema and network boundary
 
-- Existing untouched profiles continue to serialize as schema **4**.
-- A profile with Phase 5 contract state but no delivery stays schema **5**.
-- The first real delivery entitlement upgrades it to schema **6**.
-- Schema 6 adds delivery receipts/stages and records PP cost in purchase receipts.
-- Network protocol is **`skills-8`** and sends bounded server-owned product availability/delivery state to the matching client.
+- untouched/base profiles can remain schema **4**;
+- a profile with contract state but no delivery can remain schema **5**;
+- the first real delivery entitlement raises it to schema **6**;
+- schema 6 adds delivery receipts/stages and records PP cost in purchase receipts;
+- current client/server protocol is **`skills-8`**.
 
-Older 0.14.0 and 0.13.4 builds cannot be assumed to read profiles after a schema-6 delivery purchase. Back up both `forever_skyblock/progression/` and the test world/player data before testing.
+Older builds cannot be assumed to read profiles after newer schema-5/6 state has been written. Back up both `forever_skyblock/progression/` and the world/player data before downgrade experiments.
 
-## Automated validation boundary
+## Validation boundary
 
-Pure tests cover one-time debit/claim/delivery creation, strict delivery-stage transitions, respec preservation and schema-5 → schema-6 persistence. Dedicated GameTests cover the unique supply-cache marker and the expanded network payload. The NeoForge 21.1.259 integration suite checks all six AE2 registry IDs used by the package along with the existing Phase 4 integrations.
+Unit tests cover one-time debit/claim/delivery creation, delivery-stage transitions, world-state identity/recovery and schema persistence. Dedicated GameTests cover Supply Cache behavior and network boundaries. The NeoForge 21.1.259 integration suite checks the AE2 registry IDs used by the package along with the existing optional integrations.
 
-The complete 0.15.0 source commit `ae1eba7720e30042b5b2dcf7e57c04ec7b2a8ae7` passed GitHub Actions **run #165** on October 16, 2026: Java 21 build/unit tests, baseline dedicated GameTests, the NeoForge 21.1.259 pack-integration suite and artifact upload all succeeded.
+The final integrated 0.18.1 feature head `97715f06391339141032c5f0c859b5925f99539d` passed GitHub Actions run #195 before PR #13 merged it into `main`. Headless CI does not prove rendered Shop layout or a real OS-level kill at every exact inventory checkpoint.
 
-Headless tests cannot prove rendered Shop layout or a real OS-level kill at every exact inventory checkpoint. Those remain manual acceptance items.
-
-## Manual acceptance
-
-1. Back up the progression directory **and** the test world/player data. Use matching 0.15.0 client/server JARs.
-2. Confirm the existing Phase 5 profile, contracts, SP/PP, challenges, research and Tier I are unchanged on load.
-3. Open K → Shop → Current World. Verify the real AE2 package, 12-SP price, Tier-I gate, world name and no visible development entitlement.
-4. With fewer than 12 SP, verify purchase is disabled. With 12+ SP, confirm once and verify exactly 12 SP is deducted.
-5. Reopen the page. Verify the product is not purchasable again and shows **Claim Package**.
-6. Claim it with one empty inventory slot. Verify exactly one Forever Supply Cache appears and restart before opening it; the receipt remains delivered without duplication.
-7. Try the cache with another player and in another world; it must not deliver contents.
-8. Return to the purchasing world/owner, ensure at least six empty ordinary inventory slots, then open the cache. Verify the exact six configured stacks and no storage-cell/challenge reward appears merely from delivery.
-9. Reopen/replay a copied cache with the same receipt; it must not pay again. Restart and verify the package remains OPENED/claimed.
-10. Check EN/DE Shop presentation and GUI scales 2/3/4. Recheck Contracts, Challenges, Research, Perks, Condenser/Ascension GUIs and JEI.
-
-No manual client acceptance is claimed until TeKatz reports it.
+Tier II-IV, more valuable current-world packages and final pricing/balance remain intentionally deferred.
