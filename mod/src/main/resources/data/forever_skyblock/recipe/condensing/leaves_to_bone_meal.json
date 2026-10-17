@@ -1,0 +1,12 @@
+{
+  "type": "forever_skyblock:condensing",
+  "ingredient": {
+    "tag": "minecraft:leaves"
+  },
+  "ingredient_count": 8,
+  "result": {
+    "id": "minecraft:bone_meal",
+    "count": 1
+  },
+  "processing_time": 160
+}

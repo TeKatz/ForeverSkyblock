@@ -58,14 +58,11 @@ public final class ChallengeEvents {
                 "forever_skyblock:reinforced_netherite_ingot", 1))) return List.of(Evidence.completed(ChallengeRules.NETHERITE));
         return List.of();
     }
-    /** The vanilla PLAYER_KILLED_ENTITY trigger supplies its credited killer, never nearby spectators. */
+    /** Boss credit and repeatable contracts are reduced in one atomic profile update to avoid first-kill double payment. */
     public static void killed(ServerPlayer player, Entity victim) {
         if (!realPlayer(player) || victim.level().isClientSide() || victim == player) return;
-        var evidence = new ArrayList<Evidence>();
-        if (victim.getType() == EntityType.WITHER) evidence.add(Evidence.completed(ChallengeRules.WITHER));
-        if (victim.getType() == EntityType.ENDER_DRAGON) evidence.add(Evidence.completed(ChallengeRules.DRAGON));
-        if (victim.getType().getCategory() == MobCategory.MONSTER)
-            evidence.add(new Evidence(ChallengeRules.VETERAN.id(), victim.getUUID().toString()));
-        if (!evidence.isEmpty()) ProgressionService.get(player.server).evidence(player, evidence);
+        ProgressionService.get(player.server).killEvidence(player,
+                victim.getType() == EntityType.WITHER, victim.getType() == EntityType.ENDER_DRAGON,
+                victim.getType().getCategory() == MobCategory.MONSTER, victim.getUUID());
     }
 }

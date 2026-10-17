@@ -1,6 +1,32 @@
 # Changelog
 
-This file is the concise version history. Detailed test evidence belongs in [VALIDATION.md](VALIDATION.md); current implementation status belongs in [CURRENT_STATE.md](CURRENT_STATE.md).
+This file is the concise version history. Detailed test evidence belongs in [VALIDATION.md](VALIDATION.md); current integrated repository status belongs in [CURRENT_STATE.md](CURRENT_STATE.md). Entries above 0.13.4 below are development-branch versions until explicitly merged.
+
+## 0.16.0 — General polish / phase 7 development
+
+- Keep pack progression balance intentionally unchanged while the wider modpack structure is still being designed.
+- Harden progression request validation without changing the `skills-8` packet shape or schema 4/5/6 persistence model.
+- Correct the real World Shop purchase confirmation so it describes the actual package instead of the obsolete Phase-3 test entitlement.
+- Keep READY package claims actionable from the World Shop instead of disabling the visible Claim Package button with new-purchase rules.
+- Allow a consumed Supply Cache to contribute its own main-inventory slot to package delivery capacity while correctly excluding offhand capacity.
+- Extend GameTests for claim requests, malformed progression packets and Supply Cache slot reuse.
+- Rename CI stages around the current regression/full-pack integration boundary and document deferred balance/K-menu work explicitly.
+
+## 0.15.0 — Real current-world shop delivery / phase 6 development
+
+- Activate the first bounded real product, `shop/advanced_ae2_starter`, at Tier I for 12 SP / 0 PP once per player/world identity.
+- Deliver a deliberately challenge-safe AE2 autocrafting infrastructure package through a unique owner/world/receipt-bound Supply Cache.
+- Add durable READY/DISPATCHING/DELIVERED/OPENING/OPENED delivery reconciliation around forced player-data checkpoints.
+- Add dynamic schema 6 only once delivery state exists; contract-only profiles remain schema 5 and untouched profiles remain schema 4.
+- Move the matching client/server protocol to `skills-8` with bounded authoritative product state.
+- Keep Tier II-IV, additional real products and arbitrary-backup rollback recovery outside this phase.
+
+## 0.14.0 — Repeatable contracts / phase 5 development
+
+- Add Dragon Reborn and Wither Hunter repeatable boss payouts after their one-time milestones.
+- Add explicit Singularity, Nitro and Antimatter resource turn-ins with server-side consumption.
+- Add replay guards, durable resource intents and crash-recovery checks around player inventory checkpoints.
+- Introduce dynamic schema 5 for contract state and protocol `skills-7` while preserving schema-4 profiles until needed.
 
 ## 0.13.4 — Design-2 revision 3 and main integration
 

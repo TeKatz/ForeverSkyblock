@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'de.tekatz.foreverskyblock'
-version = '0.13.4'
+version = '0.18.1'
 base.archivesName = 'ForeverSkyblock-1.21.1-NeoForge'
 
 repositories {
@@ -64,12 +64,12 @@ dependencies {
         runtimeOnly 'org.appliedenergistics:guideme:21.1.19'
     }
     if (project.hasProperty('ascensionTests') || project.hasProperty('techChallengeTests')) {
-        runtimeOnly('maven.modrinth:mekanism:5KzzycBT') { transitive = false } // 10.7.19.85
-        runtimeOnly('maven.modrinth:powah:1prWLuga') { transitive = false } // 6.2.10
-        runtimeOnly('maven.modrinth:cloth-config:izKINKFg') { transitive = false } // 15.0.140 NeoForge
+        runtimeOnly('maven.modrinth:mekanism:5KzzycBT') { transitive = false }
+        runtimeOnly('maven.modrinth:powah:1prWLuga') { transitive = false }
+        runtimeOnly('maven.modrinth:cloth-config:izKINKFg') { transitive = false }
     }
     if (project.hasProperty('techChallengeTests')) {
-        runtimeOnly('curse.maven:mystical-agriculture-246640:8796913') { transitive = false } // 8.0.28
+        runtimeOnly('curse.maven:mystical-agriculture-246640:8796913') { transitive = false }
         runtimeOnly 'curse.maven:cucumber-272335:8035802'
     }
     if (project.hasProperty('toolIntegrationTests')) {

@@ -22,22 +22,26 @@ public final class CondenserJeiPlugin implements IModPlugin {
     @Override public ResourceLocation getPluginUid() { return ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "jei"); }
     @Override public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime runtime) { JetpackJeiVisibility.available(runtime);
         de.tekatz.foreverskyblock.client.ClientMachineRecipes.install(
-                () -> runtime.getRecipesGui().showTypes(java.util.List.of(TYPE)),
+                () -> runtime.getRecipesGui().showTypes(java.util.List.of(TYPE, FreezingCategory.TYPE)),
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(AscensionCategory.TYPE)));
     }
     @Override public void onRuntimeUnavailable() { de.tekatz.foreverskyblock.client.ClientMachineRecipes.clear(); JetpackJeiVisibility.unavailable(); if (transfers != null) transfers.clearPending(); }
     @Override public void registerCategories(IRecipeCategoryRegistration registration) {
         registration.addRecipeCategories(new AscensionCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CondensingCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new FreezingCategory(registration.getJeiHelpers().getGuiHelper()));
     }
     @Override public void registerRecipes(IRecipeRegistration registration) {
         registration.addRecipes(AscensionCategory.TYPE, java.util.List.of(AscensionCategory.Conversion.CORE));
+        registration.addRecipes(FreezingCategory.TYPE, java.util.List.of(FreezingCategory.Process.ICE));
         var level = Minecraft.getInstance().level;
         if (level != null) registration.addRecipes(TYPE, level.getRecipeManager().getAllRecipesFor(ForeverSkyblock.CONDENSING.get()));
     }
     @Override public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         registration.addRecipeCatalyst(ForeverSkyblock.ASCENSION_CHAMBER.get(), AscensionCategory.TYPE);
         registration.addRecipeCatalyst(ForeverSkyblock.CONDENSER_MARK_I.get(), TYPE);
+        registration.addRecipeCatalyst(ForeverSkyblock.CONDENSER_MARK_I.get(), FreezingCategory.TYPE);
+        registration.addRecipeCatalyst(ForeverSkyblock.FREEZING_CHAMBER_MARK_I.get(), FreezingCategory.TYPE);
     }
     private CondenserRecipeTransferHandler transfers;
     @Override public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {

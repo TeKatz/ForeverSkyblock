@@ -1,9 +1,13 @@
 package de.tekatz.foreverskyblock;
 
 import com.mojang.authlib.GameProfile;
+import de.tekatz.foreverskyblock.item.SupplyCacheItem;
 import de.tekatz.foreverskyblock.network.SkillNetwork;
+import de.tekatz.foreverskyblock.progression.ContractCatalog;
 import de.tekatz.foreverskyblock.progression.MilestoneCatalog;
 import de.tekatz.foreverskyblock.progression.ProgressionProfile;
+import de.tekatz.foreverskyblock.progression.ProgressionService;
+import de.tekatz.foreverskyblock.progression.ShopCatalog;
 import de.tekatz.foreverskyblock.progression.SkillCatalog;
 import de.tekatz.foreverskyblock.progression.SkillMessages;
 import io.netty.buffer.Unpooled;
@@ -13,6 +17,7 @@ import java.util.UUID;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
@@ -60,15 +65,70 @@ public final class SkillGameTests {
             SkillNetwork.Request.CODEC.encode(buffer, reset);
             h.assertTrue(reset.equals(SkillNetwork.Request.CODEC.decode(buffer)), "Reset request round trips");
             buffer.clear();
+            var claim = new SkillNetwork.Request(5, ShopCatalog.ADVANCED_AE2_STARTER.id());
+            SkillNetwork.Request.CODEC.encode(buffer, claim);
+            h.assertTrue(claim.equals(SkillNetwork.Request.CODEC.decode(buffer)), "World-package claim request round trips");
+            buffer.clear();
+            var contractRequest = new SkillNetwork.ContractRequest(ContractCatalog.SINGULARITY.id(), UUID.randomUUID());
+            SkillNetwork.ContractRequest.CODEC.encode(buffer, contractRequest);
+            h.assertTrue(contractRequest.equals(SkillNetwork.ContractRequest.CODEC.decode(buffer)), "Contract request round trips");
+            buffer.clear();
+            var contractStates = Map.of(ContractCatalog.SINGULARITY.id(), new SkillNetwork.ContractState(4, 2, true, true, false));
+            var productStates = Map.of(ShopCatalog.ADVANCED_AE2_STARTER.id(), new SkillNetwork.ProductState(1, true));
             var state = new SkillNetwork.Snapshot(3, 2, Map.of(SkillCatalog.EXTENDED_REACH, 1),
                     Set.of(MilestoneCatalog.FIRST_FOUNDATIONS.id()), true, true, true, "purchased", true, 1,
                     Map.of("forever_skyblock:veteran", 630, "forever_skyblock:permanent_tools_i", 3),
                     new de.tekatz.foreverskyblock.progression.MetaProgress.Accounting(12, 1, 5, 0, 1, 0, 10, true),
-                    true, "Phase 3 Test", Set.of(de.tekatz.foreverskyblock.progression.ShopCatalog.TEST_WORLD_ENTITLEMENT));
+                    true, "Phase 7 Test", Set.of(ShopCatalog.ADVANCED_AE2_STARTER.id()), contractStates, productStates);
             SkillNetwork.Snapshot.CODEC.encode(buffer, state);
             h.assertTrue(state.equals(SkillNetwork.Snapshot.CODEC.decode(buffer)), "Authoritative profile snapshot round trips");
             h.succeed();
         } finally { buffer.release(); }
+    }
+    @GameTest(template = "empty")
+    public static void malformedProgressionRequestsAreRejected(GameTestHelper h) {
+        h.assertTrue(rejected(() -> new SkillNetwork.Request(6, "")), "Unknown progression actions are rejected");
+        h.assertTrue(rejected(() -> new SkillNetwork.Request(0, SkillCatalog.EXTENDED_REACH)), "Open action rejects an unexpected id");
+        h.assertTrue(rejected(() -> new SkillNetwork.Request(4, "not an id")), "World-shop action rejects malformed product ids");
+        h.assertTrue(rejected(() -> new SkillNetwork.Request(5, "")), "World-package claim requires a product id");
+        h.succeed();
+    }
+    private static boolean rejected(Runnable action) {
+        try { action.run(); return false; }
+        catch (IllegalArgumentException expected) { return true; }
+    }
+    @GameTest(template = "empty")
+    public static void supplyCacheIdentityRoundTripsWithoutTrustingDisplayData(GameTestHelper h) {
+        UUID receipt = UUID.randomUUID(), owner = UUID.randomUUID(), world = UUID.randomUUID();
+        var stack = SupplyCacheItem.create(ShopCatalog.ADVANCED_AE2_STARTER, receipt, owner, world);
+        var marker = SupplyCacheItem.marker(stack);
+        h.assertTrue(marker != null, "A server-issued supply cache has a valid marker");
+        h.assertTrue(marker.receiptId().equals(receipt) && marker.ownerId().equals(owner) && marker.worldId().equals(world),
+                "Supply cache preserves receipt, owner and world identities");
+        h.assertTrue(marker.productId().equals(ShopCatalog.ADVANCED_AE2_STARTER.id()), "Supply cache preserves the server product id");
+        h.assertTrue(stack.getCount() == 1 && stack.getMaxStackSize() == 1, "Supply caches cannot stack together");
+        h.succeed();
+    }
+    @GameTest(template = "empty")
+    public static void supplyCacheReusesOnlyItsOwnMainInventorySlot(GameTestHelper h) throws Exception {
+        var player = FakePlayerFactory.get(h.getLevel(), new GameProfile(UUID.randomUUID(), "SupplySpaceTest"));
+        var inventory = player.getInventory();
+        inventory.clearContent();
+        var cache = SupplyCacheItem.create(ShopCatalog.ADVANCED_AE2_STARTER, UUID.randomUUID(), player.getUUID(), UUID.randomUUID());
+        inventory.setItem(0, cache);
+        for (int slot = 1; slot <= 30; slot++) inventory.setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+
+        var capacity = ProgressionService.class.getDeclaredMethod("hasContentSpace",
+                net.minecraft.server.level.ServerPlayer.class, ShopCatalog.Product.class, ItemStack.class);
+        capacity.setAccessible(true);
+        h.assertTrue((boolean) capacity.invoke(null, player, ShopCatalog.ADVANCED_AE2_STARTER, cache),
+                "A main-inventory Supply Cache contributes the slot it frees when consumed");
+
+        inventory.setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+        player.setItemInHand(InteractionHand.OFF_HAND, cache);
+        h.assertTrue(!(boolean) capacity.invoke(null, player, ShopCatalog.ADVANCED_AE2_STARTER, cache),
+                "An offhand Supply Cache does not create main-inventory package capacity");
+        h.succeed();
     }
     @GameTest(template = "empty")
     public static void runningServerWorldIdentityIsStable(GameTestHelper h) throws Exception {
@@ -106,5 +166,4 @@ public final class SkillGameTests {
         h.assertTrue(message.getStyle().getClickEvent() == null && message.getStyle().getColor() == null, "Link styling stays on points");
         h.succeed();
     }
-
 }

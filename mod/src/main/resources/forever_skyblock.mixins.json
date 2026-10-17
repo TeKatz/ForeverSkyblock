@@ -17,13 +17,16 @@
     "ToolRecipeManagerMixin",
     "ToolRepairRecipeMixin",
     "PersonalCraftMixin",
-    "PersonalKillMixin"
+    "PersonalKillMixin",
+    "ProgressionServiceWorldMixin"
   ],
   "client": [
     "PremiumSkillScreenVisualMixin",
     "PremiumChallengeCardVisualMixin",
     "PremiumCategoryButtonVisualMixin",
-    "PremiumChromeButtonVisualMixin"
+    "PremiumChromeButtonVisualMixin",
+    "PremiumContractScreenMixin",
+    "PremiumShopScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

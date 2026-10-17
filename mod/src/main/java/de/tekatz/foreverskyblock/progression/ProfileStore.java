@@ -23,7 +23,7 @@ import java.util.function.UnaryOperator;
 /** Stored outside saves/: deleting a world does not delete the player's progression. */
 public final class ProfileStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final int SCHEMA = 4;
+    private static final int SCHEMA = 6;
     private static final long MAX_FILE_SIZE = 1_048_576;
     private final Path directory;
     private final Map<UUID, ProgressionProfile> cache = new HashMap<>();
@@ -44,8 +44,6 @@ public final class ProfileStore {
         ProgressionProfile result;
         if (!Files.exists(file) && !Files.exists(backup)) result = ProgressionProfile.empty();
         else {
-            // A previous-state backup may precede a reward or debit. Only a durable journal can
-            // establish the next authoritative state; otherwise keep ambiguous profiles unavailable.
             if (!Files.exists(file)) throw new IOException("Primary progression profile missing; recovery required");
             result = read(file, player);
         }
@@ -60,7 +58,6 @@ public final class ProfileStore {
         if (encoded.length > MAX_FILE_SIZE) throw new IOException("Progression profile exceeds size limit");
         Files.createDirectories(directory);
         try {
-            // The backup is established before the journal commit point. Failure here changes nothing.
             if (Files.exists(file(player))) writeAtomically(backup(player), encode(player, previous));
             faults.at(WriteStage.AFTER_BACKUP);
             Files.createDirectories(journal(player).getParent());
@@ -72,7 +69,6 @@ public final class ProfileStore {
             cache.put(player, next);
             return next;
         } catch (IOException | RuntimeException e) {
-            // A durable journal is authoritative and will finish on the next load; stale cache must not mask it.
             cache.remove(player);
             throw e;
         }
@@ -81,9 +77,13 @@ public final class ProfileStore {
     public Path file(UUID player) { return directory.resolve(player + ".json"); }
     private Path backup(UUID player) { return directory.resolve(player + ".json.bak"); }
     Path journal(UUID player) { return directory.resolve("transactions").resolve(player + ".json"); }
+
     private static byte[] encode(UUID player, ProgressionProfile profile) {
+        boolean hasContracts = !profile.meta().contracts().isEmpty() || !profile.meta().pendingContracts().isEmpty();
+        boolean hasDeliveries = !profile.meta().deliveries().isEmpty();
+        int schema = hasDeliveries ? 6 : hasContracts ? 5 : 4;
         JsonObject json = new JsonObject();
-        json.addProperty("schema_version", SCHEMA);
+        json.addProperty("schema_version", schema);
         json.addProperty("player_uuid", player.toString());
         json.addProperty("points", profile.points());
         json.addProperty("perk_points", profile.perkPoints());
@@ -110,10 +110,40 @@ public final class ProfileStore {
             receipt.addProperty("world_uuid", entry.getValue().worldId().toString());
             receipt.addProperty("product_id", entry.getValue().productId());
             receipt.addProperty("sp_cost", entry.getValue().spCost());
+            if (schema >= 6) receipt.addProperty("pp_cost", entry.getValue().ppCost());
             receipt.addProperty("required_tier", entry.getValue().requiredTier());
             receipts.add(entry.getKey().toString(), receipt);
         });
         meta.add("purchase_receipts", receipts);
+        if (schema >= 5) {
+            JsonObject contracts = new JsonObject();
+            new java.util.TreeMap<>(profile.meta().contracts()).forEach((id, state) -> {
+                JsonObject value = new JsonObject(); value.addProperty("revision", state.revision());
+                value.addProperty("progress", state.progress()); value.addProperty("completions", state.completions());
+                value.add("recent_evidence", GSON.toJsonTree(state.recentEvidence()));
+                value.add("recent_requests", GSON.toJsonTree(state.recentRequests().stream().map(UUID::toString).toList()));
+                contracts.add(id, value);
+            });
+            meta.add("contracts", contracts);
+            JsonObject pending = new JsonObject();
+            profile.meta().pendingContracts().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+                var state = entry.getValue(); JsonObject value = new JsonObject();
+                value.addProperty("contract_id", state.contractId()); value.addProperty("item_id", state.itemId());
+                value.addProperty("item_count", state.itemCount()); value.addProperty("before_count", state.beforeCount());
+                value.addProperty("reward_sp", state.rewardSp()); value.addProperty("required_tier", state.requiredTier());
+                pending.add(entry.getKey().toString(), value);
+            });
+            meta.add("pending_contracts", pending);
+        }
+        if (schema >= 6) {
+            JsonObject deliveries = new JsonObject();
+            profile.meta().deliveries().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+                var state = entry.getValue(); JsonObject value = new JsonObject();
+                value.addProperty("world_uuid", state.worldId().toString()); value.addProperty("product_id", state.productId());
+                value.addProperty("stage", state.stage().name()); deliveries.add(entry.getKey().toString(), value);
+            });
+            meta.add("deliveries", deliveries);
+        }
         json.add("meta", meta);
         return (GSON.toJson(json) + "\n").getBytes(StandardCharsets.UTF_8);
     }
@@ -126,9 +156,8 @@ public final class ProfileStore {
     }
     private static ProgressionProfile read(Path file, UUID player) throws IOException {
         if (Files.size(file) > MAX_FILE_SIZE) throw new IOException("Progression profile exceeds size limit");
-        try {
-            return read(JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject(), player);
-        } catch (UnsupportedSchemaException e) { throw e; }
+        try { return read(JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject(), player); }
+        catch (UnsupportedSchemaException e) { throw e; }
         catch (RuntimeException e) { throw new IOException("Invalid progression profile", e); }
     }
     private static ProgressionProfile read(JsonObject json, UUID player) throws IOException {
@@ -140,27 +169,23 @@ public final class ProfileStore {
             var milestones = new LinkedHashSet<String>();
             for (var id : json.getAsJsonArray("milestones")) milestones.add(id.getAsString());
             var skills = new LinkedHashMap<String, Integer>();
-            for (var entry : json.getAsJsonObject("skills").entrySet()) {
-                skills.put(entry.getKey(), entry.getValue().getAsBigDecimal().intValueExact());
-            }
+            for (var entry : json.getAsJsonObject("skills").entrySet()) skills.put(entry.getKey(), entry.getValue().getAsBigDecimal().intValueExact());
             if (schema == 1) {
-                // The former SP-only Creative purchase must pass the new PP gate after migration.
                 Integer creative = skills.remove("forever_skyblock:jetpacks_creative");
                 if (creative != null) points = Math.addExact(points, Math.multiplyExact(creative, 40));
                 return new ProgressionProfile(points, milestones, skills).withMeta(MetaProgress.empty(true)
                         .account(0, 0, 0, 0, creative == null ? 0 : Math.multiplyExact(creative, 40), 0, 0));
             }
             var paid = new LinkedHashMap<String, Integer>();
-            for (var entry : json.getAsJsonObject("perk_investments").entrySet())
-                paid.put(entry.getKey(), entry.getValue().getAsBigDecimal().intValueExact());
-            var receipts = new LinkedHashSet<UUID>();
-            for (var core : json.getAsJsonArray("redeemed_cores")) receipts.add(UUID.fromString(core.getAsString()));
-            MetaProgress meta = schema == 2 ? MetaProgress.empty(true) : readMeta(json.getAsJsonObject("meta"), schema >= 4);
-            return new ProgressionProfile(points, milestones, skills, integer(json, "perk_points"), paid, receipts, meta);
+            for (var entry : json.getAsJsonObject("perk_investments").entrySet()) paid.put(entry.getKey(), entry.getValue().getAsBigDecimal().intValueExact());
+            var coreReceipts = new LinkedHashSet<UUID>();
+            for (var core : json.getAsJsonArray("redeemed_cores")) coreReceipts.add(UUID.fromString(core.getAsString()));
+            MetaProgress meta = schema == 2 ? MetaProgress.empty(true) : readMeta(json.getAsJsonObject("meta"), schema);
+            return new ProgressionProfile(points, milestones, skills, integer(json, "perk_points"), paid, coreReceipts, meta);
         } catch (UnsupportedSchemaException e) { throw e; }
         catch (RuntimeException e) { throw new IOException("Invalid progression profile", e); }
     }
-    private static MetaProgress readMeta(JsonObject meta, boolean worldData) {
+    private static MetaProgress readMeta(JsonObject meta, int schema) {
         var progress = new LinkedHashMap<String, MetaProgress.Progress>();
         for (var entry : meta.getAsJsonObject("challenge_progress").entrySet()) {
             var state = entry.getValue().getAsJsonObject(); var tokens = new LinkedHashSet<String>();
@@ -175,7 +200,7 @@ public final class ProfileStore {
             throw new IllegalArgumentException("Invalid history flag");
         var claims = new LinkedHashMap<UUID, java.util.Set<String>>();
         var purchaseReceipts = new LinkedHashMap<UUID, MetaProgress.PurchaseReceipt>();
-        if (worldData) {
+        if (schema >= 4) {
             for (var entry : meta.getAsJsonObject("world_claims").entrySet()) {
                 var products = new LinkedHashSet<String>();
                 for (var product : entry.getValue().getAsJsonArray())
@@ -185,15 +210,44 @@ public final class ProfileStore {
             }
             for (var entry : meta.getAsJsonObject("purchase_receipts").entrySet()) {
                 var receipt = entry.getValue().getAsJsonObject();
+                int ppCost = schema >= 6 && receipt.has("pp_cost") ? integer(receipt, "pp_cost") : 0;
                 purchaseReceipts.put(UUID.fromString(entry.getKey()), new MetaProgress.PurchaseReceipt(
                         UUID.fromString(receipt.get("world_uuid").getAsString()), receipt.get("product_id").getAsString(),
-                        integer(receipt, "sp_cost"), integer(receipt, "required_tier")));
+                        integer(receipt, "sp_cost"), ppCost, integer(receipt, "required_tier")));
+            }
+        }
+        var contracts = new LinkedHashMap<String, MetaProgress.ContractState>();
+        var pendingContracts = new LinkedHashMap<UUID, MetaProgress.PendingContract>();
+        if (schema >= 5) {
+            for (var entry : meta.getAsJsonObject("contracts").entrySet()) {
+                var state = entry.getValue().getAsJsonObject();
+                var evidence = new java.util.ArrayList<String>();
+                for (var value : state.getAsJsonArray("recent_evidence")) evidence.add(value.getAsString());
+                var requests = new java.util.ArrayList<UUID>();
+                for (var value : state.getAsJsonArray("recent_requests")) requests.add(UUID.fromString(value.getAsString()));
+                contracts.put(entry.getKey(), new MetaProgress.ContractState(integer(state, "revision"), integer(state, "progress"),
+                        total(state, "completions"), evidence, requests));
+            }
+            for (var entry : meta.getAsJsonObject("pending_contracts").entrySet()) {
+                var state = entry.getValue().getAsJsonObject();
+                pendingContracts.put(UUID.fromString(entry.getKey()), new MetaProgress.PendingContract(
+                        state.get("contract_id").getAsString(), state.get("item_id").getAsString(), integer(state, "item_count"),
+                        integer(state, "before_count"), integer(state, "reward_sp"), integer(state, "required_tier")));
+            }
+        }
+        var deliveries = new LinkedHashMap<UUID, MetaProgress.DeliveryReceipt>();
+        if (schema >= 6) {
+            for (var entry : meta.getAsJsonObject("deliveries").entrySet()) {
+                var state = entry.getValue().getAsJsonObject();
+                deliveries.put(UUID.fromString(entry.getKey()), new MetaProgress.DeliveryReceipt(
+                        UUID.fromString(state.get("world_uuid").getAsString()), state.get("product_id").getAsString(),
+                        MetaProgress.DeliveryStage.valueOf(state.get("stage").getAsString())));
             }
         }
         return new MetaProgress(integer(meta, "shop_tier"), progress, new MetaProgress.Accounting(
                 total(a, "spEarned"), total(a, "ppEarned"), total(a, "spSpent"), total(a, "ppSpent"),
                 total(a, "spRefunded"), total(a, "ppRefunded"), total(a, "spAdmin"), a.get("legacyHistoryUnknown").getAsBoolean()),
-                claims, purchaseReceipts);
+                claims, purchaseReceipts, contracts, pendingContracts, deliveries);
     }
     private ProgressionProfile recoverJournal(UUID player) throws IOException {
         Path journal = journal(player);

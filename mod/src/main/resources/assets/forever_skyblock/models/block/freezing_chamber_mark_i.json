@@ -1,0 +1,29 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": true,
+  "textures": {
+    "particle": "forever_skyblock:block/freezing_side",
+    "front": "forever_skyblock:block/freezing_front",
+    "side": "forever_skyblock:block/freezing_side",
+    "metal": "forever_skyblock:block/freezing_metal",
+    "inner": "forever_skyblock:block/freezing_inner",
+    "ice": "forever_skyblock:block/freezing_ice",
+    "bolt": "forever_skyblock:block/freezing_bolt"
+  },
+  "elements": [
+    {"from":[0,0,0],"to":[16,12,16],"faces":{"north":{"texture":"#front","cullface":"north"},"south":{"texture":"#side","cullface":"south"},"east":{"texture":"#side","cullface":"east"},"west":{"texture":"#side","cullface":"west"},"down":{"texture":"#metal","cullface":"down"}}},
+    {"from":[0,12,0],"to":[16,16,3],"faces":{"north":{"texture":"#metal"},"south":{"texture":"#metal"},"east":{"texture":"#metal"},"west":{"texture":"#metal"},"up":{"texture":"#metal"},"down":{"texture":"#inner"}}},
+    {"from":[0,12,13],"to":[16,16,16],"faces":{"north":{"texture":"#metal"},"south":{"texture":"#metal"},"east":{"texture":"#metal"},"west":{"texture":"#metal"},"up":{"texture":"#metal"},"down":{"texture":"#inner"}}},
+    {"from":[0,12,3],"to":[3,16,13],"faces":{"north":{"texture":"#metal"},"south":{"texture":"#metal"},"east":{"texture":"#metal"},"west":{"texture":"#metal"},"up":{"texture":"#metal"},"down":{"texture":"#inner"}}},
+    {"from":[13,12,3],"to":[16,16,13],"faces":{"north":{"texture":"#metal"},"south":{"texture":"#metal"},"east":{"texture":"#metal"},"west":{"texture":"#metal"},"up":{"texture":"#metal"},"down":{"texture":"#inner"}}},
+    {"from":[3,12.25,3],"to":[13,15.25,3.2],"faces":{"south":{"texture":"#inner"}}},
+    {"from":[3,12.25,12.8],"to":[13,15.25,13],"faces":{"north":{"texture":"#inner"}}},
+    {"from":[3,12.25,3],"to":[3.2,15.25,13],"faces":{"east":{"texture":"#inner"}}},
+    {"from":[12.8,12.25,3],"to":[13,15.25,13],"faces":{"west":{"texture":"#inner"}}},
+    {"from":[3.2,12.15,3.2],"to":[12.8,12.35,12.8],"faces":{"up":{"texture":"#ice"}}},
+    {"from":[1,16,1],"to":[3,16.5,3],"faces":{"north":{"texture":"#bolt"},"south":{"texture":"#bolt"},"east":{"texture":"#bolt"},"west":{"texture":"#bolt"},"up":{"texture":"#bolt"}}},
+    {"from":[13,16,1],"to":[15,16.5,3],"faces":{"north":{"texture":"#bolt"},"south":{"texture":"#bolt"},"east":{"texture":"#bolt"},"west":{"texture":"#bolt"},"up":{"texture":"#bolt"}}},
+    {"from":[1,16,13],"to":[3,16.5,15],"faces":{"north":{"texture":"#bolt"},"south":{"texture":"#bolt"},"east":{"texture":"#bolt"},"west":{"texture":"#bolt"},"up":{"texture":"#bolt"}}},
+    {"from":[13,16,13],"to":[15,16.5,15],"faces":{"north":{"texture":"#bolt"},"south":{"texture":"#bolt"},"east":{"texture":"#bolt"},"west":{"texture":"#bolt"},"up":{"texture":"#bolt"}}}
+  ]
+}

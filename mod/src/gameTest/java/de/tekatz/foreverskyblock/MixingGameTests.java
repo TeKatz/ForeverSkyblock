@@ -51,7 +51,9 @@ public final class MixingGameTests {
         }
         module(h);
         h.setBlock(POS.west(), ForeverSkyblock.MIXING_CHAMBER_MARK_I.get());
-        check(h, menu.slots.size() == 39 && machine.inventory().getSlots() == 3, "Multiple modules never add more slots");
+        check(h, menu.slots.size() == CondenserBlockEntity.MACHINE_SLOTS + 36
+                && machine.inventory().getSlots() == CondenserBlockEntity.MACHINE_SLOTS,
+                "Multiple Mixing Chambers never add more slots");
         h.succeed();
     }
 
@@ -152,8 +154,13 @@ public final class MixingGameTests {
         var tag = machine.saveWithFullMetadata(registries);
         tag.put("Inventory", legacy.serializeNBT(registries));
         machine.loadWithComponents(tag, registries);
-        check(h, machine.inventory().getSlots() == 3 && machine.inventory().getStackInSlot(0).getCount() == 3
-                && machine.inventory().getStackInSlot(1).getCount() == 5 && machine.inventory().getStackInSlot(2).isEmpty(), "Legacy output remains output, new input empty");
+        check(h, machine.inventory().getSlots() == CondenserBlockEntity.MACHINE_SLOTS
+                && machine.inventory().getStackInSlot(0).getCount() == 3
+                && machine.inventory().getStackInSlot(1).getCount() == 5
+                && machine.inventory().getStackInSlot(2).isEmpty()
+                && machine.inventory().getStackInSlot(3).isEmpty()
+                && machine.inventory().getStackInSlot(4).isEmpty(),
+                "Legacy output remains output and all appended module slots start empty");
         module(h);
         machine.setFilter(0, new ItemStack(Items.OAK_LOG));
         machine.setFilter(2, new ItemStack(Items.OAK_SAPLING));
