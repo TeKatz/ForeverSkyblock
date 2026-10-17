@@ -1,22 +1,22 @@
-# Repeatable contracts — 0.14.0 / phase 5 test branch
+# Repeatable contracts — integrated 0.14.0 behavior
 
-Development branch: `feature/repeatable-contracts-phase5`. This document describes the Phase 5 test implementation and does **not** imply a merge into `main` or a release.
+Repeatable contracts were introduced during Phase 5 / 0.14.0 and are integrated into the current 0.18.1 `main` baseline through PR #13. They remain intentionally conservative renewable-SP sinks rather than the primary progression source. No release publication is implied by that merge.
 
 ## Purpose
 
-Unique challenges remain the best-value SP source. Contracts provide a deliberately slower renewable SP path for established profiles so repeated worlds cannot permanently exhaust the finite one-time SP pool. Contracts require permanent **Tier I — Conqueror** in this first test implementation; a later balance pass may move advanced contracts to Tier II once Tier II exists.
+Unique challenges remain the best-value SP source. Contracts provide a slower renewable SP path for established profiles so repeated worlds cannot permanently exhaust the finite one-time SP pool. The current implementation requires permanent **Tier I — Conqueror**. A later balance pass may move advanced contracts to Tier II once Tier II exists.
 
-## Active test contracts
+## Active contracts
 
 | Contract | Trigger / turn-in | Reward | Notes |
 | --- | --- | ---: | --- |
 | Dragon Reborn | Defeat a respawned Dragon after the one-time Dragon Slayer kill | 1 SP | First Dragon never double-pays |
 | Wither Hunter | Defeat 3 additional Withers | 1 SP | Counter resets only after payout |
 | Singularity Contract | Consume 4 `ae2:singularity` | 1 SP | Explicit K-menu turn-in |
-| Nitro Contract | Consume 32 `powah:crystal_nitro` | 1 SP | **Provisional test quantity** from the original 16/32/64 candidates |
+| Nitro Contract | Consume 32 `powah:crystal_nitro` | 1 SP | Current provisional quantity; still subject to later pack balance |
 | Antimatter Contract | Consume 4 `mekanism:pellet_antimatter` | 3 SP | Endgame resource sink |
 
-The unspecified Industrial Contract is still deferred because its exact resource and production rate were never approved. Contract quantities are balance inputs, not immutable promises.
+The unspecified Industrial Contract remains deferred because its exact resource and production rate have not been approved. Current quantities/rewards are integrated behavior but remain balance inputs rather than final pack-economy promises.
 
 ## Boss rules
 
@@ -41,7 +41,7 @@ Only one resource contract intent may be pending per profile. Profile write fail
 
 ## Persistence and migration
 
-Contract state introduces profile **schema 5** only when a contract counter, completion or pending intent first exists. Profiles that have never used Phase 5 continue to serialize as schema 4, preserving downgrade/test convenience. Once schema-5 contract state has been written, 0.13.4 must not be used to modify that profile.
+Contract state introduces profile **schema 5** only when a contract counter, completion or pending intent first exists. Profiles that have never used contract state can remain schema 4. Once schema-5 contract state has been written, older builds that predate schema 5 must not be used to modify that profile.
 
 Schema 5 adds bounded:
 
@@ -53,23 +53,14 @@ Schema 5 adds bounded:
 
 Skill respec does not clear contract progress/completions, Shop Tier, world claims or Core receipts.
 
-## Network and UI
+The current integrated network protocol is **`skills-8`** because later world-shop delivery work extended the protocol after contracts were introduced. Matching client/server versions remain required.
 
-Phase 5 uses progression protocol **`skills-7`**. Matching client/server versions are required. K → Challenges → Contracts now shows five live contract cards with current progress, lifetime completions, SP reward, Tier state and explicit resource turn-in buttons. Missing optional-mod items make the corresponding resource contract unavailable rather than substituting another item.
+## UI
 
-## Manual test checklist
+K -> Challenges -> Contracts shows the five live contract cards with current progress, lifetime completions, SP reward, Tier state and explicit resource turn-in buttons. Missing optional-mod items make the corresponding resource contract unavailable rather than substituting another item.
 
-Use a backup of `forever_skyblock/progression/` and a test world.
+## Validation boundary
 
-1. Existing 0.13.4 profile loads with identical SP, PP, challenges, Tier, research and world claims.
-2. First Dragon still awards only Dragon Slayer +6 SP / Tier I. A later respawned Dragon gives exactly +1 SP per qualifying kill.
-3. First Wither still awards only Withered Away. Three later Withers award exactly +1 SP and reset the repeat counter.
-4. Open Contracts before Tier I: all contracts are locked even if resources are present.
-5. With Tier I, hold exactly 4 AE2 Singularities, turn them in, verify all four disappear and exactly +1 SP/completion is recorded.
-6. Repeat the Singularity turn-in with another batch; verify the lifetime count increments and no packet double-click can duplicate payout.
-7. Test 32 Nitro Crystals and 4 Antimatter Pellets; verify exact consumption/rewards.
-8. Restart after normal turn-ins and verify state persists across worlds.
-9. Test EN/DE client selection, 1920x1080 / GUI scale 3 first, then other practical GUI scales.
-10. Recheck Challenges, Shop, Research, Perks, Condenser/Ascension GUIs and Phase 4 technology objectives.
+The original Phase-5 source and later stacked regressions are covered by pure transaction tests, dedicated GameTests and the current full-pack integration suite. The final integrated 0.18.1 feature head `97715f06391339141032c5f0c859b5925f99539d` passed GitHub Actions run #195 before PR #13 merged it into `main`.
 
-Crash-cut recovery is covered structurally by the durable intent design and profile-journal tests, but a real forced-process-stop test around a resource turn-in remains valuable before main integration.
+The crash-safe intent design covers tested persistence/recovery boundaries, but a real forced-process-stop at every possible resource-turn-in checkpoint is not claimed as manually validated. Current quantities/rewards also remain candidates for later pack-balance tuning.

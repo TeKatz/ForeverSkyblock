@@ -1,40 +1,64 @@
-# Forever Skyblock mod — 0.17.0 early-game / world QoL test
+# Forever Skyblock mod — 0.18.1 integrated baseline
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-This development branch builds on the 0.16.0 general-polish head and targets concrete pacing issues found while actually playing the early game. It does not finalize the wider pack economy or K-menu design.
+Version **0.18.1** is integrated into `main` through PR #13. It combines the 0.14.0-0.18.1 development stack: repeatable contracts, real current-world package delivery, stability/polish work, early-game/world QoL, the Freezing Chamber Mark I and the Stone Meal Crafting Table progression gate. No release was published by the merge.
 
-Branch: `feature/earlygame-world-qol`. It is not `main` and it is not a published release.
+## Condenser family
 
-## Condenser pacing recipe
+The Condenser Mark I supports counted primary ingredients and persistent input locks. Existing log/plank, Mixing Chamber and JEI transfer behavior remains active.
 
-The Condenser Mark I now supports counted primary inputs. A new recipe converts **8 items in `minecraft:leaves` into 1 Bone Meal in 160 ticks (8 seconds)**. This is intended to pair with manually harvested leaves, including leaves obtained with a separate shears mod, without making that external mod a required dependency of Forever Skyblock.
+### Bone Meal loop
 
-JEI and recipe transfer use the same counted-input definition as the server machine. Existing log, plank and Mixing Chamber recipes remain compatible because their omitted `ingredient_count` defaults to one.
+A Condenser recipe converts **8 items in `minecraft:leaves` into 1 Bone Meal in 160 ticks / 8 seconds**. No Mixing Chamber and no power are required. JEI and recipe transfer use the same counted-input definition.
 
-## Wandering Trader world gate
+### Mixing Chamber Mark I
 
-Wandering Traders are blocked until the current save reaches its first Emerald pickup. When a real player first picks up an Emerald, the world stores the unlock and sends **“The Wandering Trader can now spawn”** (localized EN/DE). The unlock only permits normal/random spawning; it does not force a Trader to appear immediately.
+The passive adjacent Mixing Chamber exposes the second Condenser recipe input. Dirt remains the early two-input recipe using Stone Meal plus a Sapling.
 
-The unlock is world-wide and persists with the save rather than a player profile.
+### Freezing Chamber Mark I
 
-## World QoL upgrades
+The passive adjacent Freezing Chamber exposes a dedicated input/output pair inside the Condenser. The Chamber itself has no GUI or inventory.
 
-K → Shop → Current World now also exposes permanent world-wide upgrades:
+- every registered item is valid as Freezing input unless the input lock restricts it;
+- one consumed item advances independent material progress;
+- **32 consumed items produce 1 `minecraft:ice`**;
+- Freezing runs in parallel with normal Condenser/Mixing processing;
+- removing the Chamber hides its slots while preserving input, output, partial progress and lock;
+- disconnected module slots are not exposed to automation;
+- the Freezing input is deliberately excluded from generic shift-click routing because an unlocked slot accepts everything.
 
-- **No Phantoms — 1 SP**: disables insomnia Phantom spawning and blocks new Phantom entity joins.
-- **No More Rain — 2 SP**: clears rain/thunder and disables the weather cycle.
-- **Permanent Day — 3 SP**: sets daytime to 1000 and disables the daylight cycle.
+The Condenser screen has four live layouts without reopening: base, Mixing only, Freezing only, and Mixing + Freezing. The 0.18.1 pass increased vertical spacing, separated Condensing and Freezing presentation, removed overlapping lock help tooltips and removed the old hidden JEI click target between the main input/output slots.
 
-These upgrades currently use **Tier 0** as their minimum Shop Tier. A purchase is charged once for the stable world identity and becomes active for every player in that world. Other players mirror the active world claim without paying again.
+JEI includes a dedicated Freezing category showing the 32-item wildcard process, Ice output, no-power requirement and adjacent Freezing Chamber requirement.
 
-World state is stored with primary/backup copies under `data/forever_skyblock_world_progress.json(.bak)` and is bound to the existing stable world UUID. A paid player-profile claim is also the recovery source if the server stops between the SP debit and activation of the world-wide effect.
+## Crafting Table gate
 
-## Compatibility
+The normal `minecraft:crafting_table` recipe is replaced by a 3x3 plus-shaped recipe using four Planks around one Stone Meal. The starter ME Crafting Terminal therefore remains the first 3x3 crafting workstation until Stone Meal is reached.
 
-No new player-profile schema is introduced. Existing schema 4/5/6 behavior remains unchanged and the client/server protocol remains `skills-8`. The new persistent file belongs to the world save.
+The recipe override is shipped by the mod and mirrored into the Forever Recipe Editor generated pack.
 
-The fixed starter island NBT is unchanged. No third-party Wooden Shears JAR is bundled or committed by this branch.
+## Progression systems
+
+The integrated progression protocol is `skills-8`. Player profiles serialize dynamically as schema 4, 5 or 6 depending on which systems have created state.
+
+Current integrated systems include:
+
+- 20 unique personal challenges worth 58 SP;
+- permanent Shop Tier 0 and Tier I;
+- five Tier-I repeatable contracts;
+- the Advanced AE2 Starter Package at Tier I for 12 SP with receipt-bound Supply Cache delivery;
+- world-wide No Phantoms, No More Rain and Permanent Day upgrades;
+- save-wide Wandering Trader unlock after the first real-player Emerald pickup;
+- Jetpack research, permanent skills/refunds, Ascension and Perk Points.
+
+See `../docs/CURRENT_STATE.md` for the complete active/deferred boundary.
+
+## Compatibility and fixed pack state
+
+The fixed starter island NBT is unchanged. No third-party Wooden Shears JAR is bundled or committed by Forever Skyblock.
+
+Default development baseline: NeoForge 21.1.249. Pack-runtime integration target: NeoForge 21.1.259.
 
 ## Build
 
@@ -42,8 +66,8 @@ The fixed starter island NBT is unchanged. No third-party Wooden Shears JAR is b
 ./gradlew build
 ```
 
-Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.17.0.jar`.
+Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.18.1.jar`.
 
-Default development baseline: NeoForge 21.1.249. Pack-runtime integration: NeoForge 21.1.259.
+The final pre-merge feature head `97715f06391339141032c5f0c859b5925f99539d` passed GitHub Actions run #195: Java 21 build/unit tests, headless client mixin smoke, dedicated regression GameTests, full NeoForge 21.1.259 integration GameTests and artifact upload.
 
-See [EARLY_GAME_QOL.md](../docs/EARLY_GAME_QOL.md) for persistence and manual acceptance details.
+TeKatz subsequently confirmed the 0.18.1 in-game cleanup as a good baseline to continue from. This user-reported client acceptance is separate from the automated CI checks.
