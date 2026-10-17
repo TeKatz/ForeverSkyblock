@@ -1,23 +1,25 @@
 # Forever Skyblock documentation
 
-This directory contains both **live feature documentation** and **historical design/validation records**. Use the map below instead of inferring the current repository state from an old phase document.
+This directory contains **integrated-state documentation**, live feature documents and development/history records. Use the map below instead of inferring repository state from an old phase file.
 
 ## Start here
 
-1. [CURRENT_STATE.md](CURRENT_STATE.md) — current integrated version, active systems, deferred systems and the validation boundary.
-2. [DESIGN.md](DESIGN.md) — approved project direction and Expert pacing.
-3. [VALIDATION.md](VALIDATION.md) — detailed automated checks and user-reported in-game validation history.
-4. [CHANGELOG.md](CHANGELOG.md) — concise version-level history.
+1. [CURRENT_STATE.md](CURRENT_STATE.md) — truth for the version currently integrated into `main`.
+2. [POLISH_PHASE7.md](POLISH_PHASE7.md) — current 0.16.0 general-polish development branch and its deliberately limited scope.
+3. [DESIGN.md](DESIGN.md) — approved project direction and Expert pacing.
+4. [VALIDATION.md](VALIDATION.md) — detailed automated checks and user-reported in-game validation history.
+5. [CHANGELOG.md](CHANGELOG.md) — concise version-level history.
 
-If a historical branch statement conflicts with `CURRENT_STATE.md`, the current-state document wins.
+`CURRENT_STATE.md` intentionally remains the authority for `main`; a development-branch document must not silently redefine the integrated baseline.
 
-## Active feature documentation
+## Feature documentation
 
 | Document | Scope |
 | --- | --- |
-| [CHALLENGES.md](CHALLENGES.md) | Active 20-challenge / 58-SP catalog, personal attribution and deferred objectives |
-| [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md) | Integrated 0.13.4 K-menu layout and visual rules |
-| [WORLD_SHOP.md](WORLD_SHOP.md) | Stable world identity, schema-4 claims/receipts and crash-safe test purchase |
+| [CHALLENGES.md](CHALLENGES.md) | Unique Challenge catalog, personal attribution and deferred objectives |
+| [CONTRACTS.md](CONTRACTS.md) | Phase 5 repeatable-contract development behavior and transaction rules |
+| [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md) | Integrated Design-2 layout; larger redesign work is currently deferred |
+| [WORLD_SHOP.md](WORLD_SHOP.md) | Stable world identity and Phase 6 real-package delivery development behavior |
 | [SKILLS.md](SKILLS.md) | Persistent progression storage, skills and refunds |
 | [JETPACK_RESEARCH.md](JETPACK_RESEARCH.md) | Iron Jetpacks research gates and automation behavior |
 | [ASCENSION.md](ASCENSION.md) | Forever Core, Ascension Chamber and Perk Points |
@@ -30,16 +32,16 @@ If a historical branch statement conflicts with `CURRENT_STATE.md`, the current-
 
 | Document | Interpretation |
 | --- | --- |
-| [META_PROGRESSION.md](META_PROGRESSION.md) | Architecture/design record. Its baseline paragraphs intentionally describe the repository before phases 1-4 were integrated. |
+| [META_PROGRESSION.md](META_PROGRESSION.md) | Architecture/design record; older baseline paragraphs are historical. |
 | [PROGRESSION.md](PROGRESSION.md) | Unconfirmed resource/progression proposals. Do not treat them as implemented. |
-| [TOOL_RECIPE_HANDOFF.md](TOOL_RECIPE_HANDOFF.md) | Historical implementation handoff retained for traceability; `TOOL_PROGRESSION.md` is the live behavior document. |
-| [MODLIST_SNAPSHOT.md](MODLIST_SNAPSHOT.md) | Supplied runtime/list evidence, not a final launcher manifest and not the current Forever Skyblock mod version. |
+| [TOOL_RECIPE_HANDOFF.md](TOOL_RECIPE_HANDOFF.md) | Historical implementation handoff; `TOOL_PROGRESSION.md` is the live behavior document. |
+| [MODLIST_SNAPSHOT.md](MODLIST_SNAPSHOT.md) | Supplied runtime/list evidence, not a final launcher manifest. |
 | [FILES_TO_IMPORT.md](FILES_TO_IMPORT.md) | Remaining pack/export inputs that are not yet present or final. |
 
 ## Documentation rules
 
-- Current status belongs in `CURRENT_STATE.md`; do not create another competing status/handoff file.
+- Integrated status belongs in `CURRENT_STATE.md`.
+- Development-only state must identify its branch and must not present itself as merged or released.
 - Feature behavior belongs in the corresponding feature document.
 - Validation claims must distinguish CI/server checks from TeKatz's real client/in-game tests.
-- Old development-branch context may remain in architecture/history documents, but active feature docs must be normalized after merge.
 - The fixed island and pack runtime rules in `AGENTS.md` remain authoritative.

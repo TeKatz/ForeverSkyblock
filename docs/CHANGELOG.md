@@ -2,6 +2,15 @@
 
 This file is the concise version history. Detailed test evidence belongs in [VALIDATION.md](VALIDATION.md); current integrated repository status belongs in [CURRENT_STATE.md](CURRENT_STATE.md). Entries above 0.13.4 below are development-branch versions until explicitly merged.
 
+## 0.16.0 — General polish / phase 7 development
+
+- Keep pack progression balance intentionally unchanged while the wider modpack structure is still being designed.
+- Harden progression request validation without changing the `skills-8` packet shape or schema 4/5/6 persistence model.
+- Correct the real World Shop purchase confirmation so it describes the actual package instead of the obsolete Phase-3 test entitlement.
+- Allow a consumed Supply Cache to contribute its own main-inventory slot to package delivery capacity.
+- Extend GameTests for claim requests and malformed progression packets.
+- Rename CI stages around the current regression/full-pack integration boundary and document deferred balance/K-menu work explicitly.
+
 ## 0.15.0 — Real current-world shop delivery / phase 6 development
 
 - Activate the first bounded real product, `shop/advanced_ae2_starter`, at Tier I for 12 SP / 0 PP once per player/world identity.

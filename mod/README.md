@@ -1,61 +1,40 @@
-# Forever Skyblock mod — 0.15.0 Phase 6 test
+# Forever Skyblock mod — 0.16.0 Phase 7 polish test
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-This development branch layers **Phase 6 real current-world shop delivery** on top of the green 0.14.0 Phase 5 contract build. It is not `main` and it is not a published release. The integrated `main` baseline remains 0.13.4 until TeKatz explicitly approves later integration.
+This branch is a **general stability and polish pass** on top of the 0.15.0 Phase 6 development head. It deliberately does not finalize the pack economy, Challenge/Contract rewards, Shop pricing, Tier II-IV progression or the K-menu design. Those decisions are postponed until the wider modpack progression has a stronger structure.
 
-## Real current-world product
+Branch: `chore/general-polish-phase7`. It is not `main` and it is not a published release.
 
-K → Shop → Current World now exposes one deliberately bounded real package:
+## Phase 7 scope
 
-**Advanced AE2 Starter Package** — Tier I, **12 SP / 0 PP**, once per player and stable world identity.
+- Harden progression network requests so unknown actions, malformed IDs and unexpected payload data are rejected before reaching economic handlers.
+- Tighten snapshot validation without changing the `skills-8` wire format.
+- Correct the real World Shop confirmation flow so it no longer falls through to the obsolete Phase-3 test-entitlement confirmation.
+- Let a Supply Cache reuse its own main-inventory slot while opening, avoiding an unnecessary extra free-slot requirement.
+- Keep Phase 5 contracts, Phase 6 package delivery, schema 4/5/6 migration and existing challenge attribution behavior unchanged.
+- Expand regression coverage for the World Shop claim request and malformed progression requests.
+- Keep the starter island and pack gameplay balance untouched.
 
-Contents:
+## Deliberately deferred
 
-- 1× AE2 ME Drive
-- 2× AE2 Pattern Provider
-- 2× AE2 Molecular Assembler
-- 16× AE2 Blank Pattern
-- 16× AE2 Fluix Smart Cable
-- 1× AE2 Dense Energy Cell
+The current values remain **development values**, not final pack balance. Phase 7 does not retune the 20 unique challenges, repeatable-contract quantities/rewards, Jetpack costs, the 12-SP AE2 package or permanent Shop tiers. Tier II-IV remain inactive. A larger K-menu design pass is also deferred until the pack progression has been developed further.
 
-The package deliberately contains no storage cell, 64k Crafting Storage or Wireless Crafting Terminal, so buying it does not substitute for those personal challenge actions. The server validates all item IDs against the installed registry; if a required entry is absent, the product fails closed instead of substituting another item.
+## Persistence and compatibility
 
-## Delivery transaction
+The profile format is unchanged from 0.15.0: untouched profiles can remain schema 4, contract state uses schema 5, and real package delivery state uses schema 6. The network protocol remains `skills-8` because Phase 7 changes validation rather than packet shape.
 
-A purchase no longer inserts valuable anonymous items directly. It commits the 12-SP debit, current-world claim, immutable purchase receipt and a **READY** delivery entitlement together. Claiming that entitlement issues one non-stackable `forever_skyblock:world_supply_cache` bound to the exact receipt, player and world.
-
-Delivery stages are `READY → DISPATCHING → DELIVERED → OPENING → OPENED`. The profile transition is journaled and player data is forced to disk around inventory changes. Login/menu-open recovery reconciles an interrupted DISPATCHING or OPENING stage before another economic action proceeds. Duplicate request/cache copies cannot reopen an already OPENED receipt.
-
-The cache may only be opened by its owning player in its purchasing world. Its contents come from the server catalog, never from client or item display data. Package opening requires enough ordinary inventory slots and fails closed when the state is ambiguous.
-
-## Progression model
-
-- Profile schema stays **4** for untouched pre-contract profiles.
-- Contract-only state remains **schema 5**.
-- The first real delivery entitlement upgrades that profile to **schema 6**.
-- Network protocol: **skills-8**.
-- Phase 5 repeatable contracts remain active on this branch.
-- Permanent tiers remain Tier 0 / Tier I; Tier II-IV stay inactive.
-- Existing 20 unique challenges / 58 SP, Jetpack research and Ascension/PP rules are unchanged.
+Back up `forever_skyblock/progression/` and the test world's player data before testing a profile that already uses schema 6.
 
 ## Build
-
-With Java 21:
 
 ```sh
 ./gradlew build
 ```
 
-Windows:
+Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.16.0.jar`.
 
-```bat
-gradlew.bat build
-```
-
-Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.15.0.jar`.
-
-The default build baseline is NeoForge 21.1.249. Pack integration uses `-PpackRuntime=21.1.259`.
+Default development baseline: NeoForge 21.1.249. Pack-runtime integration: NeoForge 21.1.259.
 
 ## Test suites
 
@@ -64,4 +43,4 @@ The default build baseline is NeoForge 21.1.249. Pack integration uses `-PpackRu
 ./gradlew runGameTestServer -PcondenserTests -PjetpackTests -PtoolIntegrationTests -PascensionTests -PtechChallengeTests -PpackRuntime=21.1.259 --no-daemon
 ```
 
-`./gradlew build` runs the pure delivery/schema/contract tests. The pack integration suite also verifies every AE2 item ID used by the real package. Client rendering, confirmation flow and real crash/restart acceptance still require TeKatz's in-game test before this branch should be merged.
+See [POLISH_PHASE7.md](../docs/POLISH_PHASE7.md) for the exact boundary and manual acceptance checklist. Do not merge this branch into `main` until the 0.16.0 JAR has been accepted in the real pack.
