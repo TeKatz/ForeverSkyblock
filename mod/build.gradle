@@ -79,13 +79,25 @@ dependencies {
     }
     clientAdditionalRuntimeClasspath 'curse.maven:iron-jetpacks-284497:7105279'
     clientAdditionalRuntimeClasspath 'curse.maven:cucumber-272335:8035802'
-    clientAdditionalRuntimeClasspath 'org.appliedenergistics:appliedenergistics2:19.2.18'
-    clientAdditionalRuntimeClasspath 'org.appliedenergistics:guideme:21.1.19'
-    compileOnly('mezz.jei:jei-1.21.1-neoforge-api:19.21.0.247')
-    clientAdditionalRuntimeClasspath('mezz.jei:jei-1.21.1-neoforge:19.21.0.247')
-    clientAdditionalRuntimeClasspath('mezz.jei:jei-1.21.1-neoforge-api:19.21.0.247')
-    clientAdditionalRuntimeClasspath('mezz.jei:jei-1.21.1-common-api:19.21.0.247')
-    clientAdditionalRuntimeClasspath('mezz.jei:jei-1.21.1-common:19.21.0.247')
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testImplementation 'com.google.code.gson:gson:2.10.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    compileOnly 'mezz.jei:jei-1.21.1-common-api:19.64.0.454'
+    compileOnly 'mezz.jei:jei-1.21.1-neoforge-api:19.64.0.454'
+    clientAdditionalRuntimeClasspath 'mezz.jei:jei-1.21.1-neoforge:19.64.0.454'
 }
 
-sourceSets.main.resources { srcDir 'src/generated/resources' }
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging { exceptionFormat = 'full'; events 'passed', 'failed', 'skipped' }
+}
