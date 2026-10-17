@@ -1,4 +1,4 @@
-# Forever Skyblock mod — 0.19.0 material-processing development
+# Forever Skyblock mod — 0.19.1 material-processing cleanup
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
@@ -6,7 +6,7 @@ Branch: `feature/material-processing-0.19`, based on the integrated 0.18.1 `main
 
 ## Early material progression
 
-The existing Condenser Mark I, Mixing Chamber and Freezing Chamber remain the primitive foundation. Version 0.19.0 adds the first deterministic route from Water/Farming to Iron and then uses Iron to unlock a higher automation tier.
+The existing Condenser Mark I, Mixing Chamber and Freezing Chamber remain the primitive foundation. Version 0.19.x adds the first deterministic route from Water/Farming to Iron and then uses Iron to unlock a higher automation tier.
 
 ### Mud
 
@@ -20,7 +20,7 @@ The intended continuation uses Vanilla Wheat + Mud -> Packed Mud -> Mud Bricks.
 
 ### Washing Basin
 
-The new Washing Basin is crafted from 4 Mud Bricks, 2 Cobblestone and 2 Planks. It has one input/output pair and standard item-handler automation.
+The Washing Basin is crafted from 4 Mud Bricks, 2 Cobblestone and 2 Planks. It has one input/output pair and standard item-handler automation.
 
 It only processes while a directly adjacent block on one of its six faces is a **source-water block**. The water is not consumed. Removing water pauses the operation without losing input or partial progress.
 
@@ -52,17 +52,21 @@ Mark II is the first Iron-gated automation tier. Crafting uses:
 It shares the Mark I inventory/lock architecture and supports the same adjacent Mixing and Freezing Chambers. It retains all Mark-I recipes and additionally provides:
 
 - **4 Stone Fragments -> 1 Stone Meal**;
-- **8 matching Leaves + 1 Bone Meal -> 1 matching Sapling/Propagule** with a Mixing Chamber.
+- **8 Oak Leaves + 1 Bone Meal -> 1 Oak Sapling** with a Mixing Chamber.
 
-Oak, Spruce, Birch, Jungle, Acacia, Dark Oak, Cherry and Mangrove are covered. Mark-II-only recipes use a recipe-tier field and cannot run in Mark I. When both Leaves -> Bone Meal and a matching two-input Sapling recipe are possible, the explicit two-input recipe has deterministic priority.
+Other tree species are not advertised yet because the current progression does not provide a guaranteed first source for their Leaves/Saplings. They can be added when their acquisition path exists instead of leaving dead JEI recipes.
+
+A single Bone Meal use on a normal placed Vanilla Sapling now attempts full tree growth immediately, removing the random early-game wait while keeping normal space/tree-generation constraints.
 
 ## JEI and GUI
 
 JEI includes a Washing category, Washing Basin catalyst, water-source requirement, non-consumed-water note, duration/output information and a Recipes button in the Basin GUI. Condenser Mark II is registered for Condensing/Freezing and Mark-II-only recipes identify their tier requirement. Condenser recipe transfer refuses Mark-II-only recipes when the open machine is Mark I.
 
+0.19.1 also gives the Washing Basin more vertical breathing room, widens/cleans the JEI requirement layouts, restores detailed exterior paneling to Condenser Mark II and removes the stray Freezing Chamber top-rim stripe.
+
 ## Automation boundary
 
-0.19.0 removes the permanent manual dependency on the Mortar for Stone Meal and on random tree drops for Saplings once Mark II is reached. The Washing Basin is also automation-capable.
+0.19.x removes the permanent manual dependency on the Mortar for Stone Meal and on random Oak Sapling drops once Mark II is reached. The Washing Basin is also automation-capable.
 
 Automatic **Log/Leaf production remains intentionally unresolved in this update and is the next automation obligation**: the pack's primitive resource chain is based on wood, so a later tree-growing/harvesting system must close that loop rather than leaving permanent manual tree farming.
 
@@ -72,7 +76,7 @@ No progression-profile schema or `skills-8` protocol change is required. The fix
 
 Default development baseline: NeoForge 21.1.249. Pack-runtime integration target: NeoForge 21.1.259.
 
-See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the full 0.19.0 behavior and validation boundary.
+See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the full 0.19.1 behavior and validation boundary.
 
 ## Build
 
@@ -80,4 +84,4 @@ See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the ful
 ./gradlew build
 ```
 
-Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.19.0.jar`.
+Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.19.1.jar`.

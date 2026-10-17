@@ -7,6 +7,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.BoneMealItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -124,16 +125,32 @@ public final class MaterialProcessingGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 230)
-    public static void markTwoPrefersMatchingSaplingRecipe(GameTestHelper h) {
+    public static void markTwoPrefersOakSaplingRecipe(GameTestHelper h) {
         var machine = condenser(h, POS, true);
         h.setBlock(POS.east(), ForeverSkyblock.MIXING_CHAMBER_MARK_I.get());
         machine.inventory().insertItem(CondenserBlockEntity.INPUT, new ItemStack(Items.OAK_LEAVES, 8), false);
         machine.inventory().insertItem(CondenserBlockEntity.SECOND_INPUT, new ItemStack(Items.BONE_MEAL), false);
         h.runAfterDelay(180, () -> {
             ItemStack output = machine.inventory().getStackInSlot(CondenserBlockEntity.OUTPUT);
-            check(h, output.is(Items.OAK_SAPLING) && output.getCount() == 1, "With Bone Meal present, Mark II must prefer the matching two-input Sapling recipe");
-            check(h, machine.inventory().getStackInSlot(CondenserBlockEntity.INPUT).isEmpty(), "Sapling recipe consumes eight matching leaves");
+            check(h, output.is(Items.OAK_SAPLING) && output.getCount() == 1, "With Bone Meal present, Mark II must prefer the Oak Sapling recipe");
+            check(h, machine.inventory().getStackInSlot(CondenserBlockEntity.INPUT).isEmpty(), "Sapling recipe consumes eight Oak Leaves");
             check(h, machine.inventory().getStackInSlot(CondenserBlockEntity.SECOND_INPUT).isEmpty(), "Sapling recipe consumes one Bone Meal");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 80)
+    public static void oneBoneMealUseGrowsOakSapling(GameTestHelper h) {
+        BlockPos tree = new BlockPos(4, 2, 4);
+        h.setBlock(tree.below(), Blocks.DIRT);
+        h.setBlock(tree, Blocks.OAK_SAPLING);
+        ItemStack boneMeal = new ItemStack(Items.BONE_MEAL);
+        boolean applied = BoneMealItem.applyBonemeal(boneMeal, h.getLevel(), h.absolutePos(tree), null);
+        check(h, applied, "Bone Meal must recognize a placed Sapling");
+        h.runAfterDelay(2, () -> {
+            check(h, !h.getLevel().getBlockState(h.absolutePos(tree)).is(Blocks.OAK_SAPLING),
+                    "One Bone Meal use must grow a normal Oak Sapling instead of waiting for random success");
+            check(h, boneMeal.isEmpty(), "Instant Sapling growth must consume exactly one Bone Meal");
             h.succeed();
         });
     }
@@ -151,6 +168,12 @@ public final class MaterialProcessingGameTests {
                 "forever_skyblock:condensing/oak_sapling_mk2"
         };
         for (String id : ids) check(h, manager.byKey(ResourceLocation.parse(id)).isPresent(), "Missing material-processing recipe: " + id);
+        String[] deferredSpecies = {
+                "spruce_sapling_mk2", "birch_sapling_mk2", "jungle_sapling_mk2", "acacia_sapling_mk2",
+                "dark_oak_sapling_mk2", "cherry_sapling_mk2", "mangrove_propagule_mk2"
+        };
+        for (String id : deferredSpecies) check(h, manager.byKey(ResourceLocation.parse("forever_skyblock:condensing/" + id)).isEmpty(),
+                "Unobtainable tree species must not advertise dead-end Mark II recipes: " + id);
         h.succeed();
     }
 }

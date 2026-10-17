@@ -15,7 +15,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 public final class WashingMenu extends AbstractContainerMenu {
-    public static final int INPUT_X = 42, OUTPUT_X = 188, MACHINE_Y = 67;
+    public static final int INPUT_X = 42, OUTPUT_X = 188, MACHINE_Y = 78;
     public static final int MACHINE_SLOT_COUNT = WashingBasinBlockEntity.MACHINE_SLOTS;
 
     private final ContainerData data;

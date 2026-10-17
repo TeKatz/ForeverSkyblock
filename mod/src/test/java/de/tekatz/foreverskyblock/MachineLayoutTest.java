@@ -2,13 +2,14 @@ package de.tekatz.foreverskyblock;
 
 import de.tekatz.foreverskyblock.menu.CondenserMenu;
 import de.tekatz.foreverskyblock.menu.MachineLayout;
+import de.tekatz.foreverskyblock.menu.WashingMenu;
 import de.tekatz.foreverskyblock.client.MachineAnimation;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class MachineLayoutTest {
     @Test void allThirtySixSlotCentersRoundTripAtSmallAndLargeGuiSizes() {
-        for(var layout:new MachineLayout[]{MachineLayout.CONDENSER,MachineLayout.ASCENSION})for(int[] size:new int[][]{{320,180},{320,240},{480,270},{854,480},{1920,1080}}) {
+        for(var layout:new MachineLayout[]{MachineLayout.CONDENSER,MachineLayout.WASHING,MachineLayout.ASCENSION})for(int[] size:new int[][]{{320,180},{320,240},{480,270},{854,480},{1920,1080}}) {
             int left=(size[0]-layout.width())/2,top=(size[1]-layout.height())/2;var v=layout.viewport(size[0],size[1],left,top);
             assertTrue(v.x()>=5.9&&v.y()>=5.9);assertTrue(v.x()+layout.width()*v.scale()<=size[0]-5.9);assertTrue(v.y()+layout.height()*v.scale()<=size[1]-5.9);
             for(int row=0;row<4;row++)for(int col=0;col<9;col++) {
@@ -24,6 +25,13 @@ final class MachineLayoutTest {
         assertTrue(MachineLayout.CONDENSER.inventoryY() - (CondenserMenu.FREEZING_Y + 24) >= 50,
                 "Machine controls need breathing room before the player inventory");
         assertTrue(MachineLayout.CONDENSER.hotbarY() - MachineLayout.CONDENSER.inventoryY() >= 60);
+    }
+    @Test void washingLayoutKeepsLabelsControlsAndInventorySeparated() {
+        assertEquals(286, MachineLayout.WASHING.height());
+        assertTrue(WashingMenu.MACHINE_Y >= 76, "Washing slots need room below their labels");
+        assertTrue(MachineLayout.WASHING.inventoryY() - (WashingMenu.MACHINE_Y + 18) >= 90,
+                "Washing process, hint and actions need breathing room before the inventory");
+        assertTrue(MachineLayout.WASHING.hotbarY() - MachineLayout.WASHING.inventoryY() >= 60);
     }
     @Test void movingPressAndCounterRotatingFramesCannotIntersectTheirHousing() {
         for(int i=0;i<=1000;i++) {

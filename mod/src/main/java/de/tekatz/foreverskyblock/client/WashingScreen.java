@@ -23,7 +23,7 @@ public final class WashingScreen extends MachineScreen<WashingMenu> {
 
     @Override protected void init() {
         super.init();
-        recipes = addRenderableWidget(new MachineButton(leftPos + 164, topPos + 126, 64, 20, text("recipes"), skin, false,
+        recipes = addRenderableWidget(new MachineButton(leftPos + 164, topPos + 145, 64, 22, text("recipes"), skin, false,
                 b -> ClientMachineRecipes.washing()));
     }
 
@@ -56,31 +56,32 @@ public final class WashingScreen extends MachineScreen<WashingMenu> {
         MachineSkin.centered(g, font, text(menu.hasWater() ? "water_connected" : "water_required"), x + 124, y + 40, 204,
                 menu.hasWater() ? MachineSkin.CYAN : 0xFFFFBF76, .74F);
 
-        MachineSkin.panel(g, x + 18, y + 58, 212, 58, 0xFF54616D);
-        MachineSkin.centered(g, font, text("input"), x + WashingMenu.INPUT_X + 8, y + 62, 54, MachineSkin.MUTED, .73F);
-        MachineSkin.centered(g, font, text("output"), x + WashingMenu.OUTPUT_X + 8, y + 62, 54, MachineSkin.MUTED, .73F);
+        MachineSkin.panel(g, x + 18, y + 58, 212, 74, 0xFF54616D);
+        MachineSkin.centered(g, font, text("input"), x + WashingMenu.INPUT_X + 8, y + 64, 54, MachineSkin.MUTED, .73F);
+        MachineSkin.centered(g, font, text("output"), x + WashingMenu.OUTPUT_X + 8, y + 64, 54, MachineSkin.MUTED, .73F);
         skin.slot(g, x + WashingMenu.INPUT_X, y + WashingMenu.MACHINE_Y, true);
         skin.slot(g, x + WashingMenu.OUTPUT_X, y + WashingMenu.MACHINE_Y, true);
 
         int barX = x + 83, barW = 82;
-        MachineSkin.panel(g, barX, y + 73, barW, 8, 0xFF637888);
+        MachineSkin.panel(g, barX, y + 82, barW, 8, 0xFF637888);
         int filled = Math.min(barW - 4, (barW - 4) * menu.progress() / menu.duration());
-        g.fill(barX + 2, y + 75, barX + 2 + filled, y + 79, MachineSkin.CYAN);
-        g.fill(barX + barW, y + 72, barX + barW + 3, y + 82, MachineSkin.CYAN);
+        g.fill(barX + 2, y + 84, barX + 2 + filled, y + 88, MachineSkin.CYAN);
+        g.fill(barX + barW, y + 81, barX + barW + 3, y + 91, MachineSkin.CYAN);
         MachineSkin.centered(g, font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f / %.1f s",
-                menu.progress() / 20F, menu.duration() / 20F)), barX + barW / 2, y + 87, barW + 8, MachineSkin.MUTED, .7F);
+                menu.progress() / 20F, menu.duration() / 20F)), barX + barW / 2, y + 101, barW + 8, MachineSkin.MUTED, .7F);
 
         Component summary = text("washing_recipe");
         if (minecraft.level != null) {
             ItemStack input = menu.getSlot(WashingBasinBlockEntity.INPUT).getItem();
             var recipe = minecraft.level.getRecipeManager().getRecipeFor(ForeverSkyblock.WASHING.get(), new WashingInput(input), minecraft.level);
-            if (recipe.isPresent()) summary = Component.literal(input.getHoverName().getString() + " → "
-                    + recipe.get().value().result().getHoverName().getString());
+            if (recipe.isPresent()) summary = Component.literal(recipe.get().value().ingredientCount() + " × "
+                    + input.getHoverName().getString() + " → " + recipe.get().value().result().getHoverName().getString());
         }
-        MachineSkin.centered(g, font, summary, x + 124, y + 101, 196, MachineSkin.LIGHT, .82F);
+        MachineSkin.centered(g, font, summary, x + 124, y + 118, 196, MachineSkin.LIGHT, .78F);
 
-        MachineSkin.panel(g, x + 18, y + 122, 138, 28, 0xFF465A68);
-        MachineSkin.text(g, font, text("washing_hint"), x + 25, y + 129, 124, MachineSkin.MUTED, .68F);
+        MachineSkin.panel(g, x + 18, y + 138, 138, 34, 0xFF465A68);
+        MachineSkin.text(g, font, text("washing_hint_source"), x + 25, y + 145, 124, MachineSkin.MUTED, .72F);
+        MachineSkin.text(g, font, text("washing_hint_water"), x + 25, y + 157, 124, MachineSkin.MUTED, .72F);
         inventory(g);
     }
 }

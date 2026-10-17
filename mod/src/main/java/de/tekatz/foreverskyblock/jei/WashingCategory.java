@@ -30,13 +30,13 @@ public final class WashingCategory implements IRecipeCategory<RecipeHolder<Washi
     @Override public RecipeType<RecipeHolder<WashingRecipe>> getRecipeType() { return CondenserJeiPlugin.WASHING_TYPE; }
     @Override public Component getTitle() { return Component.translatable("jei.forever_skyblock.washing"); }
     @Override public IDrawable getIcon() { return icon; }
-    @Override public int getWidth() { return 150; }
-    @Override public int getHeight() { return 90; }
+    @Override public int getWidth() { return 176; }
+    @Override public int getHeight() { return 102; }
 
     @Override public void setRecipe(IRecipeLayoutBuilder builder, RecipeHolder<WashingRecipe> holder, IFocusGroup focuses) {
         builder.addInputSlot(10, 10).addItemStacks(counted(holder.value().ingredient(), holder.value().ingredientCount()));
-        builder.addOutputSlot(112, 10).addItemStack(holder.value().result());
-        builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 10, 67)
+        builder.addOutputSlot(140, 10).addItemStack(holder.value().result());
+        builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 10, 69)
                 .addItemStack(new ItemStack(ForeverSkyblock.WASHING_BASIN.get()));
     }
 
@@ -47,15 +47,16 @@ public final class WashingCategory implements IRecipeCategory<RecipeHolder<Washi
     @Override public void draw(RecipeHolder<WashingRecipe> holder, IRecipeSlotsView slots, GuiGraphics g, double mouseX, double mouseY) {
         g.fill(0, 0, getWidth(), getHeight(), 0xFF19242C);
         slot.draw(g, 9, 9);
-        slot.draw(g, 111, 9);
-        g.fill(59, 15, 98, 21, 0xFF46545C);
+        slot.draw(g, 139, 9);
+        slot.draw(g, 9, 68);
+        g.fill(64, 15, 112, 21, 0xFF46545C);
         int ticks = holder.value().processingTime();
-        int width = (int) ((System.currentTimeMillis() / 50 % ticks) * 39 / ticks);
-        g.fill(59, 15, 59 + width, 21, 0xFF36A9B8);
+        int width = (int) ((System.currentTimeMillis() / 50 % ticks) * 48 / ticks);
+        g.fill(64, 15, 64 + width, 21, 0xFF36A9B8);
         var font = Minecraft.getInstance().font;
-        g.drawCenteredString(font, Component.translatable("jei.forever_skyblock.duration", ticks / 20.0F), 75, 36, 0xFFE6EDF0);
-        g.drawCenteredString(font, Component.translatable("gui.forever_skyblock.no_power"), 75, 50, 0xFFB0D7DD);
-        g.drawString(font, Component.translatable("jei.forever_skyblock.water_source_required"), 31, 67, 0xFF7FE8F2, false);
-        g.drawString(font, Component.translatable("jei.forever_skyblock.water_not_consumed"), 31, 78, 0xFFB0D7DD, false);
+        g.drawCenteredString(font, Component.translatable("jei.forever_skyblock.duration", ticks / 20.0F), 88, 36, 0xFFE6EDF0);
+        g.drawCenteredString(font, Component.translatable("gui.forever_skyblock.no_power"), 88, 50, 0xFFB0D7DD);
+        g.drawString(font, Component.translatable("jei.forever_skyblock.water_source_required"), 34, 70, 0xFF7FE8F2, false);
+        g.drawString(font, Component.translatable("jei.forever_skyblock.water_not_consumed"), 34, 84, 0xFFB0D7DD, false);
     }
 }
