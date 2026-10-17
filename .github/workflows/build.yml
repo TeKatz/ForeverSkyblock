@@ -23,6 +23,26 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Build mod
         run: ./gradlew build --no-daemon
+      - name: Smoke-test client mixin application
+        shell: bash
+        run: |
+          set +e
+          timeout --signal=TERM --kill-after=10s 90s xvfb-run -a ./gradlew runClient --no-daemon > client-smoke.log 2>&1
+          status=$?
+          set -e
+          cat client-smoke.log
+          if grep -Eq 'Mixin apply for mod forever_skyblock failed|Failed to apply mixin.*forever_skyblock|InvalidInjectionException.*forever_skyblock' client-smoke.log; then
+            echo 'Forever Skyblock client mixin application failed.' >&2
+            exit 1
+          fi
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then
+            echo "Client smoke test exited unexpectedly with status $status." >&2
+            exit "$status"
+          fi
+          if ! grep -q 'ModLauncher running' client-smoke.log; then
+            echo 'Client smoke test never reached ModLauncher.' >&2
+            exit 1
+          fi
       - name: Test dedicated-server regression suite
         run: ./gradlew runGameTestServer -PcondenserTests --no-daemon
       - name: Test full pack-runtime integrations on NeoForge 21.1.259
