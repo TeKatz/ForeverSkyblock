@@ -28,7 +28,7 @@ public abstract class PremiumShopScreenMixin {
     private static final Constructor<?> CARD = cardConstructor();
     private static final Method CARD_PRODUCT = cardProduct();
 
-    @Inject(method = "cards", at = @At("RETURN"))
+    @Inject(method = "generalCards", at = @At("RETURN"))
     private void foreverSkyblock$addProducts(CallbackInfoReturnable<List<?>> callback) {
         if (!currentWorldShop()) return;
         List<?> raw = callback.getReturnValue();
