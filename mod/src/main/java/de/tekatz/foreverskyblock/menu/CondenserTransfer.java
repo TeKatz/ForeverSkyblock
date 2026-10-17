@@ -20,7 +20,7 @@ public final class CondenserTransfer {
         if (!menu.getCarried().isEmpty()) return Plan.failed(Error.CURSOR);
         if (recipe.requiresModule() && !menu.hasModule()) return Plan.failed(Error.MODULE);
         ItemStack[] source = new ItemStack[38];
-        for (int i = 0; i < 36; i++) source[i] = menu.getSlot(i + 3).getItem().copy();
+        for (int i = 0; i < 36; i++) source[i] = menu.getSlot(i + CondenserMenu.MACHINE_SLOT_COUNT).getItem().copy();
         source[36] = menu.getSlot(0).getItem().copy();
         source[37] = recipe.requiresModule() ? menu.getSlot(2).getItem().copy() : ItemStack.EMPTY;
         Requirement primary = new Requirement(recipe.ingredient(), recipe.ingredientCount());
@@ -91,7 +91,6 @@ public final class CondenserTransfer {
             }
             Requirement requirement = requirements[input];
             List<ItemStack> variants = new ArrayList<>();
-            // Check the current target first to retain an already loaded variant and its components.
             for (int index = -1; index < pool.length; index++) {
                 ItemStack candidate = pool[index < 0 ? 36 + input : index];
                 if (!matches(requirement.ingredient(), filters[input], candidate)

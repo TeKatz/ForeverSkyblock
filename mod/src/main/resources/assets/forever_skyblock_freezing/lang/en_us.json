@@ -1,0 +1,13 @@
+{
+  "block.forever_skyblock.freezing_chamber_mark_i": "Freezing Chamber Mark I",
+  "gui.forever_skyblock.machine.state_base": "BASE CONDENSER",
+  "gui.forever_skyblock.machine.state_mixing": "MIXING CHAMBER CONNECTED",
+  "gui.forever_skyblock.machine.state_freezing": "FREEZING CHAMBER CONNECTED",
+  "gui.forever_skyblock.machine.state_full": "MIXING + FREEZING CONNECTED",
+  "gui.forever_skyblock.machine.freezing": "FREEZING",
+  "gui.forever_skyblock.machine.freezing_hint": "Attach a Freezing Chamber to unlock material freezing",
+  "gui.forever_skyblock.machine.hint_base": "Attach Mixing or Freezing Chambers directly to expand this Condenser",
+  "gui.forever_skyblock.machine.hint_mixing": "Mixing active · Freezing Chamber can be attached separately",
+  "gui.forever_skyblock.machine.hint_freezing": "Freezing active · Mixing Chamber can be attached separately",
+  "gui.forever_skyblock.machine.hint_full": "Both modules active"
+}

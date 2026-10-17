@@ -1,0 +1,13 @@
+{
+  "block.forever_skyblock.freezing_chamber_mark_i": "Gefrierkammer Mark I",
+  "gui.forever_skyblock.machine.state_base": "BASIS-KONDENSATOR",
+  "gui.forever_skyblock.machine.state_mixing": "MISCHKAMMER VERBUNDEN",
+  "gui.forever_skyblock.machine.state_freezing": "GEFRIERKAMMER VERBUNDEN",
+  "gui.forever_skyblock.machine.state_full": "MISCHEN + GEFRIEREN VERBUNDEN",
+  "gui.forever_skyblock.machine.freezing": "GEFRIEREN",
+  "gui.forever_skyblock.machine.freezing_hint": "Gefrierkammer direkt anbauen, um Material einzufrieren",
+  "gui.forever_skyblock.machine.hint_base": "Misch- oder Gefrierkammer direkt anbauen, um den Kondensator zu erweitern",
+  "gui.forever_skyblock.machine.hint_mixing": "Mischen aktiv · Gefrierkammer kann separat angebaut werden",
+  "gui.forever_skyblock.machine.hint_freezing": "Gefrieren aktiv · Mischkammer kann separat angebaut werden",
+  "gui.forever_skyblock.machine.hint_full": "Beide Module aktiv"
+}

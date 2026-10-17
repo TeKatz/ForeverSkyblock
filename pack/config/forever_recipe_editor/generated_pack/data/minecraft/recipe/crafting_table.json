@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [" P ", "PMP", " P "],
+  "key": {
+    "P": {"tag": "minecraft:planks"},
+    "M": {"item": "forever_skyblock:stone_meal"}
+  },
+  "result": {"id": "minecraft:crafting_table", "count": 1}
+}

@@ -1,6 +1,7 @@
 package de.tekatz.foreverskyblock;
 
 import de.tekatz.foreverskyblock.block.CondenserBlock;
+import de.tekatz.foreverskyblock.block.FreezingChamberBlock;
 import de.tekatz.foreverskyblock.blockentity.CondenserBlockEntity;
 import de.tekatz.foreverskyblock.item.MortarItem;
 import de.tekatz.foreverskyblock.item.SupplyCacheItem;
@@ -25,7 +26,6 @@ import net.minecraft.world.level.material.MapColor;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -61,6 +61,10 @@ public final class ForeverSkyblock {
     public static final DeferredBlock<Block> MIXING_CHAMBER_MARK_I = BLOCKS.registerSimpleBlock("mixing_chamber_mark_i",
             BlockBehaviour.Properties.of().mapColor(MapColor.STONE).strength(2.0F, 6.0F).sound(SoundType.STONE).requiresCorrectToolForDrops().noOcclusion());
     public static final DeferredItem<BlockItem> MIXING_CHAMBER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(MIXING_CHAMBER_MARK_I);
+    public static final DeferredBlock<FreezingChamberBlock> FREEZING_CHAMBER_MARK_I = BLOCKS.register("freezing_chamber_mark_i",
+            () -> new FreezingChamberBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE)
+                    .strength(2.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()));
+    public static final DeferredItem<BlockItem> FREEZING_CHAMBER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(FREEZING_CHAMBER_MARK_I);
     public static final DeferredItem<Item> REINFORCED_NETHERITE_INGOT = ITEMS.registerSimpleItem("reinforced_netherite_ingot");
     public static final DeferredItem<Item> STONE_MEAL = ITEMS.registerSimpleItem("stone_meal");
     public static final DeferredItem<MortarItem> MORTAR = ITEMS.register("mortar", () -> new MortarItem(new Item.Properties().stacksTo(1)));
@@ -99,7 +103,18 @@ public final class ForeverSkyblock {
     }
 
     private static void addCreativeContents(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) { event.accept(ASCENSION_CHAMBER_ITEM.get()); event.accept(CONDENSER_MARK_I_ITEM.get()); event.accept(MIXING_CHAMBER_MARK_I_ITEM.get()); }
-        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) { event.accept(de.tekatz.foreverskyblock.item.ForeverCore.create()); event.accept(STONE_FRAGMENT.get()); event.accept(STONE_MEAL.get()); event.accept(MORTAR.get()); event.accept(REINFORCED_NETHERITE_INGOT.get()); }
+        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
+            event.accept(ASCENSION_CHAMBER_ITEM.get());
+            event.accept(CONDENSER_MARK_I_ITEM.get());
+            event.accept(MIXING_CHAMBER_MARK_I_ITEM.get());
+            event.accept(FREEZING_CHAMBER_MARK_I_ITEM.get());
+        }
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
+            event.accept(de.tekatz.foreverskyblock.item.ForeverCore.create());
+            event.accept(STONE_FRAGMENT.get());
+            event.accept(STONE_MEAL.get());
+            event.accept(MORTAR.get());
+            event.accept(REINFORCED_NETHERITE_INGOT.get());
+        }
     }
 }

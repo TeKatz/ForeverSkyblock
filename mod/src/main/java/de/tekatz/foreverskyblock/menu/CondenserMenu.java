@@ -18,13 +18,18 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 public final class CondenserMenu extends AbstractContainerMenu {
-    public static final int FIRST_X = 30, SECOND_X = 80, INPUT_Y = 62, OUTPUT_X = 202;
+    public static final int MAIN_INPUT_X = 30, MIXING_INPUT_X = 80, MAIN_OUTPUT_X = 202, MAIN_Y = 59;
+    public static final int FREEZING_INPUT_X = 30, FREEZING_OUTPUT_X = 202, FREEZING_Y = 101;
+    public static final int MACHINE_SLOT_COUNT = CondenserBlockEntity.MACHINE_SLOTS;
+
     private final ContainerData data;
     private final ContainerLevelAccess access;
     private final DataSlot editMode = DataSlot.standalone();
     private final @Nullable CondenserBlockEntity machine;
+    private final net.minecraft.world.level.Level ownerLevel;
+
     public CondenserMenu(int id, Inventory inventory) {
-        this(id, inventory, new ItemStackHandler(3), new SimpleContainerData(CondenserBlockEntity.DATA_COUNT), ContainerLevelAccess.NULL, null);
+        this(id, inventory, new ItemStackHandler(MACHINE_SLOT_COUNT), new SimpleContainerData(CondenserBlockEntity.DATA_COUNT), ContainerLevelAccess.NULL, null);
     }
     public CondenserMenu(int id, Inventory inventory, CondenserBlockEntity machine) {
         this(id, inventory, machine.inventory(), machine.menuData(), ContainerLevelAccess.create(machine.getLevel(), machine.getBlockPos()), machine);
@@ -36,20 +41,22 @@ public final class CondenserMenu extends AbstractContainerMenu {
         this.access = access;
         this.machine = machine;
         this.ownerLevel = playerInventory.player.level();
-        addSlot(inputSlot(inventory, 0, FIRST_X, playerInventory));
-        addSlot(new SlotItemHandler(inventory, 1, OUTPUT_X, INPUT_Y) {
-            @Override public boolean mayPlace(ItemStack stack) { return false; }
-        });
-        addSlot(inputSlot(inventory, 2, SECOND_X, playerInventory));
+        addSlot(inputSlot(inventory, CondenserBlockEntity.INPUT, MAIN_INPUT_X, MAIN_Y));
+        addSlot(outputSlot(inventory, CondenserBlockEntity.OUTPUT, MAIN_OUTPUT_X, MAIN_Y));
+        addSlot(inputSlot(inventory, CondenserBlockEntity.SECOND_INPUT, MIXING_INPUT_X, MAIN_Y));
+        addSlot(inputSlot(inventory, CondenserBlockEntity.FREEZING_INPUT, FREEZING_INPUT_X, FREEZING_Y));
+        addSlot(outputSlot(inventory, CondenserBlockEntity.FREEZING_OUTPUT, FREEZING_OUTPUT_X, FREEZING_Y));
         for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++)
             addSlot(new Slot(playerInventory, col + row * 9 + 9, MachineLayout.CONDENSER.inventoryX(col), MachineLayout.CONDENSER.inventoryRowY(row)));
-        for (int col = 0; col < 9; col++) addSlot(new Slot(playerInventory, col, MachineLayout.CONDENSER.inventoryX(col), MachineLayout.CONDENSER.hotbarY()));
+        for (int col = 0; col < 9; col++)
+            addSlot(new Slot(playerInventory, col, MachineLayout.CONDENSER.inventoryX(col), MachineLayout.CONDENSER.hotbarY()));
         addDataSlots(data);
         addDataSlot(editMode);
     }
-    private Slot inputSlot(ItemStackHandler inventory, int index, int x, Inventory playerInventory) {
-        return new SlotItemHandler(inventory, index, x, INPUT_Y) {
-            @Override public boolean isActive() { return index == 0 || hasModule(); }
+
+    private Slot inputSlot(ItemStackHandler inventory, int index, int x, int y) {
+        return new SlotItemHandler(inventory, index, x, y) {
+            @Override public boolean isActive() { return inputActive(index); }
             @Override public boolean mayPlace(ItemStack stack) {
                 return isActive() && !editing() && acceptsGhost(index, stack)
                         && (machine == null || inventory.isItemValid(index, stack));
@@ -57,26 +64,55 @@ public final class CondenserMenu extends AbstractContainerMenu {
             @Override public boolean mayPickup(Player player) { return isActive() && !editing() && super.mayPickup(player); }
         };
     }
+    private Slot outputSlot(ItemStackHandler inventory, int index, int x, int y) {
+        return new SlotItemHandler(inventory, index, x, y) {
+            @Override public boolean isActive() { return index == CondenserBlockEntity.OUTPUT || hasFreezingChamber(); }
+            @Override public boolean mayPlace(ItemStack stack) { return false; }
+            @Override public boolean mayPickup(Player player) { return isActive() && super.mayPickup(player); }
+        };
+    }
+    private boolean inputActive(int index) {
+        return switch (index) {
+            case CondenserBlockEntity.INPUT -> true;
+            case CondenserBlockEntity.SECOND_INPUT -> hasMixingChamber();
+            case CondenserBlockEntity.FREEZING_INPUT -> hasFreezingChamber();
+            default -> false;
+        };
+    }
+
     public int progress() { return data.get(0); }
     public int duration() { return Math.max(1, data.get(1)); }
     public int status() { return data.get(2); }
-    public boolean hasModule() { return data.get(3) != 0; }
+    public boolean hasMixingChamber() { return data.get(3) != 0; }
+    public boolean hasModule() { return hasMixingChamber(); }
+    public boolean hasFreezingChamber() { return data.get(4) != 0; }
+    public int freezingProgress() { return data.get(5); }
+    public int freezingStatus() { return data.get(6); }
     public boolean editing() { return editMode.get() != 0; }
+    public int moduleState() { return (hasMixingChamber() ? 1 : 0) | (hasFreezingChamber() ? 2 : 0); }
+
     public ItemStack filter(int slot) {
         if (!CondenserBlockEntity.isInput(slot)) return ItemStack.EMPTY;
-        int base = slot == 0 ? 4 : 6;
+        int base = switch (slot) {
+            case CondenserBlockEntity.INPUT -> 7;
+            case CondenserBlockEntity.SECOND_INPUT -> 9;
+            case CondenserBlockEntity.FREEZING_INPUT -> 11;
+            default -> -1;
+        };
+        if (base < 0) return ItemStack.EMPTY;
         int id = (data.get(base) & 65535) | (data.get(base + 1) & 65535) << 16;
         return new ItemStack(BuiltInRegistries.ITEM.byId(id));
     }
     public boolean acceptsGhost(int slot, ItemStack stack) {
-        if (!CondenserBlockEntity.isInput(slot) || slot == 2 && !hasModule()) return false;
+        if (!CondenserBlockEntity.isInput(slot) || !inputActive(slot)) return false;
         if (stack.isEmpty()) return true;
-        var level = ownerLevel;
-        return CondenserBlockEntity.acceptsInput(level, stack, hasModule())
+        boolean acceptable = slot == CondenserBlockEntity.FREEZING_INPUT
+                || CondenserBlockEntity.acceptsInput(ownerLevel, stack, hasMixingChamber());
+        return acceptable
                 && (slots.get(slot).getItem().isEmpty() || ItemStack.isSameItem(slots.get(slot).getItem(), stack))
                 && (editing() || filter(slot).isEmpty() || ItemStack.isSameItem(filter(slot), stack));
     }
-    private net.minecraft.world.level.Level ownerLevel;
+
     @Override public boolean clickMenuButton(Player player, int button) {
         if (button != 0 || !stillValid(player)) return false;
         editMode.set(editing() ? 0 : 1);
@@ -95,38 +131,47 @@ public final class CondenserMenu extends AbstractContainerMenu {
         if (holder == null || !(holder.value() instanceof de.tekatz.foreverskyblock.recipe.CondenserRecipe recipe)) return false;
         CondenserTransfer.Plan plan = CondenserTransfer.plan(this, recipe, maximum);
         if (!plan.success()) { broadcastChanges(); return false; }
-        // Apply the complete server-side plan together. Failure never mutates or drops any items.
-        for (int i = 0; i < 36; i++) getSlot(i + 3).set(plan.inventory().get(i));
-        machine.inventory().setStackInSlot(0, plan.inputs().get(0));
-        if (recipe.requiresModule()) machine.inventory().setStackInSlot(2, plan.inputs().get(1));
+        // Condensing transfers never touch the parallel Freezing input/output.
+        for (int i = 0; i < 36; i++) getSlot(i + MACHINE_SLOT_COUNT).set(plan.inventory().get(i));
+        machine.inventory().setStackInSlot(CondenserBlockEntity.INPUT, plan.inputs().get(0));
+        if (recipe.requiresModule()) machine.inventory().setStackInSlot(CondenserBlockEntity.SECOND_INPUT, plan.inputs().get(1));
         player.getInventory().setChanged();
         broadcastChanges();
         return true;
     }
+
     @Override public void clicked(int slotId, int button, ClickType type, Player player) {
-        if (CondenserBlockEntity.isInput(slotId) && (editing() || !slots.get(slotId).isActive())) return;
+        if (slotId >= 0 && slotId < MACHINE_SLOT_COUNT && !slots.get(slotId).isActive()) return;
+        if (CondenserBlockEntity.isInput(slotId) && editing()) return;
         super.clicked(slotId, button, type, player);
     }
     @Override public boolean canDragTo(Slot slot) {
-        return slot.isActive() && (!editing() || !CondenserBlockEntity.isInput(slot.index)) && super.canDragTo(slot);
+        int menuSlot = slots.indexOf(slot);
+        boolean machineInput = menuSlot >= 0 && menuSlot < MACHINE_SLOT_COUNT && CondenserBlockEntity.isInput(menuSlot);
+        return slot.isActive() && (!editing() || !machineInput) && super.canDragTo(slot);
     }
     @Override public boolean stillValid(Player player) { return stillValid(access, player, ForeverSkyblock.CONDENSER_MARK_I.get()); }
+
     @Override public ItemStack quickMoveStack(Player player, int index) {
         if (index < 0 || index >= slots.size()) return ItemStack.EMPTY;
         Slot slot = slots.get(index);
         if (!slot.hasItem() || !slot.mayPickup(player)) return ItemStack.EMPTY;
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
-        if (index < 3) {
-            if (!moveItemStackTo(stack, 3, slots.size(), true)) return ItemStack.EMPTY;
+        if (index < MACHINE_SLOT_COUNT) {
+            if (!moveItemStackTo(stack, MACHINE_SLOT_COUNT, slots.size(), true)) return ItemStack.EMPTY;
         } else {
+            // The Freezing input accepts every item, so it is deliberately never a generic shift-click sink.
             boolean moved = false;
-            if (slots.get(0).mayPlace(stack)) moved = moveItemStackTo(stack, 0, 1, false);
-            if (!stack.isEmpty() && slots.get(2).mayPlace(stack)) moved |= moveItemStackTo(stack, 2, 3, false);
+            if (slots.get(CondenserBlockEntity.INPUT).mayPlace(stack))
+                moved = moveItemStackTo(stack, CondenserBlockEntity.INPUT, CondenserBlockEntity.INPUT + 1, false);
+            if (!stack.isEmpty() && slots.get(CondenserBlockEntity.SECOND_INPUT).mayPlace(stack))
+                moved |= moveItemStackTo(stack, CondenserBlockEntity.SECOND_INPUT, CondenserBlockEntity.SECOND_INPUT + 1, false);
             if (!moved) {
-                if (index < 30) {
-                    if (!moveItemStackTo(stack, 30, 39, false)) return ItemStack.EMPTY;
-                } else if (!moveItemStackTo(stack, 3, 30, false)) return ItemStack.EMPTY;
+                int hotbarStart = MACHINE_SLOT_COUNT + 27;
+                if (index < hotbarStart) {
+                    if (!moveItemStackTo(stack, hotbarStart, MACHINE_SLOT_COUNT + 36, false)) return ItemStack.EMPTY;
+                } else if (!moveItemStackTo(stack, MACHINE_SLOT_COUNT, hotbarStart, false)) return ItemStack.EMPTY;
             }
         }
         if (stack.isEmpty()) slot.setByPlayer(ItemStack.EMPTY); else slot.setChanged();

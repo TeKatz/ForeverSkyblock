@@ -141,6 +141,7 @@ public final class CondenserGameTests {
             h.succeed();
         });
     }
+
     @GameTest(template = "empty")
     public static void shiftClickAndRemovalPreserveItems(GameTestHelper h) {
         var machine = machine(h, POS);
@@ -150,7 +151,7 @@ public final class CondenserGameTests {
         player.setPos(absolute.getX() + 0.5, absolute.getY(), absolute.getZ() + 0.5);
         var menu = new CondenserMenu(1, player.getInventory(), machine);
         player.getInventory().setItem(9, new ItemStack(Items.OAK_LOG, 3));
-        menu.quickMoveStack(player, 3);
+        menu.quickMoveStack(player, CondenserMenu.MACHINE_SLOT_COUNT);
         check(h, player.getInventory().getItem(9).isEmpty() && machine.inventory().getStackInSlot(0).getCount() == 3,
                 "Shift-click moves wood into the input only");
         machine.inventory().setStackInSlot(1, new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), 4));

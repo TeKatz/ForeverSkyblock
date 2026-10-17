@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["CBC", "SMS", "CBC"],
+  "key": {
+    "C": {"item": "minecraft:cobblestone"},
+    "B": {"item": "minecraft:bone_meal"},
+    "S": {"item": "forever_skyblock:stone_meal"},
+    "M": {"item": "forever_skyblock:mixing_chamber_mark_i"}
+  },
+  "result": {"id": "forever_skyblock:freezing_chamber_mark_i", "count": 1}
+}

@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "forever_skyblock:block/freezing_chamber_mark_i" },
+    "facing=east": { "model": "forever_skyblock:block/freezing_chamber_mark_i", "y": 90 },
+    "facing=south": { "model": "forever_skyblock:block/freezing_chamber_mark_i", "y": 180 },
+    "facing=west": { "model": "forever_skyblock:block/freezing_chamber_mark_i", "y": 270 }
+  }
+}
