@@ -17,7 +17,8 @@
     "ToolRecipeManagerMixin",
     "ToolRepairRecipeMixin",
     "PersonalCraftMixin",
-    "PersonalKillMixin"
+    "PersonalKillMixin",
+    "ProgressionServiceWorldMixin"
   ],
   "client": [
     "PremiumSkillScreenVisualMixin",

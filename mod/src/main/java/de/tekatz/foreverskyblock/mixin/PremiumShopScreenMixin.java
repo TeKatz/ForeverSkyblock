@@ -13,13 +13,15 @@ import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Real current-world products integrated into the existing Design-2 generic card panel. */
+/** Real current-world products and world upgrades integrated into the existing generic card panel. */
 @Mixin(PremiumSkillScreen.class)
 public abstract class PremiumShopScreenMixin {
     private static final Field PAGE = field("page"), SUBSECTIONS = field("subsections");
@@ -38,10 +40,10 @@ public abstract class PremiumShopScreenMixin {
             try {
                 String title = german() ? product.titleDe() : product.titleEn();
                 String description = german() ? product.descriptionDe() : product.descriptionEn();
-                String badge = product.spCost() + " SP · " + tier(product.requiredTier());
+                String badge = product.worldUpgrade() ? product.spCost() + " SP · " + (german() ? "WELT-UPGRADE" : "WORLD UPGRADE")
+                        : product.spCost() + " SP · " + tier(product.requiredTier());
                 Object card = CARD.newInstance(Component.literal(title), Component.literal(description), Component.literal(badge),
-                        ForeverSkyblock.WORLD_SUPPLY_CACHE.get().getDefaultInstance(), "", product.id(), null,
-                        Component.literal(german() ? "KAUFEN" : "PURCHASE"));
+                        icon(product), "", product.id(), null, Component.literal(german() ? "KAUFEN" : "PURCHASE"));
                 cards.add(card);
             } catch (ReflectiveOperationException e) { throw new IllegalStateException("Could not build current-world shop card", e); }
         }
@@ -70,7 +72,7 @@ public abstract class PremiumShopScreenMixin {
             case 2, 4 -> Component.literal(german() ? "WIEDERHERSTELLUNG…" : "RECOVERING…");
             case 3 -> Component.literal(german() ? "PAKET AUSGELIEFERT" : "PACKAGE DELIVERED");
             case 5 -> Component.literal(german() ? "PAKET GEÖFFNET" : "PACKAGE OPENED");
-            case 6 -> Component.literal(german() ? "BEANSPRUCHT" : "CLAIMED");
+            case 6 -> Component.literal(product.worldUpgrade() ? (german() ? "AKTIV" : "ACTIVE") : (german() ? "BEANSPRUCHT" : "CLAIMED"));
             default -> {
                 if (snapshot.shopTier() < product.requiredTier()) yield Component.literal((german() ? "BENÖTIGT " : "REQUIRES ") + tier(product.requiredTier()));
                 if (snapshot.perkPoints() < product.ppCost()) yield Component.literal(german() ? "ZU WENIG PP" : "NOT ENOUGH PP");
@@ -80,18 +82,13 @@ public abstract class PremiumShopScreenMixin {
         });
     }
 
-    /**
-     * Real packages own both their purchase and post-purchase claim actions. This prevents the
-     * Phase-3 test-entitlement confirmation from leaking into live products and keeps READY
-     * deliveries actionable from the same card.
-     */
     @Inject(method = "confirmProduct", at = @At("HEAD"), cancellable = true)
     private void foreverSkyblock$realProductAction(String id, CallbackInfo callback) {
         ShopCatalog.Product product = ShopCatalog.find(id);
         if (product == null || product.developmentOnly()) return;
         var snapshot = ClientSkills.snapshot();
         SkillNetwork.ProductState state = snapshot == null ? null : snapshot.products().get(id);
-        if (state != null && state.stage() == 1 && !ClientSkills.pending()) {
+        if (!product.worldUpgrade() && state != null && state.stage() == 1 && !ClientSkills.pending()) {
             ClientSkills.claimProduct(id);
             callback.cancel();
             return;
@@ -100,11 +97,18 @@ public abstract class PremiumShopScreenMixin {
             Minecraft minecraft = Minecraft.getInstance();
             PremiumSkillScreen parent = (PremiumSkillScreen) (Object) this;
             String name = german() ? product.titleDe() : product.titleEn();
-            Component title = Component.literal(german() ? "Weltpaket kaufen?" : "Purchase current-world package?");
-            Component description = Component.literal(german()
-                    ? name + " für " + product.spCost() + " SP in „" + snapshot.worldName() + "“ kaufen? Der Kauf ist nicht erstattbar und gilt nur für diese Welt."
-                    : "Buy " + name + " for " + product.spCost() + " SP in “" + snapshot.worldName() + "”? The purchase is non-refundable and applies only to this world.");
-            Component confirm = Component.literal(german() ? "Kaufen" : "Purchase");
+            Component title = Component.literal(product.worldUpgrade()
+                    ? (german() ? "Welt-Upgrade aktivieren?" : "Activate world upgrade?")
+                    : (german() ? "Weltpaket kaufen?" : "Purchase current-world package?"));
+            Component description = Component.literal(product.worldUpgrade()
+                    ? (german()
+                        ? name + " für " + product.spCost() + " SP in „" + snapshot.worldName() + "“ aktivieren? Das Upgrade gilt dauerhaft für die gesamte Welt und ist nicht erstattbar."
+                        : "Activate " + name + " for " + product.spCost() + " SP in “" + snapshot.worldName() + "”? The upgrade permanently affects the entire world and is non-refundable.")
+                    : (german()
+                        ? name + " für " + product.spCost() + " SP in „" + snapshot.worldName() + "“ kaufen? Der Kauf ist nicht erstattbar und gilt nur für diese Welt."
+                        : "Buy " + name + " for " + product.spCost() + " SP in “" + snapshot.worldName() + "”? The purchase is non-refundable and applies only to this world."));
+            Component confirm = Component.literal(product.worldUpgrade()
+                    ? (german() ? "Aktivieren" : "Activate") : (german() ? "Kaufen" : "Purchase"));
             minecraft.setScreen(new ConfirmScreen(yes -> {
                 minecraft.setScreen(parent);
                 if (yes) ClientSkills.buyProduct(id);
@@ -113,10 +117,17 @@ public abstract class PremiumShopScreenMixin {
         callback.cancel();
     }
 
+    private static ItemStack icon(ShopCatalog.Product product) {
+        if (product.id().equals(ShopCatalog.NO_PHANTOMS.id())) return Items.PHANTOM_MEMBRANE.getDefaultInstance();
+        if (product.id().equals(ShopCatalog.NO_RAIN.id())) return Items.WATER_BUCKET.getDefaultInstance();
+        if (product.id().equals(ShopCatalog.PERMANENT_DAY.id())) return Items.SUNFLOWER.getDefaultInstance();
+        return ForeverSkyblock.WORLD_SUPPLY_CACHE.get().getDefaultInstance();
+    }
+
     private static boolean canAct(SkillNetwork.Snapshot snapshot, SkillNetwork.ProductState state, ShopCatalog.Product product) {
         if (snapshot == null || !snapshot.available() || !snapshot.worldAvailable() || ClientSkills.pending()
                 || state == null || !state.available()) return false;
-        if (state.stage() == 1) return true;
+        if (!product.worldUpgrade() && state.stage() == 1) return true;
         return canPurchase(snapshot, state, product);
     }
 
