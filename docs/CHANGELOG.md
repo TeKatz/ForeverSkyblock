@@ -2,6 +2,20 @@
 
 This file is the concise version history. Detailed test evidence belongs in [VALIDATION.md](VALIDATION.md); current integrated repository status belongs in [CURRENT_STATE.md](CURRENT_STATE.md).
 
+## 0.19.0 — Material processing and automation development
+
+- Add the Mixing Chamber recipe **4 Dirt + 1 Ice -> 4 Mud**, making Ice useful after the first permanent water source and connecting the Dirt/Freezing loop to Vanilla Packed Mud and Mud Bricks.
+- Add the Washing Basin, crafted from Mud Bricks, Cobblestone and Planks. It requires a directly adjacent source-water block, does not consume the water and pauses without losing partial progress when water is removed.
+- Add deterministic first-metal processing: **4 Stone Meal -> 1 Raw Iron in 160 ticks / 8 seconds** with no power.
+- Make Condenser Mark I reproducible before Iron using Mud Bricks, Cobblestone, Stone Meal and a Furnace.
+- Add the Iron-gated Condenser Mark II using one Mark I, four Iron Ingots and four Mud Bricks while retaining the existing Mixing/Freezing modules, locks, automation and dynamic Condenser UI.
+- Add Mark-II-only automation recipes: **4 Stone Fragments -> 1 Stone Meal** and **8 matching Leaves + 1 Bone Meal -> 1 matching Sapling/Propagule** for Oak, Spruce, Birch, Jungle, Acacia, Dark Oak, Cherry and Mangrove.
+- Add recipe-tier metadata and deterministic two-input priority so Mark II + Mixing produces Saplings when the second Bone Meal input is present while Mark I still uses the existing Leaves -> Bone Meal path.
+- Add a dedicated JEI Washing category, Mark-II requirement presentation, catalysts and recipe-button integration.
+- Add dedicated regression coverage for Mud consumption, source-water gating, Washing pause/resume and automation, Mark-I tier refusal, Mark-II Stone Meal production and Sapling recipe priority.
+- Keep automatic Log/Leaf production as an explicit next automation requirement rather than pretending the wood-based primitive economy is fully closed.
+- Development branch: `feature/material-processing-0.19`. No merge, release or starter-island change is implied.
+
 ## 0.18.1 — Freezing Chamber cleanup and main integration
 
 - Fix top-side z-fighting on the Freezing Chamber while retaining the approved recessed-basin Design 3 silhouette.
