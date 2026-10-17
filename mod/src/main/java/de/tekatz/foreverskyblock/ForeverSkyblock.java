@@ -2,13 +2,17 @@ package de.tekatz.foreverskyblock;
 
 import de.tekatz.foreverskyblock.block.CondenserBlock;
 import de.tekatz.foreverskyblock.block.FreezingChamberBlock;
+import de.tekatz.foreverskyblock.block.WashingBasinBlock;
 import de.tekatz.foreverskyblock.blockentity.CondenserBlockEntity;
+import de.tekatz.foreverskyblock.blockentity.WashingBasinBlockEntity;
 import de.tekatz.foreverskyblock.item.MortarItem;
 import de.tekatz.foreverskyblock.item.SupplyCacheItem;
 import de.tekatz.foreverskyblock.menu.CondenserMenu;
+import de.tekatz.foreverskyblock.menu.WashingMenu;
 import de.tekatz.foreverskyblock.network.CondenserNetwork;
 import de.tekatz.foreverskyblock.network.SkillNetwork;
 import de.tekatz.foreverskyblock.recipe.CondenserRecipe;
+import de.tekatz.foreverskyblock.recipe.WashingRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
@@ -59,6 +63,11 @@ public final class ForeverSkyblock {
                     .strength(2.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()
                     .lightLevel(state -> state.getValue(CondenserBlock.ACTIVE) ? 5 : 0)));
     public static final DeferredItem<BlockItem> CONDENSER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(CONDENSER_MARK_I);
+    public static final DeferredBlock<CondenserBlock> CONDENSER_MARK_II = BLOCKS.register("condenser_mark_ii",
+            () -> new CondenserBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                    .strength(3.0F, 8.0F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()
+                    .lightLevel(state -> state.getValue(CondenserBlock.ACTIVE) ? 7 : 0)));
+    public static final DeferredItem<BlockItem> CONDENSER_MARK_II_ITEM = ITEMS.registerSimpleBlockItem(CONDENSER_MARK_II);
     public static final DeferredBlock<Block> MIXING_CHAMBER_MARK_I = BLOCKS.registerSimpleBlock("mixing_chamber_mark_i",
             BlockBehaviour.Properties.of().mapColor(MapColor.STONE).strength(2.0F, 6.0F).sound(SoundType.STONE).requiresCorrectToolForDrops().noOcclusion());
     public static final DeferredItem<BlockItem> MIXING_CHAMBER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(MIXING_CHAMBER_MARK_I);
@@ -66,6 +75,11 @@ public final class ForeverSkyblock {
             () -> new FreezingChamberBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE)
                     .strength(2.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()));
     public static final DeferredItem<BlockItem> FREEZING_CHAMBER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(FREEZING_CHAMBER_MARK_I);
+    public static final DeferredBlock<WashingBasinBlock> WASHING_BASIN = BLOCKS.register("washing_basin",
+            () -> new WashingBasinBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BROWN)
+                    .strength(2.5F, 6.0F).sound(SoundType.STONE).requiresCorrectToolForDrops().noOcclusion()));
+    public static final DeferredItem<BlockItem> WASHING_BASIN_ITEM = ITEMS.registerSimpleBlockItem(WASHING_BASIN);
+
     public static final DeferredItem<Item> REINFORCED_NETHERITE_INGOT = ITEMS.registerSimpleItem("reinforced_netherite_ingot");
     public static final DeferredItem<Item> STONE_MEAL = ITEMS.registerSimpleItem("stone_meal");
     public static final DeferredItem<MortarItem> MORTAR = ITEMS.register("mortar", () -> new MortarItem(new Item.Properties().stacksTo(1)));
@@ -73,16 +87,29 @@ public final class ForeverSkyblock {
     /** Delivery carrier is intentionally absent from creative tabs; only a committed shop receipt can issue one. */
     public static final DeferredItem<SupplyCacheItem> WORLD_SUPPLY_CACHE = ITEMS.register("world_supply_cache",
             () -> new SupplyCacheItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CondenserBlockEntity>> CONDENSER_ENTITY =
-            BLOCK_ENTITIES.register("condenser_mark_i", () -> BlockEntityType.Builder.of(CondenserBlockEntity::new, CONDENSER_MARK_I.get()).build(null));
+            BLOCK_ENTITIES.register("condenser_mark_i", () -> BlockEntityType.Builder.of(CondenserBlockEntity::new,
+                    CONDENSER_MARK_I.get(), CONDENSER_MARK_II.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<WashingBasinBlockEntity>> WASHING_BASIN_ENTITY =
+            BLOCK_ENTITIES.register("washing_basin", () -> BlockEntityType.Builder.of(WashingBasinBlockEntity::new, WASHING_BASIN.get()).build(null));
     public static final DeferredHolder<MenuType<?>, MenuType<CondenserMenu>> CONDENSER_MENU =
             MENUS.register("condenser_mark_i", () -> new MenuType<>(CondenserMenu::new, FeatureFlags.DEFAULT_FLAGS));
+    public static final DeferredHolder<MenuType<?>, MenuType<WashingMenu>> WASHING_BASIN_MENU =
+            MENUS.register("washing_basin", () -> new MenuType<>(WashingMenu::new, FeatureFlags.DEFAULT_FLAGS));
+
     public static final DeferredHolder<RecipeType<?>, RecipeType<CondenserRecipe>> CONDENSING =
             RECIPE_TYPES.register("condensing", () -> new RecipeType<>() {
                 @Override public String toString() { return MOD_ID + ":condensing"; }
             });
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<CondenserRecipe>> CONDENSING_SERIALIZER =
             RECIPE_SERIALIZERS.register("condensing", CondenserRecipe.Serializer::new);
+    public static final DeferredHolder<RecipeType<?>, RecipeType<WashingRecipe>> WASHING =
+            RECIPE_TYPES.register("washing", () -> new RecipeType<>() {
+                @Override public String toString() { return MOD_ID + ":washing"; }
+            });
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<WashingRecipe>> WASHING_SERIALIZER =
+            RECIPE_SERIALIZERS.register("washing", WashingRecipe.Serializer::new);
 
     public ForeverSkyblock(IEventBus modBus) {
         BLOCKS.register(modBus);
@@ -101,14 +128,17 @@ public final class ForeverSkyblock {
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ASCENSION_ENTITY.get(), de.tekatz.foreverskyblock.blockentity.AscensionChamberBlockEntity::automation);
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, CONDENSER_ENTITY.get(), CondenserBlockEntity::automation);
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, WASHING_BASIN_ENTITY.get(), WashingBasinBlockEntity::automation);
     }
 
     private static void addCreativeContents(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(ASCENSION_CHAMBER_ITEM.get());
             event.accept(CONDENSER_MARK_I_ITEM.get());
+            event.accept(CONDENSER_MARK_II_ITEM.get());
             event.accept(MIXING_CHAMBER_MARK_I_ITEM.get());
             event.accept(FREEZING_CHAMBER_MARK_I_ITEM.get());
+            event.accept(WASHING_BASIN_ITEM.get());
         }
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
             event.accept(de.tekatz.foreverskyblock.item.ForeverCore.create());

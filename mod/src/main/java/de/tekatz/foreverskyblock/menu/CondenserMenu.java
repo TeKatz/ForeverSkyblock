@@ -88,6 +88,7 @@ public final class CondenserMenu extends AbstractContainerMenu {
     public boolean hasFreezingChamber() { return data.get(4) != 0; }
     public int freezingProgress() { return data.get(5); }
     public int freezingStatus() { return data.get(6); }
+    public int machineTier() { return Math.max(1, data.get(13)); }
     public boolean editing() { return editMode.get() != 0; }
     public int moduleState() { return (hasMixingChamber() ? 1 : 0) | (hasFreezingChamber() ? 2 : 0); }
 
@@ -107,7 +108,7 @@ public final class CondenserMenu extends AbstractContainerMenu {
         if (!CondenserBlockEntity.isInput(slot) || !inputActive(slot)) return false;
         if (stack.isEmpty()) return true;
         boolean acceptable = slot == CondenserBlockEntity.FREEZING_INPUT
-                || CondenserBlockEntity.acceptsInput(ownerLevel, stack, hasMixingChamber());
+                || CondenserBlockEntity.acceptsInput(ownerLevel, stack, hasMixingChamber(), machineTier());
         return acceptable
                 && (slots.get(slot).getItem().isEmpty() || ItemStack.isSameItem(slots.get(slot).getItem(), stack))
                 && (editing() || filter(slot).isEmpty() || ItemStack.isSameItem(filter(slot), stack));
@@ -150,7 +151,11 @@ public final class CondenserMenu extends AbstractContainerMenu {
         boolean machineInput = menuSlot >= 0 && menuSlot < MACHINE_SLOT_COUNT && CondenserBlockEntity.isInput(menuSlot);
         return slot.isActive() && (!editing() || !machineInput) && super.canDragTo(slot);
     }
-    @Override public boolean stillValid(Player player) { return stillValid(access, player, ForeverSkyblock.CONDENSER_MARK_I.get()); }
+    @Override public boolean stillValid(Player player) {
+        return access.evaluate((level, pos) -> (level.getBlockState(pos).is(ForeverSkyblock.CONDENSER_MARK_I.get())
+                || level.getBlockState(pos).is(ForeverSkyblock.CONDENSER_MARK_II.get()))
+                && player.distanceToSqr(pos.getX() + .5, pos.getY() + .5, pos.getZ() + .5) <= 64.0, true);
+    }
 
     @Override public ItemStack quickMoveStack(Player player, int index) {
         if (index < 0 || index >= slots.size()) return ItemStack.EMPTY;

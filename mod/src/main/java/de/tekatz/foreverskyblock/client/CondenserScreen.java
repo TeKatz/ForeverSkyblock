@@ -76,8 +76,8 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
     @Override protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
         skin.frame(g, x, y, imageWidth, imageHeight);
-        g.renderItem(new ItemStack(ForeverSkyblock.CONDENSER_MARK_I.get()), x + 18, y + 10);
-        MachineSkin.text(g, font, text("condenser_title"), x + 42, y + 12, 126, MachineSkin.LIGHT, 1.1F);
+        g.renderItem(new ItemStack(menu.machineTier() >= 2 ? ForeverSkyblock.CONDENSER_MARK_II.get() : ForeverSkyblock.CONDENSER_MARK_I.get()), x + 18, y + 10);
+        MachineSkin.text(g, font, text(menu.machineTier() >= 2 ? "condenser_title_ii" : "condenser_title"), x + 42, y + 12, 126, MachineSkin.LIGHT, 1.1F);
         int color = menu.status() == CondenserBlockEntity.BLOCKED ? 0xFFFFBF76 : MachineSkin.CYAN;
         g.fill(x + 177, y + 12, x + 181, y + 16, color);
         MachineSkin.text(g, font, text(menu.status() == CondenserBlockEntity.RUNNING ? "processing"
@@ -126,14 +126,14 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         MachineSkin.centered(g, font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f / %.1f s",
                 menu.progress() / 20F, menu.duration() / 20F)), barX + barW / 2, y + 79, barW + 4, MachineSkin.MUTED, .7F);
 
-        Component summary = text("wood_recipe");
+        Component summary = text(menu.machineTier() >= 2 ? "mk2_recipe" : "wood_recipe");
         if (minecraft.level != null) {
             var input = new CondenserInput(menu.getSlot(CondenserBlockEntity.INPUT).getItem(),
                     menu.hasMixingChamber() ? menu.getSlot(CondenserBlockEntity.SECOND_INPUT).getItem() : ItemStack.EMPTY);
-            var recipe = minecraft.level.getRecipeManager().getRecipeFor(ForeverSkyblock.CONDENSING.get(), input, minecraft.level);
-            if (recipe.isPresent()) summary = Component.literal(menu.getSlot(CondenserBlockEntity.INPUT).getItem().getHoverName().getString()
-                    + (recipe.get().value().requiresModule() ? " + " + menu.getSlot(CondenserBlockEntity.SECOND_INPUT).getItem().getHoverName().getString() : "")
-                    + " → " + recipe.get().value().result().getHoverName().getString());
+            var recipe = CondenserBlockEntity.findMatchingRecipe(minecraft.level, input, menu.machineTier());
+            if (recipe != null) summary = Component.literal(menu.getSlot(CondenserBlockEntity.INPUT).getItem().getHoverName().getString()
+                    + (recipe.value().requiresModule() ? " + " + menu.getSlot(CondenserBlockEntity.SECOND_INPUT).getItem().getHoverName().getString() : "")
+                    + " → " + recipe.value().result().getHoverName().getString());
         }
         MachineSkin.text(g, font, summary, x + 20, y + 95, 207, MachineSkin.LIGHT, .84F);
     }

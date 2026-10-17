@@ -1,0 +1,18 @@
+{
+  "block.forever_skyblock.condenser_mark_ii": "Condenser Mark II",
+  "block.forever_skyblock.washing_basin": "Washing Basin",
+  "gui.forever_skyblock.machine.condenser_title_ii": "CONDENSER MK II",
+  "gui.forever_skyblock.machine.washing_title": "WASHING BASIN",
+  "gui.forever_skyblock.machine.washing": "WASHING",
+  "gui.forever_skyblock.machine.no_water": "NO WATER",
+  "gui.forever_skyblock.machine.water_connected": "WATER SOURCE CONNECTED",
+  "gui.forever_skyblock.machine.water_required": "ADJACENT WATER SOURCE REQUIRED",
+  "gui.forever_skyblock.machine.washing_recipe": "Stone Meal → Raw Iron",
+  "gui.forever_skyblock.machine.washing_hint": "A source block touching any face powers the wash. Water is not consumed.",
+  "gui.forever_skyblock.machine.mk2_recipe": "Advanced material processing",
+  "jei.forever_skyblock.washing": "Washing",
+  "jei.forever_skyblock.water_source_required": "Adjacent water source required",
+  "jei.forever_skyblock.water_not_consumed": "Water is not consumed",
+  "jei.forever_skyblock.tier_ii_required": "Condenser Mark II required",
+  "jei.forever_skyblock.transfer.tier": "This recipe requires a Condenser Mark II."
+}

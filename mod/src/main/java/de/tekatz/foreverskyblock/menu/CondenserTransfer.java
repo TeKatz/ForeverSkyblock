@@ -8,7 +8,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 /** Shared, side-effect-free transfer planning for the JEI preview and authoritative server execution. */
 public final class CondenserTransfer {
-    public enum Error { NONE, MODULE, EDITING, CURSOR, FILTERS, MISSING, SPACE }
+    public enum Error { NONE, TIER, MODULE, EDITING, CURSOR, FILTERS, MISSING, SPACE }
     public record Plan(Error error, List<ItemStack> inventory, List<ItemStack> inputs) {
         private static Plan failed(Error error) { return new Plan(error, List.of(), List.of()); }
         public boolean success() { return error == Error.NONE; }
@@ -16,6 +16,7 @@ public final class CondenserTransfer {
     private record Requirement(Ingredient ingredient, int count) { }
     private CondenserTransfer() { }
     public static Plan plan(CondenserMenu menu, CondenserRecipe recipe, boolean maxTransfer) {
+        if (!recipe.availableToTier(menu.machineTier())) return Plan.failed(Error.TIER);
         if (menu.editing()) return Plan.failed(Error.EDITING);
         if (!menu.getCarried().isEmpty()) return Plan.failed(Error.CURSOR);
         if (recipe.requiresModule() && !menu.hasModule()) return Plan.failed(Error.MODULE);

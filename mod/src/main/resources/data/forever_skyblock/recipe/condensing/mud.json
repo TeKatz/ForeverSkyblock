@@ -1,0 +1,8 @@
+{
+  "type": "forever_skyblock:condensing",
+  "ingredient": { "item": "minecraft:dirt" },
+  "ingredient_count": 4,
+  "secondary_ingredient": { "item": "minecraft:ice" },
+  "result": { "id": "minecraft:mud", "count": 4 },
+  "processing_time": 160
+}

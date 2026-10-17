@@ -3,6 +3,7 @@ package de.tekatz.foreverskyblock.menu;
 /** Common logical coordinates keep rendered slots, server menus and pointer transforms aligned. */
 public record MachineLayout(int width, int height, int inventoryY, int hotbarY) {
     public static final MachineLayout CONDENSER = new MachineLayout(248,296,204,268);
+    public static final MachineLayout WASHING = new MachineLayout(248,260,166,230);
     public static final MachineLayout ASCENSION = new MachineLayout(248,270,176,240);
     public int inventoryX(int column) { return 24 + column*22; }
     public int inventoryRowY(int row) { return inventoryY + row*20; }

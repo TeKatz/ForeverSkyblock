@@ -1,0 +1,9 @@
+{
+  "type": "forever_skyblock:condensing",
+  "ingredient": { "item": "minecraft:mangrove_leaves" },
+  "ingredient_count": 8,
+  "secondary_ingredient": { "item": "minecraft:bone_meal" },
+  "result": { "id": "minecraft:mangrove_propagule", "count": 1 },
+  "processing_time": 160,
+  "minimum_tier": 2
+}

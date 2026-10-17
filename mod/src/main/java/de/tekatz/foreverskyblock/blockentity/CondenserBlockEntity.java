@@ -5,6 +5,7 @@ import de.tekatz.foreverskyblock.block.CondenserBlock;
 import de.tekatz.foreverskyblock.menu.CondenserMenu;
 import de.tekatz.foreverskyblock.recipe.CondenserInput;
 import de.tekatz.foreverskyblock.recipe.CondenserRecipe;
+import java.util.Comparator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -20,7 +21,6 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
 public final class CondenserBlockEntity extends BlockEntity implements MenuProvider {
     // Original indices stay stable. Module storage is appended for old-save compatibility.
     public static final int INPUT = 0, OUTPUT = 1, SECOND_INPUT = 2, FREEZING_INPUT = 3, FREEZING_OUTPUT = 4;
-    public static final int MACHINE_SLOTS = 5, DATA_COUNT = 13;
+    public static final int MACHINE_SLOTS = 5, DATA_COUNT = 14;
     public static final int IDLE = 0, RUNNING = 1, BLOCKED = 2;
     public static final int FREEZING_REQUIRED_ITEMS = 32;
 
@@ -43,11 +43,12 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     private int freezingStatus;
     private ResourceLocation progressRecipe;
     private final ItemStack[] filters = { ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY };
-    private final RecipeManager.CachedCheck<CondenserInput, CondenserRecipe> recipeCheck = RecipeManager.createCheck(ForeverSkyblock.CONDENSING.get());
     private boolean visualDirty = true;
     private long lastVisualSync, visualReceivedAt;
 
     public CondenserBlockEntity(BlockPos pos, BlockState state) { super(ForeverSkyblock.CONDENSER_ENTITY.get(), pos, state); }
+
+    public int machineTier() { return getBlockState().is(ForeverSkyblock.CONDENSER_MARK_II.get()) ? 2 : 1; }
 
     public float visualProgress(float partialTick) {
         if (level == null) return progress;
@@ -80,7 +81,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
             if (stack.isEmpty() || level == null || !isInput(slot) || !acceptsFilter(slot, stack)) return false;
             if (slot == FREEZING_INPUT) return hasFreezingChamber();
             if (slot == SECOND_INPUT && !hasMixingChamber()) return false;
-            return acceptsInput(level, stack, hasMixingChamber());
+            return acceptsInput(level, stack, hasMixingChamber(), machineTier());
         }
         @Override protected void onContentsChanged(int slot) { setChanged(); visualDirty = true; }
     };
@@ -104,6 +105,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
                     int id = BuiltInRegistries.ITEM.getId(filters[filter].getItem());
                     yield ((index - 7) % 2 == 0 ? id : id >>> 16) & 65535;
                 }
+                case 13 -> machineTier();
                 default -> 0;
             };
         }
@@ -127,9 +129,13 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     }
 
     public static boolean acceptsInput(Level level, ItemStack stack, boolean mixing) {
+        return acceptsInput(level, stack, mixing, 1);
+    }
+    public static boolean acceptsInput(Level level, ItemStack stack, boolean mixing, int tier) {
         if (stack.isEmpty()) return false;
         return level.getRecipeManager().getAllRecipesFor(ForeverSkyblock.CONDENSING.get()).stream()
-                .anyMatch(holder -> (!holder.value().requiresModule() || mixing) && holder.value().accepts(stack));
+                .anyMatch(holder -> holder.value().availableToTier(tier)
+                        && (!holder.value().requiresModule() || mixing) && holder.value().accepts(stack));
     }
     private static int filterIndex(int slot) {
         return switch (slot) { case INPUT -> 0; case SECOND_INPUT -> 1; case FREEZING_INPUT -> 2; default -> -1; };
@@ -147,7 +153,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         if (index < 0 || slot == SECOND_INPUT && !hasMixingChamber() || slot == FREEZING_INPUT && !hasFreezingChamber()) return false;
         ItemStack current = inventory.getStackInSlot(slot);
         if (!stack.isEmpty()) {
-            if (level == null || slot != FREEZING_INPUT && !acceptsInput(level, stack, hasMixingChamber())) return false;
+            if (level == null || slot != FREEZING_INPUT && !acceptsInput(level, stack, hasMixingChamber(), machineTier())) return false;
             if (!current.isEmpty() && !ItemStack.isSameItem(current, stack)) return false;
         }
         filters[index] = stack.isEmpty() ? ItemStack.EMPTY : new ItemStack(stack.getItem());
@@ -161,9 +167,20 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     private CondenserInput currentInput(boolean mixing) {
         return new CondenserInput(inventory.getStackInSlot(INPUT), mixing ? inventory.getStackInSlot(SECOND_INPUT) : ItemStack.EMPTY);
     }
+    public static @Nullable RecipeHolder<CondenserRecipe> findMatchingRecipe(Level level, CondenserInput input, int tier) {
+        if (input.first().isEmpty()) return null;
+        Comparator<RecipeHolder<CondenserRecipe>> order = Comparator
+                .comparingInt((RecipeHolder<CondenserRecipe> holder) -> holder.value().requiresModule() ? 1 : 0).reversed()
+                .thenComparing(Comparator.comparingInt((RecipeHolder<CondenserRecipe> holder) -> holder.value().minimumTier()).reversed())
+                .thenComparing(holder -> holder.id().toString());
+        return level.getRecipeManager().getAllRecipesFor(ForeverSkyblock.CONDENSING.get()).stream()
+                .filter(holder -> holder.value().availableToTier(tier) && holder.value().matches(input, level))
+                .sorted(order)
+                .findFirst().orElse(null);
+    }
     private @Nullable RecipeHolder<CondenserRecipe> findRecipe(boolean mixing) {
-        if (level == null || inventory.getStackInSlot(INPUT).isEmpty()) return null;
-        return recipeCheck.getRecipeFor(currentInput(mixing), level).orElse(null);
+        if (level == null) return null;
+        return findMatchingRecipe(level, currentInput(mixing), machineTier());
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, CondenserBlockEntity machine) { machine.process(); machine.syncVisual(); }
@@ -249,7 +266,9 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         }
     }
 
-    @Override public Component getDisplayName() { return Component.translatable("block.forever_skyblock.condenser_mark_i"); }
+    @Override public Component getDisplayName() {
+        return Component.translatable(machineTier() >= 2 ? "block.forever_skyblock.condenser_mark_ii" : "block.forever_skyblock.condenser_mark_i");
+    }
     @Override public AbstractContainerMenu createMenu(int id, Inventory playerInventory, Player player) { return new CondenserMenu(id, playerInventory, this); }
 
     private final class Automation implements IItemHandler {

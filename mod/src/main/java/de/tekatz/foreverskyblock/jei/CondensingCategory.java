@@ -29,14 +29,21 @@ public final class CondensingCategory implements IRecipeCategory<RecipeHolder<Co
     @Override public Component getTitle() { return Component.translatable("jei.forever_skyblock.condensing"); }
     @Override public IDrawable getIcon() { return icon; }
     @Override public int getWidth() { return 150; }
-    @Override public int getHeight() { return 90; }
+    @Override public int getHeight() { return 110; }
     @Override public void setRecipe(IRecipeLayoutBuilder builder, RecipeHolder<CondenserRecipe> holder, IFocusGroup focuses) {
         builder.addInputSlot(10, 10).addItemStacks(counted(holder.value().ingredient(), holder.value().ingredientCount()));
-        if (holder.value().requiresModule()) {
-            builder.addInputSlot(32, 10).addIngredients(holder.value().secondaryIngredient());
-            builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 10, 67).addItemStack(new ItemStack(ForeverSkyblock.MIXING_CHAMBER_MARK_I.get()));
-        }
+        if (holder.value().requiresModule()) builder.addInputSlot(32, 10).addIngredients(holder.value().secondaryIngredient());
         builder.addOutputSlot(112, 10).addItemStack(holder.value().result());
+        int catalystY = 67;
+        if (holder.value().minimumTier() >= 2) {
+            builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 10, catalystY)
+                    .addItemStack(new ItemStack(ForeverSkyblock.CONDENSER_MARK_II.get()));
+            catalystY += 16;
+        }
+        if (holder.value().requiresModule()) {
+            builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 10, catalystY)
+                    .addItemStack(new ItemStack(ForeverSkyblock.MIXING_CHAMBER_MARK_I.get()));
+        }
     }
     private static List<ItemStack> counted(Ingredient ingredient, int count) {
         return Arrays.stream(ingredient.getItems()).map(stack -> stack.copyWithCount(count)).toList();
@@ -53,9 +60,17 @@ public final class CondensingCategory implements IRecipeCategory<RecipeHolder<Co
         var font = Minecraft.getInstance().font;
         g.drawCenteredString(font, Component.translatable("jei.forever_skyblock.duration", ticks / 20.0F), 75, 36, 0xFFE6EDF0);
         g.drawCenteredString(font, Component.translatable("gui.forever_skyblock.no_power"), 75, 51, 0xFFB0D7DD);
+        int y = 67;
+        if (holder.value().minimumTier() >= 2) {
+            slot.draw(g, 9, y - 1);
+            g.drawString(font, Component.translatable("jei.forever_skyblock.tier_ii_required"), 31, y, 0xFFFFCB69, false);
+            y += 16;
+        }
         if (holder.value().requiresModule()) {
-            g.drawString(font, Component.translatable("jei.forever_skyblock.module_required"), 31, 67, 0xFFFFCB69, false);
-            g.drawString(font, Component.translatable("jei.forever_skyblock.inputs_swappable"), 31, 78, 0xFFB0D7DD, false);
+            slot.draw(g, 9, y - 1);
+            g.drawString(font, Component.translatable("jei.forever_skyblock.module_required"), 31, y, 0xFFFFCB69, false);
+            y += 12;
+            g.drawString(font, Component.translatable("jei.forever_skyblock.inputs_swappable"), 31, y, 0xFFB0D7DD, false);
         }
     }
 }

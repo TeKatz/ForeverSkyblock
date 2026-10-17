@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["MCM", "SFS", "MCM"],
+  "key": {
+    "M": { "item": "minecraft:mud_bricks" },
+    "C": { "item": "minecraft:cobblestone" },
+    "S": { "item": "forever_skyblock:stone_meal" },
+    "F": { "item": "minecraft:furnace" }
+  },
+  "result": { "id": "forever_skyblock:condenser_mark_i", "count": 1 }
+}

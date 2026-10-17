@@ -1,0 +1,8 @@
+{
+  "type": "forever_skyblock:condensing",
+  "ingredient": { "item": "forever_skyblock:stone_fragment" },
+  "ingredient_count": 4,
+  "result": { "id": "forever_skyblock:stone_meal", "count": 1 },
+  "processing_time": 160,
+  "minimum_tier": 2
+}

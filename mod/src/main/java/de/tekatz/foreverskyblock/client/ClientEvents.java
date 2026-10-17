@@ -26,5 +26,6 @@ public final class ClientEvents {
     @SubscribeEvent public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ForeverSkyblock.ASCENSION_MENU.get(), AscensionScreen::new);
         event.register(ForeverSkyblock.CONDENSER_MENU.get(), CondenserScreen::new);
+        event.register(ForeverSkyblock.WASHING_BASIN_MENU.get(), WashingScreen::new);
     }
 }
