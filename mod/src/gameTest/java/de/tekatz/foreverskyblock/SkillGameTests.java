@@ -63,6 +63,10 @@ public final class SkillGameTests {
             SkillNetwork.Request.CODEC.encode(buffer, reset);
             h.assertTrue(reset.equals(SkillNetwork.Request.CODEC.decode(buffer)), "Reset request round trips");
             buffer.clear();
+            var claim = new SkillNetwork.Request(5, ShopCatalog.ADVANCED_AE2_STARTER.id());
+            SkillNetwork.Request.CODEC.encode(buffer, claim);
+            h.assertTrue(claim.equals(SkillNetwork.Request.CODEC.decode(buffer)), "World-package claim request round trips");
+            buffer.clear();
             var contractRequest = new SkillNetwork.ContractRequest(ContractCatalog.SINGULARITY.id(), UUID.randomUUID());
             SkillNetwork.ContractRequest.CODEC.encode(buffer, contractRequest);
             h.assertTrue(contractRequest.equals(SkillNetwork.ContractRequest.CODEC.decode(buffer)), "Contract request round trips");
@@ -73,11 +77,23 @@ public final class SkillGameTests {
                     Set.of(MilestoneCatalog.FIRST_FOUNDATIONS.id()), true, true, true, "purchased", true, 1,
                     Map.of("forever_skyblock:veteran", 630, "forever_skyblock:permanent_tools_i", 3),
                     new de.tekatz.foreverskyblock.progression.MetaProgress.Accounting(12, 1, 5, 0, 1, 0, 10, true),
-                    true, "Phase 6 Test", Set.of(ShopCatalog.ADVANCED_AE2_STARTER.id()), contractStates, productStates);
+                    true, "Phase 7 Test", Set.of(ShopCatalog.ADVANCED_AE2_STARTER.id()), contractStates, productStates);
             SkillNetwork.Snapshot.CODEC.encode(buffer, state);
             h.assertTrue(state.equals(SkillNetwork.Snapshot.CODEC.decode(buffer)), "Authoritative profile snapshot round trips");
             h.succeed();
         } finally { buffer.release(); }
+    }
+    @GameTest(template = "empty")
+    public static void malformedProgressionRequestsAreRejected(GameTestHelper h) {
+        h.assertTrue(rejected(() -> new SkillNetwork.Request(6, "")), "Unknown progression actions are rejected");
+        h.assertTrue(rejected(() -> new SkillNetwork.Request(0, SkillCatalog.EXTENDED_REACH)), "Open action rejects an unexpected id");
+        h.assertTrue(rejected(() -> new SkillNetwork.Request(4, "not an id")), "World-shop action rejects malformed product ids");
+        h.assertTrue(rejected(() -> new SkillNetwork.Request(5, "")), "World-package claim requires a product id");
+        h.succeed();
+    }
+    private static boolean rejected(Runnable action) {
+        try { action.run(); return false; }
+        catch (IllegalArgumentException expected) { return true; }
     }
     @GameTest(template = "empty")
     public static void supplyCacheIdentityRoundTripsWithoutTrustingDisplayData(GameTestHelper h) {

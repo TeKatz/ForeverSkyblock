@@ -83,7 +83,11 @@ public final class SkillNetwork {
                 profile.meta().accounting(), world.available(), world.name(), world.claims(), contracts, products));
     }
     public record WorldState(boolean available, String name, Set<String> claims, UUID identity) {
-        public WorldState { name = name == null ? "" : name; claims = Set.copyOf(claims); if (available && identity == null) throw new IllegalArgumentException("Missing world identity"); }
+        public WorldState {
+            name = name == null ? "" : name;
+            claims = Set.copyOf(claims);
+            if (available && identity == null) throw new IllegalArgumentException("Missing world identity");
+        }
         public WorldState(boolean available, String name, Set<String> claims) { this(available, name, claims, null); }
     }
     public record ContractState(int progress, long completions, boolean available, boolean canSubmit, boolean pending) {
@@ -97,6 +101,11 @@ public final class SkillNetwork {
         public ProductState { if (stage < 0 || stage > 6) throw new IllegalArgumentException("Invalid product state"); }
     }
     public record Request(int action, String skillId) implements CustomPacketPayload {
+        public Request {
+            if (action < 0 || action > 5 || skillId == null) throw new IllegalArgumentException("Invalid progression action");
+            if (action == 1 || action == 4 || action == 5) ProgressionProfile.validateId(skillId);
+            else if (!skillId.isEmpty()) throw new IllegalArgumentException("Unexpected progression action payload");
+        }
         public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "skill_request"));
         public static final StreamCodec<RegistryFriendlyByteBuf, Request> CODEC = new StreamCodec<>() {
             @Override public Request decode(RegistryFriendlyByteBuf buffer) { return new Request(buffer.readUnsignedByte(), buffer.readUtf(128)); }
@@ -122,7 +131,9 @@ public final class SkillNetwork {
             skills = Map.copyOf(skills); milestones = Set.copyOf(milestones); progress = Map.copyOf(progress);
             worldClaims = Set.copyOf(worldClaims); contracts = Map.copyOf(contracts); products = Map.copyOf(products);
             if (shopTier < -1 || shopTier > 4 || progress.size() > 128 || skills.size() > 128 || milestones.size() > 128
-                    || worldClaims.size() > 128 || contracts.size() > 128 || products.size() > 128 || worldName == null || worldName.length() > 128)
+                    || worldClaims.size() > 128 || contracts.size() > 128 || products.size() > 128
+                    || accounting == null || message == null || message.length() > 128
+                    || worldName == null || worldName.length() > 128)
                 throw new IllegalArgumentException("Invalid progression snapshot");
             progress.forEach((id, count) -> {
                 ProgressionProfile.validateId(id); if (count < -1 || count > 1000) throw new IllegalArgumentException("Invalid challenge progress");
@@ -182,7 +193,7 @@ public final class SkillNetwork {
                 buffer.writeByte((value.local() ? 1 : 0) | (value.open() ? 2 : 0) | (value.available() ? 4 : 0) | (value.canTestPoints() ? 8 : 0));
                 buffer.writeUtf(value.message(), 128);
                 buffer.writeVarInt(value.skills().size()); value.skills().forEach((id, rank) -> { buffer.writeUtf(id, 128); buffer.writeVarInt(rank); });
-                buffer.writeVarInt(value.milestones().size()); value.milestones().forEach(id -> buffer.writeUtf(id, 128));
+                buffer.writeVarInt(value.milestones().size()); value.milestones().forEach(id -> { buffer.writeUtf(id, 128); });
                 buffer.writeVarInt(value.shopTier()); buffer.writeVarInt(value.progress().size()); value.progress().forEach((id, count) -> { buffer.writeUtf(id, 128); buffer.writeVarInt(count); });
                 var a = value.accounting(); for (long total : new long[]{a.spEarned(), a.ppEarned(), a.spSpent(), a.ppSpent(), a.spRefunded(), a.ppRefunded(), a.spAdmin()}) buffer.writeVarLong(total);
                 buffer.writeBoolean(a.legacyHistoryUnknown()); buffer.writeBoolean(value.worldAvailable()); buffer.writeUtf(value.worldName(), 128);

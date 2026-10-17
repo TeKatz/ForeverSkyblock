@@ -11,6 +11,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Phase-6 real current-world products integrated into the existing Design-2 generic card panel. */
+/** Real current-world products integrated into the existing Design-2 generic card panel. */
 @Mixin(PremiumSkillScreen.class)
 public abstract class PremiumShopScreenMixin {
     private static final Field PAGE = field("page"), SUBSECTIONS = field("subsections");
@@ -42,7 +43,7 @@ public abstract class PremiumShopScreenMixin {
                         ForeverSkyblock.WORLD_SUPPLY_CACHE.get().getDefaultInstance(), "", product.id(), null,
                         Component.literal(german() ? "KAUFEN" : "PURCHASE"));
                 cards.add(card);
-            } catch (ReflectiveOperationException e) { throw new IllegalStateException("Could not build Phase-6 shop card", e); }
+            } catch (ReflectiveOperationException e) { throw new IllegalStateException("Could not build current-world shop card", e); }
         }
     }
 
@@ -52,10 +53,7 @@ public abstract class PremiumShopScreenMixin {
         if (product == null || product.developmentOnly()) return;
         var snapshot = ClientSkills.snapshot();
         SkillNetwork.ProductState state = snapshot == null ? null : snapshot.products().get(id);
-        callback.setReturnValue(snapshot != null && snapshot.available() && snapshot.worldAvailable() && !ClientSkills.pending()
-                && state != null && state.available() && state.stage() == 0
-                && snapshot.shopTier() >= product.requiredTier() && snapshot.points() >= product.spCost()
-                && snapshot.perkPoints() >= product.ppCost());
+        callback.setReturnValue(canPurchase(snapshot, state, product));
     }
 
     @Inject(method = "productStatus", at = @At("HEAD"), cancellable = true)
@@ -63,18 +61,18 @@ public abstract class PremiumShopScreenMixin {
         ShopCatalog.Product product = ShopCatalog.find(id);
         if (product == null || product.developmentOnly()) return;
         var snapshot = ClientSkills.snapshot();
-        if (snapshot == null || !snapshot.available()) { callback.setReturnValue(Component.literal(german() ? "NICHT VERFUEGBAR" : "UNAVAILABLE")); return; }
-        if (!snapshot.worldAvailable()) { callback.setReturnValue(Component.literal(german() ? "WELT NICHT VERFUEGBAR" : "WORLD UNAVAILABLE")); return; }
+        if (snapshot == null || !snapshot.available()) { callback.setReturnValue(Component.literal(german() ? "NICHT VERFÜGBAR" : "UNAVAILABLE")); return; }
+        if (!snapshot.worldAvailable()) { callback.setReturnValue(Component.literal(german() ? "WELT NICHT VERFÜGBAR" : "WORLD UNAVAILABLE")); return; }
         SkillNetwork.ProductState state = snapshot.products().get(id);
         if (state == null || !state.available()) { callback.setReturnValue(Component.literal(german() ? "INTEGRATION FEHLT" : "INTEGRATION UNAVAILABLE")); return; }
         callback.setReturnValue(switch (state.stage()) {
             case 1 -> Component.literal(german() ? "PAKET ABHOLEN" : "CLAIM PACKAGE");
-            case 2, 4 -> Component.literal(german() ? "WIEDERHERSTELLUNG..." : "RECOVERING...");
+            case 2, 4 -> Component.literal(german() ? "WIEDERHERSTELLUNG…" : "RECOVERING…");
             case 3 -> Component.literal(german() ? "PAKET AUSGELIEFERT" : "PACKAGE DELIVERED");
-            case 5 -> Component.literal(german() ? "PAKET GEOEFFNET" : "PACKAGE OPENED");
+            case 5 -> Component.literal(german() ? "PAKET GEÖFFNET" : "PACKAGE OPENED");
             case 6 -> Component.literal(german() ? "BEANSPRUCHT" : "CLAIMED");
             default -> {
-                if (snapshot.shopTier() < product.requiredTier()) yield Component.literal(german() ? "TIER I ERFORDERLICH" : "REQUIRES TIER I");
+                if (snapshot.shopTier() < product.requiredTier()) yield Component.literal((german() ? "BENÖTIGT " : "REQUIRES ") + tier(product.requiredTier()));
                 if (snapshot.perkPoints() < product.ppCost()) yield Component.literal(german() ? "ZU WENIG PP" : "NOT ENOUGH PP");
                 if (snapshot.points() < product.spCost()) yield Component.literal(german() ? "ZU WENIG SP" : "NOT ENOUGH SP");
                 yield Component.literal(german() ? "KAUFEN" : "PURCHASE");
@@ -82,15 +80,43 @@ public abstract class PremiumShopScreenMixin {
         });
     }
 
+    /**
+     * Phase 6 fell through to the old Phase-3 test-entitlement confirmation for new real products.
+     * Intercept every real product here so the confirmation describes the package that is actually bought.
+     */
     @Inject(method = "confirmProduct", at = @At("HEAD"), cancellable = true)
-    private void foreverSkyblock$claimInsteadOfRepurchase(String id, CallbackInfo callback) {
+    private void foreverSkyblock$realProductAction(String id, CallbackInfo callback) {
         ShopCatalog.Product product = ShopCatalog.find(id);
         if (product == null || product.developmentOnly()) return;
         var snapshot = ClientSkills.snapshot();
         SkillNetwork.ProductState state = snapshot == null ? null : snapshot.products().get(id);
-        if (state == null || state.stage() == 0) return;
-        if (state.stage() == 1 && !ClientSkills.pending()) ClientSkills.claimProduct(id);
+        if (state != null && state.stage() == 1 && !ClientSkills.pending()) {
+            ClientSkills.claimProduct(id);
+            callback.cancel();
+            return;
+        }
+        if (canPurchase(snapshot, state, product)) {
+            Minecraft minecraft = Minecraft.getInstance();
+            PremiumSkillScreen parent = (PremiumSkillScreen) (Object) this;
+            String name = german() ? product.titleDe() : product.titleEn();
+            Component title = Component.literal(german() ? "Weltpaket kaufen?" : "Purchase current-world package?");
+            Component description = Component.literal(german()
+                    ? name + " für " + product.spCost() + " SP in „" + snapshot.worldName() + "“ kaufen? Der Kauf ist nicht erstattbar und gilt nur für diese Welt."
+                    : "Buy " + name + " for " + product.spCost() + " SP in “" + snapshot.worldName() + "”? The purchase is non-refundable and applies only to this world.");
+            Component confirm = Component.literal(german() ? "Kaufen" : "Purchase");
+            minecraft.setScreen(new ConfirmScreen(yes -> {
+                minecraft.setScreen(parent);
+                if (yes) ClientSkills.buyProduct(id);
+            }, title, description, confirm, Component.translatable("gui.cancel")));
+        }
         callback.cancel();
+    }
+
+    private static boolean canPurchase(SkillNetwork.Snapshot snapshot, SkillNetwork.ProductState state, ShopCatalog.Product product) {
+        return snapshot != null && snapshot.available() && snapshot.worldAvailable() && !ClientSkills.pending()
+                && state != null && state.available() && state.stage() == 0
+                && snapshot.shopTier() >= product.requiredTier() && snapshot.points() >= product.spCost()
+                && snapshot.perkPoints() >= product.ppCost();
     }
 
     private boolean currentWorldShop() {

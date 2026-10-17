@@ -155,7 +155,7 @@ public final class ProgressionService {
                 sync(player, false, "delivery_not_ready"); return true;
             }
             if (delivery.stage() == MetaProgress.DeliveryStage.DELIVERED) {
-                if (!hasContentSpace(player, product)) { sync(player, false, "delivery_inventory_full"); return true; }
+                if (!hasContentSpace(player, product, cache)) { sync(player, false, "delivery_inventory_full"); return true; }
                 store.update(player.getUUID(), state -> state.beginOpening(marker.receiptId()));
             }
             if (!completeOpening(player, marker.receiptId())) { sync(player, false, "delivery_recovery_required"); return true; }
@@ -319,7 +319,7 @@ public final class ProgressionService {
         if (cache != null) {
             SupplyCacheItem.Marker marker = SupplyCacheItem.marker(cache);
             if (marker == null || !marker.ownerId().equals(player.getUUID()) || !marker.worldId().equals(delivery.worldId())
-                    || !marker.productId().equals(delivery.productId()) || !hasContentSpace(player, product)) return false;
+                    || !marker.productId().equals(delivery.productId()) || !hasContentSpace(player, product, cache)) return false;
             List<ItemStack> contents = productStacks(product);
             if (contents == null) return false;
             cache.shrink(1);
@@ -351,10 +351,14 @@ public final class ProgressionService {
             return List.copyOf(result);
         } catch (RuntimeException e) { return null; }
     }
-    private static boolean hasContentSpace(ServerPlayer player, ShopCatalog.Product product) {
-        int empty = 0; var inventory = player.getInventory();
-        for (int slot = 0; slot < Math.min(36, inventory.getContainerSize()); slot++) if (inventory.getItem(slot).isEmpty()) empty++;
-        return empty >= product.contents().size();
+    private static boolean hasContentSpace(ServerPlayer player, ShopCatalog.Product product, ItemStack cache) {
+        int empty = 0; boolean cacheUsesMainSlot = false; var inventory = player.getInventory();
+        for (int slot = 0; slot < Math.min(36, inventory.getContainerSize()); slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            if (stack.isEmpty()) empty++;
+            else if (stack == cache) cacheUsesMainSlot = true;
+        }
+        return empty + (cacheUsesMainSlot ? 1 : 0) >= product.contents().size();
     }
     private static int firstEmptyMainSlot(ServerPlayer player) {
         var inventory = player.getInventory();
