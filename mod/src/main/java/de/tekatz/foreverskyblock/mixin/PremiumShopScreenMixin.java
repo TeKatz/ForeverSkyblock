@@ -53,7 +53,7 @@ public abstract class PremiumShopScreenMixin {
         if (product == null || product.developmentOnly()) return;
         var snapshot = ClientSkills.snapshot();
         SkillNetwork.ProductState state = snapshot == null ? null : snapshot.products().get(id);
-        callback.setReturnValue(canPurchase(snapshot, state, product));
+        callback.setReturnValue(canAct(snapshot, state, product));
     }
 
     @Inject(method = "productStatus", at = @At("HEAD"), cancellable = true)
@@ -81,8 +81,9 @@ public abstract class PremiumShopScreenMixin {
     }
 
     /**
-     * Phase 6 fell through to the old Phase-3 test-entitlement confirmation for new real products.
-     * Intercept every real product here so the confirmation describes the package that is actually bought.
+     * Real packages own both their purchase and post-purchase claim actions. This prevents the
+     * Phase-3 test-entitlement confirmation from leaking into live products and keeps READY
+     * deliveries actionable from the same card.
      */
     @Inject(method = "confirmProduct", at = @At("HEAD"), cancellable = true)
     private void foreverSkyblock$realProductAction(String id, CallbackInfo callback) {
@@ -110,6 +111,13 @@ public abstract class PremiumShopScreenMixin {
             }, title, description, confirm, Component.translatable("gui.cancel")));
         }
         callback.cancel();
+    }
+
+    private static boolean canAct(SkillNetwork.Snapshot snapshot, SkillNetwork.ProductState state, ShopCatalog.Product product) {
+        if (snapshot == null || !snapshot.available() || !snapshot.worldAvailable() || ClientSkills.pending()
+                || state == null || !state.available()) return false;
+        if (state.stage() == 1) return true;
+        return canPurchase(snapshot, state, product);
     }
 
     private static boolean canPurchase(SkillNetwork.Snapshot snapshot, SkillNetwork.ProductState state, ShopCatalog.Product product) {
