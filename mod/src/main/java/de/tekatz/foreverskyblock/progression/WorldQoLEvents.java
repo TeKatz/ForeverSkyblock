@@ -26,7 +26,7 @@ public final class WorldQoLEvents {
                 || !event.getOriginalStack().is(Items.EMERALD)) return;
         try {
             if (WorldQoLService.unlockTrader(player.server))
-                player.sendSystemMessage(Component.literal("The Wandering Trader can now spawn"));
+                player.sendSystemMessage(Component.translatable("message.forever_skyblock.wandering_trader_unlocked"));
         } catch (IOException | RuntimeException e) {
             LogUtils.getLogger().error("Could not unlock Wandering Trader for world", e);
         }
