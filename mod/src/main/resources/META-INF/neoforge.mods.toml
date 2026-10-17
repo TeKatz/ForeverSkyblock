@@ -4,10 +4,10 @@ license="MIT"
 
 [[mods]]
 modId="forever_skyblock"
-version="0.18.1"
+version="0.19.0"
 displayName="Forever Skyblock"
 authors="TeKatz"
-description='''The foundation for Forever Skyblock. Condenser Mark I, Stone Fragments and persistent cross-world skills.'''
+description='''The foundation for Forever Skyblock. Condensers, material processing and persistent cross-world progression.'''
 
 [[dependencies.forever_skyblock]]
 modId="neoforge"
