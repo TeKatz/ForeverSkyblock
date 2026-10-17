@@ -73,6 +73,8 @@ public final class WorldQoLService {
     private static void applyRules(MinecraftServer server, WorldProgressStore.State state) {
         var level = server.overworld();
         GameRules rules = server.getGameRules();
+        if (state.active(ShopCatalog.NO_PHANTOMS.id()))
+            rules.getRule(GameRules.RULE_DOINSOMNIA).set(false, server);
         if (state.active(ShopCatalog.NO_RAIN.id())) {
             rules.getRule(GameRules.RULE_WEATHER_CYCLE).set(false, server);
             level.setWeatherParameters(24_000, 0, false, false);
