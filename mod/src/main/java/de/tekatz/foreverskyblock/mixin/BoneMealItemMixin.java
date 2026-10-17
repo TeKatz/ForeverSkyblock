@@ -14,7 +14,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** One Bone Meal use advances a placed sapling through both vanilla growth stages. */
+/**
+ * Removes the random Bone Meal wait from placed saplings.
+ * One use primes the sapling and repeatedly asks the vanilla TreeGrower to generate a tree.
+ * The bounded retries matter for growers such as Oak that can randomly choose a larger variant
+ * which may not fit even when a normal tree would. Vanilla placement checks remain authoritative.
+ */
 @Mixin(BoneMealItem.class)
 public abstract class BoneMealItemMixin {
     @Inject(method = "applyBonemeal", at = @At("HEAD"), cancellable = true)
@@ -27,9 +32,11 @@ public abstract class BoneMealItemMixin {
             return;
         }
         if (level instanceof ServerLevel server) {
-            sapling.advanceTree(server, pos, state, server.getRandom());
-            BlockState advanced = server.getBlockState(pos);
-            if (advanced.getBlock() == sapling) sapling.advanceTree(server, pos, advanced, server.getRandom());
+            for (int attempt = 0; attempt < 32; attempt++) {
+                BlockState current = server.getBlockState(pos);
+                if (current.getBlock() != sapling) break;
+                sapling.advanceTree(server, pos, current, server.getRandom());
+            }
             stack.shrink(1);
         }
         cir.setReturnValue(true);
