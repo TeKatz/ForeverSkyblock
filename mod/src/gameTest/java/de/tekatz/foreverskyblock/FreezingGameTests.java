@@ -287,7 +287,7 @@ public final class FreezingGameTests {
                 new ItemStack(Items.COBBLESTONE), new ItemStack(Items.BONE_MEAL), new ItemStack(Items.COBBLESTONE));
         var freezerInput = CraftingInput.of(3, 3, freezerGrid);
         check(h, freezerRecipe.matches(freezerInput, level)
-                && freezerRecipe.assemble(freezerInput, level.registryAccess()).is(ForeverSkyblock.FREEZING_CHAMBER_MARK_I.get()),
+                && freezerRecipe.assemble(freezerInput, level.registryAccess()).is(ForeverSkyblock.FREEZING_CHAMBER_MARK_I_ITEM.get()),
                 "Freezing Chamber recipe uses one Mixing Chamber plus current-progression materials");
         h.succeed();
     }
