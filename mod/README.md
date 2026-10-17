@@ -1,30 +1,40 @@
-# Forever Skyblock mod — 0.16.0 Phase 7 polish test
+# Forever Skyblock mod — 0.17.0 early-game / world QoL test
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-This branch is a **general stability and polish pass** on top of the 0.15.0 Phase 6 development head. It deliberately does not finalize the pack economy, Challenge/Contract rewards, Shop pricing, Tier II-IV progression or the K-menu design. Those decisions are postponed until the wider modpack progression has a stronger structure.
+This development branch builds on the 0.16.0 general-polish head and targets concrete pacing issues found while actually playing the early game. It does not finalize the wider pack economy or K-menu design.
 
-Branch: `chore/general-polish-phase7`. It is not `main` and it is not a published release.
+Branch: `feature/earlygame-world-qol`. It is not `main` and it is not a published release.
 
-## Phase 7 scope
+## Condenser pacing recipe
 
-- Harden progression network requests so unknown actions, malformed IDs and unexpected payload data are rejected before reaching economic handlers.
-- Tighten snapshot validation without changing the `skills-8` wire format.
-- Correct the real World Shop confirmation flow so it no longer falls through to the obsolete Phase-3 test-entitlement confirmation.
-- Let a Supply Cache reuse its own main-inventory slot while opening, avoiding an unnecessary extra free-slot requirement.
-- Keep Phase 5 contracts, Phase 6 package delivery, schema 4/5/6 migration and existing challenge attribution behavior unchanged.
-- Expand regression coverage for the World Shop claim request and malformed progression requests.
-- Keep the starter island and pack gameplay balance untouched.
+The Condenser Mark I now supports counted primary inputs. A new recipe converts **8 items in `minecraft:leaves` into 1 Bone Meal in 160 ticks (8 seconds)**. This is intended to pair with manually harvested leaves, including leaves obtained with a separate shears mod, without making that external mod a required dependency of Forever Skyblock.
 
-## Deliberately deferred
+JEI and recipe transfer use the same counted-input definition as the server machine. Existing log, plank and Mixing Chamber recipes remain compatible because their omitted `ingredient_count` defaults to one.
 
-The current values remain **development values**, not final pack balance. Phase 7 does not retune the 20 unique challenges, repeatable-contract quantities/rewards, Jetpack costs, the 12-SP AE2 package or permanent Shop tiers. Tier II-IV remain inactive. A larger K-menu design pass is also deferred until the pack progression has been developed further.
+## Wandering Trader world gate
 
-## Persistence and compatibility
+Wandering Traders are blocked until the current save reaches its first Emerald pickup. When a real player first picks up an Emerald, the world stores the unlock and sends **“The Wandering Trader can now spawn”** (localized EN/DE). The unlock only permits normal/random spawning; it does not force a Trader to appear immediately.
 
-The profile format is unchanged from 0.15.0: untouched profiles can remain schema 4, contract state uses schema 5, and real package delivery state uses schema 6. The network protocol remains `skills-8` because Phase 7 changes validation rather than packet shape.
+The unlock is world-wide and persists with the save rather than a player profile.
 
-Back up `forever_skyblock/progression/` and the test world's player data before testing a profile that already uses schema 6.
+## World QoL upgrades
+
+K → Shop → Current World now also exposes permanent world-wide upgrades:
+
+- **No Phantoms — 1 SP**: disables insomnia Phantom spawning and blocks new Phantom entity joins.
+- **No More Rain — 2 SP**: clears rain/thunder and disables the weather cycle.
+- **Permanent Day — 3 SP**: sets daytime to 1000 and disables the daylight cycle.
+
+These upgrades currently use **Tier 0** as their minimum Shop Tier. A purchase is charged once for the stable world identity and becomes active for every player in that world. Other players mirror the active world claim without paying again.
+
+World state is stored with primary/backup copies under `data/forever_skyblock_world_progress.json(.bak)` and is bound to the existing stable world UUID. A paid player-profile claim is also the recovery source if the server stops between the SP debit and activation of the world-wide effect.
+
+## Compatibility
+
+No new player-profile schema is introduced. Existing schema 4/5/6 behavior remains unchanged and the client/server protocol remains `skills-8`. The new persistent file belongs to the world save.
+
+The fixed starter island NBT is unchanged. No third-party Wooden Shears JAR is bundled or committed by this branch.
 
 ## Build
 
@@ -32,15 +42,8 @@ Back up `forever_skyblock/progression/` and the test world's player data before 
 ./gradlew build
 ```
 
-Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.16.0.jar`.
+Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.17.0.jar`.
 
 Default development baseline: NeoForge 21.1.249. Pack-runtime integration: NeoForge 21.1.259.
 
-## Test suites
-
-```sh
-./gradlew runGameTestServer -PcondenserTests --no-daemon
-./gradlew runGameTestServer -PcondenserTests -PjetpackTests -PtoolIntegrationTests -PascensionTests -PtechChallengeTests -PpackRuntime=21.1.259 --no-daemon
-```
-
-See [POLISH_PHASE7.md](../docs/POLISH_PHASE7.md) for the exact boundary and manual acceptance checklist. Do not merge this branch into `main` until the 0.16.0 JAR has been accepted in the real pack.
+See [EARLY_GAME_QOL.md](../docs/EARLY_GAME_QOL.md) for persistence and manual acceptance details.
