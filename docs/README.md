@@ -5,18 +5,20 @@ This directory contains **integrated-state documentation**, live feature documen
 ## Start here
 
 1. [CURRENT_STATE.md](CURRENT_STATE.md) — truth for the version currently integrated into `main`.
-2. [DESIGN.md](DESIGN.md) — approved project direction and Expert pacing.
-3. [FREEZING_CHAMBER.md](FREEZING_CHAMBER.md) — integrated 0.18.1 Freezing Chamber, dynamic Condenser UI and Crafting Table gate.
-4. [EARLY_GAME_QOL.md](EARLY_GAME_QOL.md) — integrated early-game Bone Meal loop, Trader unlock and world upgrades.
-5. [VALIDATION.md](VALIDATION.md) — detailed automated checks and user-reported in-game validation history.
-6. [CHANGELOG.md](CHANGELOG.md) — concise version-level history.
+2. [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md) — **0.19.0 development branch**: Mud, Washing Basin, first Raw Iron and Condenser Mark II automation.
+3. [DESIGN.md](DESIGN.md) — approved project direction and Expert pacing.
+4. [FREEZING_CHAMBER.md](FREEZING_CHAMBER.md) — integrated 0.18.1 Freezing Chamber, dynamic Condenser UI and Crafting Table gate.
+5. [EARLY_GAME_QOL.md](EARLY_GAME_QOL.md) — integrated early-game Bone Meal loop, Trader unlock and world upgrades.
+6. [VALIDATION.md](VALIDATION.md) — detailed automated checks and user-reported in-game validation history.
+7. [CHANGELOG.md](CHANGELOG.md) — concise version-level history.
 
-The current integrated baseline is **0.18.1**, merged through PR #13 on October 17, 2026. No release was published by that merge.
+The current integrated baseline remains **0.18.1**, merged through PR #13 on October 17, 2026. The 0.19.0 material-processing work is isolated on `feature/material-processing-0.19` until explicitly merged. No release is implied.
 
 ## Feature documentation
 
 | Document | Scope |
 | --- | --- |
+| [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md) | Development: Mud, Washing Basin, Raw Iron, craftable Mark I and Iron-gated Mark II automation |
 | [CHALLENGES.md](CHALLENGES.md) | Unique Challenge catalog, personal attribution and deferred objectives |
 | [CONTRACTS.md](CONTRACTS.md) | Integrated repeatable contracts, rewards and transaction rules |
 | [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md) | Integrated Design-2 layout; larger redesign work remains deferred |
@@ -45,6 +47,7 @@ The current integrated baseline is **0.18.1**, merged through PR #13 on October 
 ## Documentation rules
 
 - Integrated status belongs in `CURRENT_STATE.md`.
+- Development-only behavior must identify its branch and must not silently redefine the current `main` baseline.
 - Live feature behavior belongs in the corresponding feature document.
 - Historical branch/phase notes must be read as historical context and must not override the current integrated baseline.
 - `PROGRESSION.md` may contain ideas that are not implemented; verify against `CURRENT_STATE.md` before acting on them.
