@@ -117,10 +117,12 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         return true;
     }
     public IItemHandler automation(@Nullable Direction side) { return side == null ? combinedAccess : side == Direction.DOWN ? outputAccess : inputAccess; }
+    private CondenserInput currentInput() {
+        return new CondenserInput(inventory.getStackInSlot(INPUT), hasModule() ? inventory.getStackInSlot(SECOND_INPUT) : ItemStack.EMPTY);
+    }
     private @Nullable RecipeHolder<CondenserRecipe> findRecipe() {
         if (level == null || inventory.getStackInSlot(INPUT).isEmpty()) return null;
-        return recipeCheck.getRecipeFor(new CondenserInput(inventory.getStackInSlot(INPUT),
-                hasModule() ? inventory.getStackInSlot(SECOND_INPUT) : ItemStack.EMPTY), level).orElse(null);
+        return recipeCheck.getRecipeFor(currentInput(), level).orElse(null);
     }
     public static void tick(Level level, BlockPos pos, BlockState state, CondenserBlockEntity machine) { machine.process(); machine.syncVisual(); }
     private void process() {
@@ -144,8 +146,9 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         progress++;
         setChanged();
         if (progress >= duration) {
-            inventory.extractItem(INPUT, 1, false);
-            if (recipe.requiresModule()) inventory.extractItem(SECOND_INPUT, 1, false);
+            CondenserInput input = currentInput();
+            inventory.extractItem(INPUT, recipe.primaryConsumption(input), false);
+            if (recipe.requiresModule()) inventory.extractItem(SECOND_INPUT, recipe.secondaryConsumption(input), false);
             inventory.setStackInSlot(OUTPUT, result.copyWithCount(output.getCount() + result.getCount()));
             progress = 0;
         }

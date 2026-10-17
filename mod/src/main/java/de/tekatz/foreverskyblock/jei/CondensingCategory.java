@@ -2,6 +2,8 @@ package de.tekatz.foreverskyblock.jei;
 
 import de.tekatz.foreverskyblock.ForeverSkyblock;
 import de.tekatz.foreverskyblock.recipe.CondenserRecipe;
+import java.util.Arrays;
+import java.util.List;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
@@ -12,6 +14,8 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
 
 public final class CondensingCategory implements IRecipeCategory<RecipeHolder<CondenserRecipe>> {
@@ -27,12 +31,15 @@ public final class CondensingCategory implements IRecipeCategory<RecipeHolder<Co
     @Override public int getWidth() { return 150; }
     @Override public int getHeight() { return 90; }
     @Override public void setRecipe(IRecipeLayoutBuilder builder, RecipeHolder<CondenserRecipe> holder, IFocusGroup focuses) {
-        builder.addInputSlot(10, 10).addIngredients(holder.value().ingredient());
+        builder.addInputSlot(10, 10).addItemStacks(counted(holder.value().ingredient(), holder.value().ingredientCount()));
         if (holder.value().requiresModule()) {
             builder.addInputSlot(32, 10).addIngredients(holder.value().secondaryIngredient());
-            builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 10, 67).addItemStack(new net.minecraft.world.item.ItemStack(ForeverSkyblock.MIXING_CHAMBER_MARK_I.get()));
+            builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 10, 67).addItemStack(new ItemStack(ForeverSkyblock.MIXING_CHAMBER_MARK_I.get()));
         }
         builder.addOutputSlot(112, 10).addItemStack(holder.value().result());
+    }
+    private static List<ItemStack> counted(Ingredient ingredient, int count) {
+        return Arrays.stream(ingredient.getItems()).map(stack -> stack.copyWithCount(count)).toList();
     }
     @Override public void draw(RecipeHolder<CondenserRecipe> holder, IRecipeSlotsView slots, GuiGraphics g, double mouseX, double mouseY) {
         g.fill(0, 0, getWidth(), getHeight(), 0xFF19242C);

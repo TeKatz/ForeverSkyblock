@@ -47,6 +47,23 @@ public final class CondenserGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 230)
+    public static void leavesRequireEightAndProduceOneBoneMeal(GameTestHelper h) {
+        var machine = machine(h, POS);
+        machine.inventory().insertItem(0, new ItemStack(Items.OAK_LEAVES, 7), false);
+        h.runAfterDelay(60, () -> {
+            check(h, machine.menuData().get(0) == 0 && machine.inventory().getStackInSlot(1).isEmpty(),
+                    "Seven leaves must not start the bone-meal recipe");
+            machine.inventory().insertItem(0, new ItemStack(Items.OAK_LEAVES), false);
+        });
+        h.runAfterDelay(225, () -> {
+            ItemStack result = machine.inventory().getStackInSlot(1);
+            check(h, result.is(Items.BONE_MEAL) && result.getCount() == 1, "Eight leaves must produce exactly one bone meal");
+            check(h, machine.inventory().getStackInSlot(0).isEmpty(), "Bone-meal recipe consumes all eight leaves");
+            h.succeed();
+        });
+    }
+
     @GameTest(template = "empty", timeoutTicks = 280)
     public static void blockedOutputResumesWithoutLoss(GameTestHelper h) {
         var machine = machine(h, POS);
@@ -160,5 +177,4 @@ public final class CondenserGameTests {
         player.getInventory().clearContent();
         h.succeed();
     }
-
 }

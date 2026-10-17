@@ -4,8 +4,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import de.tekatz.foreverskyblock.ForeverSkyblock;
+import java.util.List;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -16,44 +16,63 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
-public record CondenserRecipe(Ingredient ingredient, Ingredient secondaryIngredient, int fragmentCount,
+public record CondenserRecipe(Ingredient ingredient, int ingredientCount, Ingredient secondaryIngredient, int fragmentCount,
                               ItemStack output, int processingTime) implements Recipe<CondenserInput> {
     public static final int DEFAULT_TIME = 160;
-    public boolean requiresModule() { return !secondaryIngredient.isEmpty(); }
-    @Override public boolean matches(CondenserInput input, Level level) {
-        if (!requiresModule()) return ingredient.test(input.first());
-        return ingredient.test(input.first()) && secondaryIngredient.test(input.second())
-                || ingredient.test(input.second()) && secondaryIngredient.test(input.first());
+    public CondenserRecipe {
+        if (ingredientCount < 1 || ingredientCount > 64) throw new IllegalArgumentException("Invalid primary ingredient count");
+        if (fragmentCount < 1 || fragmentCount > 64) throw new IllegalArgumentException("Invalid output count");
+        if (processingTime < 1 || processingTime > 32767) throw new IllegalArgumentException("Invalid processing time");
+        output = output.copy();
+        if (!output.isEmpty() && output.getCount() > Math.min(64, output.getMaxStackSize()))
+            throw new IllegalArgumentException("Invalid output stack");
     }
+    public boolean requiresModule() { return !secondaryIngredient.isEmpty(); }
     public boolean accepts(ItemStack stack) {
         return ingredient.test(stack) || requiresModule() && secondaryIngredient.test(stack);
     }
+    @Override public boolean matches(CondenserInput input, Level level) {
+        if (input.primary().isEmpty()) return false;
+        if (!requiresModule()) return ingredient.test(input.primary()) && input.primary().getCount() >= ingredientCount;
+        if (input.secondary().isEmpty()) return false;
+        boolean direct = ingredient.test(input.primary()) && input.primary().getCount() >= ingredientCount
+                && secondaryIngredient.test(input.secondary());
+        boolean swapped = secondaryIngredient.test(input.primary()) && ingredient.test(input.secondary())
+                && input.secondary().getCount() >= ingredientCount;
+        return direct || swapped;
+    }
+    public int primaryConsumption(CondenserInput input) {
+        return ingredient.test(input.primary()) ? ingredientCount : 1;
+    }
+    public int secondaryConsumption(CondenserInput input) {
+        return requiresModule() && ingredient.test(input.secondary()) ? ingredientCount : 1;
+    }
+    public ItemStack result() {
+        return output.isEmpty() ? new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), fragmentCount) : output.copy();
+    }
     @Override public ItemStack assemble(CondenserInput input, HolderLookup.Provider registries) { return result(); }
     @Override public ItemStack getResultItem(HolderLookup.Provider registries) { return result(); }
-    public ItemStack result() { return output.isEmpty() ? new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), fragmentCount) : output.copy(); }
     @Override public boolean canCraftInDimensions(int width, int height) { return true; }
     @Override public RecipeSerializer<?> getSerializer() { return ForeverSkyblock.CONDENSING_SERIALIZER.get(); }
     @Override public RecipeType<?> getType() { return ForeverSkyblock.CONDENSING.get(); }
-    @Override public boolean isSpecial() { return true; }
-    @Override public NonNullList<Ingredient> getIngredients() {
-        return requiresModule() ? NonNullList.of(Ingredient.EMPTY, ingredient, secondaryIngredient) : NonNullList.of(Ingredient.EMPTY, ingredient);
-    }
-    @Override public ItemStack getToastSymbol() { return new ItemStack(ForeverSkyblock.CONDENSER_MARK_I.get()); }
     public static final class Serializer implements RecipeSerializer<CondenserRecipe> {
         private static final MapCodec<CondenserRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-                Ingredient.CODEC_NONEMPTY.fieldOf("ingredient").forGetter(CondenserRecipe::ingredient),
-                Ingredient.CODEC_NONEMPTY.optionalFieldOf("secondary_ingredient", Ingredient.EMPTY).forGetter(CondenserRecipe::secondaryIngredient),
+                Ingredient.CODEC.fieldOf("ingredient").forGetter(CondenserRecipe::ingredient),
+                Codec.intRange(1, 64).optionalFieldOf("ingredient_count", 1).forGetter(CondenserRecipe::ingredientCount),
+                Ingredient.CODEC.optionalFieldOf("secondary_ingredient", Ingredient.EMPTY).forGetter(CondenserRecipe::secondaryIngredient),
                 Codec.intRange(1, 64).optionalFieldOf("fragment_count", 1).forGetter(CondenserRecipe::fragmentCount),
                 ItemStack.CODEC.optionalFieldOf("result", ItemStack.EMPTY).forGetter(CondenserRecipe::output),
                 Codec.intRange(1, 32767).optionalFieldOf("processing_time", DEFAULT_TIME).forGetter(CondenserRecipe::processingTime)
         ).apply(instance, CondenserRecipe::new));
-        private static final StreamCodec<RegistryFriendlyByteBuf, CondenserRecipe> STREAM_CODEC = StreamCodec.composite(
+        private static final StreamCodec<RegistryFriendlyByteBuf, CondenserRecipe> STREAM = StreamCodec.composite(
                 Ingredient.CONTENTS_STREAM_CODEC, CondenserRecipe::ingredient,
+                ByteBufCodecs.VAR_INT, CondenserRecipe::ingredientCount,
                 Ingredient.CONTENTS_STREAM_CODEC, CondenserRecipe::secondaryIngredient,
                 ByteBufCodecs.VAR_INT, CondenserRecipe::fragmentCount,
                 ItemStack.OPTIONAL_STREAM_CODEC, CondenserRecipe::output,
-                ByteBufCodecs.VAR_INT, CondenserRecipe::processingTime, CondenserRecipe::new);
+                ByteBufCodecs.VAR_INT, CondenserRecipe::processingTime,
+                CondenserRecipe::new);
         @Override public MapCodec<CondenserRecipe> codec() { return CODEC; }
-        @Override public StreamCodec<RegistryFriendlyByteBuf, CondenserRecipe> streamCodec() { return STREAM_CODEC; }
+        @Override public StreamCodec<RegistryFriendlyByteBuf, CondenserRecipe> streamCodec() { return STREAM; }
     }
 }

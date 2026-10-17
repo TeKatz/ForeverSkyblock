@@ -13,6 +13,7 @@ public final class CondenserTransfer {
         private static Plan failed(Error error) { return new Plan(error, List.of(), List.of()); }
         public boolean success() { return error == Error.NONE; }
     }
+    private record Requirement(Ingredient ingredient, int count) { }
     private CondenserTransfer() { }
     public static Plan plan(CondenserMenu menu, CondenserRecipe recipe, boolean maxTransfer) {
         if (menu.editing()) return Plan.failed(Error.EDITING);
@@ -22,16 +23,18 @@ public final class CondenserTransfer {
         for (int i = 0; i < 36; i++) source[i] = menu.getSlot(i + 3).getItem().copy();
         source[36] = menu.getSlot(0).getItem().copy();
         source[37] = recipe.requiresModule() ? menu.getSlot(2).getItem().copy() : ItemStack.EMPTY;
-        Ingredient[][] orders = recipe.requiresModule()
-                ? new Ingredient[][]{{recipe.ingredient(), recipe.secondaryIngredient()}, {recipe.secondaryIngredient(), recipe.ingredient()}}
-                : new Ingredient[][]{{recipe.ingredient()}};
+        Requirement primary = new Requirement(recipe.ingredient(), recipe.ingredientCount());
+        Requirement secondary = new Requirement(recipe.secondaryIngredient(), 1);
+        Requirement[][] orders = recipe.requiresModule()
+                ? new Requirement[][]{{primary, secondary}, {secondary, primary}}
+                : new Requirement[][]{{primary}};
         boolean validFilters = false, missing = true;
         Plan best = null;
         int bestSets = 0, bestKept = -1;
-        for (Ingredient[] order : orders) {
+        for (Requirement[] order : orders) {
             ItemStack[] filters = { menu.filter(0), menu.filter(2) };
             boolean compatible = true;
-            for (int i = 0; i < order.length; i++) if (!filters[i].isEmpty() && !order[i].test(filters[i])) compatible = false;
+            for (int i = 0; i < order.length; i++) if (!filters[i].isEmpty() && !order[i].ingredient().test(filters[i])) compatible = false;
             if (!compatible) continue;
             validFilters = true;
             int maxSets = 1;
@@ -39,8 +42,8 @@ public final class CondenserTransfer {
                 maxSets = 64;
                 for (int i = 0; i < order.length; i++) {
                     int total = 0;
-                    for (ItemStack stack : source) if (matches(order[i], filters[i], stack)) total += stack.getCount();
-                    maxSets = Math.min(maxSets, total);
+                    for (ItemStack stack : source) if (matches(order[i].ingredient(), filters[i], stack)) total += stack.getCount();
+                    maxSets = Math.min(maxSets, total / order[i].count());
                 }
             }
             for (int sets = maxSets; sets >= 1; sets--) {
@@ -70,30 +73,31 @@ public final class CondenserTransfer {
     }
     private static final class Search {
         private final ItemStack[] original;
-        private final Ingredient[] ingredients;
+        private final Requirement[] requirements;
         private final ItemStack[] filters;
         private final int sets;
         private final boolean keep;
         private boolean foundIngredients;
-        private Search(ItemStack[] original, Ingredient[] ingredients, ItemStack[] filters, int sets, boolean keep) {
-            this.original = original; this.ingredients = ingredients; this.filters = filters; this.sets = sets; this.keep = keep;
+        private Search(ItemStack[] original, Requirement[] requirements, ItemStack[] filters, int sets, boolean keep) {
+            this.original = original; this.requirements = requirements; this.filters = filters; this.sets = sets; this.keep = keep;
         }
         private Plan find(int input, ItemStack[] pool, ItemStack[] targets) {
-            if (input == ingredients.length) {
+            if (input == requirements.length) {
                 foundIngredients = true;
                 var inventory = new ArrayList<ItemStack>(36);
                 for (int i = 0; i < 36; i++) inventory.add(pool[i].copy());
                 for (int i = 36; i < pool.length; i++) if (!returnToInventory(inventory, pool[i])) return null;
                 return new Plan(Error.NONE, List.copyOf(inventory), List.of(copy(targets)));
             }
+            Requirement requirement = requirements[input];
             List<ItemStack> variants = new ArrayList<>();
             // Check the current target first to retain an already loaded variant and its components.
             for (int index = -1; index < pool.length; index++) {
                 ItemStack candidate = pool[index < 0 ? 36 + input : index];
-                if (!matches(ingredients[input], filters[input], candidate)
+                if (!matches(requirement.ingredient(), filters[input], candidate)
                         || variants.stream().anyMatch(previous -> ItemStack.isSameItemSameComponents(previous, candidate))) continue;
                 variants.add(candidate);
-                int needed = sets;
+                int needed = Math.multiplyExact(sets, requirement.count());
                 if (keep && ItemStack.isSameItemSameComponents(original[36 + input], candidate)) needed = Math.max(needed, original[36 + input].getCount());
                 if (needed > Math.min(64, candidate.getMaxStackSize())) continue;
                 int available = 0;
