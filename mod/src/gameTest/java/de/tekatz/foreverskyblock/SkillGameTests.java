@@ -6,6 +6,7 @@ import de.tekatz.foreverskyblock.network.SkillNetwork;
 import de.tekatz.foreverskyblock.progression.ContractCatalog;
 import de.tekatz.foreverskyblock.progression.MilestoneCatalog;
 import de.tekatz.foreverskyblock.progression.ProgressionProfile;
+import de.tekatz.foreverskyblock.progression.ProgressionService;
 import de.tekatz.foreverskyblock.progression.ShopCatalog;
 import de.tekatz.foreverskyblock.progression.SkillCatalog;
 import de.tekatz.foreverskyblock.progression.SkillMessages;
@@ -16,6 +17,7 @@ import java.util.UUID;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
@@ -105,6 +107,27 @@ public final class SkillGameTests {
                 "Supply cache preserves receipt, owner and world identities");
         h.assertTrue(marker.productId().equals(ShopCatalog.ADVANCED_AE2_STARTER.id()), "Supply cache preserves the server product id");
         h.assertTrue(stack.getCount() == 1 && stack.getMaxStackSize() == 1, "Supply caches cannot stack together");
+        h.succeed();
+    }
+    @GameTest(template = "empty")
+    public static void supplyCacheReusesOnlyItsOwnMainInventorySlot(GameTestHelper h) throws Exception {
+        var player = FakePlayerFactory.get(h.getLevel(), new GameProfile(UUID.randomUUID(), "SupplySpaceTest"));
+        var inventory = player.getInventory();
+        inventory.clearContent();
+        var cache = SupplyCacheItem.create(ShopCatalog.ADVANCED_AE2_STARTER, UUID.randomUUID(), player.getUUID(), UUID.randomUUID());
+        inventory.setItem(0, cache);
+        for (int slot = 1; slot <= 30; slot++) inventory.setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+
+        var capacity = ProgressionService.class.getDeclaredMethod("hasContentSpace",
+                net.minecraft.server.level.ServerPlayer.class, ShopCatalog.Product.class, ItemStack.class);
+        capacity.setAccessible(true);
+        h.assertTrue((boolean) capacity.invoke(null, player, ShopCatalog.ADVANCED_AE2_STARTER, cache),
+                "A main-inventory Supply Cache contributes the slot it frees when consumed");
+
+        inventory.setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+        player.setItemInHand(InteractionHand.OFF_HAND, cache);
+        h.assertTrue(!(boolean) capacity.invoke(null, player, ShopCatalog.ADVANCED_AE2_STARTER, cache),
+                "An offhand Supply Cache does not create main-inventory package capacity");
         h.succeed();
     }
     @GameTest(template = "empty")
