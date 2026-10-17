@@ -24,26 +24,26 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /** Real current-world products and world upgrades integrated into the existing generic card panel. */
 @Mixin(PremiumSkillScreen.class)
 public abstract class PremiumShopScreenMixin {
-    private static final Field PAGE = field("page"), SUBSECTIONS = field("subsections");
-    private static final Constructor<?> CARD = cardConstructor();
-    private static final Method CARD_PRODUCT = cardProduct();
+    private static final Field PAGE = shopField("page"), SUBSECTIONS = shopField("subsections");
+    private static final Constructor<?> CARD = shopCardConstructor();
+    private static final Method CARD_PRODUCT = shopCardProduct();
 
     @Inject(method = "generalCards", at = @At("RETURN"))
     private void foreverSkyblock$addProducts(CallbackInfoReturnable<List<?>> callback) {
-        if (!currentWorldShop()) return;
+        if (!shopCurrentWorldShop()) return;
         List<?> raw = callback.getReturnValue();
         if (raw == null) return;
         @SuppressWarnings("unchecked") List<Object> cards = (List<Object>) raw;
-        cards.removeIf(card -> ShopCatalog.TEST_WORLD_ENTITLEMENT.equals(productId(card)));
+        cards.removeIf(card -> ShopCatalog.TEST_WORLD_ENTITLEMENT.equals(shopProductId(card)));
         for (var product : ShopCatalog.PRODUCTS) {
             if (product.developmentOnly()) continue;
             try {
-                String title = german() ? product.titleDe() : product.titleEn();
-                String description = german() ? product.descriptionDe() : product.descriptionEn();
-                String badge = product.worldUpgrade() ? product.spCost() + " SP · " + (german() ? "WELT-UPGRADE" : "WORLD UPGRADE")
-                        : product.spCost() + " SP · " + tier(product.requiredTier());
+                String title = shopGerman() ? product.titleDe() : product.titleEn();
+                String description = shopGerman() ? product.descriptionDe() : product.descriptionEn();
+                String badge = product.worldUpgrade() ? product.spCost() + " SP · " + (shopGerman() ? "WELT-UPGRADE" : "WORLD UPGRADE")
+                        : product.spCost() + " SP · " + shopTier(product.requiredTier());
                 Object card = CARD.newInstance(Component.literal(title), Component.literal(description), Component.literal(badge),
-                        icon(product), "", product.id(), null, Component.literal(german() ? "KAUFEN" : "PURCHASE"));
+                        shopIcon(product), "", product.id(), null, Component.literal(shopGerman() ? "KAUFEN" : "PURCHASE"));
                 cards.add(card);
             } catch (ReflectiveOperationException e) { throw new IllegalStateException("Could not build current-world shop card", e); }
         }
@@ -55,7 +55,7 @@ public abstract class PremiumShopScreenMixin {
         if (product == null || product.developmentOnly()) return;
         var snapshot = ClientSkills.snapshot();
         SkillNetwork.ProductState state = snapshot == null ? null : snapshot.products().get(id);
-        callback.setReturnValue(canAct(snapshot, state, product));
+        callback.setReturnValue(shopCanAct(snapshot, state, product));
     }
 
     @Inject(method = "productStatus", at = @At("HEAD"), cancellable = true)
@@ -63,21 +63,21 @@ public abstract class PremiumShopScreenMixin {
         ShopCatalog.Product product = ShopCatalog.find(id);
         if (product == null || product.developmentOnly()) return;
         var snapshot = ClientSkills.snapshot();
-        if (snapshot == null || !snapshot.available()) { callback.setReturnValue(Component.literal(german() ? "NICHT VERFÜGBAR" : "UNAVAILABLE")); return; }
-        if (!snapshot.worldAvailable()) { callback.setReturnValue(Component.literal(german() ? "WELT NICHT VERFÜGBAR" : "WORLD UNAVAILABLE")); return; }
+        if (snapshot == null || !snapshot.available()) { callback.setReturnValue(Component.literal(shopGerman() ? "NICHT VERFÜGBAR" : "UNAVAILABLE")); return; }
+        if (!snapshot.worldAvailable()) { callback.setReturnValue(Component.literal(shopGerman() ? "WELT NICHT VERFÜGBAR" : "WORLD UNAVAILABLE")); return; }
         SkillNetwork.ProductState state = snapshot.products().get(id);
-        if (state == null || !state.available()) { callback.setReturnValue(Component.literal(german() ? "INTEGRATION FEHLT" : "INTEGRATION UNAVAILABLE")); return; }
+        if (state == null || !state.available()) { callback.setReturnValue(Component.literal(shopGerman() ? "INTEGRATION FEHLT" : "INTEGRATION UNAVAILABLE")); return; }
         callback.setReturnValue(switch (state.stage()) {
-            case 1 -> Component.literal(german() ? "PAKET ABHOLEN" : "CLAIM PACKAGE");
-            case 2, 4 -> Component.literal(german() ? "WIEDERHERSTELLUNG…" : "RECOVERING…");
-            case 3 -> Component.literal(german() ? "PAKET AUSGELIEFERT" : "PACKAGE DELIVERED");
-            case 5 -> Component.literal(german() ? "PAKET GEÖFFNET" : "PACKAGE OPENED");
-            case 6 -> Component.literal(product.worldUpgrade() ? (german() ? "AKTIV" : "ACTIVE") : (german() ? "BEANSPRUCHT" : "CLAIMED"));
+            case 1 -> Component.literal(shopGerman() ? "PAKET ABHOLEN" : "CLAIM PACKAGE");
+            case 2, 4 -> Component.literal(shopGerman() ? "WIEDERHERSTELLUNG…" : "RECOVERING…");
+            case 3 -> Component.literal(shopGerman() ? "PAKET AUSGELIEFERT" : "PACKAGE DELIVERED");
+            case 5 -> Component.literal(shopGerman() ? "PAKET GEÖFFNET" : "PACKAGE OPENED");
+            case 6 -> Component.literal(product.worldUpgrade() ? (shopGerman() ? "AKTIV" : "ACTIVE") : (shopGerman() ? "BEANSPRUCHT" : "CLAIMED"));
             default -> {
-                if (snapshot.shopTier() < product.requiredTier()) yield Component.literal((german() ? "BENÖTIGT " : "REQUIRES ") + tier(product.requiredTier()));
-                if (snapshot.perkPoints() < product.ppCost()) yield Component.literal(german() ? "ZU WENIG PP" : "NOT ENOUGH PP");
-                if (snapshot.points() < product.spCost()) yield Component.literal(german() ? "ZU WENIG SP" : "NOT ENOUGH SP");
-                yield Component.literal(german() ? "KAUFEN" : "PURCHASE");
+                if (snapshot.shopTier() < product.requiredTier()) yield Component.literal((shopGerman() ? "BENÖTIGT " : "REQUIRES ") + shopTier(product.requiredTier()));
+                if (snapshot.perkPoints() < product.ppCost()) yield Component.literal(shopGerman() ? "ZU WENIG PP" : "NOT ENOUGH PP");
+                if (snapshot.points() < product.spCost()) yield Component.literal(shopGerman() ? "ZU WENIG SP" : "NOT ENOUGH SP");
+                yield Component.literal(shopGerman() ? "KAUFEN" : "PURCHASE");
             }
         });
     }
@@ -93,22 +93,22 @@ public abstract class PremiumShopScreenMixin {
             callback.cancel();
             return;
         }
-        if (canPurchase(snapshot, state, product)) {
+        if (shopCanPurchase(snapshot, state, product)) {
             Minecraft minecraft = Minecraft.getInstance();
             PremiumSkillScreen parent = (PremiumSkillScreen) (Object) this;
-            String name = german() ? product.titleDe() : product.titleEn();
+            String name = shopGerman() ? product.titleDe() : product.titleEn();
             Component title = Component.literal(product.worldUpgrade()
-                    ? (german() ? "Welt-Upgrade aktivieren?" : "Activate world upgrade?")
-                    : (german() ? "Weltpaket kaufen?" : "Purchase current-world package?"));
+                    ? (shopGerman() ? "Welt-Upgrade aktivieren?" : "Activate world upgrade?")
+                    : (shopGerman() ? "Weltpaket kaufen?" : "Purchase current-world package?"));
             Component description = Component.literal(product.worldUpgrade()
-                    ? (german()
+                    ? (shopGerman()
                         ? name + " für " + product.spCost() + " SP in „" + snapshot.worldName() + "“ aktivieren? Das Upgrade gilt dauerhaft für die gesamte Welt und ist nicht erstattbar."
                         : "Activate " + name + " for " + product.spCost() + " SP in “" + snapshot.worldName() + "”? The upgrade permanently affects the entire world and is non-refundable.")
-                    : (german()
+                    : (shopGerman()
                         ? name + " für " + product.spCost() + " SP in „" + snapshot.worldName() + "“ kaufen? Der Kauf ist nicht erstattbar und gilt nur für diese Welt."
                         : "Buy " + name + " for " + product.spCost() + " SP in “" + snapshot.worldName() + "”? The purchase is non-refundable and applies only to this world."));
             Component confirm = Component.literal(product.worldUpgrade()
-                    ? (german() ? "Aktivieren" : "Activate") : (german() ? "Kaufen" : "Purchase"));
+                    ? (shopGerman() ? "Aktivieren" : "Activate") : (shopGerman() ? "Kaufen" : "Purchase"));
             minecraft.setScreen(new ConfirmScreen(yes -> {
                 minecraft.setScreen(parent);
                 if (yes) ClientSkills.buyProduct(id);
@@ -117,54 +117,54 @@ public abstract class PremiumShopScreenMixin {
         callback.cancel();
     }
 
-    private static ItemStack icon(ShopCatalog.Product product) {
+    private static ItemStack shopIcon(ShopCatalog.Product product) {
         if (product.id().equals(ShopCatalog.NO_PHANTOMS.id())) return Items.PHANTOM_MEMBRANE.getDefaultInstance();
         if (product.id().equals(ShopCatalog.NO_RAIN.id())) return Items.WATER_BUCKET.getDefaultInstance();
         if (product.id().equals(ShopCatalog.PERMANENT_DAY.id())) return Items.SUNFLOWER.getDefaultInstance();
         return ForeverSkyblock.WORLD_SUPPLY_CACHE.get().getDefaultInstance();
     }
 
-    private static boolean canAct(SkillNetwork.Snapshot snapshot, SkillNetwork.ProductState state, ShopCatalog.Product product) {
+    private static boolean shopCanAct(SkillNetwork.Snapshot snapshot, SkillNetwork.ProductState state, ShopCatalog.Product product) {
         if (snapshot == null || !snapshot.available() || !snapshot.worldAvailable() || ClientSkills.pending()
                 || state == null || !state.available()) return false;
         if (!product.worldUpgrade() && state.stage() == 1) return true;
-        return canPurchase(snapshot, state, product);
+        return shopCanPurchase(snapshot, state, product);
     }
 
-    private static boolean canPurchase(SkillNetwork.Snapshot snapshot, SkillNetwork.ProductState state, ShopCatalog.Product product) {
+    private static boolean shopCanPurchase(SkillNetwork.Snapshot snapshot, SkillNetwork.ProductState state, ShopCatalog.Product product) {
         return snapshot != null && snapshot.available() && snapshot.worldAvailable() && !ClientSkills.pending()
                 && state != null && state.available() && state.stage() == 0
                 && snapshot.shopTier() >= product.requiredTier() && snapshot.points() >= product.spCost()
                 && snapshot.perkPoints() >= product.ppCost();
     }
 
-    private boolean currentWorldShop() {
+    private boolean shopCurrentWorldShop() {
         try {
             Object page = PAGE.get(this); if (page == null || !"SHOP".equals(page.toString())) return false;
             @SuppressWarnings("unchecked") Map<Object, Integer> values = (Map<Object, Integer>) SUBSECTIONS.get(this);
             return values.getOrDefault(page, 0) == 1;
         } catch (IllegalAccessException e) { return false; }
     }
-    private static String productId(Object card) {
+    private static String shopProductId(Object card) {
         try { return (String) CARD_PRODUCT.invoke(card); }
         catch (ReflectiveOperationException e) { return ""; }
     }
-    private static Field field(String name) {
+    private static Field shopField(String name) {
         try { Field field = PremiumSkillScreen.class.getDeclaredField(name); field.setAccessible(true); return field; }
         catch (ReflectiveOperationException e) { throw new ExceptionInInitializerError(e); }
     }
-    private static Constructor<?> cardConstructor() {
+    private static Constructor<?> shopCardConstructor() {
         try {
             Class<?> card = Class.forName("de.tekatz.foreverskyblock.client.PremiumSkillScreen$Card");
             Constructor<?> ctor = card.getDeclaredConstructors()[0]; ctor.setAccessible(true); return ctor;
         } catch (ReflectiveOperationException e) { throw new ExceptionInInitializerError(e); }
     }
-    private static Method cardProduct() {
+    private static Method shopCardProduct() {
         try {
             Class<?> card = Class.forName("de.tekatz.foreverskyblock.client.PremiumSkillScreen$Card");
             Method method = card.getDeclaredMethod("product"); method.setAccessible(true); return method;
         } catch (ReflectiveOperationException e) { throw new ExceptionInInitializerError(e); }
     }
-    private static boolean german() { return Minecraft.getInstance().getLanguageManager().getSelected().toLowerCase(java.util.Locale.ROOT).startsWith("de_"); }
-    private static String tier(int tier) { return switch (tier) { case 0 -> "Tier 0"; case 1 -> "Tier I"; case 2 -> "Tier II"; case 3 -> "Tier III"; case 4 -> "Tier IV"; default -> "Tier ?"; }; }
+    private static boolean shopGerman() { return Minecraft.getInstance().getLanguageManager().getSelected().toLowerCase(java.util.Locale.ROOT).startsWith("de_"); }
+    private static String shopTier(int tier) { return switch (tier) { case 0 -> "Tier 0"; case 1 -> "Tier I"; case 2 -> "Tier II"; case 3 -> "Tier III"; case 4 -> "Tier IV"; default -> "Tier ?"; }; }
 }
