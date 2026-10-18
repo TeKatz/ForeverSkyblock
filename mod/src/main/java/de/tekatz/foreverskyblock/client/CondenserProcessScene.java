@@ -41,7 +41,7 @@ final class CondenserProcessScene {
             g.fill(cx - 10, y + 8 + stroke, cx + 11, y + 9 + stroke, tint);
         }
         // Each ingredient has one continuous path. Intake and outlet covers hide the route endpoints.
-        g.enableScissor(x + 3, y + 2, x + width - 3, y + 21);
+        clipScene(g, x + 3, y + 2, x + width - 3, y + 21);
         if (job == CondenserJob.IDLE) {
             smallItem(g, input, cx - 4, y + 10, .44F);
         } else {
@@ -76,6 +76,19 @@ final class CondenserProcessScene {
         g.fill(x + width - 3, y + 8, x + width - 1, y + 16, tint);
         g.pose().popPose();
         if (blocked) { g.fill(x + width - 8, y + 3, x + width - 6, y + 10, tint); g.fill(x + width - 8, y + 12, x + width - 6, y + 14, tint); }
+    }
+    private static void clipScene(GuiGraphics g, int x0, int y0, int x1, int y1) {
+        // MachineScreen scales/translates the entire panel. Resolve that transform once, then
+        // set the clip under an identity pose so both pose-aware and legacy scissor paths agree.
+        var matrix = g.pose().last().pose();
+        int left = (int) Math.floor(matrix.m00() * x0 + matrix.m10() * y0 + matrix.m30());
+        int top = (int) Math.floor(matrix.m01() * x0 + matrix.m11() * y0 + matrix.m31());
+        int right = (int) Math.ceil(matrix.m00() * x1 + matrix.m10() * y1 + matrix.m30());
+        int bottom = (int) Math.ceil(matrix.m01() * x1 + matrix.m11() * y1 + matrix.m31());
+        g.pose().pushPose();
+        g.pose().last().pose().identity();
+        g.enableScissor(left, top, right, bottom);
+        g.pose().popPose();
     }
     private static void gear(GuiGraphics g, int x, int y, float angle, int tint) {
         g.fill(x - 4, y - 4, x + 5, y + 5, 0xFF8A9CA7);
