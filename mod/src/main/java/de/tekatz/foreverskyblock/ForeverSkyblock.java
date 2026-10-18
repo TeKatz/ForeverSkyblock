@@ -2,8 +2,10 @@ package de.tekatz.foreverskyblock;
 
 import de.tekatz.foreverskyblock.block.CondenserBlock;
 import de.tekatz.foreverskyblock.block.FreezingChamberBlock;
+import de.tekatz.foreverskyblock.block.GardenChamberBlock;
 import de.tekatz.foreverskyblock.block.WashingBasinBlock;
 import de.tekatz.foreverskyblock.blockentity.CondenserBlockEntity;
+import de.tekatz.foreverskyblock.blockentity.GardenChamberBlockEntity;
 import de.tekatz.foreverskyblock.blockentity.WashingBasinBlockEntity;
 import de.tekatz.foreverskyblock.item.MortarItem;
 import de.tekatz.foreverskyblock.item.SupplyCacheItem;
@@ -76,9 +78,10 @@ public final class ForeverSkyblock {
             () -> new FreezingChamberBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE)
                     .strength(2.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()));
     public static final DeferredItem<BlockItem> FREEZING_CHAMBER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(FREEZING_CHAMBER_MARK_I);
-    public static final DeferredBlock<Block> GARDEN_CHAMBER_MARK_I = BLOCKS.registerSimpleBlock("garden_chamber_mark_i",
-            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(3.0F, 8.0F)
-                    .sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion());
+    // Keep the existing registry id for save compatibility; the player-facing name is simply "Garden Chamber".
+    public static final DeferredBlock<GardenChamberBlock> GARDEN_CHAMBER_MARK_I = BLOCKS.register("garden_chamber_mark_i",
+            () -> new GardenChamberBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(3.0F, 8.0F)
+                    .sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()));
     public static final DeferredItem<BlockItem> GARDEN_CHAMBER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(GARDEN_CHAMBER_MARK_I);
     public static final DeferredBlock<WashingBasinBlock> WASHING_BASIN = BLOCKS.register("washing_basin",
             () -> new WashingBasinBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BROWN)
@@ -96,6 +99,8 @@ public final class ForeverSkyblock {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CondenserBlockEntity>> CONDENSER_ENTITY =
             BLOCK_ENTITIES.register("condenser_mark_i", () -> BlockEntityType.Builder.of(CondenserBlockEntity::new,
                     CONDENSER_MARK_I.get(), CONDENSER_MARK_II.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GardenChamberBlockEntity>> GARDEN_CHAMBER_ENTITY =
+            BLOCK_ENTITIES.register("garden_chamber", () -> BlockEntityType.Builder.of(GardenChamberBlockEntity::new, GARDEN_CHAMBER_MARK_I.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<WashingBasinBlockEntity>> WASHING_BASIN_ENTITY =
             BLOCK_ENTITIES.register("washing_basin", () -> BlockEntityType.Builder.of(WashingBasinBlockEntity::new, WASHING_BASIN.get()).build(null));
     public static final DeferredHolder<MenuType<?>, MenuType<CondenserMenu>> CONDENSER_MENU =
