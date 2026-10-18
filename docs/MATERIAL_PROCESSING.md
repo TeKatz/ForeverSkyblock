@@ -1,12 +1,12 @@
-# Material processing and automation foundation — 0.19.1 development
+# Material processing and automation foundation — 0.20.0 development
 
-Development branch: `feature/material-processing-0.19`, based on the integrated 0.18.1 baseline. This document describes development work and does **not** imply a merge or release. The fixed starter-island NBT is unchanged.
+Development branch: `feature/material-processing-0.19`, based on the integrated 0.18.1 baseline and the tested 0.19.1 material-processing work. This document describes development work and does **not** imply a merge or release. The fixed starter-island NBT is unchanged.
 
 ## Progression goal
 
-0.19.x turns the first renewable water source into the bridge from primitive survival to the first metal and then uses that metal to remove early manual bottlenecks. The intended order is:
+The material-processing arc turns the first renewable water source into the bridge from primitive survival to the first metal, then uses Iron to remove early manual bottlenecks and finally closes the wood loop with the Garden Chamber.
 
-`Ice / Water -> Farm -> Mud -> Packed Mud -> Mud Bricks -> Washing Basin -> Raw Iron -> Iron -> Condenser Mark II`
+`Ice / Water -> Farm -> Mud -> Packed Mud -> Mud Bricks -> Washing Basin -> Raw Iron -> Iron -> Condenser Mark II -> Garden Chamber`
 
 Vanilla `Mud + Wheat -> Packed Mud` and Packed Mud -> Mud Bricks remain meaningful links rather than being replaced by a custom shortcut.
 
@@ -69,13 +69,46 @@ Recipe:
 Mark II retains all Mark I recipes and additionally unlocks:
 
 - **4 Stone Fragments -> 1 Stone Meal** without the manual Mortar step;
-- **8 Oak Leaves + 1 Bone Meal -> 1 Oak Sapling** through an adjacent Mixing Chamber.
+- **4 Wheat Seeds + 1 Bone Meal -> 2 Oak Saplings** through an adjacent Mixing Chamber.
 
-Only Oak is exposed at this stage because it is the tree species guaranteed by the current opening progression. Spruce, Birch, Jungle, Acacia, Dark Oak, Cherry and Mangrove recipes are deliberately deferred until the pack provides a real first-acquisition path for those species. JEI must not advertise dead-end recipes that cannot be bootstrapped.
+The Sapling recipe deliberately no longer consumes Leaves. Harvesting Leaves with Wooden Shears suppresses natural Sapling drops, so tying both Bone Meal and Sapling production to the same limited Leaf stock created an avoidable softlock risk. Wheat Seeds are renewable as soon as farming is established and give that existing by-product an additional progression role.
 
-Condenser recipes carry an optional `minimum_tier` field, defaulting to Mark I. When more than one recipe matches, two-input recipes are preferred before single-input recipes. This ensures Oak Leaves + Bone Meal selects the Oak Sapling recipe instead of the existing Leaves -> Bone Meal recipe. Mark I cannot execute Mark-II-only recipes.
+Only Oak is exposed at this stage because it is the tree species guaranteed by the current opening progression. Spruce, Birch, Jungle, Acacia, Dark Oak, Cherry and Mangrove recipes remain deferred until the pack provides a real first-acquisition path for those species. JEI must not advertise dead-end recipes that cannot be bootstrapped.
 
-Persistent input locks continue to govern manual and automated insertion. This keeps separate automated Mark II units deterministic without turning the universal Freezing input into a catch-all routing sink.
+Condenser recipes carry an optional `minimum_tier` field, defaulting to Mark I. Mark I cannot execute Mark-II-only recipes. Persistent input locks continue to govern normal Condenser insertion.
+
+## Garden Chamber Mark I
+
+The Garden Chamber is the first dedicated wood-production upgrade and is intentionally exclusive to **Condenser Mark II**.
+
+Crafting recipe:
+
+- 4 Mud Bricks;
+- 2 Iron Ingots;
+- 2 Planks;
+- 1 Oak Sapling.
+
+A Garden Chamber placed directly against a Condenser Mark II changes the machine into **Garden mode**. A Condenser Mark I ignores the Garden Chamber completely.
+
+Garden mode has strict priority over the other adjacent upgrades:
+
+- Mixing Chamber is paused and its slot disappears;
+- Freezing Chamber is paused and its slots disappear;
+- normal Condensing is paused;
+- all existing normal inputs, filters and partial progress remain stored and resume unchanged when the Garden Chamber is removed.
+
+The Garden interface replaces the normal process cards with a green artificial landscape, a persistent specimen slot, a growth bar and two harvest outputs.
+
+Initial Garden recipe:
+
+- specimen: **1 Oak Sapling**;
+- specimen is **not consumed**;
+- 320 ticks / **16 seconds**;
+- output: **4 Oak Logs + 8 Oak Leaves**.
+
+The specimen slot is limited to one item and functions as a machine setting rather than a consumed ingredient. Garden recipes are data-driven so later progression can add other trees or crops only after the corresponding plant has a real first-acquisition path.
+
+Garden automation is exposed through the existing Condenser item capability. Automation can insert a valid specimen and extract both harvest outputs. Hidden normal Condenser slots are not exposed while Garden mode is active.
 
 ## Reliable early tree growth
 
@@ -95,25 +128,34 @@ This removes idle waiting from the wood-heavy early economy while preserving Bon
 JEI includes:
 
 - a dedicated Washing category with input count, Raw Iron output, duration, no-power state, adjacent-water requirement and explicit note that water is not consumed;
+- a dedicated Garden category showing the retained specimen, both harvest outputs, duration, Condenser Mark II requirement and exclusive Garden-mode behavior;
 - Washing Basin as its recipe catalyst and a Recipes button in the Basin GUI;
+- Condenser Mark II and Garden Chamber as Garden recipe catalysts;
 - Condenser Mark II as a Condensing and Freezing catalyst;
 - Mark-II-only recipe indication inside the Condensing category;
 - transfer rejection when a Mark-II-only Condensing recipe is requested from a Mark I.
 
 ## Automation boundary
 
-0.19.x pays two existing automation debts: Stone Meal and the guaranteed Oak Sapling can now be generated without a manual Mortar/tree-drop dependency once Iron unlocks Mark II. Washing itself is automation-friendly from the start.
+The primitive resource chain now has a concrete automation closure:
 
-**Wood production is still a required later automation step.** The early economy depends heavily on Logs and Leaves, so a future tree-growing/harvesting facility must close that loop. 0.19.x does not pretend that automated Stone Meal/Saplings alone make the primitive resource chain fully autonomous.
+- Stone Fragments -> Stone Meal is automated by Condenser Mark II;
+- Wheat Seeds + Bone Meal -> Oak Saplings is automated by Condenser Mark II + Mixing Chamber;
+- Oak Logs + Oak Leaves are automated by Condenser Mark II + Garden Chamber;
+- Leaves continue feeding Bone Meal production;
+- Logs continue feeding Stone Fragment production;
+- Stone Meal + Sapling can therefore feed automated Dirt production.
+
+This means the wood-heavy opening economy no longer requires permanent manual tree chopping once the player has reached the Iron / Mark-II tier.
 
 ## Compatibility and validation
 
-No player-profile schema, progression-network protocol or starter-island change is required. Existing Mark I saves retain their stable inventory/filter indices; Mark II extends recipe eligibility rather than replacing the original machine.
+No player-profile schema, progression-network protocol or starter-island change is required. Existing Mark I saves retain their stable original inventory/filter indices; Garden storage is appended after the existing Condenser and Freezing slots for save compatibility.
 
 Required branch validation:
 
 1. Java 21 build and unit tests;
 2. client mixin smoke test;
-3. dedicated regression GameTests, including Mud, water-gated Washing, pause/resume, automation, Mark-I tier rejection, Mark-II Stone Meal, Oak Sapling priority and single-use Bone Meal tree growth;
+3. dedicated regression GameTests, including Mud, water-gated Washing, pause/resume, Mark-I tier rejection, Mark-II Stone Meal, the Wheat-Seed Sapling recipe, Garden exclusivity, retained specimen, dual-output harvest and Garden automation;
 4. full NeoForge 21.1.259 pack-runtime integration suite;
 5. client visual/JEI acceptance before any main merge.
