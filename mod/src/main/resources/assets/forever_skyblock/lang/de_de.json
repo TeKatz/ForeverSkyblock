@@ -311,7 +311,7 @@
   "gui.forever_skyblock.overhaul.grid": "Raster",
   "gui.forever_skyblock.overhaul.close": "Schließen",
   "gui.forever_skyblock.overhaul.back": "Zurück",
-  "gui.forever_skyblock.overhaul.challenge_rules": "Erfülle dieses Ziel persönlich. Die Belohnung wird einmal pro dauerhaftem Profil vergeben. Das Öffnen dieser Ansicht vergibt keine Punkte.",
+  "gui.forever_skyblock.overhaul.challenge_rules": "Diese Challenge vergibt SP einmal pro Profil. Fortschritt und abgeschlossene Ziele bleiben bei Weltwechseln und Skill-Rückerstattungen erhalten.",
   "gui.forever_skyblock.overhaul.objectives": "Benötigte Ziele",
   "gui.forever_skyblock.overhaul.inventory_progress": "Im Inventar: %s / %s",
   "gui.forever_skyblock.overhaul.action_progress": "Fortschritt: %s / %s",

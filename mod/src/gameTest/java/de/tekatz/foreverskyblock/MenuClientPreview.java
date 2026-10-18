@@ -41,12 +41,12 @@ public final class MenuClientPreview {
         Screenshot.grab(mc.gameDirectory,"menu-"+stage+".png",mc.getMainRenderTarget(),c->{});
         System.out.println("MENU_VISUAL_STAGE "+stage+" "+mc.getWindow().getGuiScaledWidth()+"x"+mc.getWindow().getGuiScaledHeight());
         switch(++stage) {
-            case 1 -> {var m=PremiumSkillScreen.class.getDeclaredMethod("openChallenge",MilestoneCatalog.Milestone.class);m.setAccessible(true);m.invoke(menu,MilestoneCatalog.MILESTONES.get(3));}
+            case 1 -> clickCard(mc,"body",3,false,true);
             case 2 -> page(mc,"SHOP");
-            case 3 -> {var m=PremiumSkillScreen.class.getDeclaredMethod("openProduct",ShopCatalog.Product.class);m.setAccessible(true);m.invoke(menu,ShopCatalog.ADVANCED_AE2_STARTER);}
+            case 3 -> clickCard(mc,"body",3,true,true);
             case 4 -> page(mc,"PROFILE");
             case 5 -> {page(mc,"CHALLENGES");Field f=PremiumSkillScreen.class.getDeclaredField("category");f.setAccessible(true);f.setInt(menu,7);mc.setScreen(null);mc.setScreen(menu);}
-            case 6 -> {var m=PremiumSkillScreen.class.getDeclaredMethod("openContract",ContractCatalog.Contract.class);m.setAccessible(true);m.invoke(menu,ContractCatalog.ANTIMATTER);}
+            case 6 -> clickCard(mc,"body",3,false,true);
             case 7 -> {mc.options.guiScale().set(4);mc.resizeDisplay();page(mc,"SHOP");}
             case 8 -> {mc.options.guiScale().set(6);mc.resizeDisplay();page(mc,"CHALLENGES");}
             case 9 -> {mc.options.guiScale().set(3);mc.resizeDisplay();mc.getLanguageManager().setSelected("de_de");mc.reloadResourcePacks();page(mc,"CHALLENGES");}
@@ -56,8 +56,25 @@ public final class MenuClientPreview {
             case 13 -> {var m=PremiumSkillScreen.class.getDeclaredMethod("openContract",ContractCatalog.Contract.class);m.setAccessible(true);m.invoke(menu,ContractCatalog.NITRO);}
             case 14 -> {page(mc,"SHOP");menu.mouseScrolled(mc.getWindow().getGuiScaledWidth()/2D,mc.getWindow().getGuiScaledHeight()-40,0,-12);}
             case 15 -> {page(mc,"CHALLENGES");Field f=PremiumSkillScreen.class.getDeclaredField("category");f.setAccessible(true);f.setInt(menu,0);mc.setScreen(null);mc.setScreen(menu);menu.mouseScrolled(35,mc.getWindow().getGuiScaledHeight()-40,0,-12);}
+            case 16 -> {
+                clickCard(mc,"rail",7,false,false);
+                Field f=PremiumSkillScreen.class.getDeclaredField("category");f.setAccessible(true);
+                if(f.getInt(menu)!=7)throw new IllegalStateException("Scrolled category did not receive click");
+            }
             default -> {System.out.println("MENU_VISUAL_COMPLETE");mc.stop();}
         }
+    }
+    private static void clickCard(Minecraft mc,String field,int index,boolean round,boolean opensDetail) throws Exception {
+        Field f=PremiumSkillScreen.class.getDeclaredField(field);f.setAccessible(true);
+        var panel=(net.neoforged.neoforge.client.gui.widget.ScrollPanel)f.get(menu);
+        var button=(net.minecraft.client.gui.components.Button)panel.children().get(index);
+        if(round) {
+            menu.mouseClicked(button.getX()+1,button.getY()+1,0);
+            if(mc.screen!=menu)throw new IllegalStateException("Round node accepted its square corner");
+        }
+        menu.mouseClicked(button.getX()+button.getWidth()/2D,button.getY()+(round?18:button.getHeight()/2D),0);
+        if(opensDetail && mc.screen==menu)throw new IllegalStateException("Card or node did not open detail through screen input");
+        System.out.println("MENU_INPUT_PASSED "+field+" "+index+" round="+round);
     }
     @SuppressWarnings({"rawtypes","unchecked"})
     private static void page(Minecraft mc,String name) throws Exception {

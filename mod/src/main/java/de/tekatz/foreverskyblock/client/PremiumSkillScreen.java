@@ -212,7 +212,7 @@ public final class PremiumSkillScreen extends Screen {
                         ItemStack icon=PremiumIconResolver.categoryIcon(id);
                         if(!"contracts".equals(id)) g.renderItem(icon,getX()+3,getY()+4);
                         else mark(g,getX()+3,getY()+4,2,GOLD);
-                        label(g,getMessage(),getX()+24,getY()+5,width-45,selected?WHITE:MUTED,.68F);
+                        wrapped(g,getMessage(),getX()+24,getY()+4,width-45,selected?WHITE:MUTED,.62F,2);
                         centered(g,literal(count),getX()+width-20,getY(),17,height,accent(id),.66F);
                     }
                 });
@@ -341,7 +341,7 @@ public final class PremiumSkillScreen extends Screen {
         };
         addNode(w/8,22,()->t("permanent_root"),()->t("sp_only"),Items.NETHER_STAR.getDefaultInstance(),
                 ()->ready(),CYAN,()->navigate(Page.PROFILE),w/4-9);
-        addNode(center,22,()->text("tier.0"),()->t("tier0_short"),Items.COBBLESTONE.getDefaultInstance(),
+        addNode(center,22,()->text("tier.0"),()->Component.translatable("milestone.forever_skyblock.first_foundations"),Items.COBBLESTONE.getDefaultInstance(),
                 ()->ready()&&state().shopTier()>=0,GOLD,()->openTier(0),Math.min(190,w-10));
         var reach=SkillCatalog.find(SkillCatalog.EXTENDED_REACH);
         addNode(w/8,108,()->Component.translatable(reach.titleKey()),()->old("cost",reach.cost()),reach.icon().getDefaultInstance(),
@@ -352,7 +352,7 @@ public final class PremiumSkillScreen extends Screen {
             addNode(w*(2*(i+1)+1)/8,108,()->productTitle(p),()->literal(p.spCost()+" SP"),productIcon(p),
                     ()->productStage(p)>=3,GREEN,()->openProduct(p),w/4-9);
         }
-        addNode(center,245,()->text("tier.1"),()->t("tier1_short"),Items.DRAGON_HEAD.getDefaultInstance(),
+        addNode(center,245,()->text("tier.1"),()->Component.translatable("milestone.forever_skyblock.dragon_slayer"),Items.DRAGON_HEAD.getDefaultInstance(),
                 ()->ready()&&state().shopTier()>=1,GOLD,()->openTier(1),Math.min(190,w-10));
         var p=ShopCatalog.ADVANCED_AE2_STARTER;
         addNode(center,326,()->productTitle(p),()->literal(p.spCost()+" SP"),productIcon(p),
@@ -375,13 +375,15 @@ public final class PremiumSkillScreen extends Screen {
                 g.renderItem(icon,nx-8,ny-8);
                 if(owned.getAsBoolean()) { circle(g,nx+13,ny-12,4,GREEN); }
                 // Up to three centered lines; the next node row is deliberately more than 80 px away.
-                g.fill(nx-labelWidth/2,ny+22,nx+labelWidth/2+1,ny+54,0xFF091822);
                 int yy=ny+25;
                 for(var line:font.split(title.get(),Math.max(1,(int)(labelWidth/.72F)))) {
                     if(yy>ny+34)break;
                     int fw=Math.round(font.width(line)*.72F);
+                    g.fill(nx-fw/2-2,yy-1,nx+fw/2+3,yy+8,0xFF091822);
                     g.pose().pushPose();g.pose().translate(nx-fw/2,yy,0);g.pose().scale(.72F,.72F,1);g.drawString(font,line,0,0,WHITE,false);g.pose().popPose();yy+=8;
                 }
+                int sw=Math.min(labelWidth,Math.round(font.width(subtitle.get().getString())*.62F));
+                g.fill(nx-sw/2-2,ny+43,nx+sw/2+3,ny+54,0xFF091822);
                 centered(g,subtitle.get(),nx-labelWidth/2,ny+43,labelWidth,10,owned.getAsBoolean()?GREEN:MUTED,.62F);
             }
         });
@@ -590,6 +592,8 @@ public final class PremiumSkillScreen extends Screen {
         final Detail detail; private long start=System.nanoTime();private int dx,dy,dw,dh;private MenuPanel prose;
         DetailScreen(Detail detail){super(detail.title());this.detail=detail;}
         @Override protected void init(){
+            if(PremiumSkillScreen.this.width!=width || PremiumSkillScreen.this.height!=height)
+                PremiumSkillScreen.this.resize(minecraft,width,height);
             dw=Math.min(width-22,430);dh=Math.min(height-22,300);dx=(width-dw)/2;dy=(height-dh)/2;
             prose=addRenderableWidget(new MenuPanel(dx+13,dy+69,dw-26,dh-112,"detail"));
             prose.paint=(g,l,t,w,mx,my)->wrapped(g,detail.description().get(),l,t,w-7,MUTED,.83F,Integer.MAX_VALUE);

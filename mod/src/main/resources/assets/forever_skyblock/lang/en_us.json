@@ -311,7 +311,7 @@
   "gui.forever_skyblock.overhaul.grid": "Grid",
   "gui.forever_skyblock.overhaul.close": "Close",
   "gui.forever_skyblock.overhaul.back": "Back",
-  "gui.forever_skyblock.overhaul.challenge_rules": "Complete this objective personally. The reward is granted once per permanent profile; opening this screen never grants points.",
+  "gui.forever_skyblock.overhaul.challenge_rules": "This challenge rewards SP once per profile. Progress and completed objectives survive changing worlds and refunding skills.",
   "gui.forever_skyblock.overhaul.objectives": "Required objectives",
   "gui.forever_skyblock.overhaul.inventory_progress": "Inventory: %s / %s",
   "gui.forever_skyblock.overhaul.action_progress": "Progress: %s / %s",
