@@ -3,6 +3,7 @@ package de.tekatz.foreverskyblock.jei;
 import de.tekatz.foreverskyblock.ForeverSkyblock;
 import de.tekatz.foreverskyblock.client.CondenserScreen;
 import de.tekatz.foreverskyblock.recipe.CondenserRecipe;
+import de.tekatz.foreverskyblock.recipe.GardenRecipe;
 import de.tekatz.foreverskyblock.recipe.WashingRecipe;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
@@ -22,11 +23,14 @@ public final class CondenserJeiPlugin implements IModPlugin {
             ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "condensing"));
     public static final RecipeType<RecipeHolder<WashingRecipe>> WASHING_TYPE = RecipeType.createRecipeHolderType(
             ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "washing"));
+    public static final RecipeType<RecipeHolder<GardenRecipe>> GARDEN_TYPE = RecipeType.createRecipeHolderType(
+            ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "garden"));
     @Override public ResourceLocation getPluginUid() { return ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "jei"); }
     @Override public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime runtime) { JetpackJeiVisibility.available(runtime);
         de.tekatz.foreverskyblock.client.ClientMachineRecipes.install(
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(TYPE, FreezingCategory.TYPE)),
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(WASHING_TYPE)),
+                () -> runtime.getRecipesGui().showTypes(java.util.List.of(GARDEN_TYPE)),
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(AscensionCategory.TYPE)));
     }
     @Override public void onRuntimeUnavailable() { de.tekatz.foreverskyblock.client.ClientMachineRecipes.clear(); JetpackJeiVisibility.unavailable(); if (transfers != null) transfers.clearPending(); }
@@ -35,6 +39,7 @@ public final class CondenserJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new CondensingCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new FreezingCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new WashingCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new GardenCategory(registration.getJeiHelpers().getGuiHelper()));
     }
     @Override public void registerRecipes(IRecipeRegistration registration) {
         registration.addRecipes(AscensionCategory.TYPE, java.util.List.of(AscensionCategory.Conversion.CORE));
@@ -43,6 +48,7 @@ public final class CondenserJeiPlugin implements IModPlugin {
         if (level != null) {
             registration.addRecipes(TYPE, level.getRecipeManager().getAllRecipesFor(ForeverSkyblock.CONDENSING.get()));
             registration.addRecipes(WASHING_TYPE, level.getRecipeManager().getAllRecipesFor(ForeverSkyblock.WASHING.get()));
+            registration.addRecipes(GARDEN_TYPE, level.getRecipeManager().getAllRecipesFor(ForeverSkyblock.GARDEN.get()));
         }
     }
     @Override public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
@@ -53,6 +59,8 @@ public final class CondenserJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(ForeverSkyblock.CONDENSER_MARK_II.get(), FreezingCategory.TYPE);
         registration.addRecipeCatalyst(ForeverSkyblock.FREEZING_CHAMBER_MARK_I.get(), FreezingCategory.TYPE);
         registration.addRecipeCatalyst(ForeverSkyblock.WASHING_BASIN.get(), WASHING_TYPE);
+        registration.addRecipeCatalyst(ForeverSkyblock.CONDENSER_MARK_II.get(), GARDEN_TYPE);
+        registration.addRecipeCatalyst(ForeverSkyblock.GARDEN_CHAMBER_MARK_I.get(), GARDEN_TYPE);
     }
     private CondenserRecipeTransferHandler transfers;
     @Override public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
