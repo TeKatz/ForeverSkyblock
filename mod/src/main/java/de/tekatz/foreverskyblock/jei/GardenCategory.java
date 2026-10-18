@@ -29,36 +29,38 @@ public final class GardenCategory implements IRecipeCategory<RecipeHolder<Garden
     @Override public Component getTitle() { return Component.translatable("jei.forever_skyblock.garden"); }
     @Override public IDrawable getIcon() { return icon; }
     @Override public int getWidth() { return 176; }
-    @Override public int getHeight() { return 108; }
+    @Override public int getHeight() { return 92; }
 
     @Override public void setRecipe(IRecipeLayoutBuilder builder, RecipeHolder<GardenRecipe> holder, IFocusGroup focuses) {
-        builder.addInputSlot(10, 10).addItemStacks(Arrays.stream(holder.value().specimen().getItems()).map(ItemStack::copy).toList());
-        builder.addOutputSlot(116, 10).addItemStack(holder.value().primaryResult());
-        builder.addOutputSlot(144, 10).addItemStack(holder.value().secondaryResult());
-        builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 10, 77)
+        builder.addInputSlot(12, 18).addItemStacks(Arrays.stream(holder.value().specimen().getItems()).map(ItemStack::copy).toList());
+        builder.addOutputSlot(118, 18).addItemStack(holder.value().primaryResult());
+        builder.addOutputSlot(146, 18).addItemStack(holder.value().secondaryResult());
+        builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 12, 67)
                 .addItemStack(new ItemStack(ForeverSkyblock.CONDENSER_MARK_II.get()));
-        builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 34, 77)
+        builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 36, 67)
                 .addItemStack(new ItemStack(ForeverSkyblock.GARDEN_CHAMBER_MARK_I.get()));
     }
 
     @Override public void draw(RecipeHolder<GardenRecipe> holder, IRecipeSlotsView slots, GuiGraphics g, double mouseX, double mouseY) {
-        g.fill(0, 0, getWidth(), getHeight(), 0xFF17271F);
-        g.fill(42, 8, 106, 31, 0xFF315F48);
-        g.fill(42, 8, 106, 18, 0xFF456F69);
-        g.fill(42, 18, 106, 31, 0xFF365E36);
-        slot.draw(g, 9, 9);
-        slot.draw(g, 115, 9);
-        slot.draw(g, 143, 9);
-        slot.draw(g, 9, 76);
-        slot.draw(g, 33, 76);
-        g.fill(48, 40, 128, 46, 0xFF40584A);
-        int ticks = holder.value().processingTime();
-        int width = (int) ((System.currentTimeMillis() / 50 % ticks) * 80 / ticks);
-        g.fill(48, 40, 48 + width, 46, 0xFF62C46B);
+        g.fill(0, 0, getWidth(), getHeight(), 0xFF17231D);
+        g.fill(1, 1, getWidth() - 1, getHeight() - 1, 0xFF1D2B24);
+        slot.draw(g, 11, 17);
+        slot.draw(g, 117, 17);
+        slot.draw(g, 145, 17);
+        slot.draw(g, 11, 66);
+        slot.draw(g, 35, 66);
+
+        // JEI stays schematic: no decorative tree-growth scene, just a clear process arrow.
+        g.fill(49, 25, 104, 29, 0xFF43594B);
+        g.fill(49, 25, 92, 29, 0xFF62C46B);
+        g.fill(103, 22, 107, 32, 0xFF62C46B);
+        g.fill(107, 24, 111, 30, 0xFF62C46B);
+
         var font = Minecraft.getInstance().font;
-        g.drawCenteredString(font, Component.translatable("jei.forever_skyblock.duration", ticks / 20.0F), 88, 53, 0xFFE6F0E8);
-        g.drawString(font, Component.translatable("jei.forever_skyblock.garden_specimen_retained"), 10, 65, 0xFF9FE0A8, false);
-        g.drawString(font, Component.translatable("jei.forever_skyblock.garden_requires"), 58, 80, 0xFFC8DCCB, false);
-        g.drawString(font, Component.translatable("jei.forever_skyblock.garden_exclusive"), 10, 96, 0xFF8FA99A, false);
+        int ticks = holder.value().processingTime();
+        g.drawCenteredString(font, Component.translatable("jei.forever_skyblock.duration", ticks / 20.0F), 80, 39, 0xFFE6F0E8);
+        g.drawCenteredString(font, Component.translatable("jei.forever_skyblock.garden_specimen_retained"), 88, 52, 0xFFA7D8AE);
+        g.drawString(font, Component.translatable("jei.forever_skyblock.garden_mk2"), 61, 66, 0xFFC8DCCB, false);
+        g.drawString(font, Component.translatable("jei.forever_skyblock.garden_chamber"), 61, 78, 0xFF91B89A, false);
     }
 }
