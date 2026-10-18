@@ -92,7 +92,18 @@ public final class ChallengeGameTests {
         h.assertTrue(profile(player).milestones().contains(ChallengeRules.STONEWORKER.id()),"Mortar craft counts on shift-click");
         for(String tool:List.of("pickaxe","axe","shovel","hoe")) craft(h,player,"tools/stone_"+tool);
         h.assertTrue(profile(player).milestones().contains(ChallengeRules.STONE_TOOLS.id()),"All four distinct Stone tools complete the set");
-        for(String tool:List.of("pickaxe","axe","shovel","hoe")) craft(h,player,"tools/iron_"+tool);
+        for (String tool : List.of("pickaxe", "axe", "shovel", "hoe")) {
+            var recipeId = id("tools/iron_" + tool);
+            var recipe = h.getLevel().getRecipeManager().byKey(recipeId).orElseThrow().value();
+            var ingredients = recipe.getIngredients().stream().filter(ingredient -> !ingredient.isEmpty())
+                    .map(ingredient -> ingredient.getItems()[0].copy()).toList();
+            var oldIngredients = ingredients.stream().map(stack -> stack.is(Items.IRON_BLOCK)
+                    ? new ItemStack(Items.IRON_INGOT) : stack.copy()).toList();
+            h.assertTrue(ChallengeEvents.craftEvidence(player, recipeId, oldIngredients).isEmpty(),
+                    "Old all-ingot ingredients must not forge Iron challenge evidence: " + tool);
+            craft(h, player, "tools/iron_" + tool);
+        }
+        h.assertTrue(profile(player).milestones().contains(ChallengeRules.IRON_TOOLS.id()), "New Iron-Block recipes must still complete the Iron Tools challenge");
         craft(h,player,"tools/diamond_pickaxe");
         var smith=new SmithingMenu(2,player.getInventory());player.containerMenu=smith;
         smith.getSlot(0).set(new ItemStack(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE));

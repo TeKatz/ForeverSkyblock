@@ -13,7 +13,7 @@ Implements TeKatz's supplied [complete handoff](TOOL_RECIPE_HANDOFF.md) on `feat
 | Shovel | 1 | 2 | Stone Shovel | 1 Chain |
 | Hoe | 1 | 2 | Stone Hoe | 1 Chain |
 
-Exactly one original head-material position becomes an Iron Block; tool shape, matching Stone core and Chain position are retained. Full set: four Iron Blocks, eleven other Ingots, four Chains and four Stone tools. Recipe IDs and permanent durability are unchanged. Both bundled recipes and Recipe Editor snapshots match. Old all-ingot custom patterns no longer match; the existing authoritative tool filter still removes Vanilla/modded alternatives. Swords, armor and other excluded tools are outside this request. See [validation](MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud-development).
+Exactly one original head-material position becomes an Iron Block; tool shape, matching Stone core and Chain position are retained. Full set: four Iron Blocks, eleven other Ingots, four Chains and four Stone tools. The existing personal Iron Tools challenge now verifies the new one-Block ingredient proof; old all-Ingot proof is rejected. Its reward and previously earned claims are unchanged. Recipe IDs and permanent durability are unchanged. Both bundled recipes and Recipe Editor snapshots match. Old all-ingot custom patterns no longer match; the existing authoritative tool filter still removes Vanilla/modded alternatives. Swords, armor and other excluded tools are outside this request. See [validation](MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud-development).
 
 ## Exact scope and patterns
 
