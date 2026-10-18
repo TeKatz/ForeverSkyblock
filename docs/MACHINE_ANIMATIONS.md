@@ -34,6 +34,15 @@ The new Garden Chamber exterior has a dark inset base, steel posts, copper trim,
 
 The branch adds unit coverage for bounded press travel, monotonic rooted growth, harvest staging, completed-phase clamping and clear greenhouse mesh geometry without coplanar overlapping faces. Dedicated GameTests cover recipe/job classification, freezing-only snapshots, output-blocked snapshots, real duration/result round-trips, transient save boundaries, Garden blocking and controller removal. The existing full regression/integration workflow remains enabled.
 
-Initial CI build/unit tests, headless client startup, dedicated regression tests and full pack-runtime integrations passed on commit `88e1c559a0913e2d23b4bc730201bd1bf43ccc92` (run `39116729062`). Final CI results will be recorded after the geometry/metadata follow-up completes. Automated tests and a headless launch do not prove final in-world rendered pixels; final appearance, motion smoothness and resource-pack/shader combinations require testing the delivered JAR in the real client.
+Final source commit `643f3ebd64452b461276a85134c1e12d204b8d48` passed [GitHub Actions run 39117087166](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39117087166):
+
+- Java 21 build and **69 unit tests**;
+- headless NeoForge client mixin/startup smoke test;
+- **78 required GameTests** on NeoForge 21.1.249;
+- **78 required GameTests** with the full optional integrations on pack runtime NeoForge 21.1.259.
+
+The resulting `ForeverSkyblock-1.21.1-NeoForge-0.21.0.jar` was downloaded from that exact run, CRC-checked and inspected for 0.21.0 mod metadata, Java 21 class files, all new renderers and matching Garden models. SHA-256: `8d6b08c68fe422560e69505b5033a233ce552817052950aec46b16bae6cb1984`. GameTest classes are excluded from the delivered mod JAR. This final documentation update changes no built code or resources.
+
+A direct comparison against the base verified that the production methods, Condenser menu/slots/handlers and fixed starter-island bytes are unchanged. Both Garden meshes were checked for coplanar overlaps; compact GUI process/growth routines were inspected using a software raster adapter with placeholder item swatches. These checks and the headless launch do not prove final in-world rendered pixels. Final appearance, motion smoothness and resource-pack/shader combinations still require testing the delivered JAR in the real client.
 
 Suggested client checks: Mark I/II Logs and Leaves; Mark-II Stone Meal; Dirt/Mud mixing; Sapling cultivation; Garden growth through a full 16-second cycle; either full harvest slot; empty specimen; module removal/reattachment; freezing-only work; all four Condenser orientations; close/reopen GUI; chunk reload; small and large GUI scale.
