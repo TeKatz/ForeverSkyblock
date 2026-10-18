@@ -1,4 +1,4 @@
-# Material processing and automation foundation — 0.20.0 development
+# Material processing and automation foundation — 0.20.1 development
 
 Development branch: `feature/material-processing-0.19`, based on the integrated 0.18.1 baseline and the tested 0.19.1 material-processing work. This document describes development work and does **not** imply a merge or release. The fixed starter-island NBT is unchanged.
 
@@ -77,7 +77,9 @@ Only Oak is exposed at this stage because it is the tree species guaranteed by t
 
 Condenser recipes carry an optional `minimum_tier` field, defaulting to Mark I. Mark I cannot execute Mark-II-only recipes. Persistent input locks continue to govern normal Condenser insertion.
 
-## Garden Chamber Mark I
+## Garden Chamber
+
+The player-facing name is simply **Garden Chamber**. The internal registry id remains `forever_skyblock:garden_chamber_mark_i` so development/test worlds that already contain the block do not lose it when updating from 0.20.0.
 
 The Garden Chamber is the first dedicated wood-production upgrade and is intentionally exclusive to **Condenser Mark II**.
 
@@ -97,7 +99,7 @@ Garden mode has strict priority over the other adjacent upgrades:
 - normal Condensing is paused;
 - all existing normal inputs, filters and partial progress remain stored and resume unchanged when the Garden Chamber is removed.
 
-The Garden interface replaces the normal process cards with a green artificial landscape, a persistent specimen slot, a growth bar and two harvest outputs.
+The Garden interface replaces the normal process cards with a dedicated landscaped growth scene, a persistent specimen slot, a growth bar, a central recipe button and two harvest outputs.
 
 Initial Garden recipe:
 
@@ -116,19 +118,29 @@ Bone Meal on a placed Vanilla Sapling no longer has a random-success wait. A sin
 
 This removes idle waiting from the wood-heavy early economy while preserving Bone Meal as an actual resource cost.
 
-## 0.19.1 presentation cleanup
+## Presentation cleanup
+
+### 0.19.1
 
 - Condenser Mark II uses the detailed machine panel atlas again, with a dark metal Mark-II frame instead of the flat placeholder-like vanilla block textures.
 - Washing Basin receives a taller layout with separated labels, slots, process bar, recipe summary, hint text and player inventory.
 - Condensing and Washing JEI categories gain additional width/height and shorter requirement labels so tier/module/water text no longer overlaps.
 - The Freezing Chamber's raised top bolts render only their top plates, removing the stray rim stripe while retaining the approved recessed-basin silhouette.
 
+### 0.20.1 Garden polish
+
+- Garden JEI is now a compact schematic view: specimen on the left, both outputs on the right, a clean process arrow, duration and two catalyst rows. The decorative tree-growth scene was intentionally removed from JEI.
+- Garden-mode Condenser GUI gets a larger landscaped viewport with layered sky, hills, grass/soil, moving clouds, sun, staged tree growth and a small late-growth shimmer. The process controls are spaced below the scene instead of competing with it.
+- The Garden Chamber block is rebuilt visually as a small copper-framed greenhouse with green glass, a soil/moss bed and visible interior space.
+- A lightweight Garden Chamber block-entity renderer animates the greenhouse interior only while an adjacent Condenser Mark II is actively growing: the retained specimen gently moves, leaf motes orbit inside and a grow-light scanner sweeps the chamber.
+- The Condenser renderer changes externally in Garden mode as well: the crusher carriage retracts into a grow-light assembly, botanical markers appear on the front and an active scanner/sapling indicator replaces the normal crushing animation.
+
 ## JEI
 
 JEI includes:
 
 - a dedicated Washing category with input count, Raw Iron output, duration, no-power state, adjacent-water requirement and explicit note that water is not consumed;
-- a dedicated Garden category showing the retained specimen, both harvest outputs, duration, Condenser Mark II requirement and exclusive Garden-mode behavior;
+- a dedicated Garden category showing the retained specimen, both harvest outputs, 16-second duration and the required Condenser Mark II + Garden Chamber catalysts without decorative animation or overflowing explanatory text;
 - Washing Basin as its recipe catalyst and a Recipes button in the Basin GUI;
 - Condenser Mark II and Garden Chamber as Garden recipe catalysts;
 - Condenser Mark II as a Condensing and Freezing catalyst;
@@ -150,12 +162,12 @@ This means the wood-heavy opening economy no longer requires permanent manual tr
 
 ## Compatibility and validation
 
-No player-profile schema, progression-network protocol or starter-island change is required. Existing Mark I saves retain their stable original inventory/filter indices; Garden storage is appended after the existing Condenser and Freezing slots for save compatibility.
+No player-profile schema, progression-network protocol or starter-island change is required. Existing Mark I saves retain their stable original inventory/filter indices; Garden storage is appended after the existing Condenser and Freezing slots for save compatibility. The Garden Chamber keeps its original development registry id while dropping `Mark I` from all player-facing naming.
 
 Required branch validation:
 
 1. Java 21 build and unit tests;
-2. client mixin smoke test;
+2. client mixin smoke test, including Garden renderer registration;
 3. dedicated regression GameTests, including Mud, water-gated Washing, pause/resume, Mark-I tier rejection, Mark-II Stone Meal, the Wheat-Seed Sapling recipe, Garden exclusivity, retained specimen, dual-output harvest and Garden automation;
 4. full NeoForge 21.1.259 pack-runtime integration suite;
 5. client visual/JEI acceptance before any main merge.
