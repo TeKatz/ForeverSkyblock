@@ -91,6 +91,10 @@ public final class PremiumSkillScreen extends Screen {
                 && (lastSnapshot == null || next == null || !next.milestones().equals(lastSnapshot.milestones()) || !next.progress().equals(lastSnapshot.progress()))) {
             remember(); rebuildBody();
         }
+        if(next!=lastSnapshot && page==Page.CHALLENGES && category==7 && filter!=0
+                && (lastSnapshot==null || next==null || !next.contracts().equals(lastSnapshot.contracts()))) {
+            remember(); rebuildBody();
+        }
         lastSnapshot=next;
     }
     @Override public void tick() { refresh(); if (++ticks % 100 == 0) ClientSkills.refreshMenu(); }

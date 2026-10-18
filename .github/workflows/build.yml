@@ -58,7 +58,7 @@ jobs:
         with:
           name: K-Menu-Visual-QA
           path: |
-            mod/runs/client/screenshots/menu-*.png
+            mod/**/screenshots/menu-*.png
             mod/menu-visual.log
           if-no-files-found: warn
       - name: Test dedicated-server regression suite

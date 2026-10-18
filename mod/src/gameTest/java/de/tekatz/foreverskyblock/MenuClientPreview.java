@@ -17,13 +17,15 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 /** Opt-in real-render QA fixture. Compiled only into the GameTest source set, never the delivered JAR. */
 @EventBusSubscriber(modid=ForeverSkyblock.MOD_ID,value=Dist.CLIENT)
 public final class MenuClientPreview {
-    private static int ticks, stage;
+    private static int ticks, stage, startup;
     private static PremiumSkillScreen menu;
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) throws Exception {
         if(!Boolean.getBoolean("forever_skyblock.menuVisualTests"))return;
         var mc=Minecraft.getInstance();
         if(menu==null) {
-            if(!(mc.screen instanceof TitleScreen))return;
+            if (++startup % 40 == 0) System.out.println("MENU_VISUAL_WAIT "+(mc.screen==null?"null":mc.screen.getClass().getName()));
+            if (mc.screen != null && mc.screen.getClass().getSimpleName().equals("AccessibilityOnboardingScreen")) mc.setScreen(new TitleScreen());
+            if(!(mc.screen instanceof TitleScreen) || mc.getOverlay()!=null)return;
             mc.options.guiScale().set(3);mc.resizeDisplay();
             var contracts=new LinkedHashMap<String,SkillNetwork.ContractState>();
             for(var c:ContractCatalog.CONTRACTS)contracts.put(c.id(),new SkillNetwork.ContractState(c.target(),3,true,c.resource(),false));
