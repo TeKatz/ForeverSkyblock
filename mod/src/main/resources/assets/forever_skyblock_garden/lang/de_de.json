@@ -1,7 +1,9 @@
 {
-  "block.forever_skyblock.garden_chamber_mark_i": "Garden Chamber Mark I",
+  "block.forever_skyblock.garden_chamber_mark_i": "Garden Chamber",
   "jei.forever_skyblock.garden": "Garden Growth",
   "jei.forever_skyblock.garden_specimen_retained": "Exemplar bleibt erhalten",
+  "jei.forever_skyblock.garden_mk2": "Condenser Mark II",
+  "jei.forever_skyblock.garden_chamber": "Garden Chamber",
   "jei.forever_skyblock.garden_requires": "MK II + Garden Chamber",
   "jei.forever_skyblock.garden_exclusive": "Garden-Modus pausiert Mixing und Freezing Chambers.",
   "gui.forever_skyblock.machine.garden_connected": "GARDEN CHAMBER ONLINE",
