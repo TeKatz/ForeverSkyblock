@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.23.0 — Iron balancing, Packed Mud and Garden alignment (development)
+
+Branch `feature/iron-balance-packed-mud`, extending tested 0.22.1:
+
+- Reduce only Log -> four Stone Fragments to 120 ticks / six seconds on both tiers.
+- Price the normal Hopper at two Iron Blocks, three Ingots and one Chest; remove old/alternative static Hopper recipes on load/replacement.
+- Require one Iron Block in each permanent Iron Pickaxe/Axe/Shovel/Hoe recipe, retaining 4/3/2/2 other Ingots, matching Stone tool and Chain.
+- Add Mud + Wheat -> one Packed Mud in eight seconds with Mixing Chamber on MK I/II, including the existing JEI presentation/transfer path.
+- Center Garden routing badges and their tooltip areas under the real output slots.
+- Synchronize the matching Recipe Editor pack resources and add timing/crafting/production/network regressions.
+
 ## 0.22.1 — Separate Garden harvest ports (development)
 
 Branch `feature/garden-harvest-routing`, extending the tested 0.22.0 work:

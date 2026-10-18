@@ -22,6 +22,8 @@ The follow-up [Garden crops and polish — 0.22.0](MACHINE_ANIMATIONS.md#0220-ga
 
 The current follow-up [Separate Garden harvest ports — 0.22.1](MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports) lives on `feature/garden-harvest-routing`, based on tested 0.22.0. Two unfiltered hoppers separate the harvest, with a permanent routing display in the existing Condenser GUI.
 
+[Iron balancing and Packed Mud — 0.23.0](MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud-development) is developed on `feature/iron-balance-packed-mud`, following 0.22.1. It changes Log timing, Iron costs, adds Packed Mud mixing and centers the Garden badges; main remains 0.20.1.
+
 ## Feature documentation
 
 | Document | Scope |

@@ -1,6 +1,6 @@
 # Forever Skyblock
 
-Development branch `feature/garden-harvest-routing` builds **0.22.1** on the existing animation/Wheat work: separate main/secondary Garden harvest ports with visible routing in the Condenser GUI. The integrated baseline remains 0.20.1. See [behavior and validation](docs/MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports).
+Development branch `feature/iron-balance-packed-mud` builds **0.23.0** on the tested Garden work: six-second Log processing, higher Iron costs for normal Hoppers and custom Iron tools, Packed Mud mixing on both Condenser tiers and centered Garden routing badges. The integrated baseline remains 0.20.1. See [behavior and validation](docs/MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud-development).
 
 **Forever Skyblock** is an Expert Skyblock modpack for **Minecraft 1.21.1 / NeoForge** built around deliberate progression, meaningful resource loops and long-term automation.
 

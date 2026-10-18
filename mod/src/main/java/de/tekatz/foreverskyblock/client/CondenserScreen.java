@@ -221,29 +221,31 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         skin.slot(g, x + CondenserMenu.GARDEN_SPECIMEN_X, y + CondenserMenu.GARDEN_Y, true);
         skin.slot(g, x + CondenserMenu.GARDEN_PRIMARY_X, y + CondenserMenu.GARDEN_Y, true);
         skin.slot(g, x + CondenserMenu.GARDEN_SECONDARY_X, y + CondenserMenu.GARDEN_Y, true);
-        harvestRoute(g, x + CondenserMenu.GARDEN_PRIMARY_X, y + 172, 1,
+        harvestRoute(g, x + CondenserMenu.GARDEN_PRIMARY_X + 8, y + 172, 1,
                 new ItemStack(ForeverSkyblock.CONDENSER_MARK_II.get()));
-        harvestRoute(g, x + CondenserMenu.GARDEN_SECONDARY_X, y + 172, 2,
+        harvestRoute(g, x + CondenserMenu.GARDEN_SECONDARY_X + 8, y + 172, 2,
                 new ItemStack(ForeverSkyblock.GARDEN_CHAMBER_MARK_I.get()));
     }
 
-    private void harvestRoute(GuiGraphics g, int x, int y, int number, ItemStack block) {
-        g.fill(x - 3, y - 1, x + 21, y + 9, 0xFF294535);
-        g.pose().pushPose(); g.pose().translate(x - 2, y, 0); g.pose().scale(.5F, .5F, 1);
+    private void harvestRoute(GuiGraphics g, int centerX, int y, int number, ItemStack block) {
+        // The badge, its content and its hit area share the real output slot's centre.
+        g.fill(centerX - 12, y - 1, centerX + 12, y + 9, 0xFF294535);
+        g.pose().pushPose(); g.pose().translate(centerX - 11, y, 0); g.pose().scale(.5F, .5F, 1);
         g.renderItem(block, 0, 0); g.pose().popPose();
-        MachineSkin.text(g, font, Component.literal(Integer.toString(number)), x + 7, y + 1, 5, 0xFFD0E7D4, .65F);
+        MachineSkin.centered(g, font, Component.literal(Integer.toString(number)), centerX, y + 1, 5, 0xFFD0E7D4, .65F);
         // Draw the arrow as geometry so its appearance does not depend on the language font.
-        g.fill(x + 16, y + 1, x + 17, y + 6, 0xFF8FE59B);
-        g.fill(x + 14, y + 4, x + 19, y + 5, 0xFF8FE59B);
-        g.fill(x + 15, y + 5, x + 18, y + 6, 0xFF8FE59B);
-        g.fill(x + 16, y + 6, x + 17, y + 7, 0xFF8FE59B);
+        int arrowX = centerX + 7;
+        g.fill(arrowX, y + 1, arrowX + 1, y + 6, 0xFF8FE59B);
+        g.fill(arrowX - 2, y + 4, arrowX + 3, y + 5, 0xFF8FE59B);
+        g.fill(arrowX - 1, y + 5, arrowX + 2, y + 6, 0xFF8FE59B);
+        g.fill(arrowX, y + 6, arrowX + 1, y + 7, 0xFF8FE59B);
     }
 
     @Override protected void renderMachineTooltip(GuiGraphics g, int mouseX, int mouseY) {
         if (!menu.hasGardenChamber()) return;
-        String key = isHovering(CondenserMenu.GARDEN_PRIMARY_X - 3, 171, 24, 10, mouseX, mouseY)
+        String key = isHovering(CondenserMenu.GARDEN_PRIMARY_X - 4, 171, 24, 10, mouseX, mouseY)
                 ? "garden_route_primary"
-                : isHovering(CondenserMenu.GARDEN_SECONDARY_X - 3, 171, 24, 10, mouseX, mouseY)
+                : isHovering(CondenserMenu.GARDEN_SECONDARY_X - 4, 171, 24, 10, mouseX, mouseY)
                 ? "garden_route_secondary"
                 : isHovering(18, 183, 212, 16, mouseX, mouseY) ? "garden_route_help" : null;
         if (key != null) g.renderTooltip(font, font.split(text(key), 210), mouseX, mouseY);

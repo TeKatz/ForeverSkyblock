@@ -170,3 +170,30 @@ No player-profile schema, progression-network protocol or starter-island change 
 Final pre-merge head `aec270d7bc0caea5952af034ed8505ce0fd3d68f` passed GitHub Actions run **#259**: Java 21 build/unit tests, headless client mixin smoke, dedicated regression GameTests and the full NeoForge 21.1.259 pack-runtime integration suite.
 
 Regression coverage includes Mud consumption, water-gated Washing, pause/resume, Washing automation, Mark-I tier rejection, Mark-II Stone Meal, the Wheat-Seed Sapling recipe, Garden exclusivity, retained specimen, dual-output harvest and Garden automation. TeKatz separately performed in-game testing throughout the 0.19.x/0.20.x visual iterations.
+
+
+## 0.23.0 balancing and Packed Mud (development)
+
+Branch `feature/iron-balance-packed-mud`, based on 0.22.1 head `06d01d6c03f063ed68fc4ce27cac4f25588d4df6`, contains the next requested balancing trial. It is not integrated into main.
+
+### Log throughput
+
+The shared `condensing/logs` recipe uses **120 ticks / six seconds**, retaining one Log -> four Stone Fragments and availability on MK I and II. Other existing cycle durations are unchanged. GUI/world interpolation and JEI read the actual recipe duration. A Garden produces four Logs per 16 seconds (15/minute); one new six-second processor consumes 10/minute. This reduces the previous backlog growth but still permits an eventual 64-Log input stack in a single-processor line. The requested value is preserved as a trial, not presented as exact throughput matching.
+
+### Iron-priced normal Hopper and tools
+
+Normal Hopper uses `I I` / `BCB` / ` I `: I = Iron Ingot, B = Iron Block, C = Chest. Total is two Blocks, three Ingots and one Chest (21 Iron Ingots equivalent, excluding Chest). `forever_skyblock:hopper` is authoritative; an explicit condition removes the original `minecraft:hopper`, and the existing recipe-replacement filter now suppresses competing static normal-Hopper outputs as well as the existing Wooden Hopper alternatives. A recipe-book advancement unlocks the replacement. Wooden Hopper still costs two Ingots, three Planks and a wooden Chest.
+
+The four custom Iron tool heads each replace one Ingot with one Block. Exact costs and retained prior-tier tools/Chains are documented in [TOOL_PROGRESSION.md](TOOL_PROGRESSION.md#0230-iron-cost-adjustment-development). Other tool tiers and durability policy are unchanged. The distributed Recipe Editor snapshots mirror the recipes/removal/advancement definitions byte-for-byte; the mod does not rewrite a player's local Recipe Editor configuration.
+
+### Packed Mud
+
+The new `condensing/packed_mud` recipe takes **one Mud + one Wheat -> one Packed Mud**, **160 ticks / eight seconds**, no power, minimum tier one. It needs the existing Mixing Chamber to expose the second input and supports either ingredient order on MK I and MK II. A single shared recipe correctly serves both tiers. Existing Garden-exclusive mode and output-capacity rules remain unchanged. The Vanilla crafting route is still available.
+
+The JEI plugin already registers all loaded Condensing recipes and both controller catalysts; its category displays the actual inputs/output, duration and required Mixing Chamber, with its existing transfer handler. Packed Mud therefore receives a native Condensing entry rather than a fabricated separate category. Recipe synchronization uses the existing serializer/stream codec and the same recipe drives the live GUI's mixing scene.
+
+### Garden badge alignment
+
+Each badge now takes the corresponding real output slot centre as its anchor. The 24-pixel background and tooltip rectangle match the slot's skin bounds; the block icon and arrow are arranged around the centered number. Neither output slots nor the approved plant animations move. English/German software previews of the actual draw routines were inspected; final appearance and mouse behavior remain a real-client test.
+
+Validation for this source revision is pending. Added/updated checks cover six-second completion on both tiers with unchanged Plank timing, retained output quantities, every new Iron-tool cost and rejection of old patterns, priced Hopper/reload filtering, Packed Mud module requirements/ingredient order/actual production/JEI recipe source/network round-trip, and byte-identical distributed Recipe Editor resources.

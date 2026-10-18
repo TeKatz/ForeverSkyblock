@@ -2,6 +2,19 @@
 
 Implements TeKatz's supplied [complete handoff](TOOL_RECIPE_HANDOFF.md) on `feature/infinite-tools-recipe-overhaul`, based on main `16d96019274766e1e22c4748ea0d5b16f10b28c7`. TeKatz authorized its integration into `main` on October 15, 2026 alongside the Ascension update. This remains a test baseline, not a completed resource progression; no release is published by the integration.
 
+## 0.23.0 Iron cost adjustment (development)
+
+`feature/iron-balance-packed-mud` updates the four existing custom Iron tools following TeKatz's automated-Iron balancing feedback. The integrated/historical patterns below retain their earlier meaning; only Iron is changed in this development revision.
+
+| Tool | Iron Block | Other Iron Ingots | Consumed core | Reinforcement |
+| --- | ---: | ---: | --- | --- |
+| Pickaxe | 1 | 4 | Stone Pickaxe | 1 Chain |
+| Axe | 1 | 3 | Stone Axe | 1 Chain |
+| Shovel | 1 | 2 | Stone Shovel | 1 Chain |
+| Hoe | 1 | 2 | Stone Hoe | 1 Chain |
+
+Exactly one original head-material position becomes an Iron Block; tool shape, matching Stone core and Chain position are retained. Full set: four Iron Blocks, eleven other Ingots, four Chains and four Stone tools. Recipe IDs and permanent durability are unchanged. Both bundled recipes and Recipe Editor snapshots match. Old all-ingot custom patterns no longer match; the existing authoritative tool filter still removes Vanilla/modded alternatives. Swords, armor and other excluded tools are outside this request. See [validation](MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud-development).
+
 ## Exact scope and patterns
 
 The 24 Vanilla pickaxes, axes, shovels and hoes across Wood, Stone, Iron, Gold, Diamond and Netherite are permanent. Swords, utility tools, armor and modded tools retain their existing recipes/durability for the separate design pass identified in the handoff.

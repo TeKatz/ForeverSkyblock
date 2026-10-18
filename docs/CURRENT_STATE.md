@@ -32,6 +32,10 @@ The 0.21.1 follow-up adds a fuller block-tree crown, preserves the approved Gard
 
 `feature/garden-harvest-routing` starts from validated 0.22.0 branch head `9b5845861b07f12c106a5ebd4b66a2a420ca4ecb`. A hopper under MK II now extracts only the first Garden harvest; a hopper under the adjacent Garden Chamber extracts only the second. Both outputs still belong to the Condenser inventory and remain accessible in its GUI. Permanent block-symbol/arrow badges, numbered routing legend and localized tooltips explain both ports. No Chamber GUI, independent storage or overflow deletion is introduced. This branch remains separate from the integrated 0.20.1 baseline. Source `864adf98215b8969e826973551091d6bdc2faff5` passed Actions run `39161891237`: 73 unit tests, client startup/model checks and both 85-test server suites, including real Wooden-Hopper harvest separation on NeoForge 21.1.259. The fresh 0.22.1 JAR was inspected. See [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports) for the artifact hash and real-client visual test boundary.
 
+## Development follow-up: Iron balancing and Packed Mud (0.23.0)
+
+`feature/iron-balance-packed-mud` starts from `06d01d6c03f063ed68fc4ce27cac4f25588d4df6` on the validated 0.22.1 branch. Logs -> four Fragments now takes six seconds on both tiers. The normal Hopper costs two Iron Blocks, three Ingots and one Chest. Each of the four permanent Iron tools replaces one head Ingot with one Iron Block, retaining the matching Stone tool and Chain. Both Condenser tiers can mix one Mud + one Wheat into one Packed Mud in eight seconds with Mixing Chamber, exposed by the existing JEI category. Garden routing badges/hit areas are centered. Corresponding Recipe Editor resources are synchronized. This is separate from integrated 0.20.1; validation for this new revision is pending. See [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud-development).
+
 ## Integrated gameplay and UI
 
 `main` contains the complete progression/meta stack through 0.18.1 plus the 0.19.x-0.20.1 early material-processing expansion:

@@ -40,6 +40,10 @@ After testing the Garden -> Logs -> Stone Fragments -> Stone Meal -> Washing Bas
 
 Later progression must not rely on high Iron quantities alone as a durable gate. Assess costs against automated throughput, elapsed production time and the ability to run parallel lines, rather than manual early-game acquisition. New processes and production infrastructure should carry meaningful progression where appropriate; specific materials, energy systems, quantities and unlocks still require their own design decisions. This feedback sets a baseline for future content and does not request a nerf to the existing Iron chain.
 
+### Approved balancing trial — 0.23.0
+
+On October 19, TeKatz requested a six-second Log -> Stone Fragment cycle, higher normal-Hopper Iron costs, at least one Iron Block in every existing custom Iron tool recipe, Packed Mud through both Condenser tiers, and centered Garden output badges. The implementation uses one Mud + one Wheat -> one Packed Mud in eight seconds with the existing Mixing Chamber; normal Hopper uses two Blocks/three Ingots/one Chest, and each Iron tool replaces one existing head Ingot with one Block while retaining the prior-tier core and Chain. No other tool tiers or machine yields are rebalanced by this trial. Six-second Log processing consumes 10 Logs/minute against a Garden's 15/minute, so a single processor still accumulates surplus; do not document this as eliminating the backlog.
+
 ## Open questions
 
 - Final balancing of the initial eight-second machine cycle; later condenser tiers remain optional.

@@ -1,8 +1,8 @@
-# Forever Skyblock mod — 0.22.1 separate Garden harvest ports
+# Forever Skyblock mod — 0.23.0 Iron balancing and Packed Mud
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-The integrated `main` baseline remains 0.20.1 after PR #15. This development branch, `feature/garden-harvest-routing`, extends the tested 0.22.0 animation/Wheat work with separated Garden harvest ports and a visible GUI routing guide. The earlier Wheat, recipe and Trader fixes are included. See [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports). No merge or release is implied.
+The integrated `main` baseline remains 0.20.1 after PR #15. Development branch `feature/iron-balance-packed-mud` extends the tested 0.22.1 work with six-second Log conversion, pricier Iron tools/Hoppers, Packed Mud mixing and centered Garden routing badges. Prior Wheat, animations and separated harvest ports are included. See [MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud-development). No merge or release is implied.
 
 ## Early material progression
 
@@ -121,10 +121,21 @@ See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the ful
 ./gradlew build
 ```
 
-Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.22.1.jar`.
+Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.23.0.jar`.
 
 
 The 0.22.0 source passed 73 unit tests, client startup/model checks and both 81-test GameTest suites, including the real Wooden Hopper on NeoForge 21.1.259. Exact source/artifact evidence and the client visual test boundary are recorded in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0220-validation-and-test-artifact).
 
 
 The 0.22.1 source passed 73 unit tests, client startup/model checks and both 85-test server suites. Real Vanilla hoppers separated Oak harvest; the actual pack Wooden Hoppers separated Wheat harvest. Exact artifact evidence and remaining client checks are in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0221-validation-and-test-artifact).
+
+
+## 0.23.0 development changes
+
+- Both Condenser tiers: **1 Log -> 4 Stone Fragments / 120 ticks (6 seconds)**; Planks, Leaves and other existing cycles retain their timing.
+- Both tiers with Mixing Chamber: **1 Mud + 1 Wheat -> 1 Packed Mud / 160 ticks (8 seconds)**, swappable inputs, no power and the existing Condensing JEI category. The Vanilla crafting alternative is retained.
+- Normal Hopper: **2 Iron Blocks + 3 Iron Ingots + 1 Chest**; the old Vanilla/NeoForge recipe and competing static-output recipes are removed. Wooden Hopper pricing is unchanged.
+- Iron Pickaxe/Axe/Shovel/Hoe: **one Iron Block** plus **4/3/2/2 Ingots**, respectively, the matching Stone tool and one Chain. Prior tool/durability behavior is unchanged. Matching Recipe Editor snapshots are included in the repository.
+- Garden output badges and tooltip hit areas are centered on the actual output slot centres.
+
+One Garden still produces 15 Logs/minute while one six-second Condenser consumes 10/minute, before pauses. This requested trial reduces backlog growth but does not make that single-processor line balanced.
