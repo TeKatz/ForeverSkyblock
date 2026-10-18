@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 public final class CondenserMenu extends AbstractContainerMenu {
     public static final int MAIN_INPUT_X = 30, MIXING_INPUT_X = 80, MAIN_OUTPUT_X = 202, MAIN_Y = 61;
     public static final int FREEZING_INPUT_X = 30, FREEZING_OUTPUT_X = 202, FREEZING_Y = 128;
-    public static final int GARDEN_SPECIMEN_X = 30, GARDEN_PRIMARY_X = 174, GARDEN_SECONDARY_X = 202, GARDEN_Y = 136;
+    public static final int GARDEN_SPECIMEN_X = 30, GARDEN_PRIMARY_X = 174, GARDEN_SECONDARY_X = 202, GARDEN_Y = 151;
     public static final int MACHINE_SLOT_COUNT = CondenserBlockEntity.MACHINE_SLOTS;
 
     private final ContainerData data;
