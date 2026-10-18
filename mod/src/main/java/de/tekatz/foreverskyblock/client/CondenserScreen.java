@@ -42,6 +42,8 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         filters.visible = !garden;
         filters.active = !garden;
         filters.setMessage(text(menu.editing() ? "finish_locks" : "edit_locks"));
+        recipes.setX(leftPos + (garden ? 94 : 168));
+        recipes.setY(topPos + (garden ? 151 : 162));
         recipes.active = ClientMachineRecipes.available();
     }
 
@@ -95,8 +97,8 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
             MachineSkin.panel(g, x + 42, y + 31, 164, 12, 0xFF315B45);
             MachineSkin.centered(g, font, text("garden_connected"), x + 124, y + 34, 156, 0xFF8FE59B, .72F);
             renderGarden(g, x, y);
-            MachineSkin.panel(g, x + 18, y + 187, 212, 12, 0xFF466252);
-            MachineSkin.centered(g, font, text("hint_garden"), x + 124, y + 190, 204, 0xFFB4D1BC, .67F);
+            MachineSkin.panel(g, x + 18, y + 183, 212, 16, 0xFF466252);
+            MachineSkin.centered(g, font, text("hint_garden"), x + 124, y + 188, 204, 0xFFB4D1BC, .65F);
             inventory(g);
             return;
         }
@@ -110,7 +112,6 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         };
         MachineSkin.centered(g, font, text(stateKey), x + 124, y + 34, 156, MachineSkin.CYAN, .72F);
 
-        // Keep timed condensing and material freezing as visually separate process cards.
         MachineSkin.panel(g, x + 14, y + 44, 220, 64, 0xFF54616D);
         renderCondensing(g, x, y);
 
@@ -125,40 +126,94 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
     }
 
     private void renderGarden(GuiGraphics g, int x, int y) {
-        MachineSkin.panel(g, x + 14, y + 44, 220, 112, 0xFF335544);
-        // A compact artificial landscape makes Garden mode immediately distinct from normal condensing.
-        g.fill(x + 20, y + 50, x + 228, y + 105, 0xFF496D6B);
-        g.fill(x + 20, y + 86, x + 228, y + 105, 0xFF3F6A3E);
-        g.fill(x + 20, y + 101, x + 228, y + 105, 0xFF5B4932);
-        g.fill(x + 204, y + 57, x + 214, y + 67, 0xFFE8D56C);
+        MachineSkin.panel(g, x + 14, y + 44, 220, 134, 0xFF335544);
+
+        int left = x + 20, right = x + 228, top = y + 50, ground = y + 112;
+        // Layered sky and distant landscape; deliberately pixel-art rather than flat rectangles.
+        g.fill(left, top, right, y + 68, 0xFF274B56);
+        g.fill(left, y + 68, right, y + 88, 0xFF35636A);
+        g.fill(left, y + 88, right, y + 100, 0xFF487263);
+        g.fill(left, y + 96, x + 72, y + 105, 0xFF355F48);
+        g.fill(x + 58, y + 91, x + 124, y + 105, 0xFF3B684C);
+        g.fill(x + 112, y + 94, right, y + 105, 0xFF315B45);
+        g.fill(left, y + 103, right, ground, 0xFF47763D);
+        g.fill(left, ground, right, y + 117, 0xFF624830);
+        g.fill(left, y + 103, right, y + 106, 0xFF6B9A4D);
+
+        // Sun with a soft blocky halo.
+        g.fill(x + 199, y + 56, x + 215, y + 72, 0x556F9B72);
+        g.fill(x + 202, y + 59, x + 212, y + 69, 0xFFE8CF72);
+        g.fill(x + 204, y + 61, x + 210, y + 67, 0xFFFFE29A);
+
+        long now = System.currentTimeMillis();
+        int cloud = (int) ((now / 95L) % 180L);
+        drawCloud(g, x + 24 + cloud, y + 61, left, right);
+        drawCloud(g, x + 172 - (cloud / 2), y + 76, left, right);
 
         ItemStack specimen = menu.getSlot(CondenserBlockEntity.GARDEN_SPECIMEN).getItem();
         if (!specimen.isEmpty()) {
             float ratio = Math.min(1F, menu.gardenProgress() / (float) menu.gardenDuration());
-            int trunkHeight = 6 + Math.round(23 * ratio);
-            int trunkTop = y + 99 - trunkHeight;
-            g.fill(x + 121, trunkTop, x + 127, y + 100, 0xFF735033);
-            if (ratio > .16F) {
-                int crown = 5 + Math.round(13 * ratio);
-                g.fill(x + 124 - crown, trunkTop - crown / 2, x + 124 + crown, trunkTop + crown / 2 + 7, 0xFF3F7A43);
-                g.fill(x + 118 - crown / 2, trunkTop + 1, x + 130 + crown / 2, trunkTop + 10, 0xFF4B8D4D);
-            }
+            renderGardenTree(g, x, y, ratio, now);
         } else {
-            MachineSkin.centered(g, font, text("garden_insert"), x + 124, y + 72, 176, 0xFFC5DCC9, .72F);
+            renderGardenTree(g, x, y, 0.05F, now);
+            MachineSkin.centered(g, font, text("garden_insert"), x + 124, y + 75, 166, 0xFFE1F1E4, .72F);
         }
 
-        int barX = x + 69, barW = 110;
-        MachineSkin.panel(g, barX, y + 110, barW, 8, 0xFF456250);
+        int barX = x + 66, barW = 116;
+        MachineSkin.panel(g, barX, y + 122, barW, 9, 0xFF456250);
         int filled = (barW - 4) * menu.gardenProgress() / menu.gardenDuration();
-        g.fill(barX + 2, y + 112, barX + 2 + filled, y + 116, 0xFF62C46B);
+        g.fill(barX + 2, y + 124, barX + 2 + filled, y + 129, 0xFF62C46B);
         MachineSkin.centered(g, font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f / %.1f s",
-                menu.gardenProgress() / 20F, menu.gardenDuration() / 20F)), barX + barW / 2, y + 120, barW + 8, 0xFFBFD6C4, .68F);
+                menu.gardenProgress() / 20F, menu.gardenDuration() / 20F)), barX + barW / 2, y + 134, barW + 10, 0xFFCAE0CE, .68F);
 
-        MachineSkin.centered(g, font, text("specimen"), x + CondenserMenu.GARDEN_SPECIMEN_X + 8, y + 128, 55, 0xFFBFD6C4, .69F);
-        MachineSkin.centered(g, font, text("harvest"), x + 190, y + 128, 75, 0xFFBFD6C4, .69F);
+        MachineSkin.centered(g, font, text("specimen"), x + CondenserMenu.GARDEN_SPECIMEN_X + 8, y + 143, 62, 0xFFBFD6C4, .69F);
+        MachineSkin.centered(g, font, text("harvest"), x + 190, y + 143, 75, 0xFFBFD6C4, .69F);
         skin.slot(g, x + CondenserMenu.GARDEN_SPECIMEN_X, y + CondenserMenu.GARDEN_Y, true);
         skin.slot(g, x + CondenserMenu.GARDEN_PRIMARY_X, y + CondenserMenu.GARDEN_Y, true);
         skin.slot(g, x + CondenserMenu.GARDEN_SECONDARY_X, y + CondenserMenu.GARDEN_Y, true);
+    }
+
+    private void drawCloud(GuiGraphics g, int cx, int cy, int left, int right) {
+        int width = 28;
+        int x = cx;
+        while (x > right) x -= 196;
+        while (x + width < left) x += 196;
+        g.fill(x + 4, cy, x + 17, cy + 3, 0x99DCE8E7);
+        g.fill(x, cy + 3, x + 24, cy + 7, 0x99DCE8E7);
+        g.fill(x + 8, cy - 2, x + 14, cy + 5, 0xB5EFF5F3);
+    }
+
+    private void renderGardenTree(GuiGraphics g, int x, int y, float ratio, long now) {
+        float eased = ratio * ratio * (3F - 2F * ratio);
+        int baseY = y + 104;
+        int height = 5 + Math.round(31F * eased);
+        int topY = baseY - height;
+        int trunkWidth = ratio < .28F ? 2 : ratio < .58F ? 3 : 4;
+        int trunkLeft = x + 124 - trunkWidth / 2;
+        g.fill(trunkLeft, topY + 7, trunkLeft + trunkWidth, baseY, 0xFF68452B);
+        if (ratio > .35F) {
+            g.fill(x + 116, topY + 13, x + 124, topY + 15, 0xFF68452B);
+            g.fill(x + 124, topY + 17, x + 133, topY + 19, 0xFF765033);
+        }
+        if (ratio < .12F) {
+            g.fill(x + 122, baseY - 7, x + 125, baseY - 4, 0xFF5D9A4B);
+            g.fill(x + 125, baseY - 9, x + 128, baseY - 6, 0xFF73B65A);
+            return;
+        }
+
+        int r = 4 + Math.round(14F * eased);
+        int cy = topY + 8;
+        int shadow = 0xFF275E36, leaf = 0xFF347744, light = 0xFF4C9250, highlight = 0xFF65A95A;
+        g.fill(x + 124 - r, cy - r / 2, x + 124 + r, cy + r / 2 + 6, shadow);
+        g.fill(x + 116 - r / 2, cy + 1, x + 125, cy + r / 2 + 10, leaf);
+        g.fill(x + 123, cy - 4, x + 132 + r / 2, cy + r / 2 + 8, leaf);
+        g.fill(x + 121 - r / 2, cy - r / 2 - 3, x + 129 + r / 2, cy + 4, light);
+        g.fill(x + 111 + r / 3, cy + 1, x + 119 + r / 2, cy + 7, light);
+        g.fill(x + 128, cy, x + 135 + r / 3, cy + 6, highlight);
+        if (ratio > .72F) {
+            int shimmer = (int) ((now / 180L) % 3L);
+            g.fill(x + 116 + shimmer * 5, cy - 5 + shimmer * 2, x + 118 + shimmer * 5, cy - 3 + shimmer * 2, 0xFFE4E89A);
+        }
     }
 
     private void renderCondensing(GuiGraphics g, int x, int y) {
