@@ -126,18 +126,71 @@ public final class MaterialProcessingGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 230)
-    public static void markTwoPrefersOakSaplingRecipe(GameTestHelper h) {
+    public static void markTwoMakesSaplingsFromSeedsAndBoneMeal(GameTestHelper h) {
         var machine = condenser(h, POS, true);
         h.setBlock(POS.east(), ForeverSkyblock.MIXING_CHAMBER_MARK_I.get());
-        machine.inventory().insertItem(CondenserBlockEntity.INPUT, new ItemStack(Items.OAK_LEAVES, 8), false);
+        machine.inventory().insertItem(CondenserBlockEntity.INPUT, new ItemStack(Items.WHEAT_SEEDS, 4), false);
         machine.inventory().insertItem(CondenserBlockEntity.SECOND_INPUT, new ItemStack(Items.BONE_MEAL), false);
         h.runAfterDelay(180, () -> {
             ItemStack output = machine.inventory().getStackInSlot(CondenserBlockEntity.OUTPUT);
-            check(h, output.is(Items.OAK_SAPLING) && output.getCount() == 1, "With Bone Meal present, Mark II must prefer the Oak Sapling recipe");
-            check(h, machine.inventory().getStackInSlot(CondenserBlockEntity.INPUT).isEmpty(), "Sapling recipe consumes eight Oak Leaves");
+            check(h, output.is(Items.OAK_SAPLING) && output.getCount() == 2, "Four Wheat Seeds plus Bone Meal must create two Oak Saplings");
+            check(h, machine.inventory().getStackInSlot(CondenserBlockEntity.INPUT).isEmpty(), "Sapling recipe consumes four Wheat Seeds");
             check(h, machine.inventory().getStackInSlot(CondenserBlockEntity.SECOND_INPUT).isEmpty(), "Sapling recipe consumes one Bone Meal");
             h.succeed();
         });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 390)
+    public static void gardenModeIsExclusiveAndKeepsItsSpecimen(GameTestHelper h) {
+        var machine = condenser(h, POS, true);
+        h.setBlock(POS.east(), ForeverSkyblock.MIXING_CHAMBER_MARK_I.get());
+        h.setBlock(POS.west(), ForeverSkyblock.FREEZING_CHAMBER_MARK_I.get());
+        h.setBlock(POS.north(), ForeverSkyblock.GARDEN_CHAMBER_MARK_I.get());
+        check(h, machine.menuData().get(14) == 1, "Garden Chamber must activate on Condenser Mark II");
+        check(h, machine.menuData().get(3) == 0 && machine.menuData().get(4) == 0,
+                "Garden mode must override Mixing and Freezing Chambers while connected");
+        ItemStack remainder = machine.inventory().insertItem(CondenserBlockEntity.GARDEN_SPECIMEN, new ItemStack(Items.OAK_SAPLING), false);
+        check(h, remainder.isEmpty(), "Oak Sapling must be accepted as a Garden specimen");
+        check(h, !machine.inventory().insertItem(CondenserBlockEntity.INPUT, new ItemStack(Items.OAK_LOG), false).isEmpty(),
+                "Normal Condenser inputs must be blocked in Garden mode");
+        h.runAfterDelay(340, () -> {
+            ItemStack specimen = machine.inventory().getStackInSlot(CondenserBlockEntity.GARDEN_SPECIMEN);
+            ItemStack logs = machine.inventory().getStackInSlot(CondenserBlockEntity.GARDEN_OUTPUT_PRIMARY);
+            ItemStack leaves = machine.inventory().getStackInSlot(CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY);
+            check(h, specimen.is(Items.OAK_SAPLING) && specimen.getCount() == 1, "Garden specimen must never be consumed");
+            check(h, logs.is(Items.OAK_LOG) && logs.getCount() == 4, "One Garden cycle must produce four Oak Logs");
+            check(h, leaves.is(Items.OAK_LEAVES) && leaves.getCount() == 8, "One Garden cycle must produce eight Oak Leaves");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = "empty")
+    public static void gardenAutomationUsesDedicatedSlots(GameTestHelper h) {
+        var machine = condenser(h, POS, true);
+        h.setBlock(POS.north(), ForeverSkyblock.GARDEN_CHAMBER_MARK_I.get());
+        var absolute = h.absolutePos(POS);
+        var top = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, absolute, Direction.UP);
+        var bottom = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, absolute, Direction.DOWN);
+        check(h, top != null && bottom != null, "Garden Condenser must expose item automation");
+        check(h, top.insertItem(CondenserBlockEntity.GARDEN_SPECIMEN, new ItemStack(Items.OAK_SAPLING), false).isEmpty(),
+                "Automation must be able to set the Garden specimen");
+        machine.inventory().setStackInSlot(CondenserBlockEntity.GARDEN_OUTPUT_PRIMARY, new ItemStack(Items.OAK_LOG, 4));
+        machine.inventory().setStackInSlot(CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY, new ItemStack(Items.OAK_LEAVES, 8));
+        check(h, bottom.extractItem(CondenserBlockEntity.GARDEN_OUTPUT_PRIMARY, 4, false).getCount() == 4,
+                "Bottom automation extracts Garden primary harvest");
+        check(h, bottom.extractItem(CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY, 8, false).getCount() == 8,
+                "Bottom automation extracts Garden secondary harvest");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void markOneIgnoresGardenChamber(GameTestHelper h) {
+        var machine = condenser(h, POS, false);
+        h.setBlock(POS.north(), ForeverSkyblock.GARDEN_CHAMBER_MARK_I.get());
+        check(h, machine.menuData().get(14) == 0, "Garden Chamber must require Condenser Mark II");
+        check(h, !machine.inventory().insertItem(CondenserBlockEntity.GARDEN_SPECIMEN, new ItemStack(Items.OAK_SAPLING), false).isEmpty(),
+                "Mark I must reject Garden specimens");
+        h.succeed();
     }
 
     @GameTest(template = "empty", timeoutTicks = 80)
@@ -166,10 +219,12 @@ public final class MaterialProcessingGameTests {
                 "forever_skyblock:condenser_mark_i",
                 "forever_skyblock:condenser_mark_ii",
                 "forever_skyblock:washing_basin",
+                "forever_skyblock:garden_chamber_mark_i",
                 "forever_skyblock:condensing/mud",
                 "forever_skyblock:washing/raw_iron",
                 "forever_skyblock:condensing/stone_meal_mk2",
-                "forever_skyblock:condensing/oak_sapling_mk2"
+                "forever_skyblock:condensing/oak_sapling_mk2",
+                "forever_skyblock:garden/oak_tree"
         };
         for (String id : ids) check(h, manager.byKey(ResourceLocation.parse(id)).isPresent(), "Missing material-processing recipe: " + id);
         String[] deferredSpecies = {
