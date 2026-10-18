@@ -2,6 +2,8 @@
 
 Integrated through PR #15 on October 18, 2026. This document describes the live early material-processing path in `main`. The fixed starter-island NBT is unchanged and no release is implied by the merge.
 
+Development follow-up **0.22.0** on `feature/garden-wheat-polish` adds retained Wheat Seeds -> **4 Wheat + 2 Seeds / 16 seconds**, synchronized crop presentation and the Iron-priced Wooden Hopper. These changes are separate from the integrated baseline described below. See [the crop template and validation](MACHINE_ANIMATIONS.md#0220-garden-crops-and-pack-fixes).
+
 ## Progression goal
 
 The material-processing arc turns the first renewable water source into the bridge from primitive survival to the first metal, then uses Iron to remove early manual bottlenecks and closes the wood loop with the Garden Chamber.

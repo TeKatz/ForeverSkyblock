@@ -121,4 +121,7 @@ See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the ful
 ./gradlew build
 ```
 
-Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.21.1.jar`.
+Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.22.0.jar`.
+
+
+The 0.22.0 source passed 73 unit tests, client startup/model checks and both 81-test GameTest suites, including the real Wooden Hopper on NeoForge 21.1.259. Exact source/artifact evidence and the client visual test boundary are recorded in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0220-validation-and-test-artifact).

@@ -1,6 +1,6 @@
-# Machine animation update — 0.21.1
+# Machine animations and Garden crops — 0.22.0
 
-Development branch: [`feature/machine-animation-overhaul`](https://github.com/TeKatz/ForeverSkyblock/tree/feature/machine-animation-overhaul), based on integrated `main` commit `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a` (0.20.1). This document does not imply a merge or release.
+Current development branch: [`feature/garden-wheat-polish`](https://github.com/TeKatz/ForeverSkyblock/tree/feature/garden-wheat-polish), extending the validated `feature/machine-animation-overhaul` branch. Both descend from integrated `main` commit `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a` (0.20.1). The earlier 0.21.x evidence below is historical; see the 0.22.0 section for the current follow-up. This document does not imply a merge or release.
 
 ## 0.21.1 polish from TeKatz's client feedback
 
@@ -42,7 +42,7 @@ The new Garden Chamber exterior has a dark inset base, steel posts, copper trim,
 - Main and Garden moving effects stop when their own job pauses or blocks, even if parallel Freezing still keeps the shared block `ACTIVE` flag set. The retained tree remains at its real growth stage. Empty/unlinked greenhouses do not grow a fake crop.
 - Multiple adjacent controllers are selected deterministically, preferring a running Garden controller; unloaded neighboring chunks are not queried.
 - GUI growth and process motion use game progress and partial ticks, replacing wall-clock-driven cloud/shimmer movement. The independent Freezing indication follows its own running status.
-- No starter-island, pack configuration, research, production, recipe or inventory migration changes are part of this branch.
+- The 0.21.x presentation update does not change starter-island, pack configuration, research, production, recipes or inventory migration. The explicit 0.22.0 Wheat and Hopper recipe changes are documented below.
 
 ## 0.21.0 baseline validation
 
@@ -89,4 +89,17 @@ The conditional `forever_skyblock:wooden_hopper` recipe copies Wooden Hopper 1.2
 
 A `WanderingTraderSpawner.spawn` head injection blocks the complete Vanilla caravan attempt before it creates either Trader llama. The existing entity-join guard additionally rejects fresh untamed Trader llamas (including those introduced by other spawn paths). It preserves llamas loaded from disk, tamed Trader llamas and all ordinary llamas. Real-player Emerald pickup still uses the same persistent world unlock and notification. No new per-tick polling is added.
 
-Validation is pending for this new source revision. Software raster previews of actual GUI drawing code were inspected, but are not in-game client screenshots. Final visual confirmation remains a real-client test.
+### 0.22.0 validation and test artifact
+
+Source commit `21bab6413db6bd17268b7760ae8f35479105519c` passed [GitHub Actions run 39158435158](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39158435158):
+
+- Java 21 build, all **73 unit tests** and early compilation of all GameTests;
+- headless client startup/mixin application and model/texture checks;
+- **81 required GameTests** on standalone NeoForge 21.1.249;
+- **81 required GameTests** on pack runtime NeoForge 21.1.259, including the real Wooden Hopper 1.21.1-3.2.1.0 and the existing optional integrations.
+
+New regressions exercise retained Wheat Seeds, exact Wheat/Seed harvest quantities, either full output, pause/resume, optional Hopper absence, actual Iron-corner crafting, rejection of the old all-wood recipe, filtering after recipe replacement, fresh Trader/Trader-llama rejection, and preservation of loaded/tamed Trader llamas and ordinary llamas. Existing production, Condenser menu and Garden serialization source files remain byte-identical to the tested 0.21.1 base. The approved Oak GUI drawing routine and fixed starter-island NBT were compared unchanged.
+
+The fresh `ForeverSkyblock-1.21.1-NeoForge-0.22.0.jar` is **5,271,339 bytes**, from artifact `12147384584` of that exact run. The artifact SHA-256 and ZIP/JAR CRCs were verified; all packaged resource bytes match the checkout, metadata is 0.22.0, the new classes use Java 21, and GameTest classes are absent. JAR SHA-256: `7f44e11fa2f7059a525bfedb2d94f0319d10cd9764a3347ee126092df806d251`.
+
+Software raster previews used the actual GUI process/crop drawing routines and actual crop mesh generation. A shrinking-item probe verified a fixed centre at several scales. These are not in-game client screenshots; the headless launch does not certify final rendered pixels. TeKatz's real-client check should cover GUI scale, full Wheat growth, empty/blocked outputs, module detach/reattach, both other Condenser tiers and the first Emerald unlock. This final documentation-only update changes none of the validated code or resources.

@@ -26,6 +26,8 @@ Before the world unlock is recorded, Wandering Trader entity joins are canceled.
 
 The event does not create a trader. It only stops blocking future spawn attempts. The flag belongs to the save, not to the player who picked up the Emerald.
 
+Development follow-up **0.22.0** on `feature/garden-wheat-polish` also blocks the entire Vanilla caravan attempt and fresh untamed Trader llamas until the same unlock. Saved/tamed Trader llamas and ordinary llamas are preserved. This fix is not integrated into `main`; see [the implementation and validation](MACHINE_ANIMATIONS.md#requested-pack-fixes).
+
 ## Permanent world upgrades
 
 The Current World Shop distinguishes item Supply Packages from non-delivery World Upgrades.
