@@ -5,6 +5,8 @@ import de.tekatz.foreverskyblock.block.CondenserBlock;
 import de.tekatz.foreverskyblock.menu.CondenserMenu;
 import de.tekatz.foreverskyblock.recipe.CondenserInput;
 import de.tekatz.foreverskyblock.recipe.CondenserRecipe;
+import de.tekatz.foreverskyblock.recipe.GardenInput;
+import de.tekatz.foreverskyblock.recipe.GardenRecipe;
 import java.util.Comparator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -32,7 +34,8 @@ import org.jetbrains.annotations.Nullable;
 public final class CondenserBlockEntity extends BlockEntity implements MenuProvider {
     // Original indices stay stable. Module storage is appended for old-save compatibility.
     public static final int INPUT = 0, OUTPUT = 1, SECOND_INPUT = 2, FREEZING_INPUT = 3, FREEZING_OUTPUT = 4;
-    public static final int MACHINE_SLOTS = 5, DATA_COUNT = 14;
+    public static final int GARDEN_SPECIMEN = 5, GARDEN_OUTPUT_PRIMARY = 6, GARDEN_OUTPUT_SECONDARY = 7;
+    public static final int MACHINE_SLOTS = 8, DATA_COUNT = 18;
     public static final int IDLE = 0, RUNNING = 1, BLOCKED = 2;
     public static final int FREEZING_REQUIRED_ITEMS = 32;
 
@@ -41,7 +44,11 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     private int status;
     private int freezingProgress;
     private int freezingStatus;
+    private int gardenProgress;
+    private int gardenDuration = GardenRecipe.DEFAULT_TIME;
+    private int gardenStatus;
     private ResourceLocation progressRecipe;
+    private ResourceLocation gardenRecipe;
     private final ItemStack[] filters = { ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY };
     private boolean visualDirty = true;
     private long lastVisualSync, visualReceivedAt;
@@ -51,12 +58,14 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     public int machineTier() { return getBlockState().is(ForeverSkyblock.CONDENSER_MARK_II.get()) ? 2 : 1; }
 
     public float visualProgress(float partialTick) {
-        if (level == null) return progress;
+        if (level == null) return hasGardenChamber() ? gardenProgress : progress;
         boolean active = getBlockState().getValue(CondenserBlock.ACTIVE);
+        int base = hasGardenChamber() ? gardenProgress : progress;
+        int max = hasGardenChamber() ? gardenDuration : duration;
         float elapsed = level.isClientSide && active ? Math.max(0, level.getGameTime() - visualReceivedAt) + partialTick : 0;
-        return (progress + elapsed) % Math.max(1, duration);
+        return (base + elapsed) % Math.max(1, max);
     }
-    public int visualDuration() { return duration; }
+    public int visualDuration() { return hasGardenChamber() ? gardenDuration : duration; }
     public ItemStackHandler inventory() { return inventory; }
     public ContainerData menuData() { return data; }
 
@@ -76,9 +85,12 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) { return saveWithoutMetadata(registries); }
 
     private final ItemStackHandler inventory = new ItemStackHandler(MACHINE_SLOTS) {
-        @Override public int getSlotLimit(int slot) { return 64; }
+        @Override public int getSlotLimit(int slot) { return slot == GARDEN_SPECIMEN ? 1 : 64; }
         @Override public boolean isItemValid(int slot, ItemStack stack) {
-            if (stack.isEmpty() || level == null || !isInput(slot) || !acceptsFilter(slot, stack)) return false;
+            if (stack.isEmpty() || level == null) return false;
+            if (slot == GARDEN_SPECIMEN) return hasGardenChamber() && acceptsGardenInput(level, stack);
+            if (hasGardenChamber()) return false;
+            if (!isInput(slot) || !acceptsFilter(slot, stack)) return false;
             if (slot == FREEZING_INPUT) return hasFreezingChamber();
             if (slot == SECOND_INPUT && !hasMixingChamber()) return false;
             return acceptsInput(level, stack, hasMixingChamber(), machineTier());
@@ -106,6 +118,10 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
                     yield ((index - 7) % 2 == 0 ? id : id >>> 16) & 65535;
                 }
                 case 13 -> machineTier();
+                case 14 -> hasGardenChamber() ? 1 : 0;
+                case 15 -> gardenProgress;
+                case 16 -> gardenDuration;
+                case 17 -> gardenStatus;
                 default -> 0;
             };
         }
@@ -114,11 +130,14 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     };
 
     public static boolean isInput(int slot) { return slot == INPUT || slot == SECOND_INPUT || slot == FREEZING_INPUT; }
-    public static boolean isOutput(int slot) { return slot == OUTPUT || slot == FREEZING_OUTPUT; }
+    public static boolean isOutput(int slot) {
+        return slot == OUTPUT || slot == FREEZING_OUTPUT || slot == GARDEN_OUTPUT_PRIMARY || slot == GARDEN_OUTPUT_SECONDARY;
+    }
     /** Compatibility alias retained for the existing condensing recipe/JEI path. */
     public boolean hasModule() { return hasMixingChamber(); }
-    public boolean hasMixingChamber() { return hasAdjacent(ForeverSkyblock.MIXING_CHAMBER_MARK_I.get()); }
-    public boolean hasFreezingChamber() { return hasAdjacent(ForeverSkyblock.FREEZING_CHAMBER_MARK_I.get()); }
+    public boolean hasGardenChamber() { return machineTier() >= 2 && hasAdjacent(ForeverSkyblock.GARDEN_CHAMBER_MARK_I.get()); }
+    public boolean hasMixingChamber() { return !hasGardenChamber() && hasAdjacent(ForeverSkyblock.MIXING_CHAMBER_MARK_I.get()); }
+    public boolean hasFreezingChamber() { return !hasGardenChamber() && hasAdjacent(ForeverSkyblock.FREEZING_CHAMBER_MARK_I.get()); }
     private boolean hasAdjacent(Block block) {
         if (level == null) return false;
         for (Direction direction : Direction.values()) {
@@ -137,6 +156,11 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
                 .anyMatch(holder -> holder.value().availableToTier(tier)
                         && (!holder.value().requiresModule() || mixing) && holder.value().accepts(stack));
     }
+    public static boolean acceptsGardenInput(Level level, ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        return level.getRecipeManager().getAllRecipesFor(ForeverSkyblock.GARDEN.get()).stream()
+                .anyMatch(holder -> holder.value().accepts(stack));
+    }
     private static int filterIndex(int slot) {
         return switch (slot) { case INPUT -> 0; case SECOND_INPUT -> 1; case FREEZING_INPUT -> 2; default -> -1; };
     }
@@ -150,7 +174,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     }
     public boolean setFilter(int slot, ItemStack stack) {
         int index = filterIndex(slot);
-        if (index < 0 || slot == SECOND_INPUT && !hasMixingChamber() || slot == FREEZING_INPUT && !hasFreezingChamber()) return false;
+        if (hasGardenChamber() || index < 0 || slot == SECOND_INPUT && !hasMixingChamber() || slot == FREEZING_INPUT && !hasFreezingChamber()) return false;
         ItemStack current = inventory.getStackInSlot(slot);
         if (!stack.isEmpty()) {
             if (level == null || slot != FREEZING_INPUT && !acceptsInput(level, stack, hasMixingChamber(), machineTier())) return false;
@@ -182,9 +206,24 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         if (level == null) return null;
         return findMatchingRecipe(level, currentInput(mixing), machineTier());
     }
+    private @Nullable RecipeHolder<GardenRecipe> findGardenRecipe() {
+        if (level == null) return null;
+        ItemStack specimen = inventory.getStackInSlot(GARDEN_SPECIMEN);
+        if (specimen.isEmpty()) return null;
+        GardenInput input = new GardenInput(specimen);
+        return level.getRecipeManager().getAllRecipesFor(ForeverSkyblock.GARDEN.get()).stream()
+                .filter(holder -> holder.value().matches(input, level))
+                .sorted(Comparator.comparing(holder -> holder.id().toString()))
+                .findFirst().orElse(null);
+    }
 
     public static void tick(Level level, BlockPos pos, BlockState state, CondenserBlockEntity machine) { machine.process(); machine.syncVisual(); }
     private void process() {
+        if (hasGardenChamber()) {
+            boolean garden = processGarden();
+            setActive(garden);
+            return;
+        }
         boolean condensing = processCondensing(hasMixingChamber());
         boolean freezing = processFreezing(hasFreezingChamber());
         setActive(condensing || freezing);
@@ -201,9 +240,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         duration = recipe.processingTime();
         ItemStack result = recipe.result();
         ItemStack output = inventory.getStackInSlot(OUTPUT);
-        boolean fits = result.getCount() <= Math.min(64, result.getMaxStackSize()) && (output.isEmpty()
-                || ItemStack.isSameItemSameComponents(output, result)
-                && output.getCount() + result.getCount() <= Math.min(64, output.getMaxStackSize()));
+        boolean fits = canFit(output, result);
         if (!fits) { status = BLOCKED; return false; }
         status = RUNNING;
         progress++;
@@ -212,7 +249,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
             CondenserInput input = currentInput(mixing);
             inventory.extractItem(INPUT, recipe.primaryConsumption(input), false);
             if (recipe.requiresModule()) inventory.extractItem(SECOND_INPUT, recipe.secondaryConsumption(input), false);
-            inventory.setStackInSlot(OUTPUT, result.copyWithCount(output.getCount() + result.getCount()));
+            inventory.setStackInSlot(OUTPUT, merge(output, result));
             progress = 0;
         }
         return true;
@@ -235,6 +272,42 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         setChanged();
         return true;
     }
+    private boolean processGarden() {
+        RecipeHolder<GardenRecipe> holder = findGardenRecipe();
+        if (holder == null) {
+            if (gardenProgress != 0 || gardenRecipe != null) { gardenProgress = 0; gardenRecipe = null; setChanged(); }
+            gardenStatus = IDLE;
+            return false;
+        }
+        GardenRecipe recipe = holder.value();
+        if (!holder.id().equals(gardenRecipe)) { gardenProgress = 0; gardenRecipe = holder.id(); setChanged(); }
+        gardenDuration = recipe.processingTime();
+        ItemStack primary = recipe.primaryResult();
+        ItemStack secondary = recipe.secondaryResult();
+        ItemStack primarySlot = inventory.getStackInSlot(GARDEN_OUTPUT_PRIMARY);
+        ItemStack secondarySlot = inventory.getStackInSlot(GARDEN_OUTPUT_SECONDARY);
+        if (!canFit(primarySlot, primary) || !canFit(secondarySlot, secondary)) {
+            gardenStatus = BLOCKED;
+            return false;
+        }
+        gardenStatus = RUNNING;
+        gardenProgress++;
+        setChanged();
+        if (gardenProgress >= gardenDuration) {
+            inventory.setStackInSlot(GARDEN_OUTPUT_PRIMARY, merge(primarySlot, primary));
+            inventory.setStackInSlot(GARDEN_OUTPUT_SECONDARY, merge(secondarySlot, secondary));
+            gardenProgress = 0;
+        }
+        return true;
+    }
+    private static boolean canFit(ItemStack output, ItemStack result) {
+        return result.getCount() <= Math.min(64, result.getMaxStackSize()) && (output.isEmpty()
+                || ItemStack.isSameItemSameComponents(output, result)
+                && output.getCount() + result.getCount() <= Math.min(64, output.getMaxStackSize()));
+    }
+    private static ItemStack merge(ItemStack output, ItemStack result) {
+        return output.isEmpty() ? result.copy() : output.copyWithCount(output.getCount() + result.getCount());
+    }
     private void setActive(boolean active) {
         if (level != null && getBlockState().getValue(CondenserBlock.ACTIVE) != active) {
             visualDirty = true;
@@ -247,7 +320,9 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         tag.put("Inventory", inventory.serializeNBT(registries));
         tag.putInt("Progress", progress);
         tag.putInt("FreezingProgress", freezingProgress);
+        tag.putInt("GardenProgress", gardenProgress);
         if (progressRecipe != null) tag.putString("ProgressRecipe", progressRecipe.toString());
+        if (gardenRecipe != null) tag.putString("GardenRecipe", gardenRecipe.toString());
         for (int i = 0; i < filters.length; i++) if (!filters[i].isEmpty())
             tag.putString("InputFilter" + i, BuiltInRegistries.ITEM.getKey(filters[i].getItem()).toString());
     }
@@ -259,7 +334,9 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         inventory.deserializeNBT(registries, saved);
         progress = Math.max(0, Math.min(32766, tag.getInt("Progress")));
         freezingProgress = Math.max(0, Math.min(FREEZING_REQUIRED_ITEMS - 1, tag.getInt("FreezingProgress")));
+        gardenProgress = Math.max(0, Math.min(32766, tag.getInt("GardenProgress")));
         progressRecipe = ResourceLocation.tryParse(tag.getString("ProgressRecipe"));
+        gardenRecipe = ResourceLocation.tryParse(tag.getString("GardenRecipe"));
         for (int i = 0; i < filters.length; i++) {
             ResourceLocation id = ResourceLocation.tryParse(tag.getString("InputFilter" + i));
             filters[i] = id == null ? ItemStack.EMPTY : BuiltInRegistries.ITEM.getOptional(id).map(ItemStack::new).orElse(ItemStack.EMPTY);
@@ -277,8 +354,13 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         @Override public int getSlots() { return MACHINE_SLOTS; }
         @Override public ItemStack getStackInSlot(int slot) {
             if (slot < 0 || slot >= MACHINE_SLOTS) return ItemStack.EMPTY;
-            if (slot == SECOND_INPUT && !hasMixingChamber()) return ItemStack.EMPTY;
-            if ((slot == FREEZING_INPUT || slot == FREEZING_OUTPUT) && !hasFreezingChamber()) return ItemStack.EMPTY;
+            if (hasGardenChamber()) {
+                if (slot != GARDEN_SPECIMEN && slot != GARDEN_OUTPUT_PRIMARY && slot != GARDEN_OUTPUT_SECONDARY) return ItemStack.EMPTY;
+            } else {
+                if (slot == GARDEN_SPECIMEN || slot == GARDEN_OUTPUT_PRIMARY || slot == GARDEN_OUTPUT_SECONDARY) return ItemStack.EMPTY;
+                if (slot == SECOND_INPUT && !hasMixingChamber()) return ItemStack.EMPTY;
+                if ((slot == FREEZING_INPUT || slot == FREEZING_OUTPUT) && !hasFreezingChamber()) return ItemStack.EMPTY;
+            }
             return inventory.getStackInSlot(slot);
         }
         @Override public int getSlotLimit(int slot) { return slot >= 0 && slot < MACHINE_SLOTS ? inventory.getSlotLimit(slot) : 0; }
@@ -288,6 +370,11 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         }
         @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
             if (!extract) return ItemStack.EMPTY;
+            if (hasGardenChamber()) {
+                if (slot == GARDEN_OUTPUT_PRIMARY || slot == GARDEN_OUTPUT_SECONDARY)
+                    return inventory.extractItem(slot, amount, simulate);
+                return ItemStack.EMPTY;
+            }
             if (slot == OUTPUT) return inventory.extractItem(slot, amount, simulate);
             if (slot == FREEZING_OUTPUT && hasFreezingChamber()) return inventory.extractItem(slot, amount, simulate);
             return ItemStack.EMPTY;
