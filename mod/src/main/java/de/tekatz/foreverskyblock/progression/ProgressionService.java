@@ -204,6 +204,9 @@ public final class ProgressionService {
                 if (monster) state = ChallengeRules.record(state, ChallengeRules.VETERAN.id(), token);
                 return state;
             });
+            if (wither) recordIsland(player, ChallengeRules.WITHER.id(), "completed");
+            if (dragon) recordIsland(player, ChallengeRules.DRAGON.id(), "completed");
+            if (monster) recordIsland(player, ChallengeRules.VETERAN.id(), victim.toString());
             if (next.equals(previous)) return false;
             notifyProgress(player, previous, next);
             sync(player, false, "");
@@ -235,11 +238,19 @@ public final class ProgressionService {
                 for (var event : events) state = ChallengeRules.record(state, event.challenge(), event.token());
                 return state;
             });
+            for (var event : events) recordIsland(player, event.challenge(), event.token());
             if (next.equals(previous)) return false;
             notifyProgress(player, previous, next);
             sync(player, false, ""); return true;
         } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); return false; }
     }
+    private static void recordIsland(ServerPlayer player, String id, String token) {
+        try { WorldQoLService.recordMilestone(player.server, id, token); }
+        catch (IOException | RuntimeException e) { LOGGER.error("Could not save island milestone {}", id, e); }
+    }
+    /** Read-only refresh; unlike opening the menu this does not retry transactions. */
+    public void refreshMenu(ServerPlayer player) { sync(player, false, ""); }
+
     private void notifyProgress(ServerPlayer player, ProgressionProfile previous, ProgressionProfile next) {
         for (var milestone : MilestoneCatalog.MILESTONES)
             if (!previous.milestones().contains(milestone.id()) && next.milestones().contains(milestone.id()) && connected(player))

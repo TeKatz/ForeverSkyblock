@@ -41,6 +41,11 @@ public final class WorldQoLService {
         return next;
     }
 
+    public static void recordMilestone(MinecraftServer server, String id, String token) throws IOException {
+        Context context = context(server);
+        context.progress().recordMilestone(context.root(), context.identities().loadOrCreate(context.root()), id, token);
+    }
+
     public static boolean unlockTrader(MinecraftServer server) throws IOException {
         Context context = context(server);
         UUID world = context.identities().loadOrCreate(context.root());

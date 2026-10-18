@@ -47,6 +47,20 @@ jobs:
             echo 'Client smoke test never reached ModLauncher.' >&2
             exit 1
           fi
+      - name: Render K-menu visual fixtures
+        shell: bash
+        run: |
+          timeout --signal=TERM --kill-after=10s 120s xvfb-run -a -s '-screen 0 1920x1080x24' ./gradlew runClient -PcondenserTests -PmenuVisualTests --no-daemon > menu-visual.log 2>&1 || { cat menu-visual.log; exit 1; }
+          cat menu-visual.log
+          grep -q 'MENU_VISUAL_COMPLETE' menu-visual.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: K-Menu-Visual-QA
+          path: |
+            mod/runs/client/screenshots/menu-*.png
+            mod/menu-visual.log
+          if-no-files-found: warn
       - name: Test dedicated-server regression suite
         run: ./gradlew runGameTestServer -PcondenserTests --no-daemon
       - name: Test full pack-runtime integrations on NeoForge 21.1.259

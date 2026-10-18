@@ -40,4 +40,20 @@ class WorldProgressStoreTest {
         store.unlockTrader(root, first);
         assertThrows(java.io.IOException.class, () -> new WorldProgressStore().loadOrCreate(root, UUID.randomUUID()));
     }
+
+    @Test void oldWorldMigratesWithoutImportingPermanentHistoryAndKeepsAllGates() throws Exception {
+        UUID world = UUID.randomUUID();
+        Path file = new WorldProgressStore().file(root);
+        Files.createDirectories(file.getParent());
+        Files.writeString(file, "{\"schema_version\":1,\"world_uuid\":\""+world+"\",\"wandering_trader_unlocked\":true,\"world_upgrades\":[]}");
+        var store = new WorldProgressStore();
+        assertEquals(0,store.loadOrCreate(root,world).islandLevel());
+        store.recordMilestone(root,world,ChallengeRules.FOUNDATIONS.id(),"completed");
+        store.enableUpgrade(root,world,ShopCatalog.NO_RAIN.id());
+        var saved = new WorldProgressStore().loadOrCreate(root,world);
+        assertTrue(saved.wanderingTraderUnlocked()); assertTrue(saved.active(ShopCatalog.NO_RAIN.id()));
+        assertEquals(1,saved.islandLevel());
+        Files.delete(file);
+        assertEquals(1,new WorldProgressStore().loadOrCreate(root,world).islandLevel());
+    }
 }

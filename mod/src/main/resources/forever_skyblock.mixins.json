@@ -22,14 +22,7 @@
     "PersonalKillMixin",
     "ProgressionServiceWorldMixin"
   ],
-  "client": [
-    "PremiumSkillScreenVisualMixin",
-    "PremiumChallengeCardVisualMixin",
-    "PremiumCategoryButtonVisualMixin",
-    "PremiumChromeButtonVisualMixin",
-    "PremiumContractScreenMixin",
-    "PremiumShopScreenMixin"
-  ],
+  "client": [],
   "injectors": {
     "defaultRequire": 1
   }
