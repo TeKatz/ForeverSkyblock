@@ -351,5 +351,7 @@
   "gui.forever_skyblock.overhaul.spent": "Spent: %s SP · %s PP",
   "gui.forever_skyblock.overhaul.refunded": "Refunded: %s SP · %s PP · Admin: %s SP",
   "gui.forever_skyblock.overhaul.permanent_root": "Permanent skills",
-  "gui.forever_skyblock.overhaul.sp_only": "SP requirement only"
+  "gui.forever_skyblock.overhaul.sp_only": "SP requirement only",
+  "gui.forever_skyblock.overhaul.development_rules": "Operator-only entitlement to test the existing transaction path. Grants no items or gameplay benefits.",
+  "gui.forever_skyblock.overhaul.world_name": "World: %s"
 }

@@ -351,5 +351,7 @@
   "gui.forever_skyblock.overhaul.spent": "Ausgegeben: %s SP · %s PP",
   "gui.forever_skyblock.overhaul.refunded": "Erstattet: %s SP · %s PP · Admin: %s SP",
   "gui.forever_skyblock.overhaul.permanent_root": "Dauerhafte Skills",
-  "gui.forever_skyblock.overhaul.sp_only": "Nur SP benötigt"
+  "gui.forever_skyblock.overhaul.sp_only": "Nur SP benötigt",
+  "gui.forever_skyblock.overhaul.development_rules": "Nur für Operatoren: Berechtigung zum Testen des bestehenden Transaktionspfads. Vergibt keine Items oder Spielvorteile.",
+  "gui.forever_skyblock.overhaul.world_name": "Welt: %s"
 }

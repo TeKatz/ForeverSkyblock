@@ -36,6 +36,7 @@ public final class MenuClientPreview {
             Field f=ClientSkills.class.getDeclaredField("snapshot");f.setAccessible(true);f.set(null,snapshot);
             menu=new PremiumSkillScreen();mc.setScreen(menu);return;
         }
+        if(mc.getOverlay()!=null)return;
         if(++ticks%24!=0)return;
         Screenshot.grab(mc.gameDirectory,"menu-"+stage+".png",mc.getMainRenderTarget(),c->{});
         System.out.println("MENU_VISUAL_STAGE "+stage+" "+mc.getWindow().getGuiScaledWidth()+"x"+mc.getWindow().getGuiScaledHeight());
@@ -48,6 +49,13 @@ public final class MenuClientPreview {
             case 6 -> {var m=PremiumSkillScreen.class.getDeclaredMethod("openContract",ContractCatalog.Contract.class);m.setAccessible(true);m.invoke(menu,ContractCatalog.ANTIMATTER);}
             case 7 -> {mc.options.guiScale().set(4);mc.resizeDisplay();page(mc,"SHOP");}
             case 8 -> {mc.options.guiScale().set(6);mc.resizeDisplay();page(mc,"CHALLENGES");}
+            case 9 -> {mc.options.guiScale().set(3);mc.resizeDisplay();mc.getLanguageManager().setSelected("de_de");mc.reloadResourcePacks();page(mc,"CHALLENGES");}
+            case 10 -> page(mc,"SHOP");
+            case 11 -> page(mc,"PROFILE");
+            case 12 -> {page(mc,"CHALLENGES");Field f=PremiumSkillScreen.class.getDeclaredField("category");f.setAccessible(true);f.setInt(menu,7);mc.setScreen(null);mc.setScreen(menu);}
+            case 13 -> {var m=PremiumSkillScreen.class.getDeclaredMethod("openContract",ContractCatalog.Contract.class);m.setAccessible(true);m.invoke(menu,ContractCatalog.NITRO);}
+            case 14 -> {page(mc,"SHOP");menu.mouseScrolled(mc.getWindow().getGuiScaledWidth()/2D,mc.getWindow().getGuiScaledHeight()-40,0,-12);}
+            case 15 -> {page(mc,"CHALLENGES");Field f=PremiumSkillScreen.class.getDeclaredField("category");f.setAccessible(true);f.setInt(menu,0);mc.setScreen(null);mc.setScreen(menu);menu.mouseScrolled(35,mc.getWindow().getGuiScaledHeight()-40,0,-12);}
             default -> {System.out.println("MENU_VISUAL_COMPLETE");mc.stop();}
         }
     }

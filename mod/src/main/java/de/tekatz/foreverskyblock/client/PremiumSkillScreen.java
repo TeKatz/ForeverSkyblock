@@ -375,13 +375,14 @@ public final class PremiumSkillScreen extends Screen {
                 g.renderItem(icon,nx-8,ny-8);
                 if(owned.getAsBoolean()) { circle(g,nx+13,ny-12,4,GREEN); }
                 // Up to three centered lines; the next node row is deliberately more than 80 px away.
+                g.fill(nx-labelWidth/2,ny+22,nx+labelWidth/2+1,ny+54,0xFF091822);
                 int yy=ny+25;
                 for(var line:font.split(title.get(),Math.max(1,(int)(labelWidth/.72F)))) {
-                    if(yy>ny+43)break;
+                    if(yy>ny+34)break;
                     int fw=Math.round(font.width(line)*.72F);
                     g.pose().pushPose();g.pose().translate(nx-fw/2,yy,0);g.pose().scale(.72F,.72F,1);g.drawString(font,line,0,0,WHITE,false);g.pose().popPose();yy+=8;
                 }
-                centered(g,subtitle.get(),nx-labelWidth/2,ny+51,labelWidth,10,owned.getAsBoolean()?GREEN:MUTED,.62F);
+                centered(g,subtitle.get(),nx-labelWidth/2,ny+43,labelWidth,10,owned.getAsBoolean()?GREEN:MUTED,.62F);
             }
         });
     }
@@ -424,7 +425,7 @@ public final class PremiumSkillScreen extends Screen {
         open(new Detail(productTitle(p),productIcon(p),p.worldUpgrade()?GREEN:0xFFBD9AF2,
                 ()->literal(p.spCost()+" SP  ·  ").copy().append(text("tier."+p.requiredTier())).append("  ·  ").append(text("current_world_scope")),
                 ()->{
-                    var desc=literal(german()?p.descriptionDe():p.descriptionEn()).copy().append("\n\n").append(t(p.worldUpgrade()?"world_upgrade_rules":"world_package_rules"));
+                    var desc=literal(german()?p.descriptionDe():p.descriptionEn()).copy().append("\n\n").append(t(p.developmentOnly()?"development_rules":p.worldUpgrade()?"world_upgrade_rules":"world_package_rules"));
                     if(!p.contents().isEmpty()) {desc.append("\n\n").append(t("contents"));for(var e:p.contents())desc.append("\n"+e.count()+" × ").append(item(e.itemId()).getHoverName());}
                     return desc;
                 },()->productStatus(p.id()),()->productStage(p)>0?1D:0D,()->productStatus(p.id()),()->canBuyProduct(p.id()),()->confirmProduct(p.id())));
@@ -479,7 +480,7 @@ public final class PremiumSkillScreen extends Screen {
         int w=body.widthValue()-5;
         int cols=w>=460?3:2, gap=6, cw=(w-gap*(cols-1))/cols;
         body.paint=(g,l,t,w0,mx,my)->drawProfile(g,l,t,w);
-        int metricsTop=74, cellH=48, rows=(9+cols-1)/cols, footer=metricsTop+rows*(cellH+gap)+119;
+        int metricsTop=56, cellH=38, rows=(9+cols-1)/cols, footer=metricsTop+rows*(cellH+gap)+119;
         body.add(new MenuButton(5,footer,w-10,22,()->old("reset"),()->ready()&&!ClientSkills.pending(),this::confirmReset,false,null));
         if(ready()&&state().canTestPoints())body.add(new MenuButton(5,footer+29,w-10,20,()->old("test_points"),()->!ClientSkills.pending(),ClientSkills::testPoints,false,null));
         body.contentHeight=footer+(ready()&&state().canTestPoints()?56:29);body.restore();
@@ -488,7 +489,7 @@ public final class PremiumSkillScreen extends Screen {
         face(g,l+10,top+9,32);
         label(g,minecraft.player==null?t("player"):minecraft.player.getDisplayName(),l+54,top+9,w-65,WHITE,1F);
         label(g,ready()?old(state().local()?"local_scope":"server_scope"):old("storage_error"),l+54,top+25,w-65,MUTED,.67F);
-        label(g,ready()?text("world_identity",state().worldName()):text("world_identity_error"),l+10,top+50,w-20,GREEN,.7F);
+        label(g,ready()?t("world_name",state().worldName()):text("world_identity_error"),l+10,top+43,w-20,GREEN,.7F);
         int cols=w>=460?3:2,gap=6,cw=(w-gap*(cols-1))/cols;
         var st=state()==null?SkillNetwork.MenuStatistics.UNKNOWN:state().statistics();
         List<Component> names=List.of(t("sp"),t("pp"),t("challenges"),t("playtime"),t("island"),t("unlocks"),t("deaths"),t("mob_kills"),text("current_world_claims"));
@@ -496,12 +497,12 @@ public final class PremiumSkillScreen extends Screen {
                 ready()?literal(completed()+" / "+MilestoneCatalog.MILESTONES.size()):literal("—"),playtime(st.playTicks()),st.islandLevel()<0?literal("—"):literal(st.islandLevel()),
                 ready()?literal(state().skills().size()):literal("—"),literal(st.deaths()<0?"—":st.deaths()),literal(st.mobKills()<0?"—":st.mobKills()),ready()?literal(state().worldClaims().size()):literal("—"));
         for(int i=0;i<names.size();i++) {
-            int dx=l+(i%cols)*(cw+gap),dy=top+74+(i/cols)*54;
-            panel(g,dx,dy,cw,48,0xD1102734,BORDER);
+            int dx=l+(i%cols)*(cw+gap),dy=top+56+(i/cols)*44;
+            panel(g,dx,dy,cw,38,0xD1102734,BORDER);
             centered(g,names.get(i),dx+4,dy+5,cw-8,12,MUTED,.67F);
-            centered(g,values.get(i),dx+4,dy+21,cw-8,20,i%3==1?GOLD:CYAN,.95F);
+            centered(g,values.get(i),dx+4,dy+18,cw-8,17,i%3==1?GOLD:CYAN,.95F);
         }
-        int fy=top+74+((9+cols-1)/cols)*54+6;
+        int fy=top+56+((9+cols-1)/cols)*44+6;
         label(g,t("statistics_scope"),l+6,fy,w-12,MUTED,.65F);
         label(g,t("island_rules"),l+6,fy+12,w-12,GREEN,.65F);
         if(ready()) {
@@ -600,8 +601,14 @@ public final class PremiumSkillScreen extends Screen {
         @Override public boolean isPauseScreen(){return false;}
         @Override public void onClose(){minecraft.setScreen(PremiumSkillScreen.this);}
         @Override public boolean keyPressed(int key,int scan,int modifiers){if(ClientSkills.OPEN.matches(key,scan)){minecraft.setScreen(null);return true;}return super.keyPressed(key,scan,modifiers);}
-        @Override public void renderBackground(GuiGraphics g,int mx,int my,float tick){
+        @Override public void render(GuiGraphics g,int mx,int my,float tick){
             PremiumSkillScreen.this.render(g,-100,-100,tick);
+            g.flush();
+            g.pose().pushPose();g.pose().translate(0,0,400);
+            super.render(g,mx,my,tick);
+            g.flush();g.pose().popPose();
+        }
+        @Override public void renderBackground(GuiGraphics g,int mx,int my,float tick){
             double reveal=MenuMotion.reveal(start,System.nanoTime());
             g.fill(0,0,width,height,((int)(178*reveal)<<24)|0x020911);
             panel(g,dx-2,dy-2,dw+4,dh+4,0xFF081822,detail.accent());
