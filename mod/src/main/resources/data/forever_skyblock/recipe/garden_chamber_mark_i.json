@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["MIM", "PSP", "MIM"],
+  "key": {
+    "M": { "item": "minecraft:mud_bricks" },
+    "I": { "item": "minecraft:iron_ingot" },
+    "P": { "tag": "minecraft:planks" },
+    "S": { "item": "minecraft:oak_sapling" }
+  },
+  "result": { "id": "forever_skyblock:garden_chamber_mark_i", "count": 1 }
+}
