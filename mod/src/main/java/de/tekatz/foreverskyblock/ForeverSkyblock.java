@@ -12,6 +12,7 @@ import de.tekatz.foreverskyblock.menu.WashingMenu;
 import de.tekatz.foreverskyblock.network.CondenserNetwork;
 import de.tekatz.foreverskyblock.network.SkillNetwork;
 import de.tekatz.foreverskyblock.recipe.CondenserRecipe;
+import de.tekatz.foreverskyblock.recipe.GardenRecipe;
 import de.tekatz.foreverskyblock.recipe.WashingRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.flag.FeatureFlags;
@@ -75,6 +76,10 @@ public final class ForeverSkyblock {
             () -> new FreezingChamberBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE)
                     .strength(2.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()));
     public static final DeferredItem<BlockItem> FREEZING_CHAMBER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(FREEZING_CHAMBER_MARK_I);
+    public static final DeferredBlock<Block> GARDEN_CHAMBER_MARK_I = BLOCKS.registerSimpleBlock("garden_chamber_mark_i",
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(3.0F, 8.0F)
+                    .sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion());
+    public static final DeferredItem<BlockItem> GARDEN_CHAMBER_MARK_I_ITEM = ITEMS.registerSimpleBlockItem(GARDEN_CHAMBER_MARK_I);
     public static final DeferredBlock<WashingBasinBlock> WASHING_BASIN = BLOCKS.register("washing_basin",
             () -> new WashingBasinBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BROWN)
                     .strength(2.5F, 6.0F).sound(SoundType.STONE).requiresCorrectToolForDrops().noOcclusion()));
@@ -104,6 +109,12 @@ public final class ForeverSkyblock {
             });
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<CondenserRecipe>> CONDENSING_SERIALIZER =
             RECIPE_SERIALIZERS.register("condensing", CondenserRecipe.Serializer::new);
+    public static final DeferredHolder<RecipeType<?>, RecipeType<GardenRecipe>> GARDEN =
+            RECIPE_TYPES.register("garden", () -> new RecipeType<>() {
+                @Override public String toString() { return MOD_ID + ":garden"; }
+            });
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<GardenRecipe>> GARDEN_SERIALIZER =
+            RECIPE_SERIALIZERS.register("garden", GardenRecipe.Serializer::new);
     public static final DeferredHolder<RecipeType<?>, RecipeType<WashingRecipe>> WASHING =
             RECIPE_TYPES.register("washing", () -> new RecipeType<>() {
                 @Override public String toString() { return MOD_ID + ":washing"; }
@@ -138,6 +149,7 @@ public final class ForeverSkyblock {
             event.accept(CONDENSER_MARK_II_ITEM.get());
             event.accept(MIXING_CHAMBER_MARK_I_ITEM.get());
             event.accept(FREEZING_CHAMBER_MARK_I_ITEM.get());
+            event.accept(GARDEN_CHAMBER_MARK_I_ITEM.get());
             event.accept(WASHING_BASIN_ITEM.get());
         }
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
