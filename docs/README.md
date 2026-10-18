@@ -24,6 +24,8 @@ The current follow-up [Separate Garden harvest ports — 0.22.1](MACHINE_ANIMATI
 
 [Iron balancing and Packed Mud — 0.23.0](MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud-development) is developed on `feature/iron-balance-packed-mud`, following 0.22.1. It changes Log timing, Iron costs, adds Packed Mud mixing and centers the Garden badges; main remains 0.20.1.
 
+[K-menu overhaul — 0.24.0](K_MENU_DESIGN2.md) lives on `feature/k-menu-overhaul`, following validated 0.23.0. It includes the round-node shop, detail windows, compact profile and real statistics; Island Level tracks shared world milestones from this update. Main remains 0.20.1.
+
 ## Feature documentation
 
 | Document | Scope |
@@ -31,7 +33,7 @@ The current follow-up [Separate Garden harvest ports — 0.22.1](MACHINE_ANIMATI
 | [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md) | Mud, Washing Basin, first Raw Iron, craftable Mark I, Iron-gated Mark II and Garden Chamber wood automation |
 | [CHALLENGES.md](CHALLENGES.md) | Unique Challenge catalog, personal attribution and deferred objectives |
 | [CONTRACTS.md](CONTRACTS.md) | Integrated repeatable contracts, rewards and transaction rules |
-| [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md) | Integrated Design-2 layout; larger redesign work remains deferred |
+| [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md) | Current 0.24.0 development overhaul: Shop graph, details, profile, motion and authoritative statistics |
 | [WORLD_SHOP.md](WORLD_SHOP.md) | Stable world identity, real package delivery and world-wide upgrades |
 | [SKILLS.md](SKILLS.md) | Persistent progression storage, skills and refunds |
 | [JETPACK_RESEARCH.md](JETPACK_RESEARCH.md) | Iron Jetpacks research gates and automation behavior |

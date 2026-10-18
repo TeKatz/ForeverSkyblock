@@ -349,5 +349,7 @@
   "gui.forever_skyblock.overhaul.island_rules": "Insellevel: 1 pro gemeinsamem Welt-Meilenstein, erfasst ab diesem Update.",
   "gui.forever_skyblock.overhaul.earned": "Verdient: %s SP · %s PP",
   "gui.forever_skyblock.overhaul.spent": "Ausgegeben: %s SP · %s PP",
-  "gui.forever_skyblock.overhaul.refunded": "Erstattet: %s SP · %s PP · Admin: %s SP"
+  "gui.forever_skyblock.overhaul.refunded": "Erstattet: %s SP · %s PP · Admin: %s SP",
+  "gui.forever_skyblock.overhaul.permanent_root": "Dauerhafte Skills",
+  "gui.forever_skyblock.overhaul.sp_only": "Nur SP benötigt"
 }

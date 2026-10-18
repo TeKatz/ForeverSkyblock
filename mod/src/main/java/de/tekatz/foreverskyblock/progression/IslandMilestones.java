@@ -11,12 +11,7 @@ public final class IslandMilestones {
 
     public static Map<String, Set<String>> record(Map<String, Set<String>> previous, String id, String token) {
         var definition = ChallengeRules.find(id);
-        if (definition == null || token == null) return previous;
-        if (!definition.objectives().isEmpty() && !definition.objectives().contains(token)) return previous;
-        if (definition == ChallengeRules.VETERAN) {
-            try { if (!java.util.UUID.fromString(token).toString().equals(token)) return previous; }
-            catch (IllegalArgumentException e) { return previous; }
-        }
+        if (!validToken(id, token)) return previous;
         var tokens = previous.getOrDefault(id, Set.of());
         if (tokens.size() >= definition.target() || tokens.contains(token)) return previous;
         var nextTokens = new LinkedHashSet<>(tokens);
@@ -24,6 +19,17 @@ public final class IslandMilestones {
         var next = new LinkedHashMap<>(previous);
         next.put(id, Set.copyOf(nextTokens));
         return Map.copyOf(next);
+    }
+
+    public static boolean validToken(String id, String token) {
+        var definition = ChallengeRules.find(id);
+        if (definition == null || token == null) return false;
+        if (!definition.objectives().isEmpty() && !definition.objectives().contains(token)) return false;
+        if (definition == ChallengeRules.VETERAN) {
+            try { return java.util.UUID.fromString(token).toString().equals(token); }
+            catch (IllegalArgumentException e) { return false; }
+        }
+        return true;
     }
 
     public static int level(Map<String, Set<String>> evidence) {

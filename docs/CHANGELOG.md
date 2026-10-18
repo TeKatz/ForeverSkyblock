@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.24.0 — K-menu overhaul (development)
+
+- Rebuild premium menu presentation directly; remove the six accumulated client visual/shop/contract patch mixins.
+- Center header/reward/filter/search labels, scroll the mod category rail and add readable animated Challenge/Contract details.
+- Replace Shop strips with round-node branches representing existing skill/tier/product prerequisites; preserve all original server transactions.
+- Add compact player/stat/accounting profile and actual skin-face tab; custom SP/PP/Tier marks and subtle bounded motion.
+- Display authoritative Vanilla world playtime/deaths/kills. Add shared world-milestone Island Level, explicitly chosen by TeKatz, with no additional rewards or imported permanent history.
+- Extend protocol to `skills-9`; preserve player schema 4/5/6 and migrate the backed-up world-progress file to schema 2 without losing Trader/world-upgrade state.
+- Add persistence/evidence/motion/codec regressions and opt-in actual-client visual fixtures, excluded from the test JAR.
+
+
 ## 0.23.0 — Iron balancing, Packed Mud and Garden alignment (development)
 
 Branch `feature/iron-balance-packed-mud`, extending tested 0.22.1:

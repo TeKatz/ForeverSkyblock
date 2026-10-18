@@ -1,8 +1,8 @@
-# Forever Skyblock mod — 0.23.0 Iron balancing and Packed Mud
+# Forever Skyblock mod — 0.24.0 K-menu overhaul
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-The integrated `main` baseline remains 0.20.1 after PR #15. Development branch `feature/iron-balance-packed-mud` extends the tested 0.22.1 work with six-second Log conversion, pricier Iron tools/Hoppers, Packed Mud mixing and centered Garden routing badges. Prior Wheat, animations and separated harvest ports are included. See [MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud-development). No merge or release is implied.
+The integrated `main` baseline remains 0.20.1 after PR #15. Development branch `feature/k-menu-overhaul` follows tested 0.23.0 with a round-node Shop graph, improved challenge/contract browsing and details, compact profile with actual skin face, custom status icons and subtle motion. Server-supplied playtime/deaths/kills and world-local milestone-based Island Level use protocol **skills-9**; matching client/server versions are required. Player profile schema remains 4/5/6; the backed-up world-progress file migrates to schema 2. See [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md). No merge or release is implied.
 
 ## Early material progression
 
@@ -107,7 +107,7 @@ This intentionally removes permanent manual tree chopping from the mature early-
 
 ## Compatibility and fixed pack state
 
-No progression-profile schema or `skills-8` protocol change is required. The fixed starter-island NBT is unchanged.
+The machine changes required no profile/protocol change. The subsequent 0.24.0 K-menu statistics use `skills-9` while preserving player profile schema 4/5/6. The fixed starter-island NBT is unchanged.
 
 Default development baseline: NeoForge 21.1.249. Pack-runtime integration target: NeoForge 21.1.259.
 
@@ -121,7 +121,7 @@ See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the ful
 ./gradlew build
 ```
 
-Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.23.0.jar`.
+Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.24.0.jar`.
 
 
 The 0.22.0 source passed 73 unit tests, client startup/model checks and both 81-test GameTest suites, including the real Wooden Hopper on NeoForge 21.1.259. Exact source/artifact evidence and the client visual test boundary are recorded in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0220-validation-and-test-artifact).

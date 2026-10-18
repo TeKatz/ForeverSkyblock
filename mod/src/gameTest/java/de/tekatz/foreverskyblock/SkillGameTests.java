@@ -91,6 +91,8 @@ public final class SkillGameTests {
         h.assertTrue(rejected(() -> new SkillNetwork.Request(0, SkillCatalog.EXTENDED_REACH)), "Open action rejects an unexpected id");
         h.assertTrue(rejected(() -> new SkillNetwork.Request(4, "not an id")), "World-shop action rejects malformed product ids");
         h.assertTrue(rejected(() -> new SkillNetwork.Request(5, "")), "World-package claim requires a product id");
+        h.assertTrue(rejected(() -> new SkillNetwork.MenuStatistics(-2,0,0,0)), "Invalid playtime is rejected");
+        h.assertTrue(rejected(() -> new SkillNetwork.MenuStatistics(20,-2,0,0)), "Invalid island level is rejected");
         h.succeed();
     }
     private static boolean rejected(Runnable action) {

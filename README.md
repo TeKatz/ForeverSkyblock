@@ -1,6 +1,6 @@
 # Forever Skyblock
 
-Development branch `feature/iron-balance-packed-mud` builds **0.23.0** on the tested Garden work: six-second Log processing, higher Iron costs for normal Hoppers and custom Iron tools, Packed Mud mixing on both Condenser tiers and centered Garden routing badges. The integrated baseline remains 0.20.1. See [behavior and validation](docs/MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud-development).
+Development branch `feature/k-menu-overhaul` builds **0.24.0** on the validated 0.23.0 machine/balancing work. It rebuilds the K-menu with a round-node Shop graph, challenge/contract detail windows, a compact player profile, subtle motion and authoritative world statistics. Main remains 0.20.1. See [K-menu behavior and validation](docs/K_MENU_DESIGN2.md).
 
 **Forever Skyblock** is an Expert Skyblock modpack for **Minecraft 1.21.1 / NeoForge** built around deliberate progression, meaningful resource loops and long-term automation.
 

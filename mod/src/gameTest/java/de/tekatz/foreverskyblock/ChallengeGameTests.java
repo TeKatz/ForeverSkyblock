@@ -84,6 +84,20 @@ public final class ChallengeGameTests {
         h.assertTrue(!taken.isEmpty() && result.isEmpty(), "Taking the real result dispatches " + path);
     }
     @GameTest(template="empty")
+    public static void worldMilestoneTrackingDoesNotReplayPermanentRewards(GameTestHelper h) throws Exception {
+        var player=packetSinkPlayer(h,"IslandMilestone");
+        var service=ProgressionService.get(player.server);
+        service.evidence(player,List.of(ChallengeEvents.Evidence.completed(ChallengeRules.FOUNDATIONS)));
+        int points=profile(player).points();
+        service.evidence(player,List.of(ChallengeEvents.Evidence.completed(ChallengeRules.FOUNDATIONS)));
+        h.assertTrue(profile(player).points()==points,"Repeated world evidence does not replay personal SP");
+        var island=WorldQoLService.state(player.server);
+        h.assertTrue(island.islandEvidence().getOrDefault(ChallengeRules.FOUNDATIONS.id(),java.util.Set.of()).contains("completed"),
+                "Real actions feed shared world evidence even when the permanent objective is complete");
+        h.assertTrue(island.islandLevel()==IslandMilestones.level(island.islandEvidence()),"Level derives only from saved world evidence");
+        h.succeed();
+    }
+    @GameTest(template="empty")
     public static void personalCraftsAndSmithingUseRealResultSlots(GameTestHelper h) throws Exception {
         var player=packetSinkPlayer(h,"ChallengeCrafter");
         craft(h,player,"cobblestone_from_fragments");

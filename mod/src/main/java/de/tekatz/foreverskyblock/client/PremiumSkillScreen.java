@@ -259,7 +259,7 @@ public final class PremiumSkillScreen extends Screen {
     private SkillNetwork.ContractState contractState(ContractCatalog.Contract c) { return state()==null?null:state().contracts().get(c.id()); }
     private Component contractStatus(ContractCatalog.Contract c) {
         var s=contractState(c); if(!ready())return old("unavailable");
-        if(s==null||!s.available()) return text("world_requires_tier",text("tier."+c.requiredTier()));
+        if(s==null||!s.available()) return state().shopTier()<c.requiredTier()?text("world_requires_tier",text("tier."+c.requiredTier())):t("integration_missing");
         return t(c.resource()?"inventory_progress":"action_progress",s.progress(),c.target());
     }
     private void buildContracts() {
@@ -320,18 +320,23 @@ public final class PremiumSkillScreen extends Screen {
     }
     private void initShop() {
         body=newBody(x+layout.padding()+7,bodyTop(),layout.width()-2*layout.padding()-14);
-        int w=body.widthValue()-5, center=w/2;
+        int w=body.widthValue()-5, center=w*5/8;
         body.paint=(g,l,t,w0,mx,my)->{
             // Lines represent actual tier prerequisites. Products are siblings, never a false purchase chain.
             int a=ready()&&state().shopTier()>=0?0xFF4B8A8B:BORDER;
             int b=ready()&&state().shopTier()>=1?0xFF4B8A8B:BORDER;
-            line(g,l+center,t+35,l+center,t+245,b);
+            line(g,l+center+18,t+22,l+w-7,t+22,b);
+            line(g,l+w-7,t+22,l+w-7,t+245,b);
+            line(g,l+w-7,t+245,l+center,t+245,b);
+            line(g,l+w/8,t+40,l+w/8,t+90,0xFF3B6576);
             int fork=t+62; line(g,l+center,t+35,l+center,fork,a);
-            line(g,l+w/8,fork,l+w*7/8,fork,a);
-            for(int i=0;i<4;i++) line(g,l+w*(2*i+1)/8,fork,l+w*(2*i+1)/8,t+108,a);
+            line(g,l+w*3/8,fork,l+w*7/8,fork,a);
+            for(int i=1;i<4;i++) line(g,l+w*(2*i+1)/8,fork,l+w*(2*i+1)/8,t+108,a);
             line(g,l+center,t+245,l+center,t+326,b);
             centered(g,t("tree_hint"),l+5,t+383,w-10,15,MUTED,.66F);
         };
+        addNode(w/8,22,()->t("permanent_root"),()->t("sp_only"),Items.NETHER_STAR.getDefaultInstance(),
+                ()->ready(),CYAN,()->navigate(Page.PROFILE),w/4-9);
         addNode(center,22,()->text("tier.0"),()->t("tier0_short"),Items.COBBLESTONE.getDefaultInstance(),
                 ()->ready()&&state().shopTier()>=0,GOLD,()->openTier(0),Math.min(190,w-10));
         var reach=SkillCatalog.find(SkillCatalog.EXTENDED_REACH);
@@ -359,7 +364,7 @@ public final class PremiumSkillScreen extends Screen {
             @Override protected boolean clicked(double mx,double my) { return active&&isMouseOver(mx,my); }
             @Override protected void renderWidget(GuiGraphics g,int mx,int my,float dt) {
                 int nx=getX()+radius,ny=getY()+radius,c=owned.getAsBoolean()?GREEN:color;
-                boolean hover=isHoveredOrFocused();
+                boolean hover=isMouseOver(mx,my)||isFocused();
                 if(hover)circle(g,nx,ny,radius+3,0x443EC4D0);
                 circle(g,nx,ny,radius,hover||owned.getAsBoolean()?c:BORDER);
                 circle(g,nx,ny,radius-2,owned.getAsBoolean()?0xFF143C35:0xFF122B39);
@@ -457,13 +462,13 @@ public final class PremiumSkillScreen extends Screen {
         body=newBody(x+layout.padding()+7,bodyTop(),layout.width()-2*layout.padding()-14);
         var entries=new ArrayList<Entry>();
         if(page==Page.PERKS) {
-            body.paint=(g,l,t,w,mx,my)->wrapped(g,old("perk_info_description"),l+8,t+4,w-20,MUTED,.75F,4);
+            entries.add(new Entry(old("perk_info_title"),old("perk_info_description"),ForeverSkyblock.FOREVER_CORE.get().getDefaultInstance(),"all",
+                    ()->literal("PP"),()->0D,()->old("core_conversion"),()->open(new Detail(old("perk_info_title"),ForeverSkyblock.FOREVER_CORE.get().getDefaultInstance(),GOLD,
+                        ()->old("core_conversion"),()->old("perk_info_description"),()->old("core_conversion"),()->0D,()->t("close"),()->true,()->minecraft.setScreen(this)))));
         }
         for(var s:SkillCatalog.SKILLS)if(page==Page.RESEARCH?s.jetpack():s.perkCost()>0)entries.add(new Entry(Component.translatable(s.titleKey()),Component.translatable(s.descriptionKey()),skillIcon(s),"all",
                 ()->s.perkCost()>0?old("dual_cost",s.cost(),s.perkCost()):old("cost",s.cost()),()->ready()&&state().rank(s.id())>0?1D:0D,()->skillStatus(s.id()),()->openSkill(s)));
         buildCards(entries,body.widthValue()>440?2:1,false);
-        // Perk conversion explanation is shown in its own readable detail, without overlapping research cards.
-        if(page==Page.PERKS)body.paint=null;
     }
     private void initProfile() {
         body=newBody(x+layout.padding()+7,bodyTop(),layout.width()-2*layout.padding()-14);

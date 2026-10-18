@@ -33,11 +33,9 @@ public final class WorldProgressStore {
             islandEvidence.forEach((id, tokens) -> {
                 if (ChallengeRules.find(id) == null || tokens.size() > ChallengeRules.find(id).target())
                     throw new IllegalArgumentException("Invalid island evidence");
-                for (String token : tokens) {
-                    var next = IslandMilestones.record(checked, id, token);
-                    if (next == checked) throw new IllegalArgumentException("Invalid island token");
-                    checked.clear(); checked.putAll(next);
-                }
+                for (String token : tokens) if (!IslandMilestones.validToken(id, token))
+                    throw new IllegalArgumentException("Invalid island token");
+                checked.put(id, Set.copyOf(tokens));
             });
             islandEvidence = Map.copyOf(checked);
             for (String id : upgrades) ProgressionProfile.validateId(id);

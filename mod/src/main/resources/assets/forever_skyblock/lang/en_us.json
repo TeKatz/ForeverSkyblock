@@ -349,5 +349,7 @@
   "gui.forever_skyblock.overhaul.island_rules": "Island Level: 1 per shared world milestone, tracked from this update.",
   "gui.forever_skyblock.overhaul.earned": "Earned: %s SP · %s PP",
   "gui.forever_skyblock.overhaul.spent": "Spent: %s SP · %s PP",
-  "gui.forever_skyblock.overhaul.refunded": "Refunded: %s SP · %s PP · Admin: %s SP"
+  "gui.forever_skyblock.overhaul.refunded": "Refunded: %s SP · %s PP · Admin: %s SP",
+  "gui.forever_skyblock.overhaul.permanent_root": "Permanent skills",
+  "gui.forever_skyblock.overhaul.sp_only": "SP requirement only"
 }
