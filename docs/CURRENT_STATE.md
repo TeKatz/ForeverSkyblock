@@ -1,67 +1,75 @@
 # Current integrated state
 
-Updated October 17, 2026 after the authorized integration of the 0.14.0-0.18.1 development stack into `main` through PR #13.
+Updated October 18, 2026 for the authorized integration of the material-processing and Garden-automation stack through **0.20.1** via PR #15.
 
 ## Baseline
 
 | Item | Current value |
 | --- | --- |
-| Mod version | **0.18.1** |
+| Mod version | **0.20.1** |
 | Minecraft | **1.21.1** |
 | Java | **21** |
 | Pack runtime | **NeoForge 21.1.259** |
 | Default build baseline | NeoForge 21.1.249 |
 | Profile schema | **dynamic 4 / 5 / 6** |
 | Progression protocol | **skills-8** |
-| Main feature integration commit | `b895e26da9087393d883ec8efa2e083e1606f580` |
-| Last pre-merge feature head | `97715f06391339141032c5f0c859b5925f99539d` |
-| Verified pre-merge CI | GitHub Actions **#195**, success |
+| Integration PR | **#15** |
+| Final pre-merge feature head | `aec270d7bc0caea5952af034ed8505ce0fd3d68f` |
+| Verified pre-merge CI | GitHub Actions **#259**, success |
 | Release | Not published by this merge |
 
 ## Integrated gameplay and UI
 
-`main` now contains the complete stacked development line through 0.18.1:
+`main` contains the complete progression/meta stack through 0.18.1 plus the 0.19.x-0.20.1 early material-processing expansion:
 
-- **0.14.0 repeatable contracts:** Dragon Reborn, Wither Hunter, Singularity, Nitro and Antimatter renewable SP paths with replay protection and durable resource turn-in intents.
-- **0.15.0 real current-world delivery:** Tier-I Advanced AE2 Starter Package for 12 SP, delivered through a receipt-bound Forever Supply Cache with READY/DISPATCHING/DELIVERED/OPENING/OPENED recovery.
-- **0.16.0 stability/polish:** stricter request validation, corrected real-product confirmation/claim behavior, Supply Cache capacity fixes and expanded regression coverage.
-- **0.17.x early-game/world QoL:** 8 Leaves -> 1 Bone Meal, save-wide Wandering Trader unlock after first real-player Emerald pickup, and permanent world-wide No Phantoms / No More Rain / Permanent Day upgrades.
-- **0.17.1 emergency hotfix:** corrected the premium shop mixin target and helper-name collisions; CI now includes a headless NeoForge client mixin smoke test.
-- **0.18.0-0.18.1 Freezing Chamber / workbench gate:** passive Freezing Chamber Mark I, lock-aware any-item freezing, four dynamic Condenser layouts, dedicated JEI Freezing category, Stone Meal-gated Crafting Table recipe and the final GUI/model/tooltip/click-target cleanup.
+- repeatable contracts, real current-world package delivery, world QoL upgrades and the existing Tier 0/I meta-progression;
+- Condenser Mark I, Mixing Chamber, Freezing Chamber, persistent input locks and JEI integration;
+- Stone Meal-gated Crafting Table and 8 Leaves -> 1 Bone Meal early loop;
+- permanent Vanilla tool progression, Jetpack research, Ascension/Perk Points, challenges and the Design-2 K menu;
+- **4 Dirt + 1 Ice -> 4 Mud** through Condenser + Mixing Chamber, bridging Water/Farming into Vanilla Packed Mud and Mud Bricks;
+- a standalone **Washing Basin** that requires directly adjacent source water and processes **4 Stone Meal -> 1 Raw Iron** in 8 seconds without consuming the water;
+- a reproducible pre-Iron **Condenser Mark I** recipe using Mud Bricks, Cobblestone, Stone Meal and a Furnace;
+- Iron-gated **Condenser Mark II**, retaining the Mark-I/Mixing/Freezing behavior while adding **4 Stone Fragments -> 1 Stone Meal** automation;
+- the Mark-II Mixing recipe **4 Wheat Seeds + 1 Bone Meal -> 2 Oak Saplings**, avoiding the earlier Leaf-consumption softlock risk;
+- reliable Sapling growth: one Bone Meal use immediately advances a Vanilla Sapling through its growth attempt while normal tree-placement constraints still apply;
+- the exclusive **Garden Chamber** operating mode for Condenser Mark II: a retained Oak Sapling specimen grows for 16 seconds and produces **4 Oak Logs + 8 Oak Leaves** without consuming the specimen;
+- Garden mode pauses normal Condensing, Mixing and Freezing while preserving their stored items, filters and partial progress for exact resume after detaching the Garden Chamber;
+- dedicated Garden JEI presentation, Garden automation slots, a greenhouse-style Garden Chamber exterior with active interior animation, and a distinct green Condenser exterior/GUI state while Garden growth is running.
 
-The earlier Condenser, Mixing Chamber, permanent-tool, Jetpack research, Ascension/Perk, challenge, K-menu and stable world-identity systems remain integrated.
+The Garden Chamber's player-facing name is intentionally **Garden Chamber**. Its internal registered ID remains `forever_skyblock:garden_chamber_mark_i` for compatibility with the already-tested 0.20.0 development worlds and items.
 
-## Active progression boundary
+## Active early progression boundary
+
+The currently implemented early material route is:
+
+`Wood -> Stone Fragments -> Stone Meal / Dirt -> Ice / Water -> Farm -> Mud -> Packed Mud -> Mud Bricks -> Washing Basin -> Raw Iron -> Iron -> Condenser Mark II -> Garden Chamber`
+
+Important active recipes and machine rules:
+
+- Condenser: 1 Log -> 4 Stone Fragments; 1 Plank -> 1 Stone Fragment; 8 Leaves -> 1 Bone Meal.
+- Mixing Chamber: Stone Meal + Sapling -> Dirt; 4 Dirt + 1 Ice -> 4 Mud; Mark II additionally uses 4 Wheat Seeds + 1 Bone Meal -> 2 Oak Saplings.
+- Freezing Chamber: any accepted item advances the independent 32-item counter; 32 consumed items create 1 Ice.
+- Washing Basin: 4 Stone Meal -> 1 Raw Iron, 8 seconds, adjacent source water required and never consumed.
+- Condenser Mark II: 4 Stone Fragments -> 1 Stone Meal without the Mortar.
+- Garden Chamber + Mark II: retained Oak Sapling specimen -> 4 Oak Logs + 8 Oak Leaves every 16 seconds.
+
+This closes the permanent manual wood dependency at the first-Iron/Mark-II tier: Garden Logs feed Stone Fragments, Garden Leaves feed Bone Meal, Mark II automates Stone Meal, and the Mixing Chamber can feed renewable Oak Saplings and Dirt.
+
+## Condenser module rules
+
+Normal Condenser mode supports the existing live module states for Mixing and Freezing. Main, Mixing and Freezing inputs use persistent filters and hidden inactive slots are not exposed to automation.
+
+Garden Chamber is different: it is a **Mark-II-only exclusive mode** and takes priority over Mixing and Freezing whenever directly adjacent. The Garden interface replaces the normal process cards with the specimen/harvest layout and green landscape. Its specimen slot is limited to one supported item and is not consumed; the two harvest outputs are independently automation-accessible.
+
+## Meta-progression boundary
 
 - **20 unique challenges / 58 SP** are active.
 - Permanent progression currently reaches **Tier 0 — Foundations** and **Tier I — Conqueror**.
-- Five repeatable contracts are active after Tier I:
-  - Dragon Reborn: one qualifying respawned Dragon -> 1 SP;
-  - Wither Hunter: three additional Withers -> 1 SP;
-  - 4 AE2 Singularities -> 1 SP;
-  - 32 Powah Nitro Crystals -> 1 SP;
-  - 4 Mekanism Antimatter Pellets -> 3 SP.
+- Five repeatable contracts remain active after Tier I.
 - Iron Jetpacks research remains 5 / 10 / 20 / 40 SP, with Creative also requiring 1 PP.
-- Player-profile persistence remains dynamic: untouched/base profiles can remain schema 4, contract state raises the profile to schema 5, and real delivery state raises it to schema 6.
-- Current-world purchases use a stable hidden world UUID and fail closed on ambiguous identity state.
-- The active real current-world package is **Advanced AE2 Starter Package**: Tier I, 12 SP, once per player/stable-world identity, delivered through a unique Supply Cache.
-- Tier-0 world upgrades are active at 1 / 2 / 3 SP: No Phantoms, No More Rain and Permanent Day. Once activated, their effects are world-wide and do not charge other players again.
-- The Condenser can process **8 Leaves -> 1 Bone Meal** without a Mixing Chamber.
-- The **Freezing Chamber Mark I** attaches directly to the Condenser and consumes any unlocked/allowed item toward an independent 32-item counter; each completed counter creates 1 Ice.
-- The normal Vanilla Crafting Table now requires four Planks plus one Stone Meal in a plus-shaped 3x3 recipe, keeping the starter ME Crafting Terminal as the first 3x3 crafting workstation.
-
-## Freezing Chamber and Condenser UI
-
-The Condenser keeps stable machine slot IDs and supports four live module states:
-
-1. base Condenser;
-2. + Mixing Chamber;
-3. + Freezing Chamber;
-4. + Mixing Chamber and Freezing Chamber.
-
-Main, Mixing and Freezing inputs all use the same persistent lock system. Inactive module slots are hidden/disabled and are not exposed to automation. Removing the Freezing Chamber preserves real input/output, partial 0-31 progress and its lock.
-
-The 0.18.1 screen pass increases vertical spacing, separates Condensing and Freezing process areas, avoids lock-tooltip overlap and removes the old hidden recipe-list click target between the main input/output slots. JEI now has a dedicated Freezing category using the same presentation language as Condensing.
+- Player-profile persistence remains dynamic schema 4/5/6 and protocol `skills-8`.
+- The active real current-world package remains the Tier-I **Advanced AE2 Starter Package** for 12 SP.
+- Tier-0 world upgrades remain No Phantoms, No More Rain and Permanent Day.
 
 ## Explicitly not active / not finalized
 
@@ -69,25 +77,27 @@ Do not infer implementation from planning documents for any of the following:
 
 - Tier II-IV;
 - final Challenge/SP balancing;
-- final repeatable-contract quantities/rewards beyond the currently integrated test values;
+- final repeatable-contract quantities/rewards beyond the currently integrated values;
 - additional valuable current-world shop packages;
 - the deferred Industrial Contract;
 - deferred shared-machine/multiblock objectives whose personal attribution is unresolved;
-- a finalized first-Iron route;
 - a finalized Lava progression route;
+- acquisition routes for non-Oak tree species and corresponding Garden recipes;
 - final late-game pack progression or final K-menu/meta-progression balance;
 - fabricated Playtime or Island Level values in the K-menu header.
 
+The first-Iron route is **no longer open**: Washing Basin -> Raw Iron is now the implemented deterministic path.
+
 ## Pack state
 
-The fixed starting island remains `pack/config/skyblockbuilder/templates/islands/forever_me_start.nbt` with spawn `[8, 4, 5]` facing east and the verified eight-bread/one-seed 1k cell. PR #13 did not modify the starter-island NBT.
+The fixed starting island remains `pack/config/skyblockbuilder/templates/islands/forever_me_start.nbt` with spawn `[8, 4, 5]` facing east and the verified eight-bread/one-seed 1k cell. PR #15 does not modify the starter-island NBT.
 
-Forever Skyblock does not bundle the external Wooden Shears mod used in the current early-game quest design. Pack mod-inventory/list files remain provisional evidence rather than the final launcher/export lockfile.
+The supplied October 18 mod-list snapshot is documented separately. `pack/mods.inventory.json` and the mod-list documents remain development/runtime evidence rather than a final launcher/export lockfile.
 
 ## Validation boundary
 
-The final 0.18.1 feature head `97715f06391339141032c5f0c859b5925f99539d` passed GitHub Actions run #195 before merge. The workflow builds with Java 21, performs a headless NeoForge client mixin smoke test, runs the dedicated regression GameTests and runs the full NeoForge 21.1.259 integration suite with the existing optional integrations.
+Final feature head `aec270d7bc0caea5952af034ed8505ce0fd3d68f` passed GitHub Actions run **#259** before merge. The workflow completed the Java 21 build/unit tests, headless NeoForge client mixin smoke test, dedicated regression GameTests and full NeoForge 21.1.259 pack-runtime integration suite.
 
-Headless CI does not prove rendered client pixels. TeKatz tested the Freezing/Condenser work in-game, reported the 0.18.0 z-fighting, cramped layout, missing Ice JEI entry, overlapping lock tooltips and hidden recipe-click issue, then confirmed the corrected 0.18.1 build as a good baseline to continue from. That is user-reported client acceptance separate from CI.
+TeKatz also tested the 0.19.x/0.20.x progression in-game. Reported client issues included the initial Condenser Mark II exterior, Washing/JEI spacing, Freezing top seam, Garden JEI layout and Garden presentation; the branch was iterated through 0.20.1 before merge. Headless CI still does not prove final rendered pixels beyond those user-reported client checks.
 
-See [VALIDATION.md](VALIDATION.md) for detailed historical checks, [FREEZING_CHAMBER.md](FREEZING_CHAMBER.md) for the current machine behavior and [EARLY_GAME_QOL.md](EARLY_GAME_QOL.md) for the active early-game/world QoL systems.
+See [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md) for the early material/automation details, [FREEZING_CHAMBER.md](FREEZING_CHAMBER.md) for Freezing behavior, [EARLY_GAME_QOL.md](EARLY_GAME_QOL.md) for world QoL, and [VALIDATION.md](VALIDATION.md) for historical validation evidence.

@@ -1,0 +1,9 @@
+{
+  "type": "forever_skyblock:condensing",
+  "ingredient": { "item": "minecraft:wheat_seeds" },
+  "ingredient_count": 4,
+  "secondary_ingredient": { "item": "minecraft:bone_meal" },
+  "result": { "id": "minecraft:oak_sapling", "count": 2 },
+  "processing_time": 160,
+  "minimum_tier": 2
+}

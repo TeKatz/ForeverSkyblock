@@ -1,0 +1,20 @@
+{
+  "block.forever_skyblock.condenser_mark_ii": "Condenser Mark II",
+  "block.forever_skyblock.washing_basin": "Waschbassin",
+  "gui.forever_skyblock.machine.condenser_title_ii": "CONDENSER MK II",
+  "gui.forever_skyblock.machine.washing_title": "WASCHBASSIN",
+  "gui.forever_skyblock.machine.washing": "WÄSCHT",
+  "gui.forever_skyblock.machine.no_water": "KEIN WASSER",
+  "gui.forever_skyblock.machine.water_connected": "WASSERQUELLE VERBUNDEN",
+  "gui.forever_skyblock.machine.water_required": "ANGRENZENDE WASSERQUELLE BENÖTIGT",
+  "gui.forever_skyblock.machine.washing_recipe": "4 × Stone Meal → Roheisen",
+  "gui.forever_skyblock.machine.washing_hint": "Ein Wasserquellblock an einer Seite versorgt den Waschvorgang. Wasser wird nicht verbraucht.",
+  "gui.forever_skyblock.machine.washing_hint_source": "Wasserquelle an einer Seite.",
+  "gui.forever_skyblock.machine.washing_hint_water": "Wasser wird nicht verbraucht.",
+  "gui.forever_skyblock.machine.mk2_recipe": "Erweiterte Materialverarbeitung",
+  "jei.forever_skyblock.washing": "Waschen",
+  "jei.forever_skyblock.water_source_required": "Wasserquelle nötig",
+  "jei.forever_skyblock.water_not_consumed": "Wasser bleibt erhalten",
+  "jei.forever_skyblock.tier_ii_required": "Mark II benötigt",
+  "jei.forever_skyblock.transfer.tier": "Dieses Rezept benötigt einen Condenser Mark II."
+}

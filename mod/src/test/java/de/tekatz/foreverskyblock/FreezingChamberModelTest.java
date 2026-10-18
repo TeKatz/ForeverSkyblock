@@ -27,14 +27,15 @@ final class FreezingChamberModelTest {
                 var to = element.getAsJsonArray("to");
                 for (int axis = 0; axis < 3; axis++) {
                     assertTrue(from.get(axis).getAsDouble() >= 0);
-                    double max = axis == 1 && bolt ? 16.5 : 16.0;
+                    double max = axis == 1 && bolt ? 16.25 : 16.0;
                     assertTrue(to.get(axis).getAsDouble() <= max);
                     assertTrue(from.get(axis).getAsDouble() <= to.get(axis).getAsDouble());
                 }
                 if (bolt) {
-                    assertEquals(16.0, from.get(1).getAsDouble(), .00001,
-                            "Top bolts must start above the frame instead of sharing its top plane");
-                    assertEquals(16.5, to.get(1).getAsDouble(), .00001);
+                    assertTrue(from.get(1).getAsDouble() > 16.0,
+                            "Top bolt plates must float just above the rim instead of sharing its top plane");
+                    assertTrue(to.get(1).getAsDouble() <= 16.25);
+                    assertEquals(Set.of("up"), faces.keySet(), "Raised bolt side faces caused the visible rim stripe");
                     raisedBolts++;
                 }
                 for (var face : faces.entrySet()) {
@@ -44,7 +45,7 @@ final class FreezingChamberModelTest {
                 }
             }
             assertTrue(recessedIce, "Design 3 must retain its recessed icy top basin");
-            assertEquals(4, raisedBolts, "All four top bolts must be raised to avoid z-fighting with the frame");
+            assertEquals(4, raisedBolts, "All four top bolt plates must remain visible");
         }
 
         try (var stream = getClass().getResourceAsStream("/assets/forever_skyblock/blockstates/freezing_chamber_mark_i.json")) {

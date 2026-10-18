@@ -1,0 +1,7 @@
+{
+  "type": "forever_skyblock:garden",
+  "specimen": { "item": "minecraft:oak_sapling" },
+  "primary_result": { "id": "minecraft:oak_log", "count": 4 },
+  "secondary_result": { "id": "minecraft:oak_leaves", "count": 8 },
+  "processing_time": 320
+}

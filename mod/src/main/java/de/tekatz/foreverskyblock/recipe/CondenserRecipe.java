@@ -16,12 +16,13 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
 public record CondenserRecipe(Ingredient ingredient, int ingredientCount, Ingredient secondaryIngredient, int fragmentCount,
-                              ItemStack output, int processingTime) implements Recipe<CondenserInput> {
+                              ItemStack output, int processingTime, int minimumTier) implements Recipe<CondenserInput> {
     public static final int DEFAULT_TIME = 160;
     public CondenserRecipe {
         if (ingredientCount < 1 || ingredientCount > 64) throw new IllegalArgumentException("Invalid primary ingredient count");
         if (fragmentCount < 1 || fragmentCount > 64) throw new IllegalArgumentException("Invalid output count");
         if (processingTime < 1 || processingTime > 32767) throw new IllegalArgumentException("Invalid processing time");
+        if (minimumTier < 1 || minimumTier > 2) throw new IllegalArgumentException("Invalid condenser tier");
         output = output.copy();
         if (!output.isEmpty() && output.getCount() > Math.min(64, output.getMaxStackSize()))
             throw new IllegalArgumentException("Invalid output stack");
@@ -30,6 +31,7 @@ public record CondenserRecipe(Ingredient ingredient, int ingredientCount, Ingred
     public boolean accepts(ItemStack stack) {
         return ingredient.test(stack) || requiresModule() && secondaryIngredient.test(stack);
     }
+    public boolean availableToTier(int tier) { return tier >= minimumTier; }
     @Override public boolean matches(CondenserInput input, Level level) {
         if (input.first().isEmpty()) return false;
         if (!requiresModule()) return ingredient.test(input.first()) && input.first().getCount() >= ingredientCount;
@@ -61,16 +63,30 @@ public record CondenserRecipe(Ingredient ingredient, int ingredientCount, Ingred
                 Ingredient.CODEC.optionalFieldOf("secondary_ingredient", Ingredient.EMPTY).forGetter(CondenserRecipe::secondaryIngredient),
                 Codec.intRange(1, 64).optionalFieldOf("fragment_count", 1).forGetter(CondenserRecipe::fragmentCount),
                 ItemStack.CODEC.optionalFieldOf("result", ItemStack.EMPTY).forGetter(CondenserRecipe::output),
-                Codec.intRange(1, 32767).optionalFieldOf("processing_time", DEFAULT_TIME).forGetter(CondenserRecipe::processingTime)
+                Codec.intRange(1, 32767).optionalFieldOf("processing_time", DEFAULT_TIME).forGetter(CondenserRecipe::processingTime),
+                Codec.intRange(1, 2).optionalFieldOf("minimum_tier", 1).forGetter(CondenserRecipe::minimumTier)
         ).apply(instance, CondenserRecipe::new));
-        private static final StreamCodec<RegistryFriendlyByteBuf, CondenserRecipe> STREAM = StreamCodec.composite(
-                Ingredient.CONTENTS_STREAM_CODEC, CondenserRecipe::ingredient,
-                ByteBufCodecs.VAR_INT, CondenserRecipe::ingredientCount,
-                Ingredient.CONTENTS_STREAM_CODEC, CondenserRecipe::secondaryIngredient,
-                ByteBufCodecs.VAR_INT, CondenserRecipe::fragmentCount,
-                ItemStack.OPTIONAL_STREAM_CODEC, CondenserRecipe::output,
-                ByteBufCodecs.VAR_INT, CondenserRecipe::processingTime,
-                CondenserRecipe::new);
+        private static final StreamCodec<RegistryFriendlyByteBuf, CondenserRecipe> STREAM = new StreamCodec<>() {
+            @Override public CondenserRecipe decode(RegistryFriendlyByteBuf buf) {
+                return new CondenserRecipe(
+                        Ingredient.CONTENTS_STREAM_CODEC.decode(buf),
+                        ByteBufCodecs.VAR_INT.decode(buf),
+                        Ingredient.CONTENTS_STREAM_CODEC.decode(buf),
+                        ByteBufCodecs.VAR_INT.decode(buf),
+                        ItemStack.OPTIONAL_STREAM_CODEC.decode(buf),
+                        ByteBufCodecs.VAR_INT.decode(buf),
+                        ByteBufCodecs.VAR_INT.decode(buf));
+            }
+            @Override public void encode(RegistryFriendlyByteBuf buf, CondenserRecipe recipe) {
+                Ingredient.CONTENTS_STREAM_CODEC.encode(buf, recipe.ingredient());
+                ByteBufCodecs.VAR_INT.encode(buf, recipe.ingredientCount());
+                Ingredient.CONTENTS_STREAM_CODEC.encode(buf, recipe.secondaryIngredient());
+                ByteBufCodecs.VAR_INT.encode(buf, recipe.fragmentCount());
+                ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, recipe.output());
+                ByteBufCodecs.VAR_INT.encode(buf, recipe.processingTime());
+                ByteBufCodecs.VAR_INT.encode(buf, recipe.minimumTier());
+            }
+        };
         @Override public MapCodec<CondenserRecipe> codec() { return CODEC; }
         @Override public StreamCodec<RegistryFriendlyByteBuf, CondenserRecipe> streamCodec() { return STREAM; }
     }

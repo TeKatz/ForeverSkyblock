@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["MCM", "P P", "MCM"],
+  "key": {
+    "M": { "item": "minecraft:mud_bricks" },
+    "C": { "item": "minecraft:cobblestone" },
+    "P": { "tag": "minecraft:planks" }
+  },
+  "result": { "id": "forever_skyblock:washing_basin", "count": 1 }
+}

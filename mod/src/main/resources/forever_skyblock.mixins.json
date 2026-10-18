@@ -6,6 +6,7 @@
   "mixins": [
     "ShapedRecipeMixin",
     "ShapelessRecipeMixin",
+    "BoneMealItemMixin",
     "SlotMixin",
     "JetpackFlightMixin",
     "Ae2CraftingSlotMixin",
