@@ -82,7 +82,7 @@ Do not infer implementation from planning documents for any of the following:
 
 The fixed starting island remains `pack/config/skyblockbuilder/templates/islands/forever_me_start.nbt` with spawn `[8, 4, 5]` facing east and the verified eight-bread/one-seed 1k cell. PR #13 did not modify the starter-island NBT.
 
-Forever Skyblock does not bundle the external Wooden Shears mod used in the current early-game quest design. Pack mod-inventory/list files remain provisional evidence rather than the final launcher/export lockfile.
+The current supplied October 18 development list explicitly includes Wooden Shears **3.2.3.0** and Wooden Hopper **3.2.1.0**. These remain third-party pack dependencies; their sources and JARs are not committed here. Pack mod-inventory/list files remain provisional evidence rather than the final launcher/export lockfile.
 
 ## Validation boundary
 
