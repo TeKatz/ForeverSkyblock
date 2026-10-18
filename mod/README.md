@@ -139,3 +139,7 @@ The 0.22.1 source passed 73 unit tests, client startup/model checks and both 85-
 - Garden output badges and tooltip hit areas are centered on the actual output slot centres.
 
 One Garden still produces 15 Logs/minute while one six-second Condenser consumes 10/minute, before pauses. This requested trial reduces backlog growth but does not make that single-processor line balanced.
+
+Existing Recipe Editor installations should also apply `ForeverSkyblock-0.23.0-RecipeEditor-Update.zip` at the instance root. Its nine data files refresh the matching overrides under `config/forever_recipe_editor/generated_pack/data/`; an old local Iron-tool override would otherwise keep the old cost and fail the new challenge ingredient proof.
+
+The 0.23.0 source passed 74 unit tests, client startup/model checks and both 89-test server suites. The strict Iron Tools challenge proof was updated with the recipe costs and its existing rewards remain covered. Exact source/artifact evidence is in [MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md#0230-validation-and-artifacts).
