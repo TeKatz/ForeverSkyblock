@@ -21,6 +21,7 @@ public final class ClientEvents {
     }
     @SubscribeEvent public static void registerRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ForeverSkyblock.CONDENSER_ENTITY.get(), CondenserRenderer::new);
+        event.registerBlockEntityRenderer(ForeverSkyblock.GARDEN_CHAMBER_ENTITY.get(), GardenChamberRenderer::new);
         event.registerBlockEntityRenderer(ForeverSkyblock.ASCENSION_ENTITY.get(), AscensionRenderer::new);
     }
     @SubscribeEvent public static void registerScreens(RegisterMenuScreensEvent event) {
