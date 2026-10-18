@@ -220,7 +220,7 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         int barX = x + 66, barW = 116;
         MachineSkin.panel(g, barX, y + 122, barW, 9, 0xFF456250);
         int filled = Math.round((barW - 4) * phase);
-        g.fill(barX + 2, y + 124, barX + 2 + filled, y + 129, 0xFF62C46B);
+        g.fill(barX + 2, y + 124, barX + 2 + filled, y + 129, menu.gardenStatus() == CondenserBlockEntity.BLOCKED ? 0xFFFFBF76 : 0xFF62C46B);
         MachineSkin.centered(g, font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f / %.1f s",
                 menu.gardenProgress() / 20F, menu.gardenDuration() / 20F)), barX + barW / 2, y + 134, barW + 10, 0xFFCAE0CE, .68F);
 
@@ -232,35 +232,32 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
     }
 
     private void renderGardenTree(GuiGraphics g, int x, int y, float ratio, boolean running) {
-        float eased = MachineAnimation.growth(ratio);
-        int baseY = y + 104;
-        int height = 5 + Math.round(31F * eased);
-        int topY = baseY - height;
-        int trunkWidth = ratio < .28F ? 2 : ratio < .58F ? 3 : 4;
-        int trunkLeft = x + 124 - trunkWidth / 2;
-        g.fill(trunkLeft, topY + 7, trunkLeft + trunkWidth, baseY, 0xFF68452B);
-        if (ratio > .35F) {
-            g.fill(x + 116, topY + 13, x + 124, topY + 15, 0xFF68452B);
-            g.fill(x + 124, topY + 17, x + 133, topY + 19, 0xFF765033);
-        }
-        if (ratio < .12F) {
-            g.fill(x + 122, baseY - 7, x + 125, baseY - 4, 0xFF5D9A4B);
-            g.fill(x + 125, baseY - 9, x + 128, baseY - 6, 0xFF73B65A);
+        float growth = MachineAnimation.growth(ratio);
+        int baseY = y + 104, height = 3 + Math.round(31F * growth);
+        int topY = baseY - height, cx = x + 124;
+        int trunkWidth = 1 + Math.round(3F * growth);
+        int trunkLeft = cx - trunkWidth / 2;
+        g.fill(trunkLeft, topY, trunkLeft + trunkWidth, baseY, 0xFF68452B);
+        if (trunkWidth > 2) g.fill(trunkLeft, topY, trunkLeft + 1, baseY, 0xFF92613C);
+        if (growth < .10F) {
+            g.fill(cx - 3, topY - 1, cx, topY + 2, 0xFF5D9A4B);
+            g.fill(cx + 1, topY - 3, cx + 4, topY, 0xFF83BF64);
             return;
         }
-
-        int r = 4 + Math.round(14F * eased);
-        int cy = topY + 8;
-        int shadow = 0xFF275E36, leaf = 0xFF347744, light = 0xFF4C9250, highlight = 0xFF65A95A;
-        g.fill(x + 124 - r, cy - r / 2, x + 124 + r, cy + r / 2 + 6, shadow);
-        g.fill(x + 116 - r / 2, cy + 1, x + 125, cy + r / 2 + 10, leaf);
-        g.fill(x + 123, cy - 4, x + 132 + r / 2, cy + r / 2 + 8, leaf);
-        g.fill(x + 121 - r / 2, cy - r / 2 - 3, x + 129 + r / 2, cy + 4, light);
-        g.fill(x + 111 + r / 3, cy + 1, x + 119 + r / 2, cy + 7, light);
-        g.fill(x + 128, cy, x + 135 + r / 3, cy + 6, highlight);
+        int r = 3 + Math.round(13F * growth), cy = topY + 2;
+        int bottom = Math.min(baseY - 2, cy + r / 2 + 5);
+        if (growth > .45F) {
+            g.fill(cx - r / 2, cy + 5, cx, cy + 7, 0xFF68452B);
+            g.fill(cx, cy + 9, cx + r / 2, cy + 11, 0xFF765033);
+        }
+        g.fill(cx - r, cy - r / 2, cx + r, bottom - 2, 0xFF275E36);
+        g.fill(cx - r + 3, cy + 1, cx + r - 2, bottom, 0xFF347744);
+        g.fill(cx - r + 2, cy - r / 2 - 2, cx + r - 4, cy + 3, 0xFF4C9250);
+        g.fill(cx - r / 2, cy - r / 2 - 4, cx + r / 2 + 2, cy, 0xFF65A95A);
+        g.fill(cx + r / 3, cy + 2, cx + r - 1, Math.min(bottom - 1, cy + 6), 0xFF65A95A);
         if (running && ratio > .72F) {
             int shimmer = (int) (ratio * 60) % 3;
-            g.fill(x + 116 + shimmer * 5, cy - 5 + shimmer * 2, x + 118 + shimmer * 5, cy - 3 + shimmer * 2, 0xFFE4E89A);
+            g.fill(cx - 8 + shimmer * 5, cy - 4 + shimmer * 2, cx - 6 + shimmer * 5, cy - 2 + shimmer * 2, 0xFFE4E89A);
         }
     }
 

@@ -38,24 +38,38 @@ final class MachineGeometry {
                             float u0, float v0, float du, float dv, float red, float green, float blue,
                             float x0, float y0, float z0, float x1, float y1, float z1, int light, int overlay, boolean glow) {
         var buffer = buffers.getBuffer(RenderType.entityCutoutNoCull(texture));
-        float[][][] faces = {
-            {{x0,y0,z0},{x0,y1,z0},{x1,y1,z0},{x1,y0,z0}},
-            {{x1,y0,z1},{x1,y1,z1},{x0,y1,z1},{x0,y0,z1}},
-            {{x0,y0,z1},{x0,y1,z1},{x0,y1,z0},{x0,y0,z0}},
-            {{x1,y0,z0},{x1,y1,z0},{x1,y1,z1},{x1,y0,z1}},
-            {{x0,y1,z0},{x0,y1,z1},{x1,y1,z1},{x1,y1,z0}},
-            {{x0,y0,z1},{x0,y0,z0},{x1,y0,z0},{x1,y0,z1}}
-        };
-        float[][] normals = {{0,0,-1},{0,0,1},{-1,0,0},{1,0,0},{0,1,0},{0,-1,0}};
-        float[][] uv = {{u0,v0+dv},{u0,v0},{u0+du,v0},{u0+du,v0+dv}};
-        for (int face=0; face<6; face++) for (int i=0; i<4; i++) {
-            float[] p=faces[face][i], n=normals[face];
-            float shade = face == 4 ? 1 : face == 5 ? 0.65F : face < 2 ? 0.9F : 0.8F;
-            if (glow) shade = 1;
-            buffer.addVertex(poses.last(), p[0],p[1],p[2]).setColor(shade * red,shade * green,shade * blue,1)
-                    .setUv(uv[i][0],uv[i][1]).setOverlay(overlay).setLight(glow ? 15728880 : light)
-                    .setNormal(poses.last(),n[0],n[1],n[2]);
-        }
+        // Emit directly: the old per-box vertex/normal arrays caused avoidable allocation for every frame.
+        var pose = poses.last();
+        int packedLight = glow ? 15728880 : light;
+        float side = glow ? 1 : .9F, edge = glow ? 1 : .8F, bottom = glow ? 1 : .65F;
+        quad(pose, buffer, x0,y0,z0, x0,y1,z0, x1,y1,z0, x1,y0,z0, 0,0,-1,
+                u0,v0,du,dv, red*side,green*side,blue*side, packedLight,overlay);
+        quad(pose, buffer, x1,y0,z1, x1,y1,z1, x0,y1,z1, x0,y0,z1, 0,0,1,
+                u0,v0,du,dv, red*side,green*side,blue*side, packedLight,overlay);
+        quad(pose, buffer, x0,y0,z1, x0,y1,z1, x0,y1,z0, x0,y0,z0, -1,0,0,
+                u0,v0,du,dv, red*edge,green*edge,blue*edge, packedLight,overlay);
+        quad(pose, buffer, x1,y0,z0, x1,y1,z0, x1,y1,z1, x1,y0,z1, 1,0,0,
+                u0,v0,du,dv, red*edge,green*edge,blue*edge, packedLight,overlay);
+        quad(pose, buffer, x0,y1,z0, x0,y1,z1, x1,y1,z1, x1,y1,z0, 0,1,0,
+                u0,v0,du,dv, red,green,blue, packedLight,overlay);
+        quad(pose, buffer, x0,y0,z1, x0,y0,z0, x1,y0,z0, x1,y0,z1, 0,-1,0,
+                u0,v0,du,dv, red*bottom,green*bottom,blue*bottom, packedLight,overlay);
+    }
+    private static void quad(PoseStack.Pose pose, VertexConsumer buffer,
+                             float ax,float ay,float az, float bx,float by,float bz,
+                             float cx,float cy,float cz, float dx,float dy,float dz,
+                             float nx,float ny,float nz, float u,float v,float du,float dv,
+                             float red,float green,float blue, int light,int overlay) {
+        vertex(pose,buffer,ax,ay,az,u,v+dv,nx,ny,nz,red,green,blue,light,overlay);
+        vertex(pose,buffer,bx,by,bz,u,v,nx,ny,nz,red,green,blue,light,overlay);
+        vertex(pose,buffer,cx,cy,cz,u+du,v,nx,ny,nz,red,green,blue,light,overlay);
+        vertex(pose,buffer,dx,dy,dz,u+du,v+dv,nx,ny,nz,red,green,blue,light,overlay);
+    }
+    private static void vertex(PoseStack.Pose pose, VertexConsumer buffer, float x,float y,float z,
+                               float u,float v, float nx,float ny,float nz,
+                               float red,float green,float blue, int light,int overlay) {
+        buffer.addVertex(pose,x,y,z).setColor(red,green,blue,1).setUv(u,v)
+                .setOverlay(overlay).setLight(light).setNormal(pose,nx,ny,nz);
     }
     private MachineGeometry() { }
 }

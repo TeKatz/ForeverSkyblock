@@ -3,7 +3,6 @@ package de.tekatz.foreverskyblock.client;
 /** Pure bounded motion functions shared by the renderer and geometry regression checks. */
 public final class MachineAnimation {
     private MachineAnimation() { }
-    public static float compression(float phase) { return (float)Math.pow(Math.sin(Math.PI*Math.clamp(phase,0,1)),2)*2.2F; }
     public static float smooth(float from, float to, float phase) {
         float t = Math.clamp((phase - from) / (to - from), 0F, 1F);
         return t * t * (3F - 2F * t);

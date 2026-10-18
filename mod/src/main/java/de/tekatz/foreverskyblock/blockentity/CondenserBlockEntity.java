@@ -52,7 +52,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     private ResourceLocation gardenRecipe;
     private final ItemStack[] filters = { ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY };
     private boolean visualDirty = true;
-    private long lastVisualSync, visualReceivedAt;
+    private long lastVisualSync, visualReceivedAt = -1;
     private int lastVisualState = -1;
     private CondenserJob visualJob = CondenserJob.IDLE;
     private ItemStack visualResult = ItemStack.EMPTY;
@@ -63,6 +63,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
 
     public float visualProgress(float partialTick) {
         if (level == null) return hasGardenChamber() ? gardenProgress : progress;
+        if (visualReceivedAt < 0) visualReceivedAt = level.getGameTime();
         boolean active = visualStatus() == RUNNING;
         int base = hasGardenChamber() ? gardenProgress : progress;
         int max = hasGardenChamber() ? gardenDuration : duration;
@@ -356,7 +357,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     }
     @Override protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        visualReceivedAt = level == null ? 0 : level.getGameTime();
+        visualReceivedAt = level == null ? -1 : level.getGameTime();
         if (tag.contains("Visual")) {
             CompoundTag visual = tag.getCompound("Visual");
             duration = Math.clamp(visual.getInt("Duration"), 1, 32767);
