@@ -1,0 +1,15 @@
+{
+  "block.forever_skyblock.garden_chamber_mark_i": "Garden Chamber Mark I",
+  "jei.forever_skyblock.garden": "Garden Growth",
+  "jei.forever_skyblock.garden_specimen_retained": "Specimen retained",
+  "jei.forever_skyblock.garden_requires": "MK II + Garden Chamber",
+  "jei.forever_skyblock.garden_exclusive": "Garden mode pauses Mixing and Freezing Chambers.",
+  "gui.forever_skyblock.machine.garden_connected": "GARDEN CHAMBER ONLINE",
+  "gui.forever_skyblock.machine.growing": "GROWING",
+  "gui.forever_skyblock.machine.harvest_full": "HARVEST FULL",
+  "gui.forever_skyblock.machine.garden_ready": "READY",
+  "gui.forever_skyblock.machine.garden_insert": "Insert a supported plant specimen",
+  "gui.forever_skyblock.machine.specimen": "SPECIMEN",
+  "gui.forever_skyblock.machine.harvest": "HARVEST",
+  "gui.forever_skyblock.machine.hint_garden": "Garden mode is exclusive; other chambers are paused."
+}
