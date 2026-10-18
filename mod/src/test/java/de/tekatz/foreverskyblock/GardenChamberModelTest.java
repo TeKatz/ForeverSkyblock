@@ -54,7 +54,16 @@ final class GardenChamberModelTest {
     @Test void inventoryTreeDoesNotBecomeAFakePermanentCropInThePlacedBlock() throws Exception {
         var placed = model("garden_chamber_mark_i");
         var icon = model("garden_chamber_inventory");
-        assertEquals(placed.getAsJsonArray("elements").size() + GardenTreeShape.PARTS.size(), icon.getAsJsonArray("elements").size());
+        assertEquals(placed.getAsJsonArray("elements").size() + GardenTreeShape.PARTS.stream().filter(part -> part.faces() != 0).count(), icon.getAsJsonArray("elements").size());
         assertFalse(placed.getAsJsonObject("textures").has("leaves"));
     }
+    @Test void everyExportedGardenElementHasAtLeastOneFaceAsRequiredByMinecraft() throws Exception {
+        for (String name : new String[]{"garden_chamber_mark_i", "garden_chamber_inventory"}) {
+            for (var raw : model(name).getAsJsonArray("elements")) {
+                int faces = raw.getAsJsonObject().getAsJsonObject("faces").size();
+                assertTrue(faces >= 1 && faces <= 6, "Minecraft rejects empty-face elements even inside a valid JSON model: " + name);
+            }
+        }
+    }
+
 }
