@@ -5,20 +5,20 @@ This directory contains **integrated-state documentation**, live feature documen
 ## Start here
 
 1. [CURRENT_STATE.md](CURRENT_STATE.md) — truth for the version currently integrated into `main`.
-2. [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md) — **0.19.0 development branch**: Mud, Washing Basin, first Raw Iron and Condenser Mark II automation.
+2. [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md) — integrated 0.20.1 material-processing and Garden-automation path.
 3. [DESIGN.md](DESIGN.md) — approved project direction and Expert pacing.
-4. [FREEZING_CHAMBER.md](FREEZING_CHAMBER.md) — integrated 0.18.1 Freezing Chamber, dynamic Condenser UI and Crafting Table gate.
-5. [EARLY_GAME_QOL.md](EARLY_GAME_QOL.md) — integrated early-game Bone Meal loop, Trader unlock and world upgrades.
+4. [FREEZING_CHAMBER.md](FREEZING_CHAMBER.md) — Freezing Chamber, dynamic Condenser UI and Crafting Table gate.
+5. [EARLY_GAME_QOL.md](EARLY_GAME_QOL.md) — early-game Bone Meal loop, Trader unlock and world upgrades.
 6. [VALIDATION.md](VALIDATION.md) — detailed automated checks and user-reported in-game validation history.
 7. [CHANGELOG.md](CHANGELOG.md) — concise version-level history.
 
-The current integrated baseline remains **0.18.1**, merged through PR #13 on October 17, 2026. The 0.19.0 material-processing work is isolated on `feature/material-processing-0.19` until explicitly merged. No release is implied.
+The integrated baseline is **0.20.1**, merged through PR #15 on October 18, 2026. The fixed starter-island NBT is unchanged and no release is implied by the merge.
 
 ## Feature documentation
 
 | Document | Scope |
 | --- | --- |
-| [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md) | Development: Mud, Washing Basin, Raw Iron, craftable Mark I and Iron-gated Mark II automation |
+| [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md) | Mud, Washing Basin, first Raw Iron, craftable Mark I, Iron-gated Mark II and Garden Chamber wood automation |
 | [CHALLENGES.md](CHALLENGES.md) | Unique Challenge catalog, personal attribution and deferred objectives |
 | [CONTRACTS.md](CONTRACTS.md) | Integrated repeatable contracts, rewards and transaction rules |
 | [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md) | Integrated Design-2 layout; larger redesign work remains deferred |
@@ -27,17 +27,32 @@ The current integrated baseline remains **0.18.1**, merged through PR #13 on Oct
 | [JETPACK_RESEARCH.md](JETPACK_RESEARCH.md) | Iron Jetpacks research gates and automation behavior |
 | [ASCENSION.md](ASCENSION.md) | Forever Core, Ascension Chamber and Perk Points |
 | [CONDENSER_MIXING.md](CONDENSER_MIXING.md) | Mortar, Stone Meal, Mixing Chamber, locks and JEI transfer |
-| [FREEZING_CHAMBER.md](FREEZING_CHAMBER.md) | Freezing Chamber, 32-item Ice process, four Condenser layouts and Crafting Table gate |
+| [FREEZING_CHAMBER.md](FREEZING_CHAMBER.md) | Freezing Chamber, 32-item Ice process, dynamic Condenser layouts and Crafting Table gate |
 | [EARLY_GAME_QOL.md](EARLY_GAME_QOL.md) | Leaves -> Bone Meal, Wandering Trader gate and permanent world upgrades |
 | [TOOL_PROGRESSION.md](TOOL_PROGRESSION.md) | Permanent Vanilla tools and Reinforced Netherite progression |
 | [START_ISLAND.md](START_ISLAND.md) | Protected starting island and verified starter contents |
-| [MODS.md](MODS.md) | Runtime/build version policy and separate Forever repositories |
+| [MODS.md](MODS.md) | Runtime/build version policy and current supplied mod-list evidence |
+
+## Current early material arc
+
+The live early-game route now reaches the first metal and closes the primitive wood loop:
+
+`Ice / Water -> Farm -> Mud -> Packed Mud -> Mud Bricks -> Washing Basin -> Raw Iron -> Iron -> Condenser Mark II -> Garden Chamber`
+
+Important integrated outcomes:
+
+- Washing Basin is the deterministic first-Iron route.
+- Mark II removes the manual Mortar dependency for Stone Meal.
+- Mark II + Mixing uses Wheat Seeds + Bone Meal for renewable Oak Saplings.
+- Garden Chamber is an exclusive Mark-II mode that retains its specimen and produces Oak Logs + Leaves every 16 seconds.
+- Garden mode has priority over Mixing/Freezing but preserves their stored state for resume after detaching it.
+- the Garden Chamber is player-facing simply as **Garden Chamber**; its compatibility-preserved internal registry ID remains `garden_chamber_mark_i`.
 
 ## Historical / phase records
 
 | Document | Interpretation |
 | --- | --- |
-| [POLISH_PHASE7.md](POLISH_PHASE7.md) | Historical 0.16.0 stabilization phase, now integrated into the 0.18.1 baseline. |
+| [POLISH_PHASE7.md](POLISH_PHASE7.md) | Historical 0.16.0 stabilization phase, now integrated. |
 | [META_PROGRESSION.md](META_PROGRESSION.md) | Architecture/design record; older baseline paragraphs are historical. |
 | [PROGRESSION.md](PROGRESSION.md) | Unconfirmed resource/progression proposals. Do not treat proposals as implemented unless CURRENT_STATE says so. |
 | [TOOL_RECIPE_HANDOFF.md](TOOL_RECIPE_HANDOFF.md) | Historical implementation handoff; `TOOL_PROGRESSION.md` is the live behavior document. |

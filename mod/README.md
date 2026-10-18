@@ -1,12 +1,12 @@
-# Forever Skyblock mod — 0.19.1 material-processing cleanup
+# Forever Skyblock mod — 0.20.1 material processing and Garden automation
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-Branch: `feature/material-processing-0.19`, based on the integrated 0.18.1 `main` baseline. It is not merged and no release is implied.
+Version 0.20.1 is the integrated early material-processing baseline after PR #15. No release publication is implied by the merge.
 
 ## Early material progression
 
-The existing Condenser Mark I, Mixing Chamber and Freezing Chamber remain the primitive foundation. Version 0.19.x adds the first deterministic route from Water/Farming to Iron and then uses Iron to unlock a higher automation tier.
+The Condenser Mark I, Mixing Chamber and Freezing Chamber remain the primitive foundation. The 0.19.x-0.20.1 stack adds the deterministic route from Water/Farming to Iron, then uses Iron to unlock a higher automation tier and close the wood loop.
 
 ### Mud
 
@@ -49,26 +49,57 @@ Mark II is the first Iron-gated automation tier. Crafting uses:
 - 4 Iron Ingots;
 - 4 Mud Bricks.
 
-It shares the Mark I inventory/lock architecture and supports the same adjacent Mixing and Freezing Chambers. It retains all Mark-I recipes and additionally provides:
+It retains Mark-I recipes, locks, automation and Mixing/Freezing compatibility, and adds:
 
 - **4 Stone Fragments -> 1 Stone Meal**;
-- **8 Oak Leaves + 1 Bone Meal -> 1 Oak Sapling** with a Mixing Chamber.
+- **4 Wheat Seeds + 1 Bone Meal -> 2 Oak Saplings** with a Mixing Chamber.
 
-Other tree species are not advertised yet because the current progression does not provide a guaranteed first source for their Leaves/Saplings. They can be added when their acquisition path exists instead of leaving dead JEI recipes.
+Only Oak is advertised at this stage because the current progression guarantees Oak but does not yet provide first-acquisition paths for the other tree species.
 
 A single Bone Meal use on a normal placed Vanilla Sapling now attempts full tree growth immediately, removing the random early-game wait while keeping normal space/tree-generation constraints.
 
-## JEI and GUI
+## Garden Chamber
 
-JEI includes a Washing category, Washing Basin catalyst, water-source requirement, non-consumed-water note, duration/output information and a Recipes button in the Basin GUI. Condenser Mark II is registered for Condensing/Freezing and Mark-II-only recipes identify their tier requirement. Condenser recipe transfer refuses Mark-II-only recipes when the open machine is Mark I.
+The player-facing block is named **Garden Chamber**. Its internal registry ID remains `forever_skyblock:garden_chamber_mark_i` for compatibility with the tested development worlds created before the visible rename.
 
-0.19.1 also gives the Washing Basin more vertical breathing room, widens/cleans the JEI requirement layouts, restores detailed exterior paneling to Condenser Mark II and removes the stray Freezing Chamber top-rim stripe.
+Crafting uses:
+
+- 4 Mud Bricks;
+- 2 Iron Ingots;
+- 2 Planks;
+- 1 Oak Sapling.
+
+The block is a Mark-II-only exclusive upgrade. While directly adjacent to Condenser Mark II, Garden mode overrides normal Condensing, Mixing and Freezing, but preserves all hidden items, filters and partial progress for resume after detaching the chamber.
+
+Initial Garden recipe:
+
+- retained specimen: **1 Oak Sapling**;
+- 320 ticks / **16 seconds**;
+- **4 Oak Logs + 8 Oak Leaves**;
+- the specimen is never consumed.
+
+Garden mode exposes a one-item specimen slot and two automation-accessible harvest outputs. The Garden Chamber itself remains a passive adjacent upgrade with no standalone inventory or GUI.
+
+## JEI, GUI and presentation
+
+JEI includes dedicated Washing and Garden categories, catalysts, duration/output information and Mark-II requirements. The Garden category is intentionally compact and static; the decorative tree-growth animation is confined to the live Condenser GUI.
+
+Garden mode replaces the normal Condenser process cards with a larger green landscape and staged tree-growth presentation. The Garden Chamber block is modeled as a small greenhouse with an animated interior while the connected Condenser is actively growing. The Condenser exterior also switches to a Garden-specific green/scanner animation while that mode is active.
+
+The 0.19.1 cleanup remains included: Washing Basin spacing, Condensing/Washing JEI spacing, detailed Condenser Mark II exterior and the Freezing Chamber top-rim seam fix.
 
 ## Automation boundary
 
-0.19.x removes the permanent manual dependency on the Mortar for Stone Meal and on random Oak Sapling drops once Mark II is reached. The Washing Basin is also automation-capable.
+The early primitive chain is now automatable after the player reaches the Iron / Mark-II tier:
 
-Automatic **Log/Leaf production remains intentionally unresolved in this update and is the next automation obligation**: the pack's primitive resource chain is based on wood, so a later tree-growing/harvesting system must close that loop rather than leaving permanent manual tree farming.
+- Garden Chamber -> Oak Logs + Oak Leaves;
+- Logs -> Stone Fragments;
+- Mark II -> Stone Meal;
+- Leaves -> Bone Meal;
+- Mark II + Mixing -> Oak Saplings;
+- Stone Meal + Sapling -> Dirt.
+
+This intentionally removes permanent manual tree chopping from the mature early-game loop.
 
 ## Compatibility and fixed pack state
 
@@ -76,7 +107,9 @@ No progression-profile schema or `skills-8` protocol change is required. The fix
 
 Default development baseline: NeoForge 21.1.249. Pack-runtime integration target: NeoForge 21.1.259.
 
-See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the full 0.19.1 behavior and validation boundary.
+Final pre-merge head `aec270d7bc0caea5952af034ed8505ce0fd3d68f` passed GitHub Actions run #259.
+
+See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the full behavior and validation boundary.
 
 ## Build
 
@@ -84,4 +117,4 @@ See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the ful
 ./gradlew build
 ```
 
-Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.19.1.jar`.
+Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.20.1.jar`.
