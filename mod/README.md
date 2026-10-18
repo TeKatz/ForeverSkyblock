@@ -125,3 +125,6 @@ Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.22.1.jar`.
 
 
 The 0.22.0 source passed 73 unit tests, client startup/model checks and both 81-test GameTest suites, including the real Wooden Hopper on NeoForge 21.1.259. Exact source/artifact evidence and the client visual test boundary are recorded in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0220-validation-and-test-artifact).
+
+
+The 0.22.1 source passed 73 unit tests, client startup/model checks and both 85-test server suites. Real Vanilla hoppers separated Oak harvest; the actual pack Wooden Hoppers separated Wheat harvest. Exact artifact evidence and remaining client checks are in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0221-validation-and-test-artifact).
