@@ -12,10 +12,10 @@ final class MachineGeometry {
     private static final ResourceLocation BARK = ResourceLocation.withDefaultNamespace("textures/block/oak_log.png");
     private static final ResourceLocation LEAVES = ResourceLocation.withDefaultNamespace("textures/block/oak_leaves.png");
     static void botanicalBox(PoseStack poses, MultiBufferSource buffers, boolean leaves,
-                             float x0, float y0, float z0, float x1, float y1, float z1, int light, int overlay) {
+                             float x0, float y0, float z0, float x1, float y1, float z1, int light, int overlay, int faces) {
         box(poses, buffers, leaves ? LEAVES : BARK, 0, 0, 1, 1,
                 leaves ? .40F : 1F, leaves ? .72F : 1F, leaves ? .27F : 1F,
-                x0, y0, z0, x1, y1, z1, light, overlay, false);
+                x0, y0, z0, x1, y1, z1, light, overlay, false, faces);
     }
     private static final ResourceLocation MATERIALS = ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "textures/block/machine_materials.png");
     private static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/block/white_concrete.png");
@@ -37,22 +37,28 @@ final class MachineGeometry {
     private static void box(PoseStack poses, MultiBufferSource buffers, ResourceLocation texture,
                             float u0, float v0, float du, float dv, float red, float green, float blue,
                             float x0, float y0, float z0, float x1, float y1, float z1, int light, int overlay, boolean glow) {
+        box(poses, buffers, texture, u0, v0, du, dv, red, green, blue,
+                x0, y0, z0, x1, y1, z1, light, overlay, glow, 63);
+    }
+    private static void box(PoseStack poses, MultiBufferSource buffers, ResourceLocation texture,
+                            float u0, float v0, float du, float dv, float red, float green, float blue,
+                            float x0, float y0, float z0, float x1, float y1, float z1, int light, int overlay, boolean glow, int faces) {
         var buffer = buffers.getBuffer(RenderType.entityCutoutNoCull(texture));
         // Emit directly: the old per-box vertex/normal arrays caused avoidable allocation for every frame.
         var pose = poses.last();
         int packedLight = glow ? 15728880 : light;
         float side = glow ? 1 : .9F, edge = glow ? 1 : .8F, bottom = glow ? 1 : .65F;
-        quad(pose, buffer, x0,y0,z0, x0,y1,z0, x1,y1,z0, x1,y0,z0, 0,0,-1,
+        if ((faces & 1) != 0) quad(pose, buffer, x0,y0,z0, x0,y1,z0, x1,y1,z0, x1,y0,z0, 0,0,-1,
                 u0,v0,du,dv, red*side,green*side,blue*side, packedLight,overlay);
-        quad(pose, buffer, x1,y0,z1, x1,y1,z1, x0,y1,z1, x0,y0,z1, 0,0,1,
+        if ((faces & 2) != 0) quad(pose, buffer, x1,y0,z1, x1,y1,z1, x0,y1,z1, x0,y0,z1, 0,0,1,
                 u0,v0,du,dv, red*side,green*side,blue*side, packedLight,overlay);
-        quad(pose, buffer, x0,y0,z1, x0,y1,z1, x0,y1,z0, x0,y0,z0, -1,0,0,
+        if ((faces & 4) != 0) quad(pose, buffer, x0,y0,z1, x0,y1,z1, x0,y1,z0, x0,y0,z0, -1,0,0,
                 u0,v0,du,dv, red*edge,green*edge,blue*edge, packedLight,overlay);
-        quad(pose, buffer, x1,y0,z0, x1,y1,z0, x1,y1,z1, x1,y0,z1, 1,0,0,
+        if ((faces & 8) != 0) quad(pose, buffer, x1,y0,z0, x1,y1,z0, x1,y1,z1, x1,y0,z1, 1,0,0,
                 u0,v0,du,dv, red*edge,green*edge,blue*edge, packedLight,overlay);
-        quad(pose, buffer, x0,y1,z0, x0,y1,z1, x1,y1,z1, x1,y1,z0, 0,1,0,
+        if ((faces & 16) != 0) quad(pose, buffer, x0,y1,z0, x0,y1,z1, x1,y1,z1, x1,y1,z0, 0,1,0,
                 u0,v0,du,dv, red,green,blue, packedLight,overlay);
-        quad(pose, buffer, x0,y0,z1, x0,y0,z0, x1,y0,z0, x1,y0,z1, 0,-1,0,
+        if ((faces & 32) != 0) quad(pose, buffer, x0,y0,z1, x0,y0,z0, x1,y0,z0, x1,y0,z1, 0,-1,0,
                 u0,v0,du,dv, red*bottom,green*bottom,blue*bottom, packedLight,overlay);
     }
     private static void quad(PoseStack.Pose pose, VertexConsumer buffer,

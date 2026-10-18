@@ -18,9 +18,11 @@ Updated October 18, 2026 for the authorized integration of the material-processi
 | Verified pre-merge CI | GitHub Actions **#259**, success |
 | Release | Not published by this merge |
 
-## Development branch: machine animations (0.21.0)
+## Development branch: machine animations (0.21.1)
 
-`feature/machine-animation-overhaul` starts from `main` commit `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a` and contains the job-aware block/GUI animation update plus the Garden Chamber model overhaul. This is development work, not an integration into `main`. The baseline table above still describes integrated 0.20.1. Source commit `643f3ebd64452b461276a85134c1e12d204b8d48` passed build, 69 unit tests, client startup and both 78-test server suites in Actions run `39117087166`; the 0.21.0 test JAR is built from that commit. See [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md) for behavior and validation boundaries.
+`feature/machine-animation-overhaul` starts from `main` commit `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a` and contains the job-aware block/GUI animation update plus the Garden Chamber model overhaul. This is development work, not an integration into `main`. The baseline table above still describes integrated 0.20.1. The prior 0.21.0 source commit `643f3ebd64452b461276a85134c1e12d204b8d48` passed build, 69 unit tests, client startup and both 78-test server suites in Actions run `39117087166`; the 0.21.0 test JAR is built from that commit. See [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md) for behavior and validation boundaries.
+
+The 0.21.1 follow-up addresses TeKatz's screenshot feedback: a fuller block-tree crown, preserved Garden GUI growth without harvest-item flights, and continuous workpiece transitions for the other Condenser jobs. Its final validation is pending.
 
 ## Integrated gameplay and UI
 

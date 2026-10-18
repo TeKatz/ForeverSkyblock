@@ -6,7 +6,6 @@ import de.tekatz.foreverskyblock.menu.*;
 import de.tekatz.foreverskyblock.network.CondenserNetwork;
 import de.tekatz.foreverskyblock.recipe.CondenserInput;
 import de.tekatz.foreverskyblock.recipe.CondenserJob;
-import de.tekatz.foreverskyblock.recipe.GardenInput;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.renderer.Rect2i;
@@ -201,16 +200,6 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
                 if (harvest > 0) {
                     int scanY = ground - 3 - Math.round(harvest * 39);
                     g.fill(x + 94, scanY, x + 155, scanY + 1, 0xFFCAF1A0);
-                    if (minecraft.level != null) {
-                        var recipe = minecraft.level.getRecipeManager().getAllRecipesFor(ForeverSkyblock.GARDEN.get()).stream()
-                                .filter(h -> h.value().matches(new GardenInput(specimen), minecraft.level))
-                                .sorted(java.util.Comparator.comparing(h -> h.id().toString())).findFirst();
-                        recipe.ifPresent(h -> {
-                            int exit = Math.round(harvest * 44);
-                            CondenserProcessScene.smallItem(g, h.value().primaryResult(), x + 148 + exit, y + 93, .55F);
-                            CondenserProcessScene.smallItem(g, h.value().secondaryResult(), x + 153 + exit, y + 82, .50F);
-                        });
-                    }
                 }
             }
         } else {

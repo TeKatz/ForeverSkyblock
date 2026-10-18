@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.21.1 — animation polish after client feedback (development branch)
+
+- Keep the approved Garden GUI tree growth exactly as in 0.21.0; remove only the decorative Logs/Leaves flight into the output area.
+- Replace the flat block-tree crown with deep foliage lobes, a tapered slender trunk and branches inside the canopy. Keep its rooted growth and lamp clearance; update the inventory preview to match.
+- Give other Condenser workpieces a single continuous intake/processing/discharge path, with smooth consumption and result emergence rather than hard timed disappearance or duplicated ingredient icons.
+- Hide GUI route endpoints beneath inlet/outlet covers, and route the world result behind the physical outlet backplate. Retain paused workpiece poses.
+- Fade debris in/out across the processing phase; remove covered faces from the fuller canopy mesh.
+- Production, timings, recipes, inventories, menu protocol and Garden GUI tree drawing are unchanged. Validation follows in [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md).
+
 ## 0.21.0 — machine animation update (development branch)
 
 - Branch: `feature/machine-animation-overhaul`, based on `main` at `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a`; not merged or released.

@@ -16,7 +16,7 @@ The integrated baseline is **0.20.1**, merged through PR #15 on October 18, 2026
 
 ## Active development
 
-[Machine animations — 0.21.0](MACHINE_ANIMATIONS.md) documents `feature/machine-animation-overhaul`: Condenser Mark I/II job-specific block and GUI motion, synchronized Garden growth and the rebuilt greenhouse model. This branch is separate from the integrated 0.20.1 baseline.
+[Machine animations — 0.21.1](MACHINE_ANIMATIONS.md) documents `feature/machine-animation-overhaul`: Condenser Mark I/II job-specific block and GUI motion, synchronized Garden growth and the rebuilt greenhouse model and 0.21.1 animation polish. This branch is separate from the integrated 0.20.1 baseline.
 
 ## Feature documentation
 

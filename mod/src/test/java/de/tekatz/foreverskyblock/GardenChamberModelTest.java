@@ -1,6 +1,7 @@
 package de.tekatz.foreverskyblock;
 
 import com.google.gson.JsonObject;
+import de.tekatz.foreverskyblock.client.GardenTreeShape;
 import com.google.gson.JsonParser;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -53,7 +54,7 @@ final class GardenChamberModelTest {
     @Test void inventoryTreeDoesNotBecomeAFakePermanentCropInThePlacedBlock() throws Exception {
         var placed = model("garden_chamber_mark_i");
         var icon = model("garden_chamber_inventory");
-        assertEquals(placed.getAsJsonArray("elements").size() + 3, icon.getAsJsonArray("elements").size());
+        assertEquals(placed.getAsJsonArray("elements").size() + GardenTreeShape.PARTS.size(), icon.getAsJsonArray("elements").size());
         assertFalse(placed.getAsJsonObject("textures").has("leaves"));
     }
 }

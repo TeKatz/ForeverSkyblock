@@ -1,6 +1,16 @@
-# Machine animation update — 0.21.0
+# Machine animation update — 0.21.1
 
 Development branch: [`feature/machine-animation-overhaul`](https://github.com/TeKatz/ForeverSkyblock/tree/feature/machine-animation-overhaul), based on integrated `main` commit `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a` (0.20.1). This document does not imply a merge or release.
+
+## 0.21.1 polish from TeKatz's client feedback
+
+The supplied October 18 screenshot showed the mature block tree as a thick trunk beneath shallow, stretched foliage sheets. The block tree now uses a narrower tapered trunk and a deep crown assembled from compact foliage lobes, with branch ends inside the crown. Covered leaf faces are omitted, and the inventory preview uses the same mature shape. The tree remains inside the existing greenhouse and controller recess at every growth stage.
+
+TeKatz explicitly approved the **Garden GUI tree animation**. Its drawing routine, progress and scenery are preserved; only the decorative Logs/Leaves flight at harvest has been removed. The actual output slots and harvest operation are unchanged.
+
+Other Condenser scenes retain their press, rollers, agitation and cultivation ideas. Each ingredient now follows one route into the mechanism, shrinks smoothly during processing, and yields a result that emerges continuously. The GUI route starts/ends behind physical port covers; the world result goes behind the recessed outlet backplate. No moving ingredient copy is simply switched off at an arbitrary mid-flight threshold. Blocked processes retain their workpiece pose. Debris has a bounded envelope instead of appearing at full size or opacity on a phase boundary.
+
+0.21.1 automated validation will be recorded after its build completes. Software raster previews of the actual GUI draw routine and the exact block-tree geometry were inspected; these are not full client screenshots.
 
 ## Presentation
 
@@ -12,7 +22,7 @@ Development branch: [`feature/machine-animation-overhaul`](https://github.com/Te
 | Either tier, Leaves -> Bone Meal | Agitation pan and organic debris | Composting paddle, actual Leaves and Bone Meal preview |
 | Either tier, two-input mixing | Mixing pan with both real ingredients | Combining ingredients and mixing paddle |
 | Mark II, Seeds + Bone Meal -> Saplings | Cultivation pan with emerging result | Cultivation scene with Sapling result preview |
-| Mark II + Garden Chamber | Rooted miniature tree, grow-light scanner, harvest sweep | Greenhouse scene with synchronized rooted growth, lamp, growth motes and recipe-based harvest previews |
+| Mark II + Garden Chamber | Rooted miniature tree, grow-light scanner, harvest sweep | Approved greenhouse growth scene with lamp and growth motes; no flying harvest items |
 | Adjacent Garden Chamber | Rooted tree grows in the soil, lamp follows its rail, harvest sweep closes the cycle | Uses the controller's exclusive Garden screen; no new standalone GUI |
 
 The selected recipe, rather than mere module presence, determines the normal process scene. Existing recipes and custom two-input recipes retain their original matching, quantities and durations. Arbitrary non-Oak Garden specimens retain their item identity in the greenhouse; the currently implemented Oak recipe receives the modeled rooted tree.
@@ -30,11 +40,11 @@ The new Garden Chamber exterior has a dark inset base, steel posts, copper trim,
 - GUI growth and process motion use game progress and partial ticks, replacing wall-clock-driven cloud/shimmer movement. The independent Freezing indication follows its own running status.
 - No starter-island, pack configuration, research, production, recipe or inventory migration changes are part of this branch.
 
-## Validation
+## 0.21.0 baseline validation
 
 The branch adds unit coverage for bounded press travel, monotonic rooted growth, harvest staging, completed-phase clamping and clear greenhouse mesh geometry without coplanar overlapping faces. Dedicated GameTests cover recipe/job classification, freezing-only snapshots, output-blocked snapshots, real duration/result round-trips, transient save boundaries, Garden blocking and controller removal. The existing full regression/integration workflow remains enabled.
 
-Final source commit `643f3ebd64452b461276a85134c1e12d204b8d48` passed [GitHub Actions run 39117087166](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39117087166):
+The prior 0.21.0 source commit `643f3ebd64452b461276a85134c1e12d204b8d48` passed [GitHub Actions run 39117087166](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39117087166):
 
 - Java 21 build and **69 unit tests**;
 - headless NeoForge client mixin/startup smoke test;
