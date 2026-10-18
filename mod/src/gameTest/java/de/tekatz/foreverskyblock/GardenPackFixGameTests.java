@@ -15,6 +15,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.RecipeManager;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -68,9 +69,10 @@ public final class GardenPackFixGameTests {
                 BuiltInRegistries.ITEM.getKey(r.value().getResultItem(h.getLevel().registryAccess()).getItem()).equals(PackRecipes.HOPPER)), "All-wood recipe must no longer craft a Hopper");
         var recipes = new ArrayList<RecipeHolder<?>>(manager.getRecipes());
         recipes.add(new RecipeHolder<>(ResourceLocation.parse("woodenhopper:test_alternative"), match.value()));
-        manager.replaceRecipes(recipes);
-        h.assertTrue(manager.byKey(ResourceLocation.parse("woodenhopper:test_alternative")).isEmpty(), "Recipe reload/replacement cannot reintroduce an alternative Hopper recipe");
-        h.assertTrue(manager.byKey(PackRecipes.HOPPER_RECIPE).isPresent(), "The priced Hopper remains available after replacement");
+        var reloaded = new RecipeManager(h.getLevel().registryAccess());
+        reloaded.replaceRecipes(recipes);
+        h.assertTrue(reloaded.byKey(ResourceLocation.parse("woodenhopper:test_alternative")).isEmpty(), "Recipe reload/replacement cannot reintroduce an alternative Hopper recipe");
+        h.assertTrue(reloaded.byKey(PackRecipes.HOPPER_RECIPE).isPresent(), "The priced Hopper remains available after replacement");
         h.succeed();
     }
 }

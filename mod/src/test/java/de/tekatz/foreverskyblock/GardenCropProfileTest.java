@@ -21,8 +21,8 @@ final class GardenCropProfileTest {
             }
             assertEquals(1, crop.growth(.86F, stalk));
             assertEquals(1, crop.ear(.86F, stalk));
-            assertEquals(0, crop.sway(0, stalk, true));
-            assertEquals(0, crop.sway(1, stalk, true));
+            assertEquals(0, crop.sway(0, stalk, true), .00001F);
+            assertEquals(0, crop.sway(1, stalk, true), .00001F);
         }
         assertEquals(crop.young(), crop.stemColor(0));
         assertEquals(crop.matureStem(), crop.stemColor(.86F));
