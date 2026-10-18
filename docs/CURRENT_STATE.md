@@ -20,9 +20,9 @@ Updated October 18, 2026 for the authorized integration of the material-processi
 
 ## Development branch: machine animations (0.21.1)
 
-`feature/machine-animation-overhaul` starts from `main` commit `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a` and contains the job-aware block/GUI animation update plus the Garden Chamber model overhaul. This is development work, not an integration into `main`. The baseline table above still describes integrated 0.20.1. The prior 0.21.0 source commit `643f3ebd64452b461276a85134c1e12d204b8d48` passed build, 69 unit tests, client startup and both 78-test server suites in Actions run `39117087166`; the 0.21.0 test JAR is built from that commit. See [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md) for behavior and validation boundaries.
+`feature/machine-animation-overhaul` starts from `main` commit `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a` and contains the job-aware block/GUI animation update, rebuilt Garden Chamber and 0.21.1 polish following TeKatz's screenshot feedback. This remains development work; the baseline table above describes integrated 0.20.1.
 
-The 0.21.1 follow-up addresses TeKatz's screenshot feedback: a fuller block-tree crown, preserved Garden GUI growth without harvest-item flights, and continuous workpiece transitions for the other Condenser jobs. Its final validation is pending.
+The 0.21.1 follow-up adds a fuller block-tree crown, preserves the approved Garden GUI tree without harvest-item flights, and gives other Condenser jobs continuous workpiece transitions. Source commit `6ad7bb9e235684b56802eb80439a51276c97f857` passed build, 72 unit tests, client startup/model checks and both 78-test server suites in Actions run `39119398626`; its fresh 0.21.1 test JAR was inspected. See [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md) for behavior, artifact hash and the remaining in-client visual test boundary.
 
 ## Integrated gameplay and UI
 

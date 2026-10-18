@@ -10,7 +10,11 @@ TeKatz explicitly approved the **Garden GUI tree animation**. Its drawing routin
 
 Other Condenser scenes retain their press, rollers, agitation and cultivation ideas. Each ingredient now follows one route into the mechanism, shrinks smoothly during processing, and yields a result that emerges continuously. The GUI route starts/ends behind physical port covers; the world result goes behind the recessed outlet backplate. No moving ingredient copy is simply switched off at an arbitrary mid-flight threshold. Blocked processes retain their workpiece pose. Debris has a bounded envelope instead of appearing at full size or opacity on a phase boundary.
 
-0.21.1 automated validation will be recorded after its build completes. Software raster previews of the actual GUI draw routine and the exact block-tree geometry were inspected; these are not full client screenshots.
+Source commit `6ad7bb9e235684b56802eb80439a51276c97f857` passed [GitHub Actions run 39119398626](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39119398626): Java 21 build, **72 unit tests**, client startup/model loading, **78 required GameTests** on NeoForge 21.1.249, and **78 required GameTests** with the full integrations on NeoForge 21.1.259. The client smoke check now explicitly rejects broken Forever Skyblock model/texture resources, including invalid empty-face model elements.
+
+The fresh `ForeverSkyblock-1.21.1-NeoForge-0.21.1.jar` was CRC-checked and inspected for matching 0.21.1 metadata, Java 21 classes and the corrected nonempty-face Garden inventory model. SHA-256: `60eb1636e338d4fb988c8ff7f16c8582b0dacd788368d02af51ab4a3792f530e`. The Garden GUI tree routine was compared byte-for-byte against the approved 0.21.0 version. Machine block entities, slots, recipes and pack files are unchanged in this follow-up.
+
+Software raster previews of the actual GUI draw routine and the exact block-tree geometry were inspected; these are not full client screenshots. Final visual confirmation with TeKatz's real pack/shader setup remains a client test. This final documentation-only update does not change the source or resources used by the validated JAR.
 
 ## Presentation
 
