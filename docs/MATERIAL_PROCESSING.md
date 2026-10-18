@@ -159,6 +159,10 @@ The primitive resource chain now has a concrete automation closure:
 
 The pack no longer requires permanent manual tree chopping after the player reaches the Iron / Mark-II tier. This follows the project rule that a progression stage may begin manually, but its core repeating work should become automatable once that stage has been mastered.
 
+## Balancing feedback from the automated Iron line
+
+On October 19, 2026, TeKatz tested the 0.22.1 setup and reported relatively fast accumulation of Iron after building the complete automated chain, with Bone Meal produced by its parallel Leaf-processing branch. Use that established-factory availability when balancing future content. The first-Iron milestone and mass production after automation are different pacing stages; larger Iron quantities alone should not be assumed to keep later content difficult. See [the agreed balancing baseline](DESIGN.md#automated-iron-as-a-balancing-baseline--october-19-2026). Existing yields, durations and recipes are unchanged by this feedback.
+
 ## Compatibility and validation
 
 No player-profile schema, progression-network protocol or starter-island change is required. Existing Mark I saves retain their stable original inventory/filter indices; Garden storage is appended after the existing Condenser and Freezing slots for save compatibility.

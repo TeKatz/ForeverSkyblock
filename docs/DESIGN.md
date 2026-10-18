@@ -34,6 +34,12 @@ As of October 15, 2026. TeKatz's explicit decisions are authoritative. Unconfirm
 
 Expert difficulty will be developed through connected crafting steps, new processes and production facilities that scale over time. The prebuilt ME network remains the central workstation. Specific time targets, costs, energy requirements and unlocks have not been agreed yet.
 
+### Automated Iron as a balancing baseline — October 19, 2026
+
+After testing the Garden -> Logs -> Stone Fragments -> Stone Meal -> Washing Basin chain in 0.22.1, TeKatz reports that a completed automated line produces substantial Iron relatively quickly, alongside renewable Bone Meal. Future balancing must treat Iron as an abundant renewable bulk resource once this setup is established, while retaining the distinction between acquiring the first Iron and operating an established factory.
+
+Later progression must not rely on high Iron quantities alone as a durable gate. Assess costs against automated throughput, elapsed production time and the ability to run parallel lines, rather than manual early-game acquisition. New processes and production infrastructure should carry meaningful progression where appropriate; specific materials, energy systems, quantities and unlocks still require their own design decisions. This feedback sets a baseline for future content and does not request a nerf to the existing Iron chain.
+
 ## Open questions
 
 - Final balancing of the initial eight-second machine cycle; later condenser tiers remain optional.

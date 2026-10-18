@@ -75,6 +75,10 @@ Normal Condenser mode supports the existing live module states for Mixing and Fr
 
 Garden Chamber is different: it is a **Mark-II-only exclusive mode** and takes priority over Mixing and Freezing whenever directly adjacent. The Garden interface replaces the normal process cards with the specimen/harvest layout and green landscape. Its specimen slot is limited to one supported item and is not consumed; the two harvest outputs are independently automation-accessible.
 
+## Future balancing baseline
+
+TeKatz's October 19 test of the 0.22.1 automated Iron/Bone Meal line establishes that Iron becomes readily available in bulk after setup. Future recipes and progression should account for automated production and parallel scaling rather than rely on Iron quantity alone as a lasting gate. This is a future balancing constraint; existing recipes/rates are unchanged. See [DESIGN.md](DESIGN.md#automated-iron-as-a-balancing-baseline--october-19-2026).
+
 ## Meta-progression boundary
 
 - **20 unique challenges / 58 SP** are active.
