@@ -1,5 +1,7 @@
 # Forever Skyblock
 
+Development branch `feature/machine-animation-overhaul` adds the **0.21.0 machine animation update** over the integrated 0.20.1 baseline. See [animation behavior and validation](docs/MACHINE_ANIMATIONS.md).
+
 **Forever Skyblock** is an Expert Skyblock modpack for **Minecraft 1.21.1 / NeoForge** built around deliberate progression, meaningful resource loops and long-term automation.
 
 The pack starts with very little, but the goal is not simply to survive or rush toward a familiar endgame. Progression is designed as a connected chain in which each new resource, machine and system creates the tools needed to solve the next problem. Early manual work gradually turns into automation, automation opens access to more advanced technology, and previously important materials continue to have a reason to exist instead of becoming disposable stepping stones.

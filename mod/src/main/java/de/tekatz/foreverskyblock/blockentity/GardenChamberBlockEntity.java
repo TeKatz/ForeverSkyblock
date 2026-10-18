@@ -1,7 +1,6 @@
 package de.tekatz.foreverskyblock.blockentity;
 
 import de.tekatz.foreverskyblock.ForeverSkyblock;
-import de.tekatz.foreverskyblock.block.CondenserBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -16,17 +15,22 @@ public final class GardenChamberBlockEntity extends BlockEntity {
 
     public @Nullable CondenserBlockEntity linkedCondenser() {
         if (level == null) return null;
+        CondenserBlockEntity fallback = null;
         for (Direction direction : Direction.values()) {
+            if (!level.hasChunkAt(worldPosition.relative(direction))) continue;
             BlockEntity entity = level.getBlockEntity(worldPosition.relative(direction));
             if (entity instanceof CondenserBlockEntity condenser
                     && condenser.machineTier() >= 2
-                    && condenser.hasGardenChamber()) return condenser;
+                    && condenser.hasGardenChamber()) {
+                if (condenser.visualStatus() == CondenserBlockEntity.RUNNING) return condenser;
+                if (fallback == null) fallback = condenser;
+            }
         }
-        return null;
+        return fallback;
     }
 
     public boolean running() {
         CondenserBlockEntity condenser = linkedCondenser();
-        return condenser != null && condenser.getBlockState().getValue(CondenserBlock.ACTIVE);
+        return condenser != null && condenser.visualStatus() == CondenserBlockEntity.RUNNING;
     }
 }

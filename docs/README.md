@@ -14,6 +14,10 @@ This directory contains **integrated-state documentation**, live feature documen
 
 The integrated baseline is **0.20.1**, merged through PR #15 on October 18, 2026. The fixed starter-island NBT is unchanged and no release is implied by the merge.
 
+## Active development
+
+[Machine animations — 0.21.0](MACHINE_ANIMATIONS.md) documents `feature/machine-animation-overhaul`: Condenser Mark I/II job-specific block and GUI motion, synchronized Garden growth and the rebuilt greenhouse model. This branch is separate from the integrated 0.20.1 baseline.
+
 ## Feature documentation
 
 | Document | Scope |

@@ -18,6 +18,10 @@ Updated October 18, 2026 for the authorized integration of the material-processi
 | Verified pre-merge CI | GitHub Actions **#259**, success |
 | Release | Not published by this merge |
 
+## Development branch: machine animations (0.21.0)
+
+`feature/machine-animation-overhaul` starts from `main` commit `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a` and contains the job-aware block/GUI animation update plus the Garden Chamber model overhaul. This is development work, not an integration into `main`. The baseline table above still describes integrated 0.20.1. See [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md) for behavior and validation boundaries.
+
 ## Integrated gameplay and UI
 
 `main` contains the complete progression/meta stack through 0.18.1 plus the 0.19.x-0.20.1 early material-processing expansion:

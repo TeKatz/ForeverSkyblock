@@ -287,5 +287,11 @@
   "gui.forever_skyblock.meta.history_tracked": "Die Erfassung begann mit diesem Profil ab Version 0.11.0.",
   "gui.forever_skyblock.meta.current_world_claims": "Ansprüche der aktuellen Welt",
   "gui.forever_skyblock.meta.world_profile_values": "Welt: %s\nBeanspruchte Produkte: %s",
-  "message.forever_skyblock.tier_unlocked": "Permanente Shop-Stufe freigeschaltet: %s"
+  "message.forever_skyblock.tier_unlocked": "Permanente Shop-Stufe freigeschaltet: %s",
+  "gui.forever_skyblock.machine.job_idle": "BEREIT",
+  "gui.forever_skyblock.machine.job_crushing": "ZERKLEINERN",
+  "gui.forever_skyblock.machine.job_milling": "MAHLEN",
+  "gui.forever_skyblock.machine.job_composting": "KOMPOSTIEREN",
+  "gui.forever_skyblock.machine.job_mixing": "MISCHEN",
+  "gui.forever_skyblock.machine.job_cultivating": "ANZUCHT"
 }

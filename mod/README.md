@@ -1,8 +1,8 @@
-# Forever Skyblock mod — 0.20.1 material processing and Garden automation
+# Forever Skyblock mod — 0.21.0 machine animation update
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-Version 0.20.1 is the integrated early material-processing baseline after PR #15. No release publication is implied by the merge.
+The integrated `main` baseline remains 0.20.1 after PR #15. This development branch, `feature/machine-animation-overhaul`, builds 0.21.0 with the animation and Garden Chamber presentation changes described in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md). No merge or release is implied.
 
 ## Early material progression
 
@@ -117,4 +117,4 @@ See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the ful
 ./gradlew build
 ```
 
-Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.20.1.jar`.
+Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.21.0.jar`.

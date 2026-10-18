@@ -7,6 +7,7 @@ import de.tekatz.foreverskyblock.recipe.CondenserInput;
 import de.tekatz.foreverskyblock.recipe.CondenserRecipe;
 import de.tekatz.foreverskyblock.recipe.GardenInput;
 import de.tekatz.foreverskyblock.recipe.GardenRecipe;
+import de.tekatz.foreverskyblock.recipe.CondenserJob;
 import java.util.Comparator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -52,6 +53,9 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     private final ItemStack[] filters = { ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY };
     private boolean visualDirty = true;
     private long lastVisualSync, visualReceivedAt;
+    private int lastVisualState = -1;
+    private CondenserJob visualJob = CondenserJob.IDLE;
+    private ItemStack visualResult = ItemStack.EMPTY;
 
     public CondenserBlockEntity(BlockPos pos, BlockState state) { super(ForeverSkyblock.CONDENSER_ENTITY.get(), pos, state); }
 
@@ -59,13 +63,19 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
 
     public float visualProgress(float partialTick) {
         if (level == null) return hasGardenChamber() ? gardenProgress : progress;
-        boolean active = getBlockState().getValue(CondenserBlock.ACTIVE);
+        boolean active = visualStatus() == RUNNING;
         int base = hasGardenChamber() ? gardenProgress : progress;
         int max = hasGardenChamber() ? gardenDuration : duration;
         float elapsed = level.isClientSide && active ? Math.max(0, level.getGameTime() - visualReceivedAt) + partialTick : 0;
-        return (base + elapsed) % Math.max(1, max);
+        // Extrapolate at most one sync interval. Never fabricate another cycle on stale data.
+        return Math.clamp(base + Math.min(20F, elapsed), 0F, Math.max(1, max));
     }
     public int visualDuration() { return hasGardenChamber() ? gardenDuration : duration; }
+    public int visualStatus() { return hasGardenChamber() ? gardenStatus : status; }
+    public int visualFreezingStatus() { return hasFreezingChamber() ? freezingStatus : IDLE; }
+    public int visualFreezingProgress() { return freezingProgress; }
+    public CondenserJob visualJob() { return visualJob; }
+    public ItemStack visualResult() { return visualResult; }
     public ItemStackHandler inventory() { return inventory; }
     public ContainerData menuData() { return data; }
 
@@ -73,16 +83,34 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         if (level == null || level.isClientSide) return;
         long now = level.getGameTime();
         boolean active = getBlockState().getValue(CondenserBlock.ACTIVE);
-        if (visualDirty || active && now - lastVisualSync >= 20) {
+        int state = status | freezingStatus << 2 | gardenStatus << 4
+                | (hasGardenChamber() ? 1 : 0) << 6 | (hasMixingChamber() ? 1 : 0) << 7
+                | (hasFreezingChamber() ? 1 : 0) << 8;
+        if (visualDirty || state != lastVisualState || active && now - lastVisualSync >= 20) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2);
             visualDirty = false;
             lastVisualSync = now;
+            lastVisualState = state;
         }
     }
     @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() {
         return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
     }
-    @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) { return saveWithoutMetadata(registries); }
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = saveWithoutMetadata(registries);
+        // These fields are sent to viewers only; they do not change saved production state or menu protocol.
+        CompoundTag visual = new CompoundTag();
+        visual.putInt("Duration", duration);
+        visual.putInt("GardenDuration", gardenDuration);
+        visual.putInt("Status", status);
+        visual.putInt("GardenStatus", gardenStatus);
+        visual.putInt("FreezingStatus", freezingStatus);
+        var holder = hasGardenChamber() ? null : findRecipe(hasMixingChamber());
+        visual.putInt("Job", CondenserJob.of(holder == null ? null : holder.value()).ordinal());
+        if (holder != null) visual.put("Result", holder.value().result().save(registries));
+        tag.put("Visual", visual);
+        return tag;
+    }
 
     private final ItemStackHandler inventory = new ItemStackHandler(MACHINE_SLOTS) {
         @Override public int getSlotLimit(int slot) { return slot == GARDEN_SPECIMEN ? 1 : 64; }
@@ -329,6 +357,16 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
     @Override protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         visualReceivedAt = level == null ? 0 : level.getGameTime();
+        if (tag.contains("Visual")) {
+            CompoundTag visual = tag.getCompound("Visual");
+            duration = Math.clamp(visual.getInt("Duration"), 1, 32767);
+            gardenDuration = Math.clamp(visual.getInt("GardenDuration"), 1, 32767);
+            status = visual.getInt("Status");
+            gardenStatus = visual.getInt("GardenStatus");
+            freezingStatus = visual.getInt("FreezingStatus");
+            visualJob = CondenserJob.fromId(visual.getInt("Job"));
+            visualResult = ItemStack.parseOptional(registries, visual.getCompound("Result"));
+        }
         CompoundTag saved = tag.getCompound("Inventory").copy();
         saved.putInt("Size", MACHINE_SLOTS);
         inventory.deserializeNBT(registries, saved);

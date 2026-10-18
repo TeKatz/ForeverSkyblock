@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.0 — machine animation update (development branch)
+
+- Branch: `feature/machine-animation-overhaul`, based on `main` at `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a`; not merged or released.
+- Mark I now has staged feed/press/release/discharge motion; Mark II uses counter-rotating toothed rollers and a distinct milling cycle.
+- Actual resolved recipes select crushing, milling, composting, mixing or cultivation scenes, including live ingredients and recipe result previews in the GUI and front recess.
+- Garden mode uses rooted growth, travelling grow lights and a final harvest sweep in the controller, GUI and adjacent greenhouse.
+- Rebuilt Garden Chamber frame, clear glazing, soil bed, copper rails, roof vent and planted item preview.
+- Viewer snapshots include separate process states, actual recipe durations and output previews; freezing-only work no longer drives the main press. Persistent processing rules, slots, recipes, IDs and production timing are unchanged.
+- Validation and client test boundary: [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md).
+
 This file is the concise version history. Detailed test evidence belongs in [VALIDATION.md](VALIDATION.md); current integrated repository status belongs in [CURRENT_STATE.md](CURRENT_STATE.md).
 
 ## 0.20.1 — Garden presentation cleanup and main integration

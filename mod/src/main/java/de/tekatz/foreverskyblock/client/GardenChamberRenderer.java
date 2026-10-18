@@ -12,68 +12,52 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/** Small greenhouse vignette rendered behind the Garden Chamber glass. */
+/** A rooted specimen grows beneath a travelling lamp; nothing moves without a running Garden job. */
 public final class GardenChamberRenderer implements BlockEntityRenderer<GardenChamberBlockEntity> {
     private final ItemRenderer items;
-
-    public GardenChamberRenderer(BlockEntityRendererProvider.Context context) {
-        items = context.getItemRenderer();
-    }
-
+    public GardenChamberRenderer(BlockEntityRendererProvider.Context context) { items = context.getItemRenderer(); }
     @Override public void render(GardenChamberBlockEntity chamber, float partialTick, PoseStack p,
-                                 MultiBufferSource buffers, int light, int overlay) {
-        CondenserBlockEntity condenser = chamber.linkedCondenser();
-        if (condenser == null) return;
-
-        ItemStack specimen = condenser.inventory().getStackInSlot(CondenserBlockEntity.GARDEN_SPECIMEN);
-        boolean running = chamber.running() && !specimen.isEmpty();
-        float time = chamber.getLevel() == null ? 0F : chamber.getLevel().getGameTime() + partialTick;
-        float phase = running ? condenser.visualProgress(partialTick) / Math.max(1F, condenser.visualDuration()) : 0F;
-
-        p.pushPose();
-        p.scale(1 / 16F, 1 / 16F, 1 / 16F);
-
-        // Warm little planter boxes give the greenhouse depth even while idle.
-        MachineGeometry.box(p, buffers, 5, 2.4F, 2.9F, 3.0F, 6.6F, 3.7F, 7.2F, light, overlay);
-        MachineGeometry.box(p, buffers, 5, 9.4F, 2.9F, 8.8F, 13.6F, 3.7F, 13.0F, light, overlay);
-
+                                 MultiBufferSource b, int light, int overlay) {
+        CondenserBlockEntity m = chamber.linkedCondenser();
+        if (m == null) return;
+        ItemStack specimen = m.inventory().getStackInSlot(CondenserBlockEntity.GARDEN_SPECIMEN);
+        boolean running = m.visualStatus() == CondenserBlockEntity.RUNNING && !specimen.isEmpty();
+        float phase = MachineAnimation.phase(m.visualProgress(partialTick), m.visualDuration());
+        p.pushPose(); p.scale(1 / 16F, 1 / 16F, 1 / 16F);
         if (!specimen.isEmpty()) {
-            float pulse = running ? 1F + 0.06F * (float) Math.sin(time * 0.18F) : 1F;
-            item(p, buffers, specimen, 8F, 5.2F + (running ? 0.18F * (float) Math.sin(time * 0.22F) : 0F), 8F,
-                    0.62F * pulse, time * 0.7F, 0F, light, overlay);
+            if (specimen.is(Items.OAK_SAPLING)) {
+                p.pushPose(); p.translate(8, 3.25F, 8);
+                GardenPlantRenderer.tree(p, b, phase, light, overlay); p.popPose();
+            } else {
+                // Datapack specimens remain identifiable rather than becoming an unrelated oak.
+                p.pushPose(); p.translate(8, 5.6F, 8); p.scale(4, 4, 4);
+                items.renderStatic(specimen, ItemDisplayContext.FIXED, light, overlay, p, b, null, 0); p.popPose();
+            }
         }
-
+        float z = 3.1F + 9.4F * MachineAnimation.growth(phase);
+        MachineGeometry.box(p, b, 3, 2.1F, 13.4F, z, 13.9F, 13.95F, z + .4F, light, overlay);
+        MachineGeometry.box(p, b, running ? 7 : 4, 3.1F, 13.15F, z + .05F, 12.9F, 13.4F, z + .35F, light, overlay);
+        int status = m.visualStatus() == CondenserBlockEntity.BLOCKED ? 10 : running ? 7 : 4;
+        for (int i = 0; i < 4; i++) {
+            p.pushPose(); p.translate(8, 0, 8); p.mulPose(Axis.YP.rotationDegrees(i * 90));
+            MachineGeometry.box(p, b, status, -2.2F, 1.05F, -7.97F, 2.2F, 1.4F, -7.87F, light, overlay);
+            p.popPose();
+        }
         if (running) {
-            float orbit = time * 0.075F;
-            float bobA = 0.28F * (float) Math.sin(time * 0.21F);
-            float bobB = 0.24F * (float) Math.sin(time * 0.17F + 1.8F);
-            item(p, buffers, new ItemStack(Items.OAK_LEAVES),
-                    8F + 3.1F * (float) Math.cos(orbit), 8.4F + bobA, 8F + 2.1F * (float) Math.sin(orbit),
-                    0.24F, time * 2.2F, 12F * (float) Math.sin(time * 0.12F), light, overlay);
-            item(p, buffers, new ItemStack(Items.OAK_LEAVES),
-                    8F + 2.5F * (float) Math.cos(orbit + 2.8F), 6.9F + bobB, 8F + 2.8F * (float) Math.sin(orbit + 2.8F),
-                    0.19F, -time * 1.7F, -10F * (float) Math.sin(time * 0.15F), light, overlay);
-
-            // Moving grow-lights read as a tiny scanner sweeping through the greenhouse.
-            float sweep = 3.2F + 8.8F * phase;
-            MachineGeometry.box(p, buffers, 6, sweep, 12.3F, 2.7F, sweep + 0.45F, 12.65F, 13.3F, 15728880, overlay);
-            MachineGeometry.box(p, buffers, 6, 3.1F, 12.25F, 3.0F, 3.45F, 12.6F, 4.2F, 15728880, overlay);
-            MachineGeometry.box(p, buffers, 6, 12.55F, 12.25F, 11.8F, 12.9F, 12.6F, 13.0F, 15728880, overlay);
+            for (int i = 0; i < 4; i++) {
+                float fall = (phase * 12 + i * .25F) % 1;
+                float x = i % 2 == 0 ? 3.5F : 12.2F, dz = i < 2 ? 3.5F : 12.2F;
+                MachineGeometry.box(p, b, 7, x, 12.7F - fall * 8.6F, dz,
+                        x + .12F, 13F - fall * 8.6F, dz + .12F, light, overlay);
+            }
+            float harvest = MachineAnimation.harvest(phase);
+            if (harvest > 0) {
+                float sweep = 3.4F + harvest * 8.8F;
+                MachineGeometry.box(p, b, 7, 2.7F, sweep, 2.7F, 13.3F, sweep + .12F, 2.85F, light, overlay);
+                MachineGeometry.box(p, b, 7, 2.7F, sweep, 13.15F, 13.3F, sweep + .12F, 13.3F, light, overlay);
+            }
         }
-
         p.popPose();
     }
-
-    private void item(PoseStack p, MultiBufferSource buffers, ItemStack stack, float x, float y, float z,
-                      float size, float yaw, float roll, int light, int overlay) {
-        p.pushPose();
-        p.translate(x, y, z);
-        p.mulPose(Axis.YP.rotationDegrees(yaw));
-        p.mulPose(Axis.ZP.rotationDegrees(roll));
-        p.scale(size, size, size);
-        items.renderStatic(stack, ItemDisplayContext.FIXED, light, overlay, p, buffers, null, 0);
-        p.popPose();
-    }
-
     @Override public int getViewDistance() { return 48; }
 }
