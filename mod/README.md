@@ -1,8 +1,8 @@
-# Forever Skyblock mod — 0.22.0 Garden crops and polish
+# Forever Skyblock mod — 0.22.1 separate Garden harvest ports
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-The integrated `main` baseline remains 0.20.1 after PR #15. This development branch, `feature/garden-wheat-polish`, extends the animation branch and builds 0.22.0 with the Wheat recipe, reusable crop presentation, GUI corrections, Iron-priced Wooden Hopper and Trader-llama gate described in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md). No merge or release is implied.
+The integrated `main` baseline remains 0.20.1 after PR #15. This development branch, `feature/garden-harvest-routing`, extends the tested 0.22.0 animation/Wheat work with separated Garden harvest ports and a visible GUI routing guide. The earlier Wheat, recipe and Trader fixes are included. See [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports). No merge or release is implied.
 
 ## Early material progression
 
@@ -82,7 +82,7 @@ Wheat uses a retained **1 Wheat Seeds** specimen and produces **4 Wheat + 2 Whea
 
 With Wooden Hopper installed, its recipe now uses **2 Iron Ingots** in the top corners, **3 Planks** in the remaining positions and **1 wooden Chest**. The cheaper original is removed at recipe reload; without that optional mod the replacement is not loaded. Before the first real-player Emerald pickup, the entire Vanilla Trader caravan attempt and fresh untamed Trader llamas are blocked. Saved/tamed Trader llamas and ordinary llamas remain intact.
 
-Garden mode exposes a one-item specimen slot and two automation-accessible harvest outputs. The Garden Chamber itself remains a passive adjacent upgrade with no standalone inventory or GUI.
+Garden mode exposes a one-item specimen slot and two automation-accessible harvest outputs. A hopper below Condenser Mark II extracts only the primary harvest; a hopper below the Garden Chamber extracts only the secondary harvest. Place the blocks side by side for two accessible bottom ports. The Chamber delegates to the controller's existing secondary slot and has no standalone inventory or GUI. Both outputs remain manually accessible in the Condenser GUI, with block icons, numbered downward arrows, a persistent routing legend and localized tooltips.
 
 ## JEI, GUI and presentation
 
@@ -121,7 +121,7 @@ See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the ful
 ./gradlew build
 ```
 
-Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.22.0.jar`.
+Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.22.1.jar`.
 
 
 The 0.22.0 source passed 73 unit tests, client startup/model checks and both 81-test GameTest suites, including the real Wooden Hopper on NeoForge 21.1.259. Exact source/artifact evidence and the client visual test boundary are recorded in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0220-validation-and-test-artifact).

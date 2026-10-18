@@ -4,6 +4,8 @@ Integrated through PR #15 on October 18, 2026. This document describes the live 
 
 Development follow-up **0.22.0** on `feature/garden-wheat-polish` adds retained Wheat Seeds -> **4 Wheat + 2 Seeds / 16 seconds**, synchronized crop presentation and the Iron-priced Wooden Hopper. These changes are separate from the integrated baseline described below. See [the crop template and validation](MACHINE_ANIMATIONS.md#0220-garden-crops-and-pack-fixes).
 
+Development follow-up **0.22.1** on `feature/garden-harvest-routing` separates the harvest: a hopper under MK II takes the primary output, while one under Garden Chamber takes the secondary output. The existing controller GUI explains both routes; all inventory remains in that controller. See [routing behavior and validation](MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports). This is not yet integrated into main.
+
 ## Progression goal
 
 The material-processing arc turns the first renewable water source into the bridge from primitive survival to the first metal, then uses Iron to remove early manual bottlenecks and closes the wood loop with the Garden Chamber.

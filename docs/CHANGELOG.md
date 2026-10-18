@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.22.1 — Separate Garden harvest ports (development)
+
+Branch `feature/garden-harvest-routing`, extending the tested 0.22.0 work:
+
+- Export only the primary Garden harvest through Condenser automation and only the secondary harvest through the Chamber's bottom port.
+- Keep all items and production state in the Condenser; preserve both manual GUI output slots and existing saves.
+- Show numbered block icons/down arrows below the two harvest slots, plus a permanent routing legend and English/German tooltips.
+- Add extraction/simulation, stale-capability/removal and real Vanilla/Wooden Hopper regressions; preserve normal Condensing/Freezing automation.
+
 ## 0.22.0 — Garden Wheat and screenshot polish (development)
 
 Branch `feature/garden-wheat-polish`, extending the unmerged 0.21.1 animation work:

@@ -13,5 +13,10 @@
   "gui.forever_skyblock.machine.garden_insert": "Insert a supported plant specimen",
   "gui.forever_skyblock.machine.specimen": "SPECIMEN",
   "gui.forever_skyblock.machine.harvest": "HARVEST",
-  "gui.forever_skyblock.machine.hint_garden": "Garden mode is exclusive; other chambers are paused."
+  "gui.forever_skyblock.machine.hint_garden": "Garden mode is exclusive; other chambers are paused.",
+  "gui.forever_skyblock.machine.garden_routes_title": "SEPARATE HARVEST OUTPUTS",
+  "gui.forever_skyblock.machine.garden_routes_hint": "1: Below MK II  |  2: Below Garden Chamber",
+  "gui.forever_skyblock.machine.garden_route_primary": "Main harvest: a hopper below the Condenser Mark II extracts only the first harvest output.",
+  "gui.forever_skyblock.machine.garden_route_secondary": "Secondary harvest: a hopper below the Garden Chamber extracts only the second harvest output. Both items remain accessible in this GUI.",
+  "gui.forever_skyblock.machine.garden_route_help": "Place the Condenser and Garden Chamber side by side, with one hopper beneath each block. 1: main harvest below MK II. 2: secondary harvest below Garden Chamber. Garden mode pauses the other chambers."
 }

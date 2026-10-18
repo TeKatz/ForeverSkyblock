@@ -394,7 +394,7 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         @Override public ItemStack getStackInSlot(int slot) {
             if (slot < 0 || slot >= MACHINE_SLOTS) return ItemStack.EMPTY;
             if (hasGardenChamber()) {
-                if (slot != GARDEN_SPECIMEN && slot != GARDEN_OUTPUT_PRIMARY && slot != GARDEN_OUTPUT_SECONDARY) return ItemStack.EMPTY;
+                if (slot != GARDEN_SPECIMEN && slot != GARDEN_OUTPUT_PRIMARY) return ItemStack.EMPTY;
             } else {
                 if (slot == GARDEN_SPECIMEN || slot == GARDEN_OUTPUT_PRIMARY || slot == GARDEN_OUTPUT_SECONDARY) return ItemStack.EMPTY;
                 if (slot == SECOND_INPUT && !hasMixingChamber()) return ItemStack.EMPTY;
@@ -410,7 +410,8 @@ public final class CondenserBlockEntity extends BlockEntity implements MenuProvi
         @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
             if (!extract) return ItemStack.EMPTY;
             if (hasGardenChamber()) {
-                if (slot == GARDEN_OUTPUT_PRIMARY || slot == GARDEN_OUTPUT_SECONDARY)
+                // Secondary harvest is exposed exclusively through the adjacent Garden Chamber.
+                if (slot == GARDEN_OUTPUT_PRIMARY)
                     return inventory.extractItem(slot, amount, simulate);
                 return ItemStack.EMPTY;
             }

@@ -28,6 +28,10 @@ The 0.21.1 follow-up adds a fuller block-tree crown, preserves the approved Gard
 
 `feature/garden-wheat-polish` branches from animation head `65922b4f4305c99067d57b97517fe8d68345d3ae`; both development branches descend from the unchanged main baseline above. It adds retained Wheat Seeds -> **4 Wheat + 2 Seeds / 16 seconds**, shared crop animation profiles, raised/centered Garden labels and centered workpiece scaling. The approved Oak GUI tree is unchanged. It also prices Wooden Hopper's two top corners at one Iron Ingot each, removes cheaper alternate Hopper recipes, and gates fresh Trader llamas plus the complete Vanilla caravan attempt before Emerald unlock. Saved/tamed Trader llamas are preserved. These changes are not integrated into `main`. Source `21bab6413db6bd17268b7760ae8f35479105519c` passed Actions run `39158435158`: 73 unit tests, client startup/model checks and both 81-test server suites (including the real Wooden Hopper). The fresh 0.22.0 JAR was inspected. See [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md) for implementation, artifact hash and the remaining in-client visual test boundary.
 
+## Development follow-up: separate Garden harvest ports (0.22.1)
+
+`feature/garden-harvest-routing` starts from validated 0.22.0 branch head `9b5845861b07f12c106a5ebd4b66a2a420ca4ecb`. A hopper under MK II now extracts only the first Garden harvest; a hopper under the adjacent Garden Chamber extracts only the second. Both outputs still belong to the Condenser inventory and remain accessible in its GUI. Permanent block-symbol/arrow badges, numbered routing legend and localized tooltips explain both ports. No Chamber GUI, independent storage or overflow deletion is introduced. This branch remains separate from the integrated 0.20.1 baseline. Validation for this revision is pending; see [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports).
+
 ## Integrated gameplay and UI
 
 `main` contains the complete progression/meta stack through 0.18.1 plus the 0.19.x-0.20.1 early material-processing expansion:

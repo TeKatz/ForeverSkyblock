@@ -20,6 +20,8 @@ The integrated baseline is **0.20.1**, merged through PR #15 on October 18, 2026
 
 The follow-up [Garden crops and polish — 0.22.0](MACHINE_ANIMATIONS.md#0220-garden-crops-and-pack-fixes) lives on `feature/garden-wheat-polish`, based on the animation branch. It adds Wheat, a reusable crop presentation template, screenshot corrections, the Iron-priced Wooden Hopper and the Trader-llama spawn fix; `main` remains 0.20.1.
 
+The current follow-up [Separate Garden harvest ports — 0.22.1](MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports) lives on `feature/garden-harvest-routing`, based on tested 0.22.0. Two unfiltered hoppers separate the harvest, with a permanent routing display in the existing Condenser GUI.
+
 ## Feature documentation
 
 | Document | Scope |

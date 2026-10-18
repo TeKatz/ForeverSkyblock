@@ -127,7 +127,8 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
             MachineSkin.centered(g, font, text("garden_connected"), x + 124, y + 34, 156, 0xFF8FE59B, .72F);
             renderGarden(g, x, y);
             MachineSkin.panel(g, x + 18, y + 183, 212, 16, 0xFF466252);
-            MachineSkin.centered(g, font, text("hint_garden"), x + 124, y + 188, 204, 0xFFB4D1BC, .65F);
+            MachineSkin.centered(g, font, text("garden_routes_title"), x + 124, y + 185, 204, 0xFFD0E7D4, .60F);
+            MachineSkin.centered(g, font, text("garden_routes_hint"), x + 124, y + 192, 204, 0xFFB4D1BC, .60F);
             inventory(g);
             return;
         }
@@ -155,7 +156,7 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
     }
 
     private void renderGarden(GuiGraphics g, int x, int y) {
-        MachineSkin.panel(g, x + 14, y + 44, 220, 134, 0xFF335544);
+        MachineSkin.panel(g, x + 14, y + 44, 220, 138, 0xFF335544);
 
         int left = x + 20, right = x + 228, top = y + 50, ground = y + 112;
         // Layered sky and distant landscape; deliberately pixel-art rather than flat rectangles.
@@ -220,6 +221,32 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         skin.slot(g, x + CondenserMenu.GARDEN_SPECIMEN_X, y + CondenserMenu.GARDEN_Y, true);
         skin.slot(g, x + CondenserMenu.GARDEN_PRIMARY_X, y + CondenserMenu.GARDEN_Y, true);
         skin.slot(g, x + CondenserMenu.GARDEN_SECONDARY_X, y + CondenserMenu.GARDEN_Y, true);
+        harvestRoute(g, x + CondenserMenu.GARDEN_PRIMARY_X, y + 172, 1,
+                new ItemStack(ForeverSkyblock.CONDENSER_MARK_II.get()));
+        harvestRoute(g, x + CondenserMenu.GARDEN_SECONDARY_X, y + 172, 2,
+                new ItemStack(ForeverSkyblock.GARDEN_CHAMBER_MARK_I.get()));
+    }
+
+    private void harvestRoute(GuiGraphics g, int x, int y, int number, ItemStack block) {
+        g.fill(x - 3, y - 1, x + 21, y + 9, 0xFF294535);
+        g.pose().pushPose(); g.pose().translate(x - 2, y, 0); g.pose().scale(.5F, .5F, 1);
+        g.renderItem(block, 0, 0); g.pose().popPose();
+        MachineSkin.text(g, font, Component.literal(Integer.toString(number)), x + 7, y + 1, 5, 0xFFD0E7D4, .65F);
+        // Draw the arrow as geometry so its appearance does not depend on the language font.
+        g.fill(x + 16, y + 1, x + 17, y + 6, 0xFF8FE59B);
+        g.fill(x + 14, y + 4, x + 19, y + 5, 0xFF8FE59B);
+        g.fill(x + 15, y + 5, x + 18, y + 6, 0xFF8FE59B);
+        g.fill(x + 16, y + 6, x + 17, y + 7, 0xFF8FE59B);
+    }
+
+    @Override protected void renderMachineTooltip(GuiGraphics g, int mouseX, int mouseY) {
+        if (!menu.hasGardenChamber()) return;
+        String key = isHovering(CondenserMenu.GARDEN_PRIMARY_X - 3, 171, 24, 10, mouseX, mouseY)
+                ? "garden_route_primary"
+                : isHovering(CondenserMenu.GARDEN_SECONDARY_X - 3, 171, 24, 10, mouseX, mouseY)
+                ? "garden_route_secondary"
+                : isHovering(18, 183, 212, 16, mouseX, mouseY) ? "garden_route_help" : null;
+        if (key != null) g.renderTooltip(font, font.split(text(key), 210), mouseX, mouseY);
     }
 
     private void renderGardenTree(GuiGraphics g, int x, int y, float ratio, boolean running) {

@@ -1,6 +1,6 @@
-# Machine animations and Garden crops — 0.22.0
+# Machine animations and Garden harvest routing — 0.22.1
 
-Current development branch: [`feature/garden-wheat-polish`](https://github.com/TeKatz/ForeverSkyblock/tree/feature/garden-wheat-polish), extending the validated `feature/machine-animation-overhaul` branch. Both descend from integrated `main` commit `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a` (0.20.1). The earlier 0.21.x evidence below is historical; see the 0.22.0 section for the current follow-up. This document does not imply a merge or release.
+Current development branch: [`feature/garden-harvest-routing`](https://github.com/TeKatz/ForeverSkyblock/tree/feature/garden-harvest-routing), extending the validated 0.22.0 `feature/garden-wheat-polish` and earlier animation work. Both descend from integrated `main` commit `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a` (0.20.1). The earlier 0.21.x evidence below is historical; see the 0.22.1 section for the current follow-up. This document does not imply a merge or release.
 
 ## 0.21.1 polish from TeKatz's client feedback
 
@@ -103,3 +103,21 @@ New regressions exercise retained Wheat Seeds, exact Wheat/Seed harvest quantiti
 The fresh `ForeverSkyblock-1.21.1-NeoForge-0.22.0.jar` is **5,271,339 bytes**, from artifact `12147384584` of that exact run. The artifact SHA-256 and ZIP/JAR CRCs were verified; all packaged resource bytes match the checkout, metadata is 0.22.0, the new classes use Java 21, and GameTest classes are absent. JAR SHA-256: `7f44e11fa2f7059a525bfedb2d94f0319d10cd9764a3347ee126092df806d251`.
 
 Software raster previews used the actual GUI process/crop drawing routines and actual crop mesh generation. A shrinking-item probe verified a fixed centre at several scales. These are not in-game client screenshots; the headless launch does not certify final rendered pixels. TeKatz's real-client check should cover GUI scale, full Wheat growth, empty/blocked outputs, module detach/reattach, both other Condenser tiers and the first Emerald unlock. This final documentation-only update changes none of the validated code or resources.
+
+
+## 0.22.1 separate Garden harvest ports
+
+Branch `feature/garden-harvest-routing` starts from tested 0.22.0 head `9b5845861b07f12c106a5ebd4b66a2a420ca4ecb`. The requested two-hopper setup separates harvest without introducing early filter technology:
+
+| Hopper location | Oak harvest | Wheat harvest |
+| --- | --- | --- |
+| Below Condenser Mark II | Logs | Wheat |
+| Below Garden Chamber | Leaves | Seeds |
+
+Place the two blocks side by side and a hopper under each. Use separate destination inventories if separate storage is intended. Garden Chamber remains without an interactable GUI or independent inventory. Its stable one-slot extraction capability delegates directly to the linked controller's existing secondary output, resolving the live controller on every operation. It exposes its bottom face and unsided access, rejects all insertion and invalid extraction requests, and cannot take the specimen, primary harvest or hidden normal-machine contents. Removed/unlinked chambers expose no items; cached capability objects stop working after removal and discover newly attached controllers without holding old inventories. Neighbor lookup retains the existing deterministic visual controller-selection rule, including preference for a running controller and unloaded-chunk guards. Give each production line its own Chamber for dedicated harvest routing.
+
+Condenser Garden automation hides/refuses the secondary slot on both sided and unsided access; its GUI still uses the unchanged real inventory and permits manual withdrawal from both outputs. Normal Condensing/Mixing/Freezing access is unchanged. Inventory indices, saved fields, production durations, yields and output-capacity checks remain unchanged. There is no overflow voiding: either full output pauses production as before. Removing a module preserves stored controller items.
+
+The controller GUI shows compact numbered block-symbol/down-arrow badges immediately under the two output fields and a permanent two-line routing legend above the player inventory. Hover either badge for its specific hopper placement; hover the legend for a combined placement guide and the Garden-mode exclusivity reminder. Labels/tooltips are localized for English and German. The panel extends four logical pixels to contain the badges; inventory/slot coordinates and the approved tree/Wheat animations do not move. Tooltips use the existing shared viewport transform.
+
+Validation is pending for this revision. The source includes direct port/simulation/manual-GUI regressions, stale-controller/removal cases, a full Oak cycle through real Vanilla hoppers and a full Wheat cycle through the pack's real Wooden Hoppers. Client pixel appearance remains a real-client check.

@@ -1,6 +1,6 @@
 # Forever Skyblock
 
-Development branch `feature/garden-wheat-polish` builds **0.22.0** on the existing animation branch: Wheat Garden automation, shared crop animation templates, centered process consumption, GUI spacing, the Iron-priced Wooden Hopper and the Trader-llama gate. The integrated baseline remains 0.20.1. See [animation behavior and validation](docs/MACHINE_ANIMATIONS.md).
+Development branch `feature/garden-harvest-routing` builds **0.22.1** on the existing animation/Wheat work: separate main/secondary Garden harvest ports with visible routing in the Condenser GUI. The integrated baseline remains 0.20.1. See [behavior and validation](docs/MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports).
 
 **Forever Skyblock** is an Expert Skyblock modpack for **Minecraft 1.21.1 / NeoForge** built around deliberate progression, meaningful resource loops and long-term automation.
 
