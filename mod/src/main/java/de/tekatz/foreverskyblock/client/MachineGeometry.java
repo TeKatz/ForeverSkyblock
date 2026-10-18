@@ -19,6 +19,12 @@ final class MachineGeometry {
     }
     private static final ResourceLocation MATERIALS = ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "textures/block/machine_materials.png");
     private static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/block/white_concrete.png");
+    static void plantBox(PoseStack p, MultiBufferSource b, int color,
+                         float x0, float y0, float z0, float x1, float y1, float z1, int light, int overlay) {
+        box(p, b, WHITE, 0, 0, 1, 1, ((color >> 16) & 255) / 255F,
+                ((color >> 8) & 255) / 255F, (color & 255) / 255F,
+                x0, y0, z0, x1, y1, z1, light, overlay, false);
+    }
     private static final ResourceLocation LIGHTS = ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "textures/block/machine_lights.png");
     static void box(PoseStack poses, MultiBufferSource buffers, int material, float x0, float y0, float z0,
                     float x1, float y1, float z1, int light, int overlay) {

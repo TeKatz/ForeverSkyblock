@@ -43,22 +43,22 @@ final class CondenserProcessScene {
         // Each ingredient has one continuous path. Intake and outlet covers hide the route endpoints.
         clipScene(g, x + 3, y + 2, x + width - 3, y + 21);
         if (job == CondenserJob.IDLE) {
-            smallItem(g, input, cx - 4, y + 10, .44F);
+            smallItem(g, input, cx, y + 14, .44F);
         } else {
             float feed = MachineAnimation.intake(phase);
             float size = .46F * MachineAnimation.ingredient(phase);
             float orbit = combining ? (float) Math.sin(motion * Math.PI * 6) * 1.4F * MachineAnimation.smooth(.18F, .32F, phase) : 0;
-            float target = cx - (combining ? 9 : 4) + orbit;
-            smallItem(g, input, x - 9 + (target - x + 9) * feed, y + 9, size);
+            float target = cx - (combining ? 5 : 0) + orbit;
+            smallItem(g, input, x - 9 + (target - x + 9) * feed, y + 13, size);
             if (job == CondenserJob.MIXING || job == CondenserJob.CULTIVATING) {
                 float secondFeed = MachineAnimation.intake(phase - .035F);
-                smallItem(g, second, x - 9 + (cx + 4 - orbit - x + 9) * secondFeed, y + 8,
+                smallItem(g, second, x - 9 + (cx + 4 - orbit - x + 9) * secondFeed, y + 12,
                         .44F * MachineAnimation.ingredient(phase - .035F));
             }
             float product = job == CondenserJob.CULTIVATING ? MachineAnimation.smooth(.44F, .82F, phase) : MachineAnimation.product(phase);
             float exit = MachineAnimation.discharge(phase);
-            float resultX = cx - 4 + (width + 8 - width / 2F) * exit;
-            float resultY = y + (job == CondenserJob.CULTIVATING ? 3 + 6 * exit : 10);
+            float resultX = cx + (width + 8 - width / 2F) * exit;
+            float resultY = y + (job == CondenserJob.CULTIVATING ? 7 + 6 * exit : 14);
             smallItem(g, result, resultX, resultY, .46F * product);
         }
         if (running) for (int i = 0; i < 3; i++) {
@@ -99,9 +99,10 @@ final class CondenserProcessScene {
         }
         g.fill(x - 1, y - 1, x + 2, y + 2, 0xFF22343E);
     }
+    /** Coordinates identify the fixed item centre, including while its scale approaches zero. */
     static void smallItem(GuiGraphics g, ItemStack stack, float x, float y, float scale) {
         if (stack.isEmpty() || scale <= .001F) return;
         g.pose().pushPose(); g.pose().translate(x, y, 0); g.pose().scale(scale, scale, 1);
-        g.renderItem(stack, 0, 0); g.pose().popPose();
+        g.renderItem(stack, -8, -8); g.pose().popPose();
     }
 }

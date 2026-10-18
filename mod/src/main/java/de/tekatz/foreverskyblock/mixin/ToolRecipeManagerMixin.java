@@ -1,7 +1,7 @@
 package de.tekatz.foreverskyblock.mixin;
 
 import com.google.gson.JsonElement;
-import de.tekatz.foreverskyblock.tools.ToolRecipes;
+import de.tekatz.foreverskyblock.recipe.PackRecipes;
 import java.util.Map;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.ResourceLocation;
@@ -27,6 +27,6 @@ public abstract class ToolRecipeManagerMixin {
     }
     @ModifyVariable(method = "replaceRecipes", at = @At("HEAD"), argsOnly = true)
     private Iterable<RecipeHolder<?>> foreverSkyblock$authoritativeTools(Iterable<RecipeHolder<?>> recipes) {
-        return ToolRecipes.filter(recipes, registries);
+        return PackRecipes.filter(recipes, registries);
     }
 }

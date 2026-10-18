@@ -1,8 +1,8 @@
-# Forever Skyblock mod — 0.21.1 machine animation update
+# Forever Skyblock mod — 0.22.0 Garden crops and polish
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-The integrated `main` baseline remains 0.20.1 after PR #15. This development branch, `feature/machine-animation-overhaul`, builds 0.21.1 with the animation and Garden Chamber presentation changes described in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md). No merge or release is implied.
+The integrated `main` baseline remains 0.20.1 after PR #15. This development branch, `feature/garden-wheat-polish`, extends the animation branch and builds 0.22.0 with the Wheat recipe, reusable crop presentation, GUI corrections, Iron-priced Wooden Hopper and Trader-llama gate described in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md). No merge or release is implied.
 
 ## Early material progression
 
@@ -71,12 +71,16 @@ Crafting uses:
 
 The block is a Mark-II-only exclusive upgrade. While directly adjacent to Condenser Mark II, Garden mode overrides normal Condensing, Mixing and Freezing, but preserves all hidden items, filters and partial progress for resume after detaching the chamber.
 
-Initial Garden recipe:
+Garden recipes:
 
 - retained specimen: **1 Oak Sapling**;
 - 320 ticks / **16 seconds**;
 - **4 Oak Logs + 8 Oak Leaves**;
 - the specimen is never consumed.
+
+Wheat uses a retained **1 Wheat Seeds** specimen and produces **4 Wheat + 2 Wheat Seeds** every **320 ticks / 16 seconds**. Wheat receives synchronized green-to-gold crop animations in the GUI, controller and greenhouse. Both harvest outputs must have room. The existing Oak GUI tree is preserved.
+
+With Wooden Hopper installed, its recipe now uses **2 Iron Ingots** in the top corners, **3 Planks** in the remaining positions and **1 wooden Chest**. The cheaper original is removed at recipe reload; without that optional mod the replacement is not loaded. Before the first real-player Emerald pickup, the entire Vanilla Trader caravan attempt and fresh untamed Trader llamas are blocked. Saved/tamed Trader llamas and ordinary llamas remain intact.
 
 Garden mode exposes a one-item specimen slot and two automation-accessible harvest outputs. The Garden Chamber itself remains a passive adjacent upgrade with no standalone inventory or GUI.
 

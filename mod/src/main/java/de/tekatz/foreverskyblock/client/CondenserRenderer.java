@@ -99,7 +99,7 @@ public final class CondenserRenderer implements BlockEntityRenderer<CondenserBlo
         ItemStack specimen = m.inventory().getStackInSlot(CondenserBlockEntity.GARDEN_SPECIMEN);
         if (!specimen.isEmpty()) {
             p.pushPose(); p.translate(8, 5.9F, 2.5F); p.scale(.52F, .52F, .24F);
-            GardenPlantRenderer.tree(p, b, phase, light, overlay); p.popPose();
+            GardenPlantRenderer.plant(p, b, specimen, phase, running, light, overlay); p.popPose();
         }
         if (running) {
             float scan = 5F + 5.6F * MachineAnimation.growth(phase);

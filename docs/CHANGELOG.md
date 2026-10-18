@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.22.0 — Garden Wheat and screenshot polish (development)
+
+Branch `feature/garden-wheat-polish`, extending the unmerged 0.21.1 animation work:
+
+- Raise Specimen/Harvest labels and center Harvest over both output slots.
+- Scale process ingredients toward the centre of the press/rollers.
+- Add a retained Wheat Seed Garden recipe: 4 Wheat + 2 Seeds every 16 seconds, with shared GUI/controller/greenhouse crop profiles.
+- Preserve the approved Oak GUI tree and its removed harvest-item flights.
+- Replace Wooden Hopper's top-corner Planks with two Iron Ingots; suppress the cheaper original/alternate recipes, including on reload.
+- Gate the entire Vanilla Trader caravan and fresh untamed Trader llamas until Emerald pickup; preserve saved/tamed Trader llamas and ordinary llamas.
+- Add crop geometry/staging, real Wheat harvest/blocking, optional Hopper crafting/reload and llama-gate regressions.
+
 ## 0.21.1 — animation polish after client feedback (development branch)
 
 - Keep the approved Garden GUI tree growth exactly as in 0.21.0; remove only the decorative Logs/Leaves flight into the output area.

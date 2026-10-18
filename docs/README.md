@@ -18,6 +18,8 @@ The integrated baseline is **0.20.1**, merged through PR #15 on October 18, 2026
 
 [Machine animations — 0.21.1](MACHINE_ANIMATIONS.md) documents `feature/machine-animation-overhaul`: Condenser Mark I/II job-specific block and GUI motion, synchronized Garden growth and the rebuilt greenhouse model and 0.21.1 animation polish. This branch is separate from the integrated 0.20.1 baseline.
 
+The follow-up [Garden crops and polish — 0.22.0](MACHINE_ANIMATIONS.md#0220-garden-crops-and-pack-fixes) lives on `feature/garden-wheat-polish`, based on the animation branch. It adds Wheat, a reusable crop presentation template, screenshot corrections, the Iron-priced Wooden Hopper and the Trader-llama spawn fix; `main` remains 0.20.1.
+
 ## Feature documentation
 
 | Document | Scope |

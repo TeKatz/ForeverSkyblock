@@ -60,3 +60,33 @@ The resulting `ForeverSkyblock-1.21.1-NeoForge-0.21.0.jar` was downloaded from t
 A direct comparison against the base verified that the production methods, Condenser menu/slots/handlers and fixed starter-island bytes are unchanged. Both Garden meshes were checked for coplanar overlaps; compact GUI process/growth routines were inspected using a software raster adapter with placeholder item swatches. These checks and the headless launch do not prove final in-world rendered pixels. Final appearance, motion smoothness and resource-pack/shader combinations still require testing the delivered JAR in the real client.
 
 Suggested client checks: Mark I/II Logs and Leaves; Mark-II Stone Meal; Dirt/Mud mixing; Sapling cultivation; Garden growth through a full 16-second cycle; either full harvest slot; empty specimen; module removal/reattachment; freezing-only work; all four Condenser orientations; close/reopen GUI; chunk reload; small and large GUI scale.
+
+
+## 0.22.0 Garden crops and pack fixes
+
+This bounded follow-up uses `feature/garden-wheat-polish`, based on animation commit `65922b4f4305c99067d57b97517fe8d68345d3ae`. It does not merge either development branch into main.
+
+Garden labels move up four logical pixels; Harvest is centered at the midpoint of the two real harvest slots. Small process items now render about their centre (`-8,-8` in their scaled item pose), with input targets at the press/roller centre. Intake and outlet covers still hide route endpoints. The approved `renderGardenTree` routine is unchanged.
+
+The new data recipe `garden/wheat.json` retains **one Wheat Seeds** and produces **4 Wheat + 2 Wheat Seeds every 320 ticks**. It uses the existing Garden recipe type, one-item specimen slot, exclusive Mark-II mode, automation, two-output capacity checks, pause/resume and JEI category. No persistent fields, menu slots or production algorithms change.
+
+### Small crop template
+
+`GardenCropProfile` is a presentation-only template, separate from production recipes. Its immutable stalk layout, height, delayed growth, ear emergence, ripening palette and bounded sway are shared by `GardenCropScene` and `GardenPlantRenderer`. Wheat has eight rooted stalks, paired leaves and tapered heads; it matures before the existing harvest sweep. The greenhouse uses full-size geometry; the Mark-II controller uses the same geometry at its existing miniature scale. No new ticker or packets are needed. Paused jobs stop their motion. No decorative harvest items fly into outputs.
+
+For a future crop:
+
+1. Add a normal Garden recipe with retained specimen, two outputs and processing time.
+2. Define a `GardenCropProfile` with the crop's stalk layout, height and palette; preserve the 13.15-unit greenhouse lamp clearance including the root height and grain heads.
+3. Associate its specimen with the profile in the presentation resolver and reuse the GUI/block crop renderers. Crops with different structures may supply a distinct renderer while keeping recipe/production state independent.
+4. Check first sprout, leaf growth, maturation, harvest, blocked outputs and reload. Add a real production regression for the new recipe. Do not copy processing logic into rendering code.
+
+The crop profile is the initial small template, not a new configurable gameplay system. Further plants and their balances are not added implicitly.
+
+### Requested pack fixes
+
+The conditional `forever_skyblock:wooden_hopper` recipe copies Wooden Hopper 1.21.1's three-row layout and wooden-Chest tag, replacing only the top corners with Iron. `PackRecipes` retains the existing authoritative tool filtering and removes competing Hopper-output recipes whenever the replacement exists, both on initial load and `replaceRecipes`/reload. It leaves other recipes intact and does not require Wooden Hopper in standalone installs. The optional CI runtime now loads the pack's exact Wooden Hopper **3.2.1.0**, CurseForge project 440985 / file 6753722.
+
+A `WanderingTraderSpawner.spawn` head injection blocks the complete Vanilla caravan attempt before it creates either Trader llama. The existing entity-join guard additionally rejects fresh untamed Trader llamas (including those introduced by other spawn paths). It preserves llamas loaded from disk, tamed Trader llamas and all ordinary llamas. Real-player Emerald pickup still uses the same persistent world unlock and notification. No new per-tick polling is added.
+
+Validation is pending for this new source revision. Software raster previews of actual GUI drawing code were inspected, but are not in-game client screenshots. Final visual confirmation remains a real-client test.

@@ -25,9 +25,9 @@ public final class GardenChamberRenderer implements BlockEntityRenderer<GardenCh
         float phase = MachineAnimation.phase(m.visualProgress(partialTick), m.visualDuration());
         p.pushPose(); p.scale(1 / 16F, 1 / 16F, 1 / 16F);
         if (!specimen.isEmpty()) {
-            if (specimen.is(Items.OAK_SAPLING)) {
+            if (specimen.is(Items.OAK_SAPLING) || GardenPlantRenderer.cropProfile(specimen) != null) {
                 p.pushPose(); p.translate(8, 3.25F, 8);
-                GardenPlantRenderer.tree(p, b, phase, light, overlay); p.popPose();
+                GardenPlantRenderer.plant(p, b, specimen, phase, running, light, overlay); p.popPose();
             } else {
                 // Datapack specimens remain identifiable rather than becoming an unrelated oak.
                 p.pushPose(); p.translate(8, 5.6F, 8); p.scale(4, 4, 4);

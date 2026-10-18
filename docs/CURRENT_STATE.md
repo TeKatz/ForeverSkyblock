@@ -24,6 +24,10 @@ Updated October 18, 2026 for the authorized integration of the material-processi
 
 The 0.21.1 follow-up adds a fuller block-tree crown, preserves the approved Garden GUI tree without harvest-item flights, and gives other Condenser jobs continuous workpiece transitions. Source commit `6ad7bb9e235684b56802eb80439a51276c97f857` passed build, 72 unit tests, client startup/model checks and both 78-test server suites in Actions run `39119398626`; its fresh 0.21.1 test JAR was inspected. See [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md) for behavior, artifact hash and the remaining in-client visual test boundary.
 
+## Development follow-up: Garden crops and polish (0.22.0)
+
+`feature/garden-wheat-polish` branches from animation head `65922b4f4305c99067d57b97517fe8d68345d3ae`; both development branches descend from the unchanged main baseline above. It adds retained Wheat Seeds -> **4 Wheat + 2 Seeds / 16 seconds**, shared crop animation profiles, raised/centered Garden labels and centered workpiece scaling. The approved Oak GUI tree is unchanged. It also prices Wooden Hopper's two top corners at one Iron Ingot each, removes cheaper alternate Hopper recipes, and gates fresh Trader llamas plus the complete Vanilla caravan attempt before Emerald unlock. Saved/tamed Trader llamas are preserved. These changes are not integrated into `main`. See [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md) for implementation and validation.
+
 ## Integrated gameplay and UI
 
 `main` contains the complete progression/meta stack through 0.18.1 plus the 0.19.x-0.20.1 early material-processing expansion:

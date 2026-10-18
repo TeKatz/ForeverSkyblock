@@ -189,7 +189,9 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
 
         ItemStack specimen = menu.getSlot(CondenserBlockEntity.GARDEN_SPECIMEN).getItem();
         if (!specimen.isEmpty()) {
-            renderGardenTree(g, x, y, phase, running);
+            var crop = GardenPlantRenderer.cropProfile(specimen);
+            if (crop != null) GardenCropScene.draw(g, x + 124, y + 104, phase, running, crop);
+            else renderGardenTree(g, x, y, phase, running);
             if (running) {
                 for (int i = 0; i < 4; i++) {
                     int dropY = top + 10 + Math.round(((phase * 12 + i * .25F) % 1) * 36);
@@ -213,8 +215,8 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         MachineSkin.centered(g, font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f / %.1f s",
                 menu.gardenProgress() / 20F, menu.gardenDuration() / 20F)), barX + barW / 2, y + 134, barW + 10, 0xFFCAE0CE, .68F);
 
-        MachineSkin.centered(g, font, text("specimen"), x + CondenserMenu.GARDEN_SPECIMEN_X + 8, y + 143, 62, 0xFFBFD6C4, .69F);
-        MachineSkin.centered(g, font, text("harvest"), x + 190, y + 143, 75, 0xFFBFD6C4, .69F);
+        MachineSkin.centered(g, font, text("specimen"), x + CondenserMenu.GARDEN_SPECIMEN_X + 8, y + 139, 62, 0xFFBFD6C4, .69F);
+        MachineSkin.centered(g, font, text("harvest"), x + (CondenserMenu.GARDEN_PRIMARY_X + CondenserMenu.GARDEN_SECONDARY_X) / 2 + 8, y + 139, 75, 0xFFBFD6C4, .69F);
         skin.slot(g, x + CondenserMenu.GARDEN_SPECIMEN_X, y + CondenserMenu.GARDEN_Y, true);
         skin.slot(g, x + CondenserMenu.GARDEN_PRIMARY_X, y + CondenserMenu.GARDEN_Y, true);
         skin.slot(g, x + CondenserMenu.GARDEN_SECONDARY_X, y + CondenserMenu.GARDEN_Y, true);
