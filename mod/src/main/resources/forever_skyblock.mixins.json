@@ -29,6 +29,7 @@
     "PremiumSkillScreenOverviewMixin",
     "PremiumSkillScreenButtonStyleMixin",
     "KMenuEditorShopNodeMixin",
+    "KMenuEditorDeletedGraphMixin",
     "KMenuEditorUxMixin"
   ],
   "injectors": {
