@@ -9,7 +9,12 @@ import static de.tekatz.foreverskyblock.editor.EditorDocument.*;
 
 /** The initial authoring document mirrors existing rules without changing their triggers or rewards. */
 public final class EditorDefaults {
-    public static final List<String> ELEMENTS=List.of("header.brand","header.sp","header.pp","header.tier","header.stats",
+    public static final List<String> ELEMENTS=List.of(
+            "header.brand","header.sp","header.sp.icon","header.sp.label","header.sp.value",
+            "header.pp","header.pp.icon","header.pp.label","header.pp.value",
+            "header.tier","header.tier.icon","header.tier.label","header.tier.value",
+            "header.stats","header.stats.playtime.icon","header.stats.playtime.label","header.stats.playtime.value",
+            "header.stats.island.icon","header.stats.island.label","header.stats.island.value",
             "nav.overview","nav.challenges","nav.shop","nav.research","nav.perks","nav.profile","search","categories",
             "body.challenges","body.shop","body.research","body.perks","body.profile","body.overview",
             "card","card.title","card.description","card.icon","card.reward","detail","detail.title","detail.icon","detail.prose","profile.identity","profile.stats");
