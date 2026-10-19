@@ -23,7 +23,9 @@
     "ProgressionServiceWorldMixin"
   ],
   "client": [
-    "PremiumSkillScreenHeaderArtMixin"
+    "PremiumSkillScreenHeaderArtMixin",
+    "PremiumSkillScreenPanelMotionMixin",
+    "KMenuEditorUxMixin"
   ],
   "injectors": {
     "defaultRequire": 1
