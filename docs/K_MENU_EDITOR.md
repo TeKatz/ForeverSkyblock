@@ -42,6 +42,8 @@ New quest IDs use `forever_skyblock:quest/…`. A quest supports up to 16 indivi
 
 Automated output is not automatically credited as personal crafting/smelting. PICKUP counts pickup actions and can intentionally be repeated by dropping/picking up items; use another objective if unique acquisition is required. BREAK/PLACE similarly measure those actions, not unique blocks. New observation mechanisms, machine-operation objectives, custom abilities and arbitrary scripts require code.
 
+Dimension and advancement targets are entered directly as resource IDs; the registry picker covers item, block and entity objectives. A blank chapter icon preserves the original automatic category icon; supplying an item ID overrides it.
+
 Objectives and prerequisite quests independently support **ALL / ANY**. Required Tier and SP/PP reward values are server-owned. Add chapters and order them; connect quests in the graph to express unlocks. A cycle, missing dependency, duplicate ID or unknown custom registry target prevents publication.
 
 Quest evidence is reduced in original event order and saved once per affected player per server tick. Pending evidence is flushed on logout, server stopping and before activating another document. Per-player event queues, objective counters, identity guards, document size and graph sizes are bounded.
@@ -85,4 +87,18 @@ The Gradle build includes an exported pack configuration as a bundled default. A
 
 Focused tests cover document bounds/references/cycles, original default parity, multi-objective reducers, prerequisites, replay guards, reward/accounting persistence, respec retention, immutable published identities/packages, target/reward edits, history, merge conflicts, rollback, atomic backups and ZIP integrity/path rejection. Dedicated GameTests cover real packet codecs/size bounds and default gameplay parity. Opt-in native client fixtures extend the existing K-menu rendering/input checks with editor pages, alternate viewport/detail/language previews and mouse-drag undo/redo. Test fixtures remain outside the production JAR.
 
-Final CI source/artifact hashes and any remaining acceptance limits are recorded here after validation. A fixture run is not a substitute for TeKatz testing the editor in the full player instance, including its actual skin/resources, multiplayer publication conflicts and server restart with exported configuration.
+### Validated development build — October 19, 2026
+
+Source `910f902ff853b0051e5ecfb96a60bb773f901db1` passed [Actions run 39200171912](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39200171912):
+
+- Java 21 build, all **96 unit tests**, client startup/model/mixin smoke checks.
+- **95 required GameTests on each runtime**, NeoForge 21.1.249 and pack runtime 21.1.259.
+- **32 native-client fixture stages**, EN/DE and multiple viewport sizes, completed successfully.
+- **7 input checks**: card/circular hit areas, category scrolling, scrollbar dragging, editor header dragging with undo/redo, and quest linking at a non-default zoom.
+- Earlier native captures were visually inspected during implementation; this caught and corrected blurred editor screens and pose/scissor clipping in scaled previews.
+
+The [production artifact](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39200171912/artifacts/12164010725), named **ForeverSkyblock-Mod**, contains the 0.25.0 build. The GitHub artifact ZIP is **5,389,672 bytes** with archive SHA-256 `982247a243118ca333197ec631f374ec4e8041ae24619b8bbf60caf2e9fae184`. The expected production filename is `ForeverSkyblock-1.21.1-NeoForge-0.25.0.jar`. [Native fixture evidence](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39200171912/artifacts/12164125034) is uploaded separately.
+
+The local execution environment disconnected during handoff. The final uploaded ZIP/JAR contents and final screenshots were therefore not independently re-opened after this run; no inner-JAR hash or final archive resource audit is claimed. The successful CI build and test logs above were checked through GitHub.
+
+Remaining acceptance: TeKatz's full player instance, including actual skin/resources, multiplayer publication conflicts, server restart with exported configuration, and the final downloaded JAR's contents. Matching 0.25.0 client/server builds are required. This remains an unmerged development branch and draft PR, with no release published.

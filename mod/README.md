@@ -4,7 +4,7 @@ Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz.
 
 `feature/kmenu-admin-editor` builds 0.25.0 on the integrated 0.24.1 header-art baseline. It adds a native admin layout/quest/node editor, server-owned publication and portable/repository export. Matching client/server builds are required for the added `kmenu-editor-1` channel. See [K_MENU_EDITOR.md](../docs/K_MENU_EDITOR.md). Main integration and publication are separate steps. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-The integrated `main` baseline is **0.24.0** through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16), including all 0.21–0.23 animation, crop, harvest-routing and balancing updates. The K-menu has round Shop nodes, improved Challenge/Contract browsing and details, a compact profile with actual skin face, custom status icons and subtle motion. Server-supplied playtime/deaths/kills and shared world-milestone Island Level use protocol **skills-9**; matching client/server versions are required. Player profile schema remains 4/5/6; the backed-up world-progress file migrates to schema 2. See [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md). No release is published by this integration.
+The integrated `main` baseline is **0.24.1** through [PR #17](https://github.com/TeKatz/ForeverSkyblock/pull/17), on top of [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16), including all 0.21–0.23 animation, crop, harvest-routing and balancing updates. The K-menu has round Shop nodes, improved Challenge/Contract browsing and details, a compact profile with actual skin face, custom status icons and subtle motion. Server-supplied playtime/deaths/kills and shared world-milestone Island Level use protocol **skills-9**; matching client/server versions are required. Player profile schema remains 4/5/6; the backed-up world-progress file migrates to schema 2. See [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md). No release is published by this integration.
 
 The final 0.24.0 source passed 78 unit tests, native-client render/input checks and both 90-test server suites, including NeoForge 21.1.259. The fresh JAR was checked against all 158 source resources and excludes the visual fixture/GameTests. Exact source, run and artifact hash are recorded in [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md#validation-and-acceptance).
 
@@ -115,7 +115,7 @@ The machine changes required no profile/protocol change. The subsequent 0.24.0 K
 
 Default development baseline: NeoForge 21.1.249. Pack-runtime integration target: NeoForge 21.1.259.
 
-Historical 0.20.1 pre-merge head `aec270d7bc0caea5952af034ed8505ce0fd3d68f` passed GitHub Actions run #259. Current 0.24.0 validation is recorded above and in [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md#validation-and-acceptance).
+Historical 0.20.1 pre-merge head `aec270d7bc0caea5952af034ed8505ce0fd3d68f` passed GitHub Actions run #259. Historical 0.24.0 validation is recorded above and in [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md#validation-and-acceptance).
 
 See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the full behavior and validation boundary.
 

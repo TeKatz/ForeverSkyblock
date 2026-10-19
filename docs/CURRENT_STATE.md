@@ -16,10 +16,12 @@ Updated October 19, 2026 for the authorized integration of the 0.21–0.24 anima
 | Player profile schema | **dynamic 4 / 5 / 6** |
 | World-progress schema | **2**, migrated from 1 with backup |
 | Progression protocol | **skills-9**, matching client/server required |
-| Integration PR | **#16** |
-| Validated source | `227c81611f8c8cda719c59106c80d6350a2034a1` |
-| Pre-merge validation | [Actions 39178417187](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39178417187), success |
+| Integration PR | **#17**, following #16 |
+| Historical 0.24.0 validated source | `227c81611f8c8cda719c59106c80d6350a2034a1` |
+| Historical 0.24.0 pre-merge validation | [Actions 39178417187](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39178417187), success |
 | Release | Not published by this merge |
+
+The integrated 0.24.1 baseline commit is `c7246d00456c9c4c23905f496316a72bbcd473e8`. Header artwork is the only 0.24.1 presentation change; the 0.24.0 gameplay evidence below remains historical.
 
 ## Integrated gameplay and presentation
 
@@ -74,6 +76,6 @@ The fixed island `pack/config/skyblockbuilder/templates/islands/forever_me_start
 
 The October 18 mod-list inventory remains experimental runtime evidence, not a launcher lockfile or final mod selection.
 
-Validated source `227c81611f8c8cda719c59106c80d6350a2034a1` passed the Java 21 build, **78 unit tests**, client startup, **17 actual-client EN/DE fixture captures** with four input checks, and **90 GameTests on each runtime** (21.1.249 and pack 21.1.259). The fresh 0.24.0 JAR was inspected against all 158 resources and excludes test fixtures. Integration documentation changes no validated code/resources.
+Historical 0.24.0 source `227c81611f8c8cda719c59106c80d6350a2034a1` passed the Java 21 build, **78 unit tests**, client startup, **17 actual-client EN/DE fixture captures** with four input checks, and **90 GameTests on each runtime** (21.1.249 and pack 21.1.259). The fresh 0.24.0 JAR was inspected against all 158 resources and excludes test fixtures. Integration documentation changes no validated code/resources.
 
-Native fixture rendering is distinct from a full player-instance test. Actual player skin/hat, full-pack scrolling/scale, live purchases and contract/respec flow, multiplayer milestones and reload separation still need acceptance in TeKatz's instance. Earlier user-reported machine tests remain attributed in the feature records. See [VALIDATION.md](VALIDATION.md) for evidence and [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md#validation-and-acceptance) for the current artifact hash.
+Native fixture rendering is distinct from a full player-instance test. Actual player skin/hat, full-pack scrolling/scale, live purchases and contract/respec flow, multiplayer milestones and reload separation still need acceptance in TeKatz's instance. Earlier user-reported machine tests remain attributed in the feature records. See [VALIDATION.md](VALIDATION.md) for evidence and [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md#validation-and-acceptance) for the historical 0.24.0 artifact hash.

@@ -12,7 +12,7 @@ This directory contains **integrated-state documentation**, live feature documen
 6. [VALIDATION.md](VALIDATION.md) — detailed automated checks and user-reported in-game validation history.
 7. [CHANGELOG.md](CHANGELOG.md) — concise version-level history.
 
-The integrated baseline is **0.24.0**, merged through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16) on October 19, 2026. This includes the complete 0.21–0.24 stack. The fixed starter-island NBT is unchanged; no release is implied by the merge.
+The integrated baseline is **0.24.1**, including the approved header artwork through [PR #17](https://github.com/TeKatz/ForeverSkyblock/pull/17) after the gameplay stack in [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16) on October 19, 2026. This includes the complete 0.21–0.24 stack. The fixed starter-island NBT is unchanged; no release is implied by the merge.
 
 ## Integrated 0.21–0.24 updates
 
