@@ -20,11 +20,14 @@
     "ToolRepairRecipeMixin",
     "PersonalCraftMixin",
     "PersonalKillMixin",
-    "ProgressionServiceWorldMixin"
+    "ProgressionServiceWorldMixin",
+    "ProgressionServiceAdminMixin"
   ],
   "client": [
     "PremiumSkillScreenHeaderArtMixin",
     "PremiumSkillScreenPanelMotionMixin",
+    "PremiumSkillScreenOverviewMixin",
+    "PremiumSkillScreenButtonStyleMixin",
     "KMenuEditorUxMixin"
   ],
   "injectors": {
