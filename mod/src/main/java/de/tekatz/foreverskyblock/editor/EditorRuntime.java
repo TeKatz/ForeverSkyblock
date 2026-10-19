@@ -7,11 +7,14 @@ import static de.tekatz.foreverskyblock.editor.EditorDocument.*;
 /** Published catalog only. Client drafts are deliberately held elsewhere. */
 public final class EditorRuntime {
     private static volatile EditorDocument active;
+    private static volatile boolean failed;
     private EditorRuntime() { }
     public static EditorDocument active(){return active;}
-    public static void publish(EditorDocument document){active=document;}
+    public static void publish(EditorDocument document){active=document;if(document==null)failed=false;}
+    public static void failed(boolean value){failed=value;}
+    public static boolean failed(){return failed;}
     public static Quest quest(String id){var d=active;return d==null?null:d.quest(id);}
-    public static boolean productUnlocked(String id,ProgressionProfile profile){var d=active;var p=d==null?null:d.product(id);return p==null||p.enabled()&&QuestRules.dependencies(p.requires(),Match.ALL,profile.milestones());}
+    public static boolean productUnlocked(String id,ProgressionProfile profile){if(failed)return false;var d=active;var p=d==null?null:d.product(id);return p==null||p.enabled()&&QuestRules.dependencies(p.requires(),Match.ALL,profile.milestones());}
     public static List<ShopCatalog.Product> products() {
         return products(active);
     }
@@ -39,6 +42,6 @@ public final class EditorRuntime {
         for(var c:ContractCatalog.CONTRACTS)if(d.contract(c.id())==null)result.add(c);
         return List.copyOf(result);
     }
-    public static boolean contractEnabled(String id){var d=active;var c=d==null?null:d.contract(id);return c==null||c.enabled();}
+    public static boolean contractEnabled(String id){if(failed)return false;var d=active;var c=d==null?null:d.contract(id);return c==null||c.enabled();}
     public static boolean customContract(String id){var d=active;var c=d==null?null:d.contract(id);if(c==null)return false;var original=ContractCatalog.CONTRACTS.stream().filter(x->x.id().equals(id)).findFirst().orElse(null);return original==null||original.target()!=c.count();}
 }

@@ -19,8 +19,22 @@ public final class EditorCodec {
             if(escape){escape=false;continue;} if(quoted&&c=='\\'){escape=true;continue;}
             if(c=='"'){quoted=!quoted;continue;} if(!quoted){if(c=='{'||c=='[')require(++depth<=24,"JSON nesting too deep");else if(c=='}'||c==']')depth--;}
         }
-        try { var result=JSON.fromJson(source,EditorDocument.class); validate(result); return result; }
+        try { var tree=JsonParser.parseString(source);checkNumbers(tree,"");var result=JSON.fromJson(tree,EditorDocument.class); validate(result); return result; }
         catch(RuntimeException e) { throw new IllegalArgumentException("Invalid K-menu document: "+e.getMessage(),e); }
+    }
+    private static void checkNumbers(JsonElement tree,String path){
+        if(tree.isJsonArray()){int i=0;for(var e:tree.getAsJsonArray())checkNumbers(e,path+"/"+i++);return;}
+        if(!tree.isJsonObject())return;
+        var integral=Set.of("schema","revision","grid","animationMillis","x","y","width","height","order","count","rewardSp","rewardPp","requiredTier","spCost","ppCost","radius");
+        for(var entry:tree.getAsJsonObject().entrySet()){
+            String key=entry.getKey();var value=entry.getValue();
+            if(integral.contains(key)&&value.isJsonPrimitive()&&!(path.startsWith("/nodes/")&&(key.equals("x")||key.equals("y")))){
+                require(value.getAsJsonPrimitive().isNumber(),"Expected integer: "+path+"/"+key);
+                try{var number=value.getAsBigDecimal().toBigIntegerExact();require(number.bitLength()<=(key.equals("revision")?63:31),"Integer out of range: "+path+"/"+key);}
+                catch(ArithmeticException e){throw new IllegalArgumentException("Expected integer: "+path+"/"+key);}
+            }
+            checkNumbers(value,path+"/"+key);
+        }
     }
     public static String encode(EditorDocument document) { validate(document); String value=JSON.toJson(document); require(value.getBytes(StandardCharsets.UTF_8).length<=MAX_BYTES,"Document exceeds 240 KB");return value; }
     public static void validate(EditorDocument d) {

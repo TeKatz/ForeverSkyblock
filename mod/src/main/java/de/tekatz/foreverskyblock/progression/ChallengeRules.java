@@ -56,6 +56,7 @@ public final class ChallengeRules {
     }
     /** Replayable events retain bounded identity evidence until completion. No client can invoke this. */
     public static ProgressionProfile record(ProgressionProfile profile, String id, String evidence) {
+        if(de.tekatz.foreverskyblock.editor.EditorRuntime.failed())return profile;
         Definition definition = find(id);
         if (definition == null || profile.milestones().contains(id)) return profile;
         if (!definition.objectives().isEmpty() && !definition.objectives().contains(evidence)) return profile;

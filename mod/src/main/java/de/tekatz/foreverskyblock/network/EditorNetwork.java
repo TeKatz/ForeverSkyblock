@@ -22,7 +22,7 @@ public final class EditorNetwork {
         registrar.playToClient(Reply.TYPE,Reply.CODEC,(r,ctx)->receiver.accept(r));
     }
     public record Request(int action,UUID transfer,int index,int total,long revision,String data) implements CustomPacketPayload {
-        public Request {if(action<0||action>3||transfer==null||index<0||total<1||total>MAX_CHUNKS||index>=total||revision<0||data==null||data.length()>CHUNK)throw new IllegalArgumentException("Invalid editor request");}
+        public Request {if(action<0||action>3||transfer==null||index<0||total<1||total>MAX_CHUNKS||index>=total||revision<0||data==null||data.length()>CHUNK||action!=1&&(index!=0||total!=1||!data.isEmpty()))throw new IllegalArgumentException("Invalid editor request");}
         public static final Type<Request> TYPE=new Type<>(ResourceLocation.fromNamespaceAndPath("forever_skyblock","editor_request"));
         public static final StreamCodec<RegistryFriendlyByteBuf,Request> CODEC=new StreamCodec<>() {
             public Request decode(RegistryFriendlyByteBuf b){return new Request(b.readUnsignedByte(),b.readUUID(),b.readVarInt(),b.readVarInt(),b.readVarLong(),b.readUtf(CHUNK));}

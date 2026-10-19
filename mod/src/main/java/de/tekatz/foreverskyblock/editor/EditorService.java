@@ -33,12 +33,13 @@ public final class EditorService {
             }
         }catch(IOException|RuntimeException e){document=EditorDefaults.create();loadError="Could not load K-menu config: "+e.getMessage();com.mojang.logging.LogUtils.getLogger().error(loadError,e);}
         EditorRuntime.publish(document);
+        EditorRuntime.failed(!loadError.isEmpty());
     }
     public static EditorService get(MinecraftServer server){return SERVICES.computeIfAbsent(server,EditorService::new);}
     public static void stop(MinecraftServer server){SERVICES.remove(server);EditorRuntime.publish(null);}
     public static void logout(MinecraftServer server,UUID id){var s=SERVICES.get(server);if(s!=null){s.sent.remove(id);s.uploads.remove(id);s.lastRequest.remove(id);}}
     public EditorDocument document(){return document;}
-    public void event(ServerPlayer p,QuestRules.Event event){ProgressionService.get(server).editorEvent(p,document,event);}
+    public void event(ServerPlayer p,QuestRules.Event event){if(loadError.isEmpty())ProgressionService.get(server).editorEvent(p,document,event);}
     private static boolean connected(ServerPlayer p){return p.connection!=null&&p.connection.getConnection().isConnected()&&net.neoforged.neoforge.network.registration.NetworkRegistry.hasChannel(p.connection,EditorNetwork.Reply.TYPE.id());}
     private void reply(ServerPlayer p,int kind,String data,String message,boolean open){if(connected(p))PacketDistributor.sendToPlayer(p,new EditorNetwork.Reply(kind,document.revision(),data,message,ProgressionService.canTestPoints(p),open));}
     public void sync(ServerPlayer p,ProgressionProfile profile,boolean opening) {
@@ -60,7 +61,6 @@ public final class EditorService {
             if(request.revision()!=document.revision())throw new IOException("Conflict: server revision changed");
             long prior=lastRequest.getOrDefault(p.getUUID(),0L);if(now-prior<250_000_000L)throw new IOException("Please wait before another operation");lastRequest.put(p.getUUID(),now);
             if(request.action()==2){
-                if(!loadError.isEmpty())throw new IOException("Fix or restore the invalid config before publishing");
                 var next=store.load();EditorCodec.validateUpdate(document,next);activate(next.withRevision(Math.addExact(document.revision(),1)));reply(p,2,"","Reloaded",false);
             }else if(request.action()==3){
                 var backup=EditorMerge.rollback(document,store.readBackup());EditorCodec.validateUpdate(document,backup);activate(backup.withRevision(Math.addExact(document.revision(),1)));reply(p,2,"","Backup restored",false);
@@ -97,7 +97,7 @@ public final class EditorService {
         for(var c:d.contracts())if(c.type()==EditorDocument.ContractType.RESOURCE&&ContractCatalog.CONTRACTS.stream().noneMatch(x->x.id().equals(c.id())))EditorCodec.require(BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(c.item())),"Unknown contract item: "+c.item());
     }
     private void activate(EditorDocument next) throws IOException {
-        store.save(next);document=next;EditorRuntime.publish(next);sent.clear();loadError="";
+        store.save(next);document=next;EditorRuntime.publish(next);EditorRuntime.failed(false);sent.clear();loadError="";
         for(var p:server.getPlayerList().getPlayers())ProgressionService.get(server).refreshMenu(p);
     }
 }

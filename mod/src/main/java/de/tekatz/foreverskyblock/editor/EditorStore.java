@@ -24,7 +24,11 @@ public final class EditorStore {
     }
     public void save(EditorDocument next) throws IOException {
         String data=EditorCodec.encode(next);
-        if(Files.exists(file))atomic(file.resolveSibling(file.getFileName()+".bak"),Files.readString(file));
+        if(Files.exists(file)){
+            String previous=Files.readString(file);
+            try{EditorCodec.decode(previous);atomic(file.resolveSibling(file.getFileName()+".bak"),previous);}
+            catch(IllegalArgumentException ignored){/* Preserve the last valid backup while repairing a corrupt primary. */}
+        }
         atomic(file,data);
     }
     public EditorDocument readBackup() throws IOException {return read(file.resolveSibling(file.getFileName()+".bak"));}
