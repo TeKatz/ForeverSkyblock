@@ -1,5 +1,6 @@
 package de.tekatz.foreverskyblock.mixin;
 
+import com.mojang.blaze3d.vertex.Tesselator;
 import de.tekatz.foreverskyblock.client.EditorStyleBridge;
 import de.tekatz.foreverskyblock.editor.EditorDocument;
 import java.lang.reflect.Field;
@@ -39,11 +40,11 @@ public abstract class PremiumSkillScreenPanelMotionMixin {
     }
 
     @Inject(method="drawBackground",at=@At("HEAD"))
-    private void foreverSkyblock$beginBackgroundEffect(GuiGraphics g,net.minecraft.client.renderer.Tesselator tess,float tick,CallbackInfo ci){
+    private void foreverSkyblock$beginBackgroundEffect(GuiGraphics g,Tesselator tess,float tick,CallbackInfo ci){
         String id=foreverSkyblock$styleId();if(!id.isEmpty())foreverSkyblock$previousStyle=EditorStyleBridge.pushEffects(id);
     }
     @Inject(method="drawBackground",at=@At("RETURN"))
-    private void foreverSkyblock$endBackgroundEffect(GuiGraphics g,net.minecraft.client.renderer.Tesselator tess,float tick,CallbackInfo ci){
+    private void foreverSkyblock$endBackgroundEffect(GuiGraphics g,Tesselator tess,float tick,CallbackInfo ci){
         if(foreverSkyblock$previousStyle!=null){EditorStyleBridge.restore(foreverSkyblock$previousStyle);foreverSkyblock$previousStyle=null;}
     }
 
@@ -58,18 +59,15 @@ public abstract class PremiumSkillScreenPanelMotionMixin {
     @Unique private double foreverSkyblock$maximum(){return Math.max(0,foreverSkyblock$contentWidth()-foreverSkyblock$field("width"));}
     @Unique private void foreverSkyblock$clamp(){foreverSkyblock$horizontal=Math.clamp(foreverSkyblock$horizontal,0,foreverSkyblock$maximum());}
 
-    /** Button hit boxes move with the graph, while the panel/scissor itself stays fixed. */
     @Inject(method="position",at=@At("TAIL"))
     private void foreverSkyblock$shiftShopButtons(CallbackInfo ci){
         if(!foreverSkyblock$isShop())return;foreverSkyblock$clamp();int shift=(int)Math.round(foreverSkyblock$horizontal);
         if(shift==0)return;for(var button:buttons)button.setX(button.getX()-shift);
     }
 
-    /** Shift the Shop edge painter by the same amount as its nodes. */
     @ModifyArg(method="drawPanel",at=@At(value="INVOKE",target="Lde/tekatz/foreverskyblock/client/PremiumSkillScreen$Painter;draw(Lnet/minecraft/client/gui/GuiGraphics;IIIII)V"),index=1)
     private int foreverSkyblock$shiftShopPainter(int left){return foreverSkyblock$isShop()?left-(int)Math.round(foreverSkyblock$horizontal):left;}
 
-    /** Shift-wheel (or a native horizontal wheel) pans the live Shop sideways. */
     @Inject(method="mouseScrolled",at=@At("HEAD"),cancellable=true)
     private void foreverSkyblock$horizontalWheel(double mx,double my,double horizontal,double vertical,CallbackInfoReturnable<Boolean> cir){
         var panel=(ScrollPanel)(Object)this;if(!foreverSkyblock$isShop()||!panel.isMouseOver(mx,my)||foreverSkyblock$maximum()<=0)return;
