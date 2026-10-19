@@ -55,6 +55,7 @@ public abstract class KMenuEditorUxMixin extends Screen {
             String original=button.getMessage().getString(),text=original;
             text=foreverSkyblock$strip(text,"Page: ","Seite: ","Viewport: ","Ansicht: ","Interaction: ","Interaktion: ","Edit: ","Bearbeiten: ","Detail: ","Details: ","State: ","Status: ");
             text=switch(text){
+                case "Zurück"->"Undo";case "Vor"->"Redo";
                 case "All sizes"->"All";case "Alle Größen"->"Alle";case "This size"->"This";case "Nur diese Größe"->"Diese";
                 case "Focus preview"->"Focus";case "Vorschau fokussieren"->"Fokus";case "Show panels"->"Panels";case "Panels zeigen"->"Panels";
                 case "Apply changes [Enter]"->"Apply [Enter]";case "Änderungen übernehmen [Enter]"->"Übernehmen [Enter]";
@@ -85,8 +86,8 @@ public abstract class KMenuEditorUxMixin extends Screen {
         addRenderableWidget(Button.builder(Component.literal("#"),b->minecraft.setScreen(new EditorColorPicker(editor,current,value->pending.put(path,value)))).bounds(width-28,y+12,20,18).build());
     }
 
-    /** Label/icon leaves get focused actions instead of forcing users to understand internal style fields. */
-    @Inject(method="inspector",at=@At("RETURN"))
+    /** Label/icon leaves put their main editing action at the top of the inspector. */
+    @Inject(method="inspector",at=@At("HEAD"))
     private void foreverSkyblock$headerLeafActions(CallbackInfo ci){
         if(rightWidth<=0||!foreverSkyblock$isHeaderLeaf())return;
         int y=propertyY;propertyY+=26;if(y<108||y+20>height-31)return;Screen editor=(Screen)(Object)this;
