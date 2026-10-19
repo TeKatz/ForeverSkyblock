@@ -31,7 +31,7 @@ public final class EditorDefaults {
                     new Text(value(en,key+".description","Complete this challenge."),value(de,key+".description","Schließe diese Herausforderung ab.")),
                     "minecraft:"+icons[i++],q.category(),List.of(new Task("legacy",TaskType.LEGACY,q.id(),q.target())),Match.ALL,List.of(),Match.ALL,-1,q.reward(),0));
         }
-        var products=new ArrayList<Product>();for(var p:ShopCatalog.PRODUCTS)products.add(new Product(p.id(),p!=ShopCatalog.TEST,new Text(p.titleEn(),p.titleDe()),
+        var products=new ArrayList<Product>();for(var p:ShopCatalog.PRODUCTS)products.add(new Product(p.id(),true,new Text(p.titleEn(),p.titleDe()),
                 new Text(p.descriptionEn(),p.descriptionDe()),"minecraft:"+(p==ShopCatalog.NO_PHANTOMS?"phantom_membrane":p==ShopCatalog.NO_RAIN?"water_bucket":p==ShopCatalog.PERMANENT_DAY?"sunflower":"chest"),
                 p.requiredTier(),p.spCost(),p.ppCost(),List.of(),p.contents().stream().map(s->new EditorDocument.Stack(s.itemId(),s.count())).toList()));
         var contracts=new ArrayList<Contract>();for(var c:ContractCatalog.CONTRACTS)contracts.add(new Contract(c.id(),true,new Text(c.titleEn(),c.titleDe()),
