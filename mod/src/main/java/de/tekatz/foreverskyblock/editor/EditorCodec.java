@@ -77,13 +77,14 @@ public final class EditorCodec {
         for(var c:d.contracts()) {
             id(c.id());unique(contracts,c.id());text(c.title(),160);text(c.description(),6000);id(c.icon());require(c.type()!=null,"Missing contract type");
             range(c.requiredTier(),0,4);range(c.count(),1,1_000_000);range(c.rewardSp(),1,10);if(c.type()==ContractType.RESOURCE)id(c.item());
-            require(ContractCatalog.CONTRACTS.stream().anyMatch(x->x.id().equals(c.id()))||c.id().startsWith("forever_skyblock:contract/custom/"),"Invalid contract ID");
+            require(ContractCatalog.CONTRACTS.stream().anyMatch(x->x.id().equals(c.id()))||c.id().startsWith("forever_skyblock:contract/custom/"),"Invalid custom contract ID");
             var original=ContractCatalog.CONTRACTS.stream().filter(x->x.id().equals(c.id())).findFirst().orElse(null);
             if(original!=null)require(c.type().name().equals(original.trigger().name())&&Objects.equals(c.item(),original.itemId()==null?"":original.itemId()),"Existing contract type/item must retain its original meaning");
             require(!ids.contains(c.id())&&!products.contains(c.id()),"ID collision");
         }
         d.layout().forEach((key,s)->{require(key.length()<=160&&key.matches("[a-zA-Z0-9_./:-]+"),"Invalid layout key");range(s.x(),-4096,4096);range(s.y(),-4096,4096);range(s.width(),0,4096);range(s.height(),0,4096);
-            require(s.anchorX()!=null&&s.anchorY()!=null,"Missing anchor");finite(s.fontScale(),.25F,4);finite(s.itemScale(),.25F,4);color(s.fill());color(s.border());color(s.text());if(!s.icon().isEmpty())id(s.icon());});
+            require(s.anchorX()!=null&&s.anchorY()!=null,"Missing anchor");finite(s.fontScale(),.25F,4);finite(s.itemScale(),.25F,4);color(s.fill());color(s.border());color(s.text());if(!s.icon().isEmpty())id(s.icon());
+            require(s.labelEn()!=null&&s.labelDe()!=null&&s.labelEn().length()<=120&&s.labelDe().length()<=120,"Header text override is too long");});
         d.nodes().forEach((key,n)->{require(ids.contains(key)||products.contains(key)||key.startsWith("shop:"),"Unknown graph node: "+key);finite(n.x(),-32768,32768);finite(n.y(),-32768,32768);range(n.radius(),10,60);});
         var decorations=new HashSet<String>();for(var w:d.decorations()) {
             key(w.id());unique(decorations,w.id());require(Set.of("ALL","OVERVIEW","CHALLENGES","SHOP","RESEARCH","PERKS","PROFILE").contains(w.page())&&w.type()!=null,"Invalid decoration page/type");
