@@ -13,14 +13,14 @@ Nothing in a draft changes another player's rules. **Check** validates it; **Pub
 ## Layout
 
 - Select header groups, navigation tabs, the search field, category rail, content panels, card templates and their title/description/icon/reward areas, profile sections and detail-window sections.
-- Drag to move; switch **Move / Resize** to resize. Grid snapping uses the configured grid; hold Alt to move freely. Numeric properties allow exact changes.
+- Drag to move; switch **Move / Resize** to resize. Use the inspector actions to center an element horizontally or vertically. Grid snapping uses the configured grid; hold Alt to move freely. Numeric properties allow exact changes.
 - Width/height **0** retains the original calculated size. START/CENTER/END anchors decide how replacement dimensions sit inside the original rectangle.
 - Colors use **AARRGGBB**; blank retains the original color. Font/item scale and visibility are available where the selected renderer supports them.
-- Switch between 640×360, 480×270 and 944×522 logical preview viewports. **All / Size** selects a common override or a small/compact/wide override. Minecraft's existing responsive layout still provides defaults.
+- The layout canvas supports wheel zoom and empty-canvas panning; middle-click resets its view. Switch between 640×360, 480×270 and 944×522 logical preview viewports. **All / Size** selects a common override or a small/compact/wide override. Minecraft's existing responsive layout still provides defaults.
 - **Try** routes input through the preview's native widgets. Purchase, respec, test-point and detail actions cannot modify gameplay from this preview.
 - **Detail** previews challenge, package and contract windows. **State** switches between live, locked, available/partial and completed sample states for quest/node presentation.
 - Add decorative text, panels, registered item icons or progress bars. Text can show SP, PP, Tier, playtime, Island Level, deaths, kills or completed challenges. These are display bindings, not executable scripts.
-- Settings control grid/snap, entry/reveal duration, scroll speed and the live quest graph/card view.
+- Settings control grid/snap, entry/reveal duration, scroll speed, card/category spacing and the live quest graph/card view.
 
 Repeated cards use one shared template. This is deliberate: changing a reward label's alignment should affect every generated card. Some responsive layout relationships still come from Java; this is not a Java source-code editor or a universal editor for other mods' screens.
 
