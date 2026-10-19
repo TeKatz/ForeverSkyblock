@@ -39,7 +39,7 @@ public final class EditorService {
     public static void stop(MinecraftServer server){SERVICES.remove(server);EditorRuntime.publish(null);}
     public static void logout(MinecraftServer server,UUID id){var s=SERVICES.get(server);if(s!=null){s.sent.remove(id);s.uploads.remove(id);s.lastRequest.remove(id);}}
     public EditorDocument document(){return document;}
-    public void event(ServerPlayer p,QuestRules.Event event){if(loadError.isEmpty())ProgressionService.get(server).editorEvent(p,document,event);}
+    public void events(ServerPlayer p,List<QuestRules.Event> events){if(loadError.isEmpty())ProgressionService.get(server).editorEvents(p,document,events);}
     private static boolean connected(ServerPlayer p){return p.connection!=null&&p.connection.getConnection().isConnected()&&net.neoforged.neoforge.network.registration.NetworkRegistry.hasChannel(p.connection,EditorNetwork.Reply.TYPE.id());}
     private void reply(ServerPlayer p,int kind,String data,String message,boolean open){if(connected(p))PacketDistributor.sendToPlayer(p,new EditorNetwork.Reply(kind,document.revision(),data,message,ProgressionService.canTestPoints(p),open));}
     public void sync(ServerPlayer p,ProgressionProfile profile,boolean opening) {
@@ -97,6 +97,7 @@ public final class EditorService {
         for(var c:d.contracts())if(c.type()==EditorDocument.ContractType.RESOURCE&&ContractCatalog.CONTRACTS.stream().noneMatch(x->x.id().equals(c.id())))EditorCodec.require(BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(c.item())),"Unknown contract item: "+c.item());
     }
     private void activate(EditorDocument next) throws IOException {
+        EditorEvents.flush(server);
         store.save(next);document=next;EditorRuntime.publish(next);EditorRuntime.failed(false);sent.clear();loadError="";
         for(var p:server.getPlayerList().getPlayers())ProgressionService.get(server).refreshMenu(p);
     }

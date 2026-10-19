@@ -216,12 +216,12 @@ public final class ProgressionService {
         } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); return false; }
     }
 
-    public void editorEvent(ServerPlayer player, de.tekatz.foreverskyblock.editor.EditorDocument document,
-                            de.tekatz.foreverskyblock.editor.QuestRules.Event event) {
+    public void editorEvents(ServerPlayer player, de.tekatz.foreverskyblock.editor.EditorDocument document,
+                            java.util.List<de.tekatz.foreverskyblock.editor.QuestRules.Event> events) {
         if (!ChallengeEvents.realPlayer(player)) return;
         try {
             var previous = store.load(player.getUUID());
-            var next = store.update(player.getUUID(), state -> de.tekatz.foreverskyblock.editor.QuestRules.record(state,document,event));
+            var next = store.update(player.getUUID(), state -> de.tekatz.foreverskyblock.editor.QuestRules.recordBatch(state,document,events));
             if (!next.equals(previous)) {
                 for(var quest:document.quests()) if(!previous.milestones().contains(quest.id()) && next.milestones().contains(quest.id()) && connected(player))
                     player.sendSystemMessage(Component.literal(quest.title().en()+" +"+quest.rewardSp()+" SP / +"+quest.rewardPp()+" PP"));
@@ -269,7 +269,12 @@ public final class ProgressionService {
     private void notifyProgress(ServerPlayer player, ProgressionProfile previous, ProgressionProfile next) {
         for (var milestone : MilestoneCatalog.MILESTONES)
             if (!previous.milestones().contains(milestone.id()) && next.milestones().contains(milestone.id()) && connected(player))
-                player.sendSystemMessage(SkillMessages.milestone(milestone));
+            {
+                var override=de.tekatz.foreverskyblock.editor.EditorRuntime.quest(milestone.id());
+                if(override!=null&&(override.rewardSp()!=milestone.reward()||override.rewardPp()>0))
+                    player.sendSystemMessage(Component.literal(override.title().en()+" +"+override.rewardSp()+" SP / +"+override.rewardPp()+" PP"));
+                else player.sendSystemMessage(SkillMessages.milestone(milestone));
+            }
         if (connected(player) && next.meta().shopTier() > previous.meta().shopTier()) player.sendSystemMessage(Component.translatable(
                 "message.forever_skyblock.tier_unlocked", Component.translatable("gui.forever_skyblock.meta.tier." + next.meta().shopTier())));
         for (var contract : ContractCatalog.all()) {

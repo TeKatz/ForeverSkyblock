@@ -50,6 +50,7 @@ public final class QuestRules {
         }
         return profile;
     }
+    public static ProgressionProfile recordBatch(ProgressionProfile profile,EditorDocument document,List<Event> events){for(var event:events)profile=record(profile,document,event);return profile;}
     private static long sequence(String token){try{int slash=token.indexOf('/',5);return slash<0?0:Long.parseLong(token.substring(5,slash));}catch(NumberFormatException e){return 0;}}
     private static boolean complete(Quest q,Map<String,Integer> counts){return q.taskMatch()==Match.ALL?q.tasks().stream().allMatch(t->counts.get(t.id())>=t.count()):q.tasks().stream().anyMatch(t->counts.get(t.id())>=t.count());}
     public static ProgressionProfile award(ProgressionProfile p,String id,int sp,int pp) {
