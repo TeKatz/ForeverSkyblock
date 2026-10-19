@@ -37,8 +37,9 @@ public final class PremiumSkillScreen extends Screen {
     private Screen previewDetail;
     private List<String> categories() {
         if(!EditorClient.customized())return CATEGORIES;
-        var result=new ArrayList<>(CATEGORIES);
-        EditorClient.document().chapters().stream().sorted(Comparator.comparingInt(Chapter::order)).forEach(c->{if(!result.contains(c.id()))result.add(c.id());});
+        var result=new ArrayList<String>();result.add("all");
+        EditorClient.document().chapters().stream().sorted(Comparator.comparingInt(Chapter::order)).forEach(c->result.add(c.id()));
+        if(!result.contains("contracts"))result.add("contracts");
         return result;
     }
     private Page page = Page.CHALLENGES;
@@ -119,7 +120,7 @@ public final class PremiumSkillScreen extends Screen {
                 && (lastSnapshot == null || next == null || !next.milestones().equals(lastSnapshot.milestones()) || !next.progress().equals(lastSnapshot.progress()))) {
             remember(); rebuildBody();
         }
-        if(next!=lastSnapshot && page==Page.CHALLENGES && category==7 && filter!=0
+        if(next!=lastSnapshot && page==Page.CHALLENGES && categories().get(category).equals("contracts") && filter!=0
                 && (lastSnapshot==null || next==null || !next.contracts().equals(lastSnapshot.contracts()))) {
             remember(); rebuildBody();
         }
@@ -150,7 +151,7 @@ public final class PremiumSkillScreen extends Screen {
         panel(g,l,t,w,layout.contentBottom()-layout.contentTop(),0xBC091822,0xFF203D4D);
         int titleLeft=page==Page.CHALLENGES?x+layout.challengeMainX():l;
         int titleW=page==Page.CHALLENGES?layout.challengeMainWidth()-(layout.tiny()?0:112):w;
-        centered(g,page==Page.CHALLENGES&&category==7?categoryName("contracts"):pageName(page),titleLeft+5,t+3,titleW-10,20,WHITE,.86F);
+        centered(g,page==Page.CHALLENGES&&categories().get(category).equals("contracts")?categoryName("contracts"):pageName(page),titleLeft+5,t+3,titleW-10,20,WHITE,.86F);
         if(page==Page.CHALLENGES&&layout.challengeSidebarWidth()>0) {
             int sx=l+6, sw=layout.challengeSidebarWidth()-12;
             if(search!=null)panel(g,search.getX()-5,search.getY()-4,search.getWidth()+10,search.getHeight()+6,0xFF0D2331,BORDER);
@@ -378,7 +379,7 @@ public final class PremiumSkillScreen extends Screen {
         var entries=new ArrayList<Entry>();for(var q:quests)entries.add(new Entry(questTitle(q),questDescription(q),item(q.icon()),q.chapter(),()->questReward(q),()->editorRatio(q),()->questStatus(q),()->openEditorQuest(q)));
         buildCards(entries,grid?layout.challengeColumns():1,false);
     }
-    private int[] questPoint(String id,int i,int cols,int w){var node=EditorClient.document().nodes().get(id);return node==null?new int[]{w/cols*(i%cols)+w/cols/2,25+(i/cols)*115}:new int[]{Math.round(node.x()*w/640F),Math.round(node.y())};}
+    private int[] questPoint(String id,int i,int cols,int w){var node=GraphGeometry.point(EditorClient.document(),id,false);return new int[]{Math.round(node.x()*w/640F),Math.round(node.y())};}
     private void openEditorQuest(Quest q){
         open(new Detail(questTitle(q),item(q.icon()),accent(q.chapter()),()->questReward(q).copy().append(" · ").append(categoryName(q.chapter())),
                 ()->{var desc=questDescription(q).copy().append("\n\n");var progress=EditorClient.state(q.id()).counts();

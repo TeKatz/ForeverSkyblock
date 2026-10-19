@@ -41,8 +41,9 @@ public final class KMenuEditorScreen extends Screen {
 
     public KMenuEditorScreen(Screen parent,EditorDocument document){super(Component.literal("K-menu editor"));this.parent=parent;opened=document;session=new EditorSession(document);}
     private static Component tr(String en,String de){return Component.literal(EditorClient.german()?de:en);}
-    private void button(int x,int y,int w,String en,String de,Runnable action){addRenderableWidget(Button.builder(tr(en,de),b->run(action)).bounds(x,y,w,18).build());}
-    private void run(Runnable action){try{action.run();}catch(Exception e){message=e.getMessage()==null?"Operation failed":e.getMessage();}}
+    private void button(int x,int y,int w,String en,String de,EditorAction action){addRenderableWidget(Button.builder(tr(en,de),b->run(action)).bounds(x,y,w,18).build());}
+    @FunctionalInterface private interface EditorAction { void run() throws Exception; }
+    private void run(EditorAction action){try{action.run();}catch(Exception e){message=e.getMessage()==null?"Operation failed":e.getMessage();}}
     @Override protected void init(){
         leftWidth=width>=900?166:122;rightWidth=width>=900?240:Math.max(170,width/3);canvasLeft=leftWidth+9;canvasRight=width-rightWidth-9;canvasBottom=height-28;
         clearWidgets();fieldLabels.clear();
@@ -54,6 +55,7 @@ public final class KMenuEditorScreen extends Screen {
         button(294,54,48,"Check","Prüfen",()->{applyPending();EditorCodec.validateUpdate(opened,session.current());message=tr("Document valid. Publish to activate it.","Dokument gültig. Zum Aktivieren veröffentlichen.").getString();});
         button(345,54,60,"Publish","Aktivieren",this::confirmPublish);
         if(width>500)button(408,54,60,"Reset","Reset",()->confirm(tr("Reset draft to the opened revision?","Entwurf auf die geöffnete Version zurücksetzen?"),()->{session.reset();pending.clear();rebuild();}));
+        if(width>550)button(471,54,62,"Reconcile","Abgleichen",this::reconcile);
         search=addRenderableWidget(new EditBox(font,8,84,leftWidth-8,18,tr("Search","Suchen")));search.setMaxLength(120);search.setValue(filter);search.setResponder(s->{filter=s;listScroll=0;});
         button(width-rightWidth,84,rightWidth-8,"Apply properties [Enter]","Eigenschaften übernehmen [Enter]",()->{applyPending();rebuild();});
         if(mode==Mode.LAYOUT)layoutTools();else if(mode==Mode.GRAPH||mode==Mode.SHOP)graphTools();else contentTools();
@@ -74,8 +76,8 @@ public final class KMenuEditorScreen extends Screen {
     }
     private void graphTools(){
         int w=Math.max(35,(canvasRight-canvasLeft-8)/4);
-        button(canvasLeft,84,w,linkTool?"Link ✓":"Link",linkTool?"Link ✓":"Link",()->{linkTool=!linkTool;unlinkTool=false;linkSource="";rebuild();});
-        button(canvasLeft+w+2,84,w,"Unlink","Trennen",()->{unlinkTool=!unlinkTool;linkTool=false;linkSource="";rebuild();});
+        button(canvasLeft,84,w,mode==Mode.SHOP?"Requires":linkTool?"Link ✓":"Link",mode==Mode.SHOP?"Voraussetz.":linkTool?"Link ✓":"Link",()->{if(mode==Mode.SHOP){chooseQuestDependency(selected,false);return;}linkTool=!linkTool;unlinkTool=false;linkSource="";rebuild();});
+        button(canvasLeft+w+2,84,w,"Unlink","Trennen",()->{if(mode==Mode.SHOP){chooseQuestDependency(selected,true);return;}unlinkTool=!unlinkTool;linkTool=false;linkSource="";rebuild();});
         button(canvasLeft+2*(w+2),84,w,"Arrange","Ordnen",this::arrange);
         button(canvasLeft+3*(w+2),84,w,"Center","Zentrieren",()->{zoom=1;panX=28;panY=30;});
         button(canvasLeft,106,60,"+ New","+ Neu",this::addEntry);button(canvasLeft+63,106,64,"Duplicate","Duplizieren",this::duplicate);
@@ -99,8 +101,10 @@ public final class KMenuEditorScreen extends Screen {
     private void put(JsonObject obj,String path,JsonElement value){String[] parts=path.split("\\.");JsonElement current=obj;for(int i=0;i<parts.length-1;i++)current=current.isJsonArray()?current.getAsJsonArray().get(Integer.parseInt(parts[i])):current.getAsJsonObject().get(parts[i]);if(current.isJsonArray())current.getAsJsonArray().set(Integer.parseInt(parts[parts.length-1]),value);else current.getAsJsonObject().add(parts[parts.length-1],value);}
     private void applyPending(){
         if(pending.isEmpty())return;var changes=new LinkedHashMap<>(pending);
-        session.edit(root->{var obj=target(root);if(obj==null)return;for(var change:changes.entrySet()) {
-            String key=change.getKey(),s=change.getValue();JsonElement old=at(obj,key),value;
+        session.edit(root->{var obj=target(root);if(obj==null)obj=new JsonObject();for(var change:changes.entrySet()) {
+            String key=change.getKey(),s=change.getValue();
+            if(key.startsWith("node.")){var map=root.getAsJsonObject("nodes");var node=map.has(selected)?map.getAsJsonObject(selected):EditorCodec.JSON.toJsonTree(GraphGeometry.point(session.current(),selected,mode==Mode.SHOP)).getAsJsonObject();String field=key.substring(5);node.addProperty(field,field.equals("radius")?Integer.parseInt(s):Float.parseFloat(s));map.add(selected,node);continue;}
+            JsonElement old=at(obj,key),value;
             if(old.isJsonPrimitive()&&old.getAsJsonPrimitive().isNumber())value=new JsonPrimitive(old.toString().contains(".")?Double.parseDouble(s):Long.parseLong(s));
             else if(old.isJsonPrimitive()&&old.getAsJsonPrimitive().isBoolean())value=new JsonPrimitive(Boolean.parseBoolean(s));else value=new JsonPrimitive(s);
             put(obj,key,value);
@@ -117,14 +121,14 @@ public final class KMenuEditorScreen extends Screen {
     private void choice(JsonObject obj,String path,String label,String... values){int y=propertyY;propertyY+=35;if(y<108||y+32>height-31)return;int x=width-rightWidth;fieldLabels.add(new FieldLabel(label,x,y));String current=pending.getOrDefault(path,at(obj,path).getAsString());
         button(x,y+12,rightWidth-8,current,current,()->{int index=Arrays.asList(values).indexOf(current);pending.put(path,values[(index+1)%values.length]);rebuild();});}
     private void inspector(){
-        var obj=target(root());if(obj==null)return;
+        var obj=target(root());if(obj==null){if(mode==Mode.SHOP&&selected.startsWith("shop:"))nodeFields();return;}
         if(mode==Mode.LAYOUT&&!selected.startsWith("decoration/")) {
             for(String key:List.of("x","y","width","height"))field(obj,key,key);
             choice(obj,"anchorX","Horizontal anchor","START","CENTER","END");choice(obj,"anchorY","Vertical anchor","START","CENTER","END");
             for(String key:List.of("fontScale","itemScale","fill","border","text"))field(obj,key,key);
             choice(obj,"hidden","Hidden","false","true");return;
         }
-        if(mode==Mode.SETTINGS){field(obj,"grid","Grid size");choice(obj,"snap","Snap to grid","true","false");field(obj,"animationMillis","Animation milliseconds");field(obj,"scrollSpeed","Scroll speed");choice(obj,"questGraph","Quest graph view","false","true");return;}
+        if(mode==Mode.SETTINGS){serverTools();field(obj,"grid","Grid size");choice(obj,"snap","Snap to grid","true","false");field(obj,"animationMillis","Animation milliseconds");field(obj,"scrollSpeed","Scroll speed");choice(obj,"questGraph","Quest graph view","false","true");return;}
         if(obj.has("enabled"))choice(obj,"enabled","Enabled","true","false");
         if(obj.has("title")){field(obj,"title.en","Title · English");field(obj,"title.de","Titel · Deutsch");}
         if(obj.has("description")){field(obj,"description.en","Description · English");field(obj,"description.de","Beschreibung · Deutsch");}
@@ -146,17 +150,17 @@ public final class KMenuEditorScreen extends Screen {
         if(mode==Mode.CONTRACTS){choice(obj,"type","Contract type","RESOURCE","WITHER","DRAGON");if(obj.get("type").getAsString().equals("RESOURCE"))field(obj,"item","Consumed item");field(obj,"count","Required quantity");field(obj,"rewardSp","Reward · SP (1–10)");}
     }
     private void prerequisites(JsonObject obj){int y=propertyY;propertyY+=40;if(y<108||y+35>height-31)return;fieldLabels.add(new FieldLabel("Prerequisites: "+obj.getAsJsonArray("requires").size(),width-rightWidth,y));button(width-rightWidth,y+12,rightWidth-8,"Connect in node view","Im Node-Baum verbinden",()->{applyPending();if(mode==Mode.SHOP){chooseQuestDependency(selected,hasShiftDown());return;}mode=Mode.GRAPH;linkTool=true;linkSource="";rebuild();});}
-    private void nodeFields(){int y=propertyY;propertyY+=38;if(y>=108&&y+35<=height-31)button(width-rightWidth,y+12,rightWidth-8,"Reset node position","Node-Position zurücksetzen",()->{session.edit(r->r.getAsJsonObject("nodes").remove(selected));rebuild();});}
+    private void nodeFields(){var obj=new JsonObject();obj.add("node",EditorCodec.JSON.toJsonTree(GraphGeometry.point(session.current(),selected,mode==Mode.SHOP)));field(obj,"node.x","Node · X");field(obj,"node.y","Node · Y");field(obj,"node.radius","Node · radius");int y=propertyY;propertyY+=38;if(y>=108&&y+35<=height-31)button(width-rightWidth,y+12,rightWidth-8,"Reset node position","Node-Position zurücksetzen",()->{session.edit(r->r.getAsJsonObject("nodes").remove(selected));rebuild();});}
     private void buildPreview(){
         if(minecraft==null||mode!=Mode.LAYOUT)return;
         EditorClient.simulation(simulation);EditorClient.preview(session.current());try{previewMenu=new PremiumSkillScreen(true);int[] v=VIEWPORTS[viewportIndex];previewMenu.init(minecraft,v[0],v[1]);previewMenu.editorPage(page);previewScreen=previewMenu.editorPreviewDetail(previewState);}finally{EditorClient.preview(null);}
     }
     private List<String> entries(){List<String> values;
         if(mode==Mode.LAYOUT){var ids=new ArrayList<>(EditorDefaults.ELEMENTS);for(var w:session.current().decorations())ids.add("decoration/"+w.id());values=ids;}
-        else if(mode==Mode.SETTINGS)values=List.of("settings");else {var out=new ArrayList<String>();for(var e:root().getAsJsonArray(collection()))out.add(e.getAsJsonObject().get("id").getAsString());values=out;}
+        else if(mode==Mode.SETTINGS)values=List.of("settings");else {var out=new ArrayList<String>();if(mode==Mode.SHOP)out.addAll(GraphGeometry.SHOP_ROOTS);for(var e:root().getAsJsonArray(collection()))out.add(e.getAsJsonObject().get("id").getAsString());values=out;}
         return values.stream().filter(s->s.toLowerCase(Locale.ROOT).contains(filter.toLowerCase(Locale.ROOT))||entryName(s).toLowerCase(Locale.ROOT).contains(filter.toLowerCase(Locale.ROOT))).toList();
     }
-    private String entryName(String id){if(mode==Mode.LAYOUT||mode==Mode.SETTINGS)return id;for(var e:root().getAsJsonArray(collection())){var o=e.getAsJsonObject();if(o.get("id").getAsString().equals(id))return EditorCodec.JSON.fromJson(o.get("title"),Text.class).value(EditorClient.german());}return id;}
+    private String entryName(String id){if(mode==Mode.LAYOUT||mode==Mode.SETTINGS)return id;if(mode==Mode.SHOP&&id.startsWith("shop:"))return id.substring(5);for(var e:root().getAsJsonArray(collection())){var o=e.getAsJsonObject();if(o.get("id").getAsString().equals(id))return EditorCodec.JSON.fromJson(o.get("title"),Text.class).value(EditorClient.german());}return id;}
     @Override public void render(GuiGraphics g,int mx,int my,float dt){
         g.fill(0,0,width,height,0xFF07111B);g.drawString(font,tr("FOREVER / K-MENU STUDIO","FOREVER / K-MENÜ STUDIO"),9,11,MenuArt.WHITE);
         MenuArt.label(g,Component.literal("r"+opened.revision()+(session.dirty()?" · *":"")),Math.min(230,width/2),11,Math.max(1,width/2-80),MenuArt.CYAN,.8F);
@@ -179,19 +183,22 @@ public final class KMenuEditorScreen extends Screen {
         var r=previewBounds.get(selected);if(r!=null&&!tryMode){int x=(int)(previewX+r.x()*previewScale),y=(int)(previewY+r.y()*previewScale),w=(int)(r.width()*previewScale),h=(int)(r.height()*previewScale);outline(g,x,y,w,h,MenuArt.CYAN);g.fill(x+w-3,y+h-3,x+w+3,y+h+3,MenuArt.GOLD);}
     }
     private void outline(GuiGraphics g,int x,int y,int w,int h,int color){g.fill(x,y,x+w,y+1,color);g.fill(x,y+h-1,x+w,y+h,color);g.fill(x,y,x+1,y+h,color);g.fill(x+w-1,y,x+w,y+h,color);}
-    private Node node(String id,int index){return session.current().nodes().getOrDefault(id,new Node(60+(index%3)*140,45+(index/3)*115,18));}
-    private List<String> graphIds(){return mode==Mode.SHOP?session.current().products().stream().filter(p->p.enabled()).map(Product::id).toList():session.current().quests().stream().map(Quest::id).toList();}
+    private Node node(String id,int index){return GraphGeometry.point(session.current(),id,mode==Mode.SHOP);}
+    private List<String> graphIds(){if(mode!=Mode.SHOP)return session.current().quests().stream().map(Quest::id).toList();var list=new ArrayList<>(GraphGeometry.SHOP_ROOTS);for(var p:session.current().products())if(p.enabled()&&!p.id().equals(de.tekatz.foreverskyblock.progression.ShopCatalog.TEST.id()))list.add(p.id());return list;}
+    private String graphName(String id){return id.startsWith("shop:")?entryName(id):mode==Mode.SHOP?session.current().product(id).title().value(EditorClient.german()):session.current().quest(id).title().value(EditorClient.german());}
+    private String graphIcon(String id){return id.startsWith("shop:")?id.equals("shop:tier1")?"minecraft:dragon_head":id.equals("shop:reach")?"minecraft:spyglass":"minecraft:nether_star":mode==Mode.SHOP?session.current().product(id).icon():session.current().quest(id).icon();}
+    private void focusSelected(){if(mode!=Mode.GRAPH&&mode!=Mode.SHOP)return;var n=node(selected,graphIds().indexOf(selected));panX=(canvasRight-canvasLeft)/2F-n.x()*zoom;panY=(canvasBottom-134)/2F-n.y()*zoom;}
     private void drawGraph(GuiGraphics g,int mx,int my){
         int step=Math.max(8,(int)(session.current().settings().grid()*zoom*4));for(int x=canvasLeft+(int)(panX%step);x<canvasRight;x+=step)for(int y=130+(int)(panY%step);y<canvasBottom;y+=step)g.fill(x,y,x+1,y+1,0xFF234052);
         var ids=graphIds();
         if(mode==Mode.GRAPH)for(int i=0;i<ids.size();i++){var q=session.current().quest(ids.get(i));var b=node(q.id(),i);for(String dep:q.requires()){int j=ids.indexOf(dep);if(j<0)continue;var a=node(dep,j);MenuArt.line(g,gx(a.x()),gy(a.y()),gx(b.x()),gy(b.y()),q.prerequisiteMatch()==Match.ANY?MenuArt.GOLD:0xFF4D95A1);}}
         if(mode==Mode.SHOP){var qids=session.current().quests().stream().filter(q->session.current().products().stream().anyMatch(p->p.requires().contains(q.id()))).map(Quest::id).toList();int i=0;for(String id:qids){int x=gx(-100),y=gy(30+i++*70);MenuArt.circle(g,x,y,12,MenuArt.GOLD);MenuArt.centered(g,Component.literal(session.current().quest(id).title().value(EditorClient.german())),x-52,y+17,104,18,MenuArt.GOLD,.6F);for(int j=0;j<ids.size();j++)if(session.current().product(ids.get(j)).requires().contains(id)){var b=node(ids.get(j),j);MenuArt.line(g,x,y,gx(b.x()),gy(b.y()),MenuArt.GOLD);}}}
         for(int i=0;i<ids.size();i++){String id=ids.get(i);var n=node(id,i);if(id.equals(dragging)&&gesture!=null)n=gesture.nodes().getOrDefault(id,n);int x=gx(n.x()),y=gy(n.y()),r=Math.max(6,(int)(n.radius()*zoom));
-            boolean enabled=mode==Mode.SHOP?session.current().product(id).enabled():session.current().quest(id).enabled();int color=id.equals(selected)?MenuArt.CYAN:!enabled?MenuArt.DIM:MenuArt.BORDER;
+            boolean enabled=id.startsWith("shop:")||mode==Mode.SHOP?true:session.current().quest(id).enabled();int color=id.equals(selected)?MenuArt.CYAN:!enabled?MenuArt.DIM:MenuArt.BORDER;
             MenuArt.circle(g,x,y,r+2,color);MenuArt.circle(g,x,y,r,0xFF123044);
-            String icon=mode==Mode.SHOP?session.current().product(id).icon():session.current().quest(id).icon();var item=BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(icon)).orElse(Items.BARRIER);
+            String icon=graphIcon(id);var item=BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(icon)).orElse(Items.BARRIER);
             g.pose().pushPose();g.pose().translate(x-8*zoom,y-8*zoom,0);g.pose().scale(zoom,zoom,1);g.renderItem(item.getDefaultInstance(),0,0);g.pose().popPose();
-            String name=mode==Mode.SHOP?session.current().product(id).title().value(EditorClient.german()):session.current().quest(id).title().value(EditorClient.german());MenuArt.centered(g,Component.literal(name),x-61,y+r+7,122,22,MenuArt.WHITE,.7F);
+            String name=graphName(id);MenuArt.centered(g,Component.literal(name),x-61,y+r+7,122,22,MenuArt.WHITE,.7F);
         }
     }
     private int gx(float x){return (int)(canvasLeft+panX+x*zoom);}private int gy(float y){return (int)(134+panY+y*zoom);}
@@ -204,7 +211,7 @@ public final class KMenuEditorScreen extends Screen {
         else if(mode==Mode.CONTRACTS)MenuArt.label(g,tr("Resource turn-in consumes items on the server.","Ressourcenabgabe verbraucht Items auf dem Server."),x,y,w,MenuArt.GOLD,.7F);
     }
     @Override public boolean mouseClicked(double mx,double my,int button){
-        if(mx<leftWidth+1&&my>=109&&my<canvasBottom){var list=entries();int i=listScroll+(int)((my-109)/25);if(i<list.size()){run(()->{applyPending();selected=list.get(i);propertyScroll=0;pending.clear();rebuild();});return true;}}
+        if(mx<leftWidth+1&&my>=109&&my<canvasBottom){var list=entries();int i=listScroll+(int)((my-109)/25);if(i<list.size()){run(()->{applyPending();selected=list.get(i);propertyScroll=0;pending.clear();focusSelected();rebuild();});return true;}}
         if(mx>=canvasLeft&&mx<canvasRight&&my>=130&&my<canvasBottom){
             if(mode==Mode.LAYOUT){if(tryMode){EditorClient.preview(session.current());try{boolean handled=previewScreen.mouseClicked((mx-previewX)/previewScale,(my-previewY)/previewScale,button);previewScreen=previewMenu.editorActivePreview();return handled;}finally{EditorClient.preview(null);}}
                 var entries=new ArrayList<>(previewBounds.entrySet());Collections.reverse(entries);String hit="";for(var e:entries)if(e.getValue().contains((mx-previewX)/previewScale,(my-previewY)/previewScale)){hit=e.getKey();break;}
@@ -237,6 +244,7 @@ public final class KMenuEditorScreen extends Screen {
         session.edit(r->{var q=find(r.getAsJsonArray("quests"),destination);var a=q.getAsJsonArray("requires");var values=new LinkedHashSet<String>();for(var e:a)values.add(e.getAsString());if(remove)values.remove(source);else values.add(source);q.add("requires",EditorCodec.JSON.toJsonTree(values));});rebuild();
     }
     private void chooseQuestDependency(String id,boolean remove){
+        if(session.current().product(id)==null){message=tr("Select a shop product first.","Wähle zuerst ein Shop-Angebot aus.").getString();return;}
         var quests=session.current().quests();minecraft.setScreen(new Screen(tr("Quest prerequisite","Quest-Voraussetzung")){
             int offset;
             @Override protected void init(){int row=0;for(int i=offset;i<quests.size()&&row<(height-65)/24;i++){var q=quests.get(i);addRenderableWidget(Button.builder(Component.literal(q.title().value(EditorClient.german())),b->{session.edit(r->{var p=find(r.getAsJsonArray("products"),id);var a=p.getAsJsonArray("requires");var values=new LinkedHashSet<String>();for(var v:a)values.add(v.getAsString());if(remove)values.remove(q.id());else values.add(q.id());p.add("requires",EditorCodec.JSON.toJsonTree(values));});minecraft.setScreen(KMenuEditorScreen.this);}).bounds(25,30+row++*24,width-50,20).build());}}
@@ -252,15 +260,17 @@ public final class KMenuEditorScreen extends Screen {
         else if(mode==Mode.SHOP){id="forever_skyblock:shop/custom/"+suffix();var p=new Product(id,true,new Text("New package","Neues Paket"),new Text("Describe this package.","Beschreibe dieses Paket."),"minecraft:chest",0,1,0,List.of(),List.of(new EditorDocument.Stack("minecraft:cobblestone",1)));session.edit(r->r.getAsJsonArray("products").add(EditorCodec.JSON.toJsonTree(p)));}
         else if(mode==Mode.CONTRACTS){id="forever_skyblock:contract/custom/"+suffix();var c=new Contract(id,true,new Text("New contract","Neuer Vertrag"),new Text("Submit the required resources.","Gib die erforderlichen Ressourcen ab."),"minecraft:cobblestone",ContractType.RESOURCE,"minecraft:cobblestone",64,1,0);session.edit(r->r.getAsJsonArray("contracts").add(EditorCodec.JSON.toJsonTree(c)));}
         else if(mode==Mode.CHAPTERS){id="chapter_"+suffix();var c=new Chapter(id,new Text("New chapter","Neues Kapitel"),"minecraft:book",session.current().chapters().size());session.edit(r->r.getAsJsonArray("chapters").add(EditorCodec.JSON.toJsonTree(c)));}
-        else return;selected=id;propertyScroll=0;pending.clear();rebuild();
+        else return;selected=id;propertyScroll=0;pending.clear();focusSelected();rebuild();
     }
-    private void duplicate(){applyPending();if(mode==Mode.LAYOUT||mode==Mode.SETTINGS||mode==Mode.CHAPTERS){addEntry();return;}String old=selected;String prefix=mode==Mode.SHOP?"forever_skyblock:shop/custom/":mode==Mode.CONTRACTS?"forever_skyblock:contract/custom/":"forever_skyblock:quest/";String id=prefix+suffix();session.edit(r->{var q=find(r.getAsJsonArray(collection()),old).deepCopy();q.addProperty("id",id);if(q.has("tasks")&&q.getAsJsonArray("tasks").get(0).getAsJsonObject().get("type").getAsString().equals("LEGACY")){q.add("tasks",EditorCodec.JSON.toJsonTree(List.of(new Task("objective_1",TaskType.CRAFT,"minecraft:cobblestone",1))));}r.getAsJsonArray(collection()).add(q);});selected=id;propertyScroll=0;pending.clear();rebuild();}
+    private void duplicate(){applyPending();if(mode==Mode.LAYOUT||mode==Mode.SETTINGS||mode==Mode.CHAPTERS){addEntry();return;}String old=selected;String prefix=mode==Mode.SHOP?"forever_skyblock:shop/custom/":mode==Mode.CONTRACTS?"forever_skyblock:contract/custom/":"forever_skyblock:quest/";String id=prefix+suffix();session.edit(r->{var q=find(r.getAsJsonArray(collection()),old).deepCopy();q.addProperty("id",id);if(q.has("tasks")&&q.getAsJsonArray("tasks").get(0).getAsJsonObject().get("type").getAsString().equals("LEGACY")){q.add("tasks",EditorCodec.JSON.toJsonTree(List.of(new Task("objective_1",TaskType.CRAFT,"minecraft:cobblestone",1))));}r.getAsJsonArray(collection()).add(q);});selected=id;propertyScroll=0;pending.clear();focusSelected();rebuild();}
     private void disable(){applyPending();session.edit(r->{var obj=target(r);if(obj!=null&&obj.has("enabled"))obj.addProperty("enabled",!obj.get("enabled").getAsBoolean());});rebuild();}
     private void addTask(){applyPending();var q=session.current().quest(selected);if(q==null||q.legacy()){message=tr("Duplicate a built-in quest to use custom objectives.","Dupliziere eine bestehende Quest für eigene Aufgaben.").getString();return;}session.edit(r->find(r.getAsJsonArray("quests"),selected).getAsJsonArray("tasks").add(EditorCodec.JSON.toJsonTree(new Task("objective_"+suffix(),TaskType.CRAFT,"minecraft:cobblestone",1))));rebuild();}
     private void addStack(){applyPending();session.edit(r->find(r.getAsJsonArray("products"),selected).getAsJsonArray("contents").add(EditorCodec.JSON.toJsonTree(new EditorDocument.Stack("minecraft:cobblestone",1))));rebuild();}
     private void addDecoration(){applyPending();String id="text_"+suffix();var w=new Decoration(id,page,DecorationType.TEXT,new Text("New text","Neuer Text"),"minecraft:paper","",20,20,120,16,"FF51D7ED");session.edit(r->r.getAsJsonArray("decorations").add(EditorCodec.JSON.toJsonTree(w)));selected="decoration/"+id;propertyScroll=0;rebuild();}
-    private void arrange(){applyPending();var ids=graphIds();session.edit(r->{var map=r.getAsJsonObject("nodes");for(int i=0;i<ids.size();i++){String id=ids.get(i);int depth=mode==Mode.GRAPH?depth(id,new HashSet<>()):i/3;map.add(id,EditorCodec.JSON.toJsonTree(new Node(60+(i%3)*140,45+depth*115,18)));}});rebuild();}
-    private int depth(String id,Set<String> stack){if(!stack.add(id))return 0;var q=session.current().quest(id);int result=0;if(q!=null)for(String dep:q.requires())result=Math.max(result,1+depth(dep,new HashSet<>(stack)));return result;}
+    private void arrange(){applyPending();if(mode==Mode.GRAPH)session.edit(r->r.add("nodes",EditorCodec.JSON.toJsonTree(GraphGeometry.arrange(session.current()))));else session.edit(r->{var map=r.getAsJsonObject("nodes");for(String id:graphIds())map.remove(id);});focusSelected();rebuild();}
+    private void serverTools(){int y=propertyY;propertyY+=48;if(y<108||y+42>height-31)return;button(width-rightWidth,y,rightWidth-8,"Reload server config","Serverdatei neu laden",()->confirm(tr("Reload the server's K-menu file?","K-Menü-Datei des Servers neu laden?"),()->serverOperation(2)));button(width-rightWidth,y+22,rightWidth-8,"Restore published backup","Veröffentlichte Sicherung laden",()->confirm(tr("Restore the last published backup? Newer quest IDs will remain disabled.","Letzte veröffentlichte Sicherung laden? Neuere Quest-IDs bleiben deaktiviert erhalten."),()->serverOperation(3)));}
+    private void serverOperation(int action){net.neoforged.neoforge.network.PacketDistributor.sendToServer(new EditorNetwork.Request(action,UUID.randomUUID(),0,1,opened.revision(),""));}
+    private void reconcile(){applyPending();var latest=EditorClient.document();if(latest.revision()==opened.revision()){message=tr("Already using the current server revision.","Der Entwurf basiert auf der aktuellen Serverversion.").getString();return;}var result=EditorMerge.reconcile(opened,session.current(),latest,true);if(result.conflicts().isEmpty()){opened=latest;session.replace(result.document());rebuild();message=tr("Draft reconciled.","Entwurf abgeglichen.").getString();return;}String paths=result.conflicts().stream().limit(8).map(EditorMerge.Conflict::path).collect(java.util.stream.Collectors.joining("\n"));confirm(tr("Conflicts in:\n"+paths+"\nKeep your values? No uses server values for these fields.","Konflikte in:\n"+paths+"\nEigene Werte behalten? Nein übernimmt hier die Serverwerte."),()->{opened=latest;session.replace(result.document());rebuild();},()->{var merged=EditorMerge.reconcile(opened,session.current(),latest,false);opened=latest;session.replace(merged.document());rebuild();});}
     private void saveDraft(){run(()->{applyPending();EditorStore.atomic(EditorClient.directory().resolve("draft.json"),EditorCodec.encode(session.current()));lastDraft=System.nanoTime();message=tr("Draft saved","Entwurf gespeichert").getString();});}
     private void loadDraft(){run(()->{var d=EditorStore.read(EditorClient.directory().resolve("draft.json"));session.replace(d.withRevision(opened.revision()));pending.clear();rebuild();message=tr("Draft loaded; compare before publishing.","Entwurf geladen; vor Veröffentlichung vergleichen.").getString();});}
     private void chooseImport(){pathDialog(tr("Import JSON / exported ZIP","JSON / exportierte ZIP importieren"),"",path->{var d=path.toString().toLowerCase(Locale.ROOT).endsWith(".zip")?EditorStore.importZip(path):EditorStore.read(path);session.replace(d.withRevision(opened.revision()));pending.clear();minecraft.setScreen(this);});}
@@ -273,7 +283,7 @@ public final class KMenuEditorScreen extends Screen {
     private void export(){applyPending();confirm(tr("Export directly to a local Git repository? Choose No for a portable ZIP.","Direkt in eine lokale Git-Repo exportieren? Nein erzeugt eine portable ZIP."),()->pathDialog(tr("ForeverSkyblock repository folder","ForeverSkyblock-Repositoryordner"),"",path->{EditorStore.exportRepository(session.current(),path);message="Exported: "+path; minecraft.setScreen(this);}),()->run(()->{Path zip=EditorClient.directory().resolve("exports/kmenu-r"+opened.revision()+"-"+System.currentTimeMillis()+".zip");EditorStore.exportZip(session.current(),zip);message="Exported: "+zip;minecraft.setScreen(this);}));}
     private void confirmPublish(){applyPending();EditorCodec.validateUpdate(opened,session.current());confirm(tr("Publish this draft for every player on this server? Existing completed quests keep their rewards.","Diesen Entwurf für alle Spieler auf diesem Server aktivieren? Abgeschlossene Quests behalten ihre Belohnungen."),()->{saveDraft();EditorClient.publish(session.current());});}
     private void confirm(Component text,Runnable yes){confirm(text,yes,()->minecraft.setScreen(this));}
-    private void confirm(Component text,Runnable yes,Runnable no){minecraft.setScreen(new ConfirmScreen(ok->{minecraft.setScreen(this);run(ok?yes:no);},tr("K-menu editor","K-Menü-Editor"),text));}
+    private void confirm(Component text,Runnable yes,Runnable no){minecraft.setScreen(new ConfirmScreen(ok->{minecraft.setScreen(this);run(()->{if(ok)yes.run();else no.run();});},tr("K-menu editor","K-Menü-Editor"),text));}
     public void serverReply(EditorNetwork.Reply r){if(r.kind()==2){message=r.message();if(message.startsWith("Published")){pending.clear();opened=EditorClient.document();session=new EditorSession(opened);rebuild();}}else if(r.kind()==0&&r.revision()!=opened.revision())message=tr("Server revision changed. Your draft is preserved; reopen to reconcile.","Serverversion geändert. Dein Entwurf bleibt erhalten; zum Abgleichen neu öffnen.").getString();}
     @Override public void onFilesDrop(List<Path> paths){if(paths.size()!=1){message="Drop one JSON or export ZIP";return;}run(()->{Path p=paths.getFirst();var d=p.toString().endsWith(".zip")?EditorStore.importZip(p):EditorStore.read(p);session.replace(d.withRevision(opened.revision()));pending.clear();rebuild();});}
     @Override public void onClose(){if(session.dirty()||!pending.isEmpty())confirm(tr("Save your draft before closing?","Entwurf vor dem Schließen speichern?"),()->{saveDraft();minecraft.setScreen(parent);},()->minecraft.setScreen(parent));else minecraft.setScreen(parent);}

@@ -13,8 +13,9 @@ public final class EditorStore {
     public static final String REPO_PATH="pack/config/forever_skyblock/kmenu.json";
     private final Path file;
     public EditorStore(Path file){this.file=file;}
+    public boolean exists(){return Files.exists(file);}
     public EditorDocument load() throws IOException {
-        if(!Files.exists(file))return EditorDefaults.create();
+        if(!Files.exists(file)){if(Files.exists(file.resolveSibling(file.getFileName()+".bak")))throw new IOException("Primary K-menu config missing; restore the backup");return EditorDefaults.create();}
         return read(file);
     }
     public static EditorDocument read(Path path) throws IOException {

@@ -28,7 +28,7 @@ public final class EditorService {
         this.server=server;store=new EditorStore(FMLPaths.CONFIGDIR.get().resolve("forever_skyblock/kmenu.json"));
         try {
             document=store.load();
-            if(document.revision()==0)try(var in=EditorService.class.getResourceAsStream("/assets/forever_skyblock/editor/kmenu.json")) {
+            if(!store.exists())try(var in=EditorService.class.getResourceAsStream("/assets/forever_skyblock/editor/kmenu.json")) {
                 if(in!=null)document=EditorCodec.decode(new String(in.readNBytes(EditorDocument.MAX_BYTES+1),StandardCharsets.UTF_8));
             }
         }catch(IOException|RuntimeException e){document=EditorDefaults.create();loadError="Could not load K-menu config: "+e.getMessage();com.mojang.logging.LogUtils.getLogger().error(loadError,e);}
@@ -57,11 +57,13 @@ public final class EditorService {
                 reply(p,0,EditorCodec.WIRE.toJson(document),loadError,true);return;
             }
             if(request.action()==1){receive(p,request,now);return;}
+            if(request.revision()!=document.revision())throw new IOException("Conflict: server revision changed");
+            long prior=lastRequest.getOrDefault(p.getUUID(),0L);if(now-prior<250_000_000L)throw new IOException("Please wait before another operation");lastRequest.put(p.getUUID(),now);
             if(request.action()==2){
                 if(!loadError.isEmpty())throw new IOException("Fix or restore the invalid config before publishing");
                 var next=store.load();EditorCodec.validateUpdate(document,next);activate(next.withRevision(Math.addExact(document.revision(),1)));reply(p,2,"","Reloaded",false);
             }else if(request.action()==3){
-                var backup=store.readBackup();EditorCodec.validateUpdate(document,backup);activate(backup.withRevision(Math.addExact(document.revision(),1)));reply(p,2,"","Backup restored",false);
+                var backup=EditorMerge.rollback(document,store.readBackup());EditorCodec.validateUpdate(document,backup);activate(backup.withRevision(Math.addExact(document.revision(),1)));reply(p,2,"","Backup restored",false);
             }
         }catch(IOException|RuntimeException e){uploads.remove(p.getUUID());reply(p,2,"",e.getMessage()==null?"Editor operation failed":e.getMessage().substring(0,Math.min(950,e.getMessage().length())),false);}
     }
