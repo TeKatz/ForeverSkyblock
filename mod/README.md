@@ -4,6 +4,8 @@ Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package 
 
 The integrated `main` baseline remains 0.20.1 after PR #15. Development branch `feature/k-menu-overhaul` follows tested 0.23.0 with a round-node Shop graph, improved challenge/contract browsing and details, compact profile with actual skin face, custom status icons and subtle motion. Server-supplied playtime/deaths/kills and world-local milestone-based Island Level use protocol **skills-9**; matching client/server versions are required. Player profile schema remains 4/5/6; the backed-up world-progress file migrates to schema 2. See [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md). No merge or release is implied.
 
+The final 0.24.0 source passed 78 unit tests, native-client render/input checks and both 90-test server suites, including NeoForge 21.1.259. The fresh JAR was checked against all 158 source resources and excludes the visual fixture/GameTests. Exact source, run and artifact hash are recorded in [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md#validation-and-acceptance).
+
 ## Early material progression
 
 The Condenser Mark I, Mixing Chamber and Freezing Chamber remain the primitive foundation. The 0.19.x-0.20.1 stack adds the deterministic route from Water/Farming to Iron, then uses Iron to unlock a higher automation tier and close the wood loop.

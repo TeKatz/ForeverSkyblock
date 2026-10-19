@@ -40,6 +40,8 @@ The 0.21.1 follow-up adds a fuller block-tree crown, preserves the approved Gard
 
 `feature/k-menu-overhaul` follows validated 0.23.0 head `c08c9a3d65825d6025ba7981e28b2d41578579fd`. It replaces visual patch mixins with direct layout/input ownership, introduces the round-node Shop graph, compact profile, scrolling categories, readable Challenge/Contract details and subtle motion. TeKatz selected shared world milestones as the Island Level foundation: one level per distinct world milestone, tracked from this update without importing permanent profile history or awarding extra SP. Playtime/deaths/kills use real Vanilla server statistics. The network protocol becomes `skills-9`; player profile schema remains 4/5/6 and the backed-up world-progress file migrates from schema 1 to 2. This remains development work, separate from main's 0.20.1. See [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md).
 
+Source `227c81611f8c8cda719c59106c80d6350a2034a1` passed Actions `39178417187`: 78 unit tests, client startup, 17 actual-client fixture views plus card/node/scroll input checks, and both 90-test server suites. The fresh 0.24.0 JAR was inspected against the checkout; see the live K-menu document for its hash and real-world acceptance boundary.
+
 ## Integrated gameplay and UI
 
 `main` contains the complete progression/meta stack through 0.18.1 plus the 0.19.x-0.20.1 early material-processing expansion:

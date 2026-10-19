@@ -9,6 +9,7 @@
 - Display authoritative Vanilla world playtime/deaths/kills. Add shared world-milestone Island Level, explicitly chosen by TeKatz, with no additional rewards or imported permanent history.
 - Extend protocol to `skills-9`; preserve player schema 4/5/6 and migrate the backed-up world-progress file to schema 2 without losing Trader/world-upgrade state.
 - Add persistence/evidence/motion/codec regressions and opt-in actual-client visual fixtures, excluded from the test JAR.
+- Validated final source with 78 unit tests, 17 native-client fixture views/input checks and both 90-test server suites; fresh artifact inspected.
 
 
 ## 0.23.0 — Iron balancing, Packed Mud and Garden alignment (development)
