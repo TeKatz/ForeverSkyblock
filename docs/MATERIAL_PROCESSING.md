@@ -1,10 +1,10 @@
-# Material processing and automation foundation — integrated 0.20.1
+# Material processing and automation foundation — integrated 0.24.0
 
-Integrated through PR #15 on October 18, 2026. This document describes the live early material-processing path in `main`. The fixed starter-island NBT is unchanged and no release is implied by the merge.
+The 0.19–0.20 foundation was integrated through PR #15; the 0.21–0.24 follow-ups are integrated through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16) on October 19, 2026. This document describes the live early material-processing path in `main`. The fixed starter-island NBT is unchanged; no release is implied.
 
-Development follow-up **0.22.0** on `feature/garden-wheat-polish` adds retained Wheat Seeds -> **4 Wheat + 2 Seeds / 16 seconds**, synchronized crop presentation and the Iron-priced Wooden Hopper. These changes are separate from the integrated baseline described below. See [the crop template and validation](MACHINE_ANIMATIONS.md#0220-garden-crops-and-pack-fixes).
+Integrated **0.22.0** adds retained Wheat Seeds -> **4 Wheat + 2 Seeds / 16 seconds**, synchronized crop presentation and the Iron-priced Wooden Hopper. See [the crop template and validation](MACHINE_ANIMATIONS.md#0220-garden-crops-and-pack-fixes).
 
-Development follow-up **0.22.1** on `feature/garden-harvest-routing` separates the harvest: a hopper under MK II takes the primary output, while one under Garden Chamber takes the secondary output. The existing controller GUI explains both routes; all inventory remains in that controller. See [routing behavior and validation](MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports). This is not yet integrated into main.
+Integrated **0.22.1** separates harvest: a hopper under MK II takes the primary output, while one under Garden Chamber takes the secondary. The controller GUI explains both routes; all inventory remains in that controller. See [routing behavior and validation](MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports).
 
 ## Progression goal
 
@@ -77,13 +77,13 @@ Mark II retains all Mark I recipes and additionally unlocks:
 
 The Sapling recipe deliberately does not consume Leaves. Harvesting Leaves with Wooden Shears suppresses natural Sapling drops, so tying both Bone Meal and Sapling production to the same limited Leaf stock created an avoidable softlock risk. Wheat Seeds are renewable as soon as farming is established and give that existing by-product an additional progression role.
 
-Only Oak is exposed at this stage because it is the tree species guaranteed by the current opening progression. Spruce, Birch, Jungle, Acacia, Dark Oak, Cherry and Mangrove recipes remain deferred until the pack provides a real first-acquisition path for those species. JEI must not advertise dead-end recipes that cannot be bootstrapped.
+Oak is currently the only supported tree because it is the tree species guaranteed by the current opening progression. Spruce, Birch, Jungle, Acacia, Dark Oak, Cherry and Mangrove recipes remain deferred until the pack provides a real first-acquisition path for those species. JEI must not advertise dead-end recipes that cannot be bootstrapped.
 
 Condenser recipes carry an optional `minimum_tier` field, defaulting to Mark I. Mark I cannot execute Mark-II-only recipes. Persistent input locks continue to govern normal Condenser insertion.
 
 ## Garden Chamber
 
-The **Garden Chamber** is the dedicated wood-production upgrade and is intentionally exclusive to **Condenser Mark II**.
+The **Garden Chamber** is the dedicated tree/crop-production upgrade and is intentionally exclusive to **Condenser Mark II**.
 
 The player-facing name is simply `Garden Chamber`. The internal registry ID remains `forever_skyblock:garden_chamber_mark_i` to preserve compatibility with the already-tested development worlds/items created before the visible rename.
 
@@ -105,20 +105,22 @@ Garden mode has strict priority over the other adjacent upgrades:
 
 The Garden interface replaces the normal Condenser process cards with a green landscape, a persistent specimen slot, a growth bar, two harvest outputs and a dedicated Garden recipe button.
 
-Initial Garden recipe:
+Oak Garden recipe:
 
 - specimen: **1 Oak Sapling**;
 - specimen is **not consumed**;
 - 320 ticks / **16 seconds**;
 - output: **4 Oak Logs + 8 Oak Leaves**.
 
+Wheat retains **1 Wheat Seeds** and produces **4 Wheat + 2 Seeds every 16 seconds**, using the shared crop presentation profile.
+
 The specimen slot is limited to one item and functions as a machine setting rather than a consumed ingredient. Garden recipes are data-driven so later progression can add other trees or crops only after the corresponding plant has a real first-acquisition path.
 
-Garden automation is exposed through the existing Condenser item capability. Automation can insert a valid specimen and extract both harvest outputs. Hidden normal Condenser slots are not exposed while Garden mode is active.
+Automation inserts a supported specimen through the Condenser capability. It extracts only the primary harvest through MK II and only the secondary harvest through the adjacent Garden Chamber's bottom or unsided port. Both slots remain manually accessible in the Condenser GUI. Hidden normal inputs stay inaccessible during Garden mode; either full output pauses production. The Chamber has no standalone storage or GUI.
 
 ## Garden presentation
 
-The 0.20.1 presentation pass keeps the Garden system visually distinct from normal condensing without changing the gameplay numbers:
+The presentation introduced in 0.20.1 and polished through 0.22.x keeps the Garden system visually distinct from normal condensing without changing the gameplay numbers:
 
 - the Condenser Garden GUI uses a larger layered landscape with sky, hills, soil, clouds and a more detailed staged tree-growth animation;
 - the Garden JEI page is intentionally static and compact: specimen, retained-state indicator, duration and two outputs, with no decorative tree-growth animation in the recipe overview;
@@ -161,20 +163,20 @@ The pack no longer requires permanent manual tree chopping after the player reac
 
 ## Balancing feedback from the automated Iron line
 
-On October 19, 2026, TeKatz tested the 0.22.1 setup and reported relatively fast accumulation of Iron after building the complete automated chain, with Bone Meal produced by its parallel Leaf-processing branch. Use that established-factory availability when balancing future content. The first-Iron milestone and mass production after automation are different pacing stages; larger Iron quantities alone should not be assumed to keep later content difficult. See [the agreed balancing baseline](DESIGN.md#automated-iron-as-a-balancing-baseline--october-19-2026). Existing yields, durations and recipes are unchanged by this feedback.
+On October 19, 2026, TeKatz tested the 0.22.1 setup and reported relatively fast accumulation of Iron after building the complete automated chain, with Bone Meal produced by its parallel Leaf-processing branch. Use that established-factory availability when balancing future content. The first-Iron milestone and mass production after automation are different pacing stages; larger Iron quantities alone should not be assumed to keep later content difficult. See [the agreed balancing baseline](DESIGN.md#automated-iron-as-a-balancing-baseline--october-19-2026). The feedback itself changed no recipes; the requested 0.23.0 trial below subsequently adjusted processing speed and Iron costs.
 
 ## Compatibility and validation
 
-No player-profile schema, progression-network protocol or starter-island change is required. Existing Mark I saves retain their stable original inventory/filter indices; Garden storage is appended after the existing Condenser and Freezing slots for save compatibility.
+The material-processing changes require no player-profile schema, progression-network protocol or starter-island change. Existing Mark I saves retain their stable original inventory/filter indices; Garden storage is appended after the existing Condenser and Freezing slots for save compatibility. The separate 0.24.0 K-menu update uses protocol `skills-9` and world-progress schema 2; see [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md#island-level-explicitly-chosen-world-progress).
 
-Final pre-merge head `aec270d7bc0caea5952af034ed8505ce0fd3d68f` passed GitHub Actions run **#259**: Java 21 build/unit tests, headless client mixin smoke, dedicated regression GameTests and the full NeoForge 21.1.259 pack-runtime integration suite.
+Historical 0.20.1 pre-merge head `aec270d7bc0caea5952af034ed8505ce0fd3d68f` passed GitHub Actions run **#259**: Java 21 build/unit tests, headless client mixin smoke, dedicated regression GameTests and the full NeoForge 21.1.259 pack-runtime integration suite. Current 0.24.0 validation is recorded in [VALIDATION.md](VALIDATION.md#0240-integration--pr-16).
 
 Regression coverage includes Mud consumption, water-gated Washing, pause/resume, Washing automation, Mark-I tier rejection, Mark-II Stone Meal, the Wheat-Seed Sapling recipe, Garden exclusivity, retained specimen, dual-output harvest and Garden automation. TeKatz separately performed in-game testing throughout the 0.19.x/0.20.x visual iterations.
 
 
-## 0.23.0 balancing and Packed Mud (development)
+## 0.23.0 balancing and Packed Mud
 
-Branch `feature/iron-balance-packed-mud`, based on 0.22.1 head `06d01d6c03f063ed68fc4ce27cac4f25588d4df6`, contains the next requested balancing trial. It is not integrated into main.
+Developed on `feature/iron-balance-packed-mud` from validated 0.22.1 head `06d01d6c03f063ed68fc4ce27cac4f25588d4df6`, this requested balancing trial is integrated into `main` through PR #16. It remains subject to later gameplay tuning.
 
 ### Log throughput
 
@@ -184,7 +186,7 @@ The shared `condensing/logs` recipe uses **120 ticks / six seconds**, retaining 
 
 Normal Hopper uses `I I` / `BCB` / ` I `: I = Iron Ingot, B = Iron Block, C = Chest. Total is two Blocks, three Ingots and one Chest (21 Iron Ingots equivalent, excluding Chest). `forever_skyblock:hopper` is authoritative; an explicit condition removes the original `minecraft:hopper`, and the existing recipe-replacement filter now suppresses competing static normal-Hopper outputs as well as the existing Wooden Hopper alternatives. A recipe-book advancement unlocks the replacement. Wooden Hopper still costs two Ingots, three Planks and a wooden Chest.
 
-The four custom Iron tool heads each replace one Ingot with one Block. Exact costs and retained prior-tier tools/Chains are documented in [TOOL_PROGRESSION.md](TOOL_PROGRESSION.md#0230-iron-cost-adjustment-development). The personal Iron Tools challenge validates the new one-Block ingredient proof, rejects the previous all-Ingot proof, and retains the existing rewards and earned claims. Other tool tiers and durability policy are unchanged. The distributed Recipe Editor snapshots mirror the recipes/removal/advancement definitions byte-for-byte; the mod does not rewrite a player's local Recipe Editor configuration.
+The four custom Iron tool heads each replace one Ingot with one Block. Exact costs and retained prior-tier tools/Chains are documented in [TOOL_PROGRESSION.md](TOOL_PROGRESSION.md#0230-iron-cost-adjustment). The personal Iron Tools challenge validates the new one-Block ingredient proof, rejects the previous all-Ingot proof, and retains the existing rewards and earned claims. Other tool tiers and durability policy are unchanged. The distributed Recipe Editor snapshots mirror the recipes/removal/advancement definitions byte-for-byte; the mod does not rewrite a player's local Recipe Editor configuration.
 
 For an existing instance with Recipe Editor overrides, also apply `ForeverSkyblock-0.23.0-RecipeEditor-Update.zip` at the instance root. It contains only the nine matching data files under `config/forever_recipe_editor/generated_pack/data/`; these refresh the four Iron-tool recipes, Logs, Packed Mud, the normal Hopper/removal and its recipe-book advancement. The test JAR itself also bundles those definitions for standalone installation.
 

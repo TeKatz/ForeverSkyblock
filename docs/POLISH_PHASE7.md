@@ -1,6 +1,6 @@
 # Phase 7 — general polish and stability (historical integrated phase)
 
-Phase 7 was intentionally **not a progression-balancing phase**. It created a cleaner technical baseline before work moved into early-game pacing and the Freezing Chamber. The 0.16.0 work is now integrated into the current 0.18.1 `main` baseline through PR #13.
+Phase 7 was intentionally **not a progression-balancing phase**. It created a cleaner technical baseline before work moved into early-game pacing and the Freezing Chamber. The 0.16.0 work was integrated through PR #13. This is a historical phase record; [CURRENT_STATE.md](CURRENT_STATE.md) describes the current baseline.
 
 Historical development branch: `chore/general-polish-phase7`. Historical target version: **0.16.0**. No release was published from that phase.
 
@@ -40,7 +40,7 @@ Some later phases added early-game/world QoL and the Freezing Chamber, but the r
 
 ## Compatibility boundary
 
-Phase 7 introduced no new profile schema. Existing schema-4, schema-5 and schema-6 behavior remained compatible with the 0.15.0 development line and `skills-8` remained the client/server protocol. That remains true in the current 0.18.1 baseline.
+Phase 7 introduced no new profile schema. Existing schema-4, schema-5 and schema-6 behavior remained compatible with the 0.15.0 development line and `skills-8` remained the client/server protocol. That was the 0.18.1 baseline; 0.24.0 preserves player schemas but extends the protocol to `skills-9` and world progress to schema 2.
 
 ## Validation history
 

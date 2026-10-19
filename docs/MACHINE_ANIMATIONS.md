@@ -1,6 +1,6 @@
-# Machine animations and Garden harvest routing — 0.22.1
+# Machine animations, Garden crops and harvest ports — integrated through 0.24.0
 
-Current development branch: [`feature/garden-harvest-routing`](https://github.com/TeKatz/ForeverSkyblock/tree/feature/garden-harvest-routing), extending the validated 0.22.0 `feature/garden-wheat-polish` and earlier animation work. Both descend from integrated `main` commit `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a` (0.20.1). The earlier 0.21.x evidence below is historical; see the 0.22.1 section for the current follow-up. This document does not imply a merge or release.
+The 0.21.1 animation, 0.22.0 crop/pack-fix and 0.22.1 harvest-routing updates are integrated into `main` through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16), included in 0.24.0. Branch names and artifact evidence below identify their historical development origins. Later six-second Log timing and centered output badges are documented in [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud); current K-menu behavior is in [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md). No release is implied.
 
 ## 0.21.1 polish from TeKatz's client feedback
 
@@ -29,11 +29,11 @@ Software raster previews of the actual GUI draw routine and the exact block-tree
 | Mark II + Garden Chamber | Rooted miniature tree, grow-light scanner, harvest sweep | Approved greenhouse growth scene with lamp and growth motes; no flying harvest items |
 | Adjacent Garden Chamber | Rooted tree grows in the soil, lamp follows its rail, harvest sweep closes the cycle | Uses the controller's exclusive Garden screen; no new standalone GUI |
 
-The selected recipe, rather than mere module presence, determines the normal process scene. Existing recipes and custom two-input recipes retain their original matching, quantities and durations. Arbitrary non-Oak Garden specimens retain their item identity in the greenhouse; the currently implemented Oak recipe receives the modeled rooted tree.
+The selected recipe, rather than mere module presence, determines the normal process scene. Existing recipes and custom two-input recipes retain their original matching, quantities and durations. The Oak recipe receives the modeled rooted tree; Wheat uses the shared crop renderer described below. Other data-defined specimens retain their item identity unless a dedicated presentation is registered.
 
 The new Garden Chamber exterior has a dark inset base, steel posts, copper trim, clear cutout glazing, soil bed, lamp rails, rear housings and a compact roof vent. Its inventory model includes a static planted specimen; the placed model has no permanent decorative crop. The internal ID remains `garden_chamber_mark_i`.
 
-## State and compatibility
+## Animation state and compatibility (0.21.x scope)
 
 - The existing server processing methods, recipes, automation handlers, slot positions, filters, recipe priority, exclusive Garden rule and save fields are retained.
 - The existing viewer update packet carries a transient `Visual` compound with separate normal/Garden/Freezing statuses, real durations, resolved job and result preview. It is not written into persistent machine saves and does not change the menu protocol or progression protocol.
@@ -64,7 +64,7 @@ Suggested client checks: Mark I/II Logs and Leaves; Mark-II Stone Meal; Dirt/Mud
 
 ## 0.22.0 Garden crops and pack fixes
 
-This bounded follow-up uses `feature/garden-wheat-polish`, based on animation commit `65922b4f4305c99067d57b97517fe8d68345d3ae`. It does not merge either development branch into main.
+This follow-up was developed on `feature/garden-wheat-polish`, based on animation commit `65922b4f4305c99067d57b97517fe8d68345d3ae`. Both updates are now included in the PR #16 integration.
 
 Garden labels move up four logical pixels; Harvest is centered at the midpoint of the two real harvest slots. Small process items now render about their centre (`-8,-8` in their scaled item pose), with input targets at the press/roller centre. Intake and outlet covers still hide route endpoints. The approved `renderGardenTree` routine is unchanged.
 

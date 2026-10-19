@@ -1,6 +1,6 @@
 # Current-world shop and world-state progression — integrated baseline
 
-The stable world identity, claim and purchase-receipt foundation was introduced in 0.12.0. Real package delivery followed in 0.15.0 and world-wide QoL upgrades in 0.17.0. The complete stack is integrated into the current 0.18.1 `main` baseline through PR #13.
+The stable world identity, claim and purchase-receipt foundation was introduced in 0.12.0. Real package delivery followed in 0.15.0 and world-wide QoL upgrades in 0.17.0. This foundation was integrated through PR #13 and remains active in the current 0.24.0 baseline. The 0.24.0 round-node Shop and product detail windows preserve these server transactions; see [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md#shop-graph).
 
 Minecraft 1.21.1, Java 21; pack runtime NeoForge 21.1.259.
 
@@ -44,7 +44,7 @@ World Upgrades are non-delivery Current World products. They are paid through th
 
 Each upgrade is charged once for the stable world identity. Its effect is world-wide; other players mirror the active claim for UI/idempotency purposes without a second SP debit.
 
-World-wide state is persisted separately in `data/forever_skyblock_world_progress.json` with a `.bak` copy. The file stores schema 1, the stable world UUID, the Wandering Trader unlock and active world upgrades. It fails closed if its stored world identity does not match the save's stable identity.
+World-wide state is persisted separately in `data/forever_skyblock_world_progress.json` with a `.bak` copy. The file now stores schema 2, preserving the stable world UUID, Wandering Trader unlock and active world upgrades while adding shared milestone evidence. The 0.24.0 migration retains the prior schema-1 fields and backup; rollback requires the pre-update world-progress file. It fails closed if its stored world identity does not match the save's stable identity.
 
 If an SP debit/profile claim commits but world-state activation is interrupted, login or opening progression reconciles the paid claim into the world state. Once global state is active, current players mirror the claim so the same upgrade cannot be repurchased.
 
@@ -98,7 +98,7 @@ This protocol is designed for ordinary process/server crashes around the explici
 - a profile with contract state but no delivery can remain schema **5**;
 - the first real delivery entitlement raises it to schema **6**;
 - schema 6 adds delivery receipts/stages and records PP cost in purchase receipts;
-- current client/server protocol is **`skills-8`**.
+- current client/server protocol is **`skills-9`**.
 
 Older builds cannot be assumed to read profiles after newer schema-5/6 state has been written. Back up both `forever_skyblock/progression/` and the world/player data before downgrade experiments.
 
@@ -106,6 +106,6 @@ Older builds cannot be assumed to read profiles after newer schema-5/6 state has
 
 Unit tests cover one-time debit/claim/delivery creation, delivery-stage transitions, world-state identity/recovery and schema persistence. Dedicated GameTests cover Supply Cache behavior and network boundaries. The NeoForge 21.1.259 integration suite checks the AE2 registry IDs used by the package along with the existing optional integrations.
 
-The final integrated 0.18.1 feature head `97715f06391339141032c5f0c859b5925f99539d` passed GitHub Actions run #195 before PR #13 merged it into `main`. Headless CI does not prove rendered Shop layout or a real OS-level kill at every exact inventory checkpoint.
+The historical 0.18.1 feature head `97715f06391339141032c5f0c859b5925f99539d` passed GitHub Actions run #195 before PR #13 merged it into `main`. Headless CI does not prove rendered Shop layout or a real OS-level kill at every exact inventory checkpoint.
 
 Tier II-IV, more valuable current-world packages and final pricing/balance remain intentionally deferred.

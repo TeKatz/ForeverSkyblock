@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.24.0 — K-menu overhaul (development)
+The complete 0.21–0.24 stack is integrated into `main` through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16), authorized October 19, 2026. Version entries and branch names below record development origins. This integration publishes no release and leaves the fixed starter-island NBT unchanged.
+
+## 0.24.0 — K-menu overhaul
 
 - Rebuild premium menu presentation directly; remove the six accumulated client visual/shop/contract patch mixins.
 - Center header/reward/filter/search labels, scroll the mod category rail and add readable animated Challenge/Contract details.
@@ -12,7 +14,7 @@
 - Validated final source with 78 unit tests, 17 native-client fixture views/input checks and both 90-test server suites; fresh artifact inspected.
 
 
-## 0.23.0 — Iron balancing, Packed Mud and Garden alignment (development)
+## 0.23.0 — Iron balancing, Packed Mud and Garden alignment
 
 Branch `feature/iron-balance-packed-mud`, extending tested 0.22.1:
 
@@ -23,7 +25,7 @@ Branch `feature/iron-balance-packed-mud`, extending tested 0.22.1:
 - Center Garden routing badges and their tooltip areas under the real output slots.
 - Synchronize the matching Recipe Editor pack resources and add timing/crafting/production/network regressions.
 
-## 0.22.1 — Separate Garden harvest ports (development)
+## 0.22.1 — Separate Garden harvest ports
 
 Branch `feature/garden-harvest-routing`, extending the tested 0.22.0 work:
 
@@ -32,9 +34,9 @@ Branch `feature/garden-harvest-routing`, extending the tested 0.22.0 work:
 - Show numbered block icons/down arrows below the two harvest slots, plus a permanent routing legend and English/German tooltips.
 - Add extraction/simulation, stale-capability/removal and real Vanilla/Wooden Hopper regressions; preserve normal Condensing/Freezing automation.
 
-## 0.22.0 — Garden Wheat and screenshot polish (development)
+## 0.22.0 — Garden Wheat and screenshot polish
 
-Branch `feature/garden-wheat-polish`, extending the unmerged 0.21.1 animation work:
+Branch `feature/garden-wheat-polish`, extending the 0.21.1 animation work:
 
 - Raise Specimen/Harvest labels and center Harvest over both output slots.
 - Scale process ingredients toward the centre of the press/rollers.
@@ -44,7 +46,7 @@ Branch `feature/garden-wheat-polish`, extending the unmerged 0.21.1 animation wo
 - Gate the entire Vanilla Trader caravan and fresh untamed Trader llamas until Emerald pickup; preserve saved/tamed Trader llamas and ordinary llamas.
 - Add crop geometry/staging, real Wheat harvest/blocking, optional Hopper crafting/reload and llama-gate regressions.
 
-## 0.21.1 — animation polish after client feedback (development branch)
+## 0.21.1 — animation polish after client feedback
 
 - Keep the approved Garden GUI tree growth exactly as in 0.21.0; remove only the decorative Logs/Leaves flight into the output area.
 - Replace the flat block-tree crown with deep foliage lobes, a tapered slender trunk and branches inside the canopy. Keep its rooted growth and lamp clearance; update the inventory preview to match.
@@ -53,9 +55,9 @@ Branch `feature/garden-wheat-polish`, extending the unmerged 0.21.1 animation wo
 - Fade debris in/out across the processing phase; remove covered faces from the fuller canopy mesh.
 - Production, timings, recipes, inventories, menu protocol and Garden GUI tree drawing are unchanged. Validation follows in [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md).
 
-## 0.21.0 — machine animation update (development branch)
+## 0.21.0 — machine animation update
 
-- Branch: `feature/machine-animation-overhaul`, based on `main` at `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a`; not merged or released.
+- Branch: `feature/machine-animation-overhaul`, based on `main` at `c1f38cb6f9187826af806f7ab4a11ebe0d3f491a`; subsequently integrated through PR #16, without a release.
 - Mark I now has staged feed/press/release/discharge motion; Mark II uses counter-rotating toothed rollers and a distinct milling cycle.
 - Actual resolved recipes select crushing, milling, composting, mixing or cultivation scenes, including live ingredients and recipe result previews in the GUI and front recess.
 - Garden mode uses rooted growth, travelling grow lights and a final harvest sweep in the controller, GUI and adjacent greenhouse.

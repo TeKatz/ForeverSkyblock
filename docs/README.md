@@ -5,26 +5,22 @@ This directory contains **integrated-state documentation**, live feature documen
 ## Start here
 
 1. [CURRENT_STATE.md](CURRENT_STATE.md) — truth for the version currently integrated into `main`.
-2. [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md) — integrated 0.20.1 material-processing and Garden-automation path.
+2. [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md) — integrated 0.24.0 material-processing and Garden-automation path.
 3. [DESIGN.md](DESIGN.md) — approved project direction and Expert pacing.
 4. [FREEZING_CHAMBER.md](FREEZING_CHAMBER.md) — Freezing Chamber, dynamic Condenser UI and Crafting Table gate.
 5. [EARLY_GAME_QOL.md](EARLY_GAME_QOL.md) — early-game Bone Meal loop, Trader unlock and world upgrades.
 6. [VALIDATION.md](VALIDATION.md) — detailed automated checks and user-reported in-game validation history.
 7. [CHANGELOG.md](CHANGELOG.md) — concise version-level history.
 
-The integrated baseline is **0.20.1**, merged through PR #15 on October 18, 2026. The fixed starter-island NBT is unchanged and no release is implied by the merge.
+The integrated baseline is **0.24.0**, merged through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16) on October 19, 2026. This includes the complete 0.21–0.24 stack. The fixed starter-island NBT is unchanged; no release is implied by the merge.
 
-## Active development
+## Integrated 0.21–0.24 updates
 
-[Machine animations — 0.21.1](MACHINE_ANIMATIONS.md) documents `feature/machine-animation-overhaul`: Condenser Mark I/II job-specific block and GUI motion, synchronized Garden growth and the rebuilt greenhouse model and 0.21.1 animation polish. This branch is separate from the integrated 0.20.1 baseline.
-
-The follow-up [Garden crops and polish — 0.22.0](MACHINE_ANIMATIONS.md#0220-garden-crops-and-pack-fixes) lives on `feature/garden-wheat-polish`, based on the animation branch. It adds Wheat, a reusable crop presentation template, screenshot corrections, the Iron-priced Wooden Hopper and the Trader-llama spawn fix; `main` remains 0.20.1.
-
-The current follow-up [Separate Garden harvest ports — 0.22.1](MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports) lives on `feature/garden-harvest-routing`, based on tested 0.22.0. Two unfiltered hoppers separate the harvest, with a permanent routing display in the existing Condenser GUI.
-
-[Iron balancing and Packed Mud — 0.23.0](MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud-development) is developed on `feature/iron-balance-packed-mud`, following 0.22.1. It changes Log timing, Iron costs, adds Packed Mud mixing and centers the Garden badges; main remains 0.20.1.
-
-[K-menu overhaul — 0.24.0](K_MENU_DESIGN2.md) lives on `feature/k-menu-overhaul`, following validated 0.23.0. It includes the round-node shop, detail windows, compact profile and real statistics; Island Level tracks shared world milestones from this update. Main remains 0.20.1.
+- [Machine animations — 0.21.1](MACHINE_ANIMATIONS.md): job-specific Condenser motion, synchronized Garden growth, rebuilt greenhouse and polished tree/workpiece transitions.
+- [Garden crops and pack fixes — 0.22.0](MACHINE_ANIMATIONS.md#0220-garden-crops-and-pack-fixes): Wheat crop template, centered labels/items, Iron-priced Wooden Hopper and complete Trader-caravan gate.
+- [Separate Garden harvest ports — 0.22.1](MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports): two unfiltered hoppers separate primary/secondary harvest; the Condenser GUI explains both ports.
+- [Iron balancing and Packed Mud — 0.23.0](MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud): six-second Logs, higher Iron costs, Packed Mud mixing and centered Garden badges.
+- [K-menu overhaul — 0.24.0](K_MENU_DESIGN2.md): round Shop nodes, readable details, compact profile, subtle motion and real statistics. Island Level uses shared world milestones from this update without extra SP.
 
 ## Feature documentation
 
@@ -33,7 +29,7 @@ The current follow-up [Separate Garden harvest ports — 0.22.1](MACHINE_ANIMATI
 | [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md) | Mud, Washing Basin, first Raw Iron, craftable Mark I, Iron-gated Mark II and Garden Chamber wood automation |
 | [CHALLENGES.md](CHALLENGES.md) | Unique Challenge catalog, personal attribution and deferred objectives |
 | [CONTRACTS.md](CONTRACTS.md) | Integrated repeatable contracts, rewards and transaction rules |
-| [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md) | Current 0.24.0 development overhaul: Shop graph, details, profile, motion and authoritative statistics |
+| [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md) | Integrated 0.24.0 overhaul: Shop graph, details, profile, motion and authoritative statistics |
 | [WORLD_SHOP.md](WORLD_SHOP.md) | Stable world identity, real package delivery and world-wide upgrades |
 | [SKILLS.md](SKILLS.md) | Persistent progression storage, skills and refunds |
 | [JETPACK_RESEARCH.md](JETPACK_RESEARCH.md) | Iron Jetpacks research gates and automation behavior |
@@ -56,7 +52,9 @@ Important integrated outcomes:
 - Washing Basin is the deterministic first-Iron route.
 - Mark II removes the manual Mortar dependency for Stone Meal.
 - Mark II + Mixing uses Wheat Seeds + Bone Meal for renewable Oak Saplings.
-- Garden Chamber is an exclusive Mark-II mode that retains its specimen and produces Oak Logs + Leaves every 16 seconds.
+- Garden Chamber is an exclusive Mark-II mode that retains its specimen and produces Oak Logs + Leaves or Wheat + Seeds every 16 seconds.
+- Separate bottom ports on MK II and Garden Chamber route the primary and secondary harvest.
+- Both tiers with Mixing Chamber can automate Mud + Wheat -> Packed Mud.
 - Garden mode has priority over Mixing/Freezing but preserves their stored state for resume after detaching it.
 - the Garden Chamber is player-facing simply as **Garden Chamber**; its compatibility-preserved internal registry ID remains `garden_chamber_mark_i`.
 

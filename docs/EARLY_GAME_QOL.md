@@ -1,6 +1,6 @@
 # Early-game pacing and world QoL — integrated 0.17.x behavior
 
-The 0.17.x early-game/world-QoL work is integrated into the current 0.18.1 `main` baseline through PR #13. It addresses concrete friction found during real Skyblock play without attempting to finalize the full pack progression.
+The 0.17.x early-game/world-QoL work was introduced into `main` through PR #13 and is retained in the current 0.24.0 baseline. It addresses concrete friction found during real Skyblock play without attempting to finalize the full pack progression.
 
 Historical development branch: `feature/earlygame-world-qol`. No release was published from that branch.
 
@@ -26,7 +26,7 @@ Before the world unlock is recorded, Wandering Trader entity joins are canceled.
 
 The event does not create a trader. It only stops blocking future spawn attempts. The flag belongs to the save, not to the player who picked up the Emerald.
 
-Development follow-up **0.22.0** on `feature/garden-wheat-polish` also blocks the entire Vanilla caravan attempt and fresh untamed Trader llamas until the same unlock. Saved/tamed Trader llamas and ordinary llamas are preserved. This fix is not integrated into `main`; see [the implementation and validation](MACHINE_ANIMATIONS.md#requested-pack-fixes).
+The **0.22.0** fix, integrated through PR #16, also blocks the entire Vanilla caravan attempt and fresh untamed Trader llamas until the same unlock. Saved/tamed Trader llamas and ordinary llamas are preserved. See [implementation and validation](MACHINE_ANIMATIONS.md#requested-pack-fixes).
 
 ## Permanent world upgrades
 
@@ -47,11 +47,11 @@ World-wide state is stored in:
 - `data/forever_skyblock_world_progress.json`
 - `data/forever_skyblock_world_progress.json.bak`
 
-The file stores schema 1, the stable world UUID, the Wandering Trader gate and the set of active world upgrades. It is validated against `forever_skyblock_world_identity.json` so world state cannot silently attach to a different save identity.
+The file now stores schema 2, retaining the stable world UUID, Wandering Trader gate and active world upgrades while adding shared Island Level evidence. The 0.24.0 migration preserves the earlier schema-1 fields and backup; see [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md#island-level-explicitly-chosen-world-progress). It is validated against `forever_skyblock_world_identity.json` so world state cannot silently attach to a different save identity.
 
 World-upgrade purchase order keeps the existing player-profile claim/receipt as the durable economic commit. If the SP debit succeeds but world-state activation is interrupted, login or opening the progression menu reconciles that paid claim into the world state. Once the world upgrade is active, active upgrade IDs are mirrored into current players' world claims so they cannot purchase the same global effect again.
 
-This adds no new player-profile schema: dynamic schema 4/5/6 and protocol `skills-8` remain in place.
+Player profiles remain dynamic schema 4/5/6. The current 0.24.0 protocol is `skills-9` for authoritative menu statistics; matching clients and servers are required.
 
 ## Relation to 0.18.x
 
@@ -61,4 +61,4 @@ The later Freezing Chamber work builds directly on this early-game boundary. Onc
 
 The dedicated regression suite covers the exact 8-leaves -> 1-Bone-Meal machine cycle, world-state persistence/recovery and purchase behavior. The complete 0.18.1 stack subsequently passed GitHub Actions run #195 before PR #13 merged it into `main`.
 
-The starter-island NBT is intentionally untouched. Wooden Shears remains an external pack choice rather than a hard mod dependency. First-Iron and Lava progression are still not finalized.
+The starter-island NBT is intentionally untouched. Wooden Shears remains an external pack choice rather than a hard mod dependency. First Iron is implemented through Washing Basin -> Raw Iron. Lava progression remains open.

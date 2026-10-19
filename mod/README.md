@@ -2,13 +2,13 @@
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-The integrated `main` baseline remains 0.20.1 after PR #15. Development branch `feature/k-menu-overhaul` follows tested 0.23.0 with a round-node Shop graph, improved challenge/contract browsing and details, compact profile with actual skin face, custom status icons and subtle motion. Server-supplied playtime/deaths/kills and world-local milestone-based Island Level use protocol **skills-9**; matching client/server versions are required. Player profile schema remains 4/5/6; the backed-up world-progress file migrates to schema 2. See [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md). No merge or release is implied.
+The integrated `main` baseline is **0.24.0** through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16), including all 0.21–0.23 animation, crop, harvest-routing and balancing updates. The K-menu has round Shop nodes, improved Challenge/Contract browsing and details, a compact profile with actual skin face, custom status icons and subtle motion. Server-supplied playtime/deaths/kills and shared world-milestone Island Level use protocol **skills-9**; matching client/server versions are required. Player profile schema remains 4/5/6; the backed-up world-progress file migrates to schema 2. See [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md). No release is published by this integration.
 
 The final 0.24.0 source passed 78 unit tests, native-client render/input checks and both 90-test server suites, including NeoForge 21.1.259. The fresh JAR was checked against all 158 source resources and excludes the visual fixture/GameTests. Exact source, run and artifact hash are recorded in [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md#validation-and-acceptance).
 
 ## Early material progression
 
-The Condenser Mark I, Mixing Chamber and Freezing Chamber remain the primitive foundation. The 0.19.x-0.20.1 stack adds the deterministic route from Water/Farming to Iron, then uses Iron to unlock a higher automation tier and close the wood loop.
+The Condenser Mark I, Mixing Chamber and Freezing Chamber remain the primitive foundation. The 0.19.x-0.20.1 stack introduced the deterministic route from Water/Farming to Iron. Iron unlocks the higher automation tier that closes the wood loop.
 
 ### Mud
 
@@ -18,7 +18,7 @@ Condenser + Mixing Chamber:
 - 160 ticks / 8 seconds;
 - no power.
 
-The intended continuation uses Vanilla Wheat + Mud -> Packed Mud -> Mud Bricks.
+Both Condenser tiers with Mixing Chamber now automate **1 Wheat + 1 Mud -> 1 Packed Mud / 8 seconds**. Vanilla crafting remains available; Packed Mud -> Mud Bricks continues the route.
 
 ### Washing Basin
 
@@ -56,7 +56,7 @@ It retains Mark-I recipes, locks, automation and Mixing/Freezing compatibility, 
 - **4 Stone Fragments -> 1 Stone Meal**;
 - **4 Wheat Seeds + 1 Bone Meal -> 2 Oak Saplings** with a Mixing Chamber.
 
-Only Oak is advertised at this stage because the current progression guarantees Oak but does not yet provide first-acquisition paths for the other tree species.
+Oak is currently the only supported tree because the opening progression does not yet provide first-acquisition paths for other tree species. Wheat is also available as a Garden crop.
 
 A single Bone Meal use on a normal placed Vanilla Sapling now attempts full tree growth immediately, removing the random early-game wait while keeping normal space/tree-generation constraints.
 
@@ -113,7 +113,7 @@ The machine changes required no profile/protocol change. The subsequent 0.24.0 K
 
 Default development baseline: NeoForge 21.1.249. Pack-runtime integration target: NeoForge 21.1.259.
 
-Final pre-merge head `aec270d7bc0caea5952af034ed8505ce0fd3d68f` passed GitHub Actions run #259.
+Historical 0.20.1 pre-merge head `aec270d7bc0caea5952af034ed8505ce0fd3d68f` passed GitHub Actions run #259. Current 0.24.0 validation is recorded above and in [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md#validation-and-acceptance).
 
 See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the full behavior and validation boundary.
 
@@ -132,7 +132,7 @@ The 0.22.0 source passed 73 unit tests, client startup/model checks and both 81-
 The 0.22.1 source passed 73 unit tests, client startup/model checks and both 85-test server suites. Real Vanilla hoppers separated Oak harvest; the actual pack Wooden Hoppers separated Wheat harvest. Exact artifact evidence and remaining client checks are in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0221-validation-and-test-artifact).
 
 
-## 0.23.0 development changes
+## Integrated 0.23.0 balancing
 
 - Both Condenser tiers: **1 Log -> 4 Stone Fragments / 120 ticks (6 seconds)**; Planks, Leaves and other existing cycles retain their timing.
 - Both tiers with Mixing Chamber: **1 Mud + 1 Wheat -> 1 Packed Mud / 160 ticks (8 seconds)**, swappable inputs, no power and the existing Condensing JEI category. The Vanilla crafting alternative is retained.

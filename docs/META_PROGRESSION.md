@@ -1,5 +1,7 @@
 # Persistent challenges, shop and profile progression
 
+**Historical phase-1–3 architecture and design record.** Branch status, schemas and implementation limits below describe those phases when written. Later contracts, delivery, challenges and UI updates are integrated; use [CURRENT_STATE.md](CURRENT_STATE.md) and the live feature documents for active behavior. Unconfirmed proposals remain proposals.
+
 Architecture proposal and bounded implementation plan, October 16, 2026.
 Owner: TeKatz. Source: the complete 38-section Shop/Challenges handoff supplied by TeKatz.
 

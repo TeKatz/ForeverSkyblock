@@ -1,6 +1,6 @@
-# K-menu overhaul — 0.24.0 development
+# K-menu overhaul — integrated 0.24.0
 
-`feature/k-menu-overhaul` starts from validated 0.23.0 branch head `c08c9a3d65825d6025ba7981e28b2d41578579fd`. The integrated main baseline remains 0.20.1. This update implements TeKatz's October 19 screenshots and requested redesign; it does not imply a merge or release.
+Integrated into `main` through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16) on October 19, 2026, together with the preceding 0.21–0.23 stack. Developed on `feature/k-menu-overhaul` from validated 0.23.0 head `c08c9a3d65825d6025ba7981e28b2d41578579fd`, this update implements TeKatz's screenshots and requested redesign. No release is published by this integration.
 
 ## Presentation and navigation
 
@@ -49,6 +49,6 @@ Automated checks cover bounded motion/circular hit areas, shared evidence valida
 
 Source **`227c81611f8c8cda719c59106c80d6350a2034a1`** passed Actions run **`39178417187`**: Java 21 build, **78 unit tests**, client startup, actual-client rendering/input, and **90 required GameTests on each server runtime** (default 21.1.249 and pack 21.1.259). All four native input checks passed: challenge card, circle corner/center, contract card and scrolled category selection. Seventeen actual Minecraft fixture captures were produced; representative captures were inspected across English/German and the 640×360 / 480×270 logical GUI sizes. A real modal item-depth bug found in the captures was fixed before final validation.
 
-The fresh `ForeverSkyblock-1.21.1-NeoForge-0.24.0.jar` is **5,262,116 bytes**, from artifact **`12155336788`**, SHA-256 **`06694e5ead79a1d59e010c114663a9bc1a1bf767b960233255e3e0c2ea8098bb`**. All **158 resource files** match the checkout byte-for-byte; the menu/network/world-progress classes are Java 21, `skills-9` is present, and no GameTests or visual-fixture classes are included. The fixed island retains Git blob `4c0e3ada63bb61ef1d109ad110b66b6d359d473f`. The final evidence commit changes documentation only.
+The fresh `ForeverSkyblock-1.21.1-NeoForge-0.24.0.jar` is **5,262,116 bytes**, from artifact **`12155336788`**, SHA-256 **`06694e5ead79a1d59e010c114663a9bc1a1bf767b960233255e3e0c2ea8098bb`**. All **158 resource files** match the checkout byte-for-byte; the menu/network/world-progress classes are Java 21, `skills-9` is present, and no GameTests or visual-fixture classes are included. The fixed island retains Git blob `4c0e3ada63bb61ef1d109ad110b66b6d359d473f`. The pre-merge evidence and integration-normalization commits change documentation only.
 
 Remaining real-world acceptance: skin/hat rendering for the actual player; English/German readability at the chosen scale; search/category scrolling with the full modpack; click/drag and keyboard navigation; live reward/contract purchases/package delivery and respec with existing profiles; two players sharing world milestones; and world reload/new-world separation. The fixed starter-island NBT and prior machine/recipe behavior remain unchanged.

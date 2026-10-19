@@ -1,5 +1,15 @@
 # Validation status
 
+## 0.24.0 integration — PR #16
+
+The complete 0.21–0.24 stack is integrated through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16). Source `227c81611f8c8cda719c59106c80d6350a2034a1` passed [Actions run 39178417187](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39178417187): Java 21 build, **78 unit tests**, client startup/model checks, actual-client rendering/input and **90 required GameTests on each runtime** (NeoForge 21.1.249 and pack 21.1.259). The integration documentation changes no validated code/resources.
+
+The native client fixture produced **17 EN/DE captures**, including 640×360 and 480×270 logical layouts. Representative views were inspected. Four actual screen-input checks passed: Challenge card, circular Shop node corner/center, Contract card and scrolled category selection. Synthetic fixture data and reflection setup are excluded from the mod JAR; these checks do not certify a live player skin, full-instance gameplay or every transaction in a player's save.
+
+The fresh `ForeverSkyblock-1.21.1-NeoForge-0.24.0.jar` is **5,262,116 bytes**, artifact `12155336788`, SHA-256 `06694e5ead79a1d59e010c114663a9bc1a1bf767b960233255e3e0c2ea8098bb`. ZIP/JAR integrity and Java 21 metadata passed; all **158 resource files** match source, `skills-9` is present and test/preview classes are absent. Fixed island Git blob remains `4c0e3ada63bb61ef1d109ad110b66b6d359d473f`.
+
+Current persistence, rollback instructions and remaining player-instance acceptance are in [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md#validation-and-acceptance). Earlier evidence below is version-specific history, not the current mod/protocol baseline.
+
 ## Current-world shop safety — 0.12.0 / phase 3
 
 Tested source `50683be3bf4fd3d1e2261aa15e953c82ae1be3f4` passed [CI run 38851560072](https://github.com/TeKatz/ForeverSkyblock/actions/runs/38851560072), job `116813669907`: the Java 21 build and pure world-identity/profile tests passed, followed by **all 48 required GameTests in both server runs**. The second run used the pack runtime NeoForge 21.1.259 with the existing AE2, Iron Jetpacks, Mekanism, Powah and Ultimine integration set.

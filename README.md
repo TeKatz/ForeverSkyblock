@@ -1,6 +1,6 @@
 # Forever Skyblock
 
-Development branch `feature/k-menu-overhaul` builds **0.24.0** on the validated 0.23.0 machine/balancing work. It rebuilds the K-menu with a round-node Shop graph, challenge/contract detail windows, a compact player profile, subtle motion and authoritative world statistics. Main remains 0.20.1. See [K-menu behavior and validation](docs/K_MENU_DESIGN2.md).
+The integrated `main` baseline is **0.24.0**, including the machine animation overhaul, Wheat Garden crops, separate harvest ports, Iron/Hopper balancing and Packed Mud, followed by the rebuilt K-menu with round Shop nodes, readable detail windows, compact profile and authoritative statistics. Integrated through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16); see [current state](docs/CURRENT_STATE.md) and [K-menu behavior and validation](docs/K_MENU_DESIGN2.md).
 
 **Forever Skyblock** is an Expert Skyblock modpack for **Minecraft 1.21.1 / NeoForge** built around deliberate progression, meaningful resource loops and long-term automation.
 
@@ -95,12 +95,13 @@ The final goal is a long-form Expert Skyblock experience where the player can lo
 
 ## Current project status
 
-- **Main mod version:** `0.20.1`
+- **Main mod version:** `0.24.0`
 - **Minecraft:** 1.21.1
 - **Java:** 21
 - **Pack runtime:** NeoForge 21.1.259
-- **Progression protocol:** `skills-8`
-- **Current integrated baseline:** material processing and Garden automation through 0.20.1
+- **Progression protocol:** `skills-9` (matching client/server required)
+- **Current integrated baseline:** animation, automation, balancing and K-menu updates through 0.24.0
+- **Persistence:** player schema 4/5/6; world-progress schema 2
 - **Release status:** active development; repository integration does not imply a public release
 
 The current implemented behavior and exact integration boundary are documented in [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md). The full documentation map is available in [docs/README.md](docs/README.md).
