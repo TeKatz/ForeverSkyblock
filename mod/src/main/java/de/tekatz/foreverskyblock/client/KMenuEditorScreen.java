@@ -166,6 +166,7 @@ public final class KMenuEditorScreen extends Screen {
         return values.stream().filter(s->s.toLowerCase(Locale.ROOT).contains(filter.toLowerCase(Locale.ROOT))||entryName(s).toLowerCase(Locale.ROOT).contains(filter.toLowerCase(Locale.ROOT))).toList();
     }
     private String entryName(String id){if(mode==Mode.LAYOUT||mode==Mode.SETTINGS)return id;if(mode==Mode.SHOP&&id.startsWith("shop:"))return id.substring(5);for(var e:root().getAsJsonArray(collection())){var o=e.getAsJsonObject();if(o.get("id").getAsString().equals(id))return EditorCodec.JSON.fromJson(o.get("title"),Text.class).value(EditorClient.german());}return id;}
+    @Override public void renderBackground(GuiGraphics g,int mx,int my,float dt) { }
     @Override public void render(GuiGraphics g,int mx,int my,float dt){
         g.fill(0,0,width,height,0xFF07111B);g.drawString(font,tr("FOREVER / K-MENU STUDIO","FOREVER / K-MENÜ STUDIO"),9,11,MenuArt.WHITE);
         MenuArt.label(g,Component.literal("r"+opened.revision()+(session.dirty()?" · *":"")),Math.min(230,width/2),11,Math.max(1,width/2-80),MenuArt.CYAN,.8F);
@@ -259,7 +260,8 @@ public final class KMenuEditorScreen extends Screen {
         var quests=session.current().quests();minecraft.setScreen(new Screen(tr("Quest prerequisite","Quest-Voraussetzung")){
             int offset;
             @Override protected void init(){int row=0;for(int i=offset;i<quests.size()&&row<(height-65)/24;i++){var q=quests.get(i);addRenderableWidget(Button.builder(Component.literal(q.title().value(EditorClient.german())),b->{session.edit(r->{var p=find(r.getAsJsonArray("products"),id);var a=p.getAsJsonArray("requires");var values=new LinkedHashSet<String>();for(var v:a)values.add(v.getAsString());if(remove)values.remove(q.id());else values.add(q.id());p.add("requires",EditorCodec.JSON.toJsonTree(values));});minecraft.setScreen(KMenuEditorScreen.this);}).bounds(25,30+row++*24,width-50,20).build());}}
-            @Override public void render(GuiGraphics g,int x,int y,float dt){g.fill(0,0,width,height,0xFF07111B);g.drawString(font,title,25,12,MenuArt.WHITE);super.render(g,x,y,dt);}
+            @Override public void renderBackground(GuiGraphics g,int x,int y,float dt) { }
+        @Override public void render(GuiGraphics g,int x,int y,float dt){g.fill(0,0,width,height,0xFF07111B);g.drawString(font,title,25,12,MenuArt.WHITE);super.render(g,x,y,dt);}
             @Override public boolean mouseScrolled(double x,double y,double h,double v){offset=Math.clamp(offset-(int)v*3,0,Math.max(0,quests.size()-5));clearWidgets();init();return true;}
             @Override public void onClose(){minecraft.setScreen(KMenuEditorScreen.this);}
         });
@@ -293,6 +295,7 @@ public final class KMenuEditorScreen extends Screen {
     @FunctionalInterface private interface PathAction{void apply(Path path)throws Exception;}
     private void pathDialog(Component heading,String initial,PathAction action){minecraft.setScreen(new Screen(heading){EditBox path;String error="";
         @Override protected void init(){path=addRenderableWidget(new EditBox(font,22,height/2-12,width-44,20,title));path.setMaxLength(2048);path.setValue(initial);addRenderableWidget(Button.builder(tr("Continue","Weiter"),b->{try{action.apply(Path.of(path.getValue()));}catch(Exception e){error=e.getMessage();}}).bounds(width-170,height/2+22,70,20).build());addRenderableWidget(Button.builder(tr("Cancel","Abbrechen"),b->onClose()).bounds(width-94,height/2+22,70,20).build());setInitialFocus(path);}
+        @Override public void renderBackground(GuiGraphics g,int x,int y,float dt) { }
         @Override public void render(GuiGraphics g,int x,int y,float dt){g.fill(0,0,width,height,0xFF07111B);g.drawString(font,title,22,height/2-35,MenuArt.WHITE);MenuArt.label(g,Component.literal(error),22,height/2+54,width-44,0xFFFFA0A0,.8F);super.render(g,x,y,dt);}
         @Override public void onClose(){minecraft.setScreen(KMenuEditorScreen.this);}
     });}

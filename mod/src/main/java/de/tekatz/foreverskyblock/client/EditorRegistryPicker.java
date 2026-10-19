@@ -21,6 +21,7 @@ final class EditorRegistryPicker extends Screen {
     }
     private void filter(){String q=search.getValue().toLowerCase(Locale.ROOT);var keys=switch(kind){case "block"->BuiltInRegistries.BLOCK.keySet();case "entity"->BuiltInRegistries.ENTITY_TYPE.keySet();default->BuiltInRegistries.ITEM.keySet();};
         matches=keys.stream().filter(id->id.toString().contains(q)||kind.equals("item")&&BuiltInRegistries.ITEM.get(id).getDescription().getString().toLowerCase(Locale.ROOT).contains(q)).sorted(Comparator.comparing(ResourceLocation::toString)).toList();}
+    @Override public void renderBackground(GuiGraphics g,int mx,int my,float dt) { }
     @Override public void render(GuiGraphics g,int mx,int my,float dt){g.fill(0,0,width,height,0xFF07121D);g.drawString(font,EditorClient.german()?"Registrierte Einträge auswählen":"Choose a registered entry",24,12,MenuArt.WHITE);super.render(g,mx,my,dt);
         int rows=Math.max(1,(height-80)/24);for(int i=0;i<rows&&i+scroll<matches.size();i++){var id=matches.get(i+scroll);int y=62+i*24;MenuArt.panel(g,24,y,width-48,22,my>=y&&my<y+22?0xFF1A3E51:0xFF0D2231,MenuArt.BORDER);
             if(kind.equals("item"))g.renderItem(BuiltInRegistries.ITEM.get(id).getDefaultInstance(),29,y+3);else if(kind.equals("block"))g.renderItem(BuiltInRegistries.BLOCK.get(id).asItem().getDefaultInstance(),29,y+3);else g.renderItem(Items.SPAWNER.getDefaultInstance(),29,y+3);
