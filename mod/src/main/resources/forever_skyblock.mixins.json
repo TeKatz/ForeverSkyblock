@@ -22,7 +22,9 @@
     "PersonalKillMixin",
     "ProgressionServiceWorldMixin"
   ],
-  "client": [],
+  "client": [
+    "PremiumSkillScreenHeaderArtMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }
