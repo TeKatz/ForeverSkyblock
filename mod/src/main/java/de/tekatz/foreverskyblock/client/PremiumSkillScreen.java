@@ -224,6 +224,7 @@ public final class PremiumSkillScreen extends Screen {
                     else super.renderWidget(g,mx,my,dt);
                 }
             };
+            search.visible=!EditorClient.style("search").hidden();
             search.setBordered(false); search.setMaxLength(80); search.setValue(query); search.setHint(t("search"));
             search.setTextColor(WHITE);
             search.setResponder(v->{query=v; positions.put(location(),0D); rebuildBody();});
@@ -647,6 +648,7 @@ public final class PremiumSkillScreen extends Screen {
         else {panel(g,x,y,size,size,0xFF1F3B49,CYAN);centered(g,literal("?"),x,y,size,size,CYAN,1F);}
     }
     private void pageIcon(GuiGraphics g,Page p,int x,int y) {
+        var override=EditorClient.style("nav."+p.name().toLowerCase(Locale.ROOT)).icon();if(!override.isEmpty()){g.renderItem(item(override),x,y);return;}
         if(p==Page.PROFILE){face(g,x,y,14);return;}
         ItemStack icon=switch(p){case OVERVIEW->Items.COMPASS.getDefaultInstance();case CHALLENGES->Items.IRON_SWORD.getDefaultInstance();
             case SHOP->Items.CHEST.getDefaultInstance();case RESEARCH->Items.BOOK.getDefaultInstance();default->ForeverSkyblock.FOREVER_CORE.get().getDefaultInstance();};
@@ -667,7 +669,7 @@ public final class PremiumSkillScreen extends Screen {
             if(!elementId.isEmpty())EditorClient.capture(elementId,getX(),getY(),width,height);
             panel(g,getX(),getY(),width,height,EditorCodec.color(style.fill(),selected?0xFF163A4B:isHoveredOrFocused()?0xFF173141:0xD00D202B),EditorCodec.color(style.border(),selected?CYAN:BORDER));
             if(selected)g.fill(getX()+1,getY()+height-2,getX()+width-1,getY()+height-1,CYAN);
-            boolean icon=tab!=null&&width>68; if(icon)pageIcon(g,tab,getX()+7,getY()+(height-16)/2);
+            boolean icon=tab!=null&&width>68;if(icon){g.pose().pushPose();g.pose().translate(getX()+7,getY()+(height-16)/2,0);g.pose().scale(style.itemScale(),style.itemScale(),1);pageIcon(g,tab,0,0);g.pose().popPose();}
             centered(g,title.get(),getX()+(icon?25:4),getY(),width-(icon?29:8),height,EditorCodec.color(style.text(),active?selected?WHITE:MUTED:DIM),.74F*style.fontScale());
         }
     }
@@ -739,7 +741,7 @@ public final class PremiumSkillScreen extends Screen {
             if(PremiumSkillScreen.this.width!=width || PremiumSkillScreen.this.height!=height)
                 PremiumSkillScreen.this.resize(minecraft,width,height);
             dw=Math.min(width-22,430);dh=Math.min(height-22,300);dx=(width-dw)/2;dy=(height-dh)/2;
-            var rect=EditorClient.rect("detail",dx,dy,dw,dh);dx=rect.x();dy=rect.y();dw=rect.width();dh=rect.height();
+            var rect=EditorClient.rect("detail",dx,dy,dw,dh);dx=rect.x();dy=rect.y();dw=rect.width();dh=rect.height();if(EditorClient.style("detail").hidden())return;
             var pr=EditorClient.rect("detail.prose",dx+13,dy+69,dw-26,Math.max(20,dh-112));
             prose=addRenderableWidget(new MenuPanel(pr.x(),pr.y(),pr.width(),pr.height(),"detail"));
             prose.paint=(g,l,t,w,mx,my)->wrapped(g,detail.description().get(),l,t,w-7,EditorCodec.color(EditorClient.style("detail.prose").text(),MUTED),.83F*EditorClient.style("detail.prose").fontScale(),Integer.MAX_VALUE);
@@ -753,6 +755,7 @@ public final class PremiumSkillScreen extends Screen {
         @Override public boolean keyPressed(int key,int scan,int modifiers){if(ClientSkills.OPEN.matches(key,scan)){minecraft.setScreen(null);return true;}return super.keyPressed(key,scan,modifiers);}
         @Override public void render(GuiGraphics g,int mx,int my,float tick){
             PremiumSkillScreen.this.render(g,-100,-100,tick);
+            if(EditorClient.style("detail").hidden())return;
             g.flush();
             g.pose().pushPose();g.pose().translate(0,0,400);
             super.render(g,mx,my,tick);

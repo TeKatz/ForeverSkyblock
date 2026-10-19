@@ -57,6 +57,7 @@ public final class EditorClient {
     }
     public static void item(GuiGraphics g,ItemStack stack,int x,int y,String id) {
         var s=style(id);var r=rect(id,x,y,16,16);if(r.width()==0||r.height()==0)return;
+        if(!s.icon().isEmpty())stack=net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(net.minecraft.resources.ResourceLocation.parse(s.icon())).orElse(net.minecraft.world.item.Items.BARRIER).getDefaultInstance();
         g.pose().pushPose();g.pose().translate(r.x(),r.y(),0);g.pose().scale(r.width()/16F*s.itemScale(),r.height()/16F*s.itemScale(),1);g.renderItem(stack,0,0);g.pose().popPose();
     }
     public static void text(GuiGraphics g,Component text,int x,int y,int w,int h,int color,float scale,String id,boolean wrap) {

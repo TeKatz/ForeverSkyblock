@@ -16,7 +16,7 @@ final class EditorRegistryPicker extends Screen {
     private List<ResourceLocation> matches=List.of();private EditBox search;private int scroll;
     EditorRegistryPicker(Screen parent,String kind,Consumer<String> select){super(Component.literal("Registry"));this.parent=parent;this.kind=kind;this.select=select;}
     @Override protected void init(){
-        search=addRenderableWidget(new EditBox(font,24,30,width-112,20,Component.literal("Search")));search.setMaxLength(128);search.setResponder(s->{scroll=0;filter();});
+        search=addRenderableWidget(new EditBox(font,24,30,width-112,20,Component.literal("Search")));search.setMaxLength(128);search.setHint(Component.literal(EditorClient.german()?"ID oder Itemname suchen…":"Search an ID or item name…"));search.setResponder(s->{scroll=0;filter();});
         addRenderableWidget(Button.builder(Component.literal(EditorClient.german()?"Zurück":"Back"),b->onClose()).bounds(width-80,30,56,20).build());filter();setInitialFocus(search);
     }
     private void filter(){String q=search.getValue().toLowerCase(Locale.ROOT);var keys=switch(kind){case "block"->BuiltInRegistries.BLOCK.keySet();case "entity"->BuiltInRegistries.ENTITY_TYPE.keySet();default->BuiltInRegistries.ITEM.keySet();};

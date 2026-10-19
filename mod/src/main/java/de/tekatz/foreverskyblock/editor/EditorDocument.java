@@ -17,8 +17,9 @@ public record EditorDocument(int schema, long revision, Map<String, Style> layou
     }
     public enum Anchor { START, CENTER, END }
     public record Style(int x, int y, int width, int height, Anchor anchorX, Anchor anchorY,
-                        float fontScale, float itemScale, String fill, String border, String text, boolean hidden) {
-        public static Style defaults() { return new Style(0,0,0,0,Anchor.START,Anchor.START,1,1,"","","",false); }
+                        float fontScale, float itemScale, String fill, String border, String text, boolean hidden, String icon) {
+        public Style {if(icon==null)icon="";}
+        public static Style defaults() { return new Style(0,0,0,0,Anchor.START,Anchor.START,1,1,"","","",false,""); }
     }
     public record Chapter(String id, Text title, String icon, int order) { }
     public enum TaskType { LEGACY, CRAFT, SMELT, PICKUP, KILL, DIMENSION, BREAK, PLACE, ADVANCEMENT }

@@ -81,7 +81,7 @@ public final class EditorCodec {
             require(!ids.contains(c.id())&&!products.contains(c.id()),"ID collision");
         }
         d.layout().forEach((key,s)->{require(key.length()<=160&&key.matches("[a-zA-Z0-9_./:-]+"),"Invalid layout key");range(s.x(),-4096,4096);range(s.y(),-4096,4096);range(s.width(),0,4096);range(s.height(),0,4096);
-            require(s.anchorX()!=null&&s.anchorY()!=null,"Missing anchor");finite(s.fontScale(),.25F,4);finite(s.itemScale(),.25F,4);color(s.fill());color(s.border());color(s.text());});
+            require(s.anchorX()!=null&&s.anchorY()!=null,"Missing anchor");finite(s.fontScale(),.25F,4);finite(s.itemScale(),.25F,4);color(s.fill());color(s.border());color(s.text());if(!s.icon().isEmpty())id(s.icon());});
         d.nodes().forEach((key,n)->{require(ids.contains(key)||products.contains(key)||key.startsWith("shop:"),"Unknown graph node: "+key);finite(n.x(),-32768,32768);finite(n.y(),-32768,32768);range(n.radius(),10,60);});
         var decorations=new HashSet<String>();for(var w:d.decorations()) {
             key(w.id());unique(decorations,w.id());require(Set.of("ALL","OVERVIEW","CHALLENGES","SHOP","RESEARCH","PERKS","PROFILE").contains(w.page())&&w.type()!=null,"Invalid decoration page/type");
