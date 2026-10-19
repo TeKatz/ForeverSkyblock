@@ -1,8 +1,8 @@
-# Forever Skyblock mod — 0.25.0 K-menu Studio development
+# Forever Skyblock mod — 0.25.1 K-menu Studio polish development
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz.
 
-`feature/kmenu-admin-editor` builds 0.25.0 on the integrated 0.24.1 header-art baseline. It adds a native admin layout/quest/node editor, server-owned publication and portable/repository export. Matching client/server builds are required for the added `kmenu-editor-1` channel. See [K_MENU_EDITOR.md](../docs/K_MENU_EDITOR.md). Main integration and publication are separate steps. Java package and Gradle group: `de.tekatz.foreverskyblock`.
+`feature/kmenu-editor-polish` builds 0.25.1 on top of the unmerged 0.25.0 K-menu Studio branch and the integrated 0.24.1 header-art baseline. It keeps the native admin layout/quest/node editor, server-owned publication and portable/repository export, while polishing navigation, help, inspector grouping and preview behavior after the first real-player test. Matching client/server builds are required for the `kmenu-editor-1` channel. See [K_MENU_EDITOR.md](../docs/K_MENU_EDITOR.md). Main integration and publication are separate steps. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
 The integrated `main` baseline is **0.24.1** through [PR #17](https://github.com/TeKatz/ForeverSkyblock/pull/17), on top of [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16), including all 0.21–0.23 animation, crop, harvest-routing and balancing updates. The K-menu has round Shop nodes, improved Challenge/Contract browsing and details, a compact profile with actual skin face, custom status icons and subtle motion. Server-supplied playtime/deaths/kills and shared world-milestone Island Level use protocol **skills-9**; matching client/server versions are required. Player profile schema remains 4/5/6; the backed-up world-progress file migrates to schema 2. See [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md). No release is published by this integration.
 
@@ -125,14 +125,13 @@ See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the ful
 ./gradlew build
 ```
 
-Output on this branch: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.25.0.jar`.
+Output on this branch: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.25.1.jar`.
 
+The validated 0.25.1 editor-polish code/metadata source `56246f2a57672d0fdf966cf865b596eeeaee0019` passed Actions run `39204247635`, including Java build, client smoke, native K-menu visual fixtures and both server regression runtimes. The production JAR SHA-256 is `e530f8ae16c1131893073a7ba529b87521528005a78559a9a45bf9dbfdcb8b6c`; real-player usability acceptance is still separate.
 
 The 0.22.0 source passed 73 unit tests, client startup/model checks and both 81-test GameTest suites, including the real Wooden Hopper on NeoForge 21.1.259. Exact source/artifact evidence and the client visual test boundary are recorded in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0220-validation-and-test-artifact).
 
-
 The 0.22.1 source passed 73 unit tests, client startup/model checks and both 85-test server suites. Real Vanilla hoppers separated Oak harvest; the actual pack Wooden Hoppers separated Wheat harvest. Exact artifact evidence and remaining client checks are in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0221-validation-and-test-artifact).
-
 
 ## Integrated 0.23.0 balancing
 
