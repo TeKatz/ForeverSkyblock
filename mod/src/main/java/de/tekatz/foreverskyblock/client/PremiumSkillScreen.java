@@ -387,8 +387,8 @@ public final class PremiumSkillScreen extends Screen {
         return switch(task.type()){
             case LEGACY->questTitle(quest);
             case CRAFT,SMELT,PICKUP->item(task.target()).getHoverName();
-            case BREAK,PLACE->BuiltInRegistries.BLOCK.getOptional(id).map(net.minecraft.world.level.block.Block::getName).orElse(literal(task.target()));
-            case KILL->task.target().equals("minecraft:any_hostile")?literal(EditorClient.german()?"Feindliche Kreaturen":"Hostile mobs"):BuiltInRegistries.ENTITY_TYPE.getOptional(id).map(net.minecraft.world.entity.EntityType::getDescription).orElse(literal(task.target()));
+            case BREAK,PLACE->BuiltInRegistries.BLOCK.getOptional(id).<Component>map(net.minecraft.world.level.block.Block::getName).orElse(literal(task.target()));
+            case KILL->task.target().equals("minecraft:any_hostile")?literal(EditorClient.german()?"Feindliche Kreaturen":"Hostile mobs"):BuiltInRegistries.ENTITY_TYPE.getOptional(id).<Component>map(net.minecraft.world.entity.EntityType::getDescription).orElse(literal(task.target()));
             case DIMENSION->literal(switch(task.target()){case "minecraft:overworld"->EditorClient.german()?"Oberwelt":"Overworld";case "minecraft:the_nether"->"Nether";case "minecraft:the_end"->EditorClient.german()?"Das Ende":"The End";default->id.getPath().replace('_',' ');});
             case ADVANCEMENT->literal(id.getPath().replace('_',' ').replace('/', ' '));
         };
