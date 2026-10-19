@@ -155,6 +155,6 @@ The editor does not commit, push, merge or store GitHub credentials.
 
 The original 0.25.0 implementation source `910f902ff853b0051e5ecfb96a60bb773f901db1` passed Actions run `39200171912`. The first 0.25.1 polish source `56246f2a57672d0fdf966cf865b596eeeaee0019` passed Actions run `39204247635`.
 
-The 0.25.2 usability source `f6ad7233f04ea80e8d8d2b6873fdf2a829725dcc` passed Actions run `39209084530`: Java 21 build/compileGameTestJava, client startup/model/mixin smoke, the native K-menu render/input fixture, the dedicated regression GameTests and the full NeoForge 21.1.259 pack-runtime integration suite. The native fixture now explicitly checks that `header.sp.label` can be selected independently before the parent SP group is dragged and undo/redo is exercised.
+The 0.25.2 usability source `f6ad7233f04ea80e8d8d2b6873fdf2a829725dcc` passed Actions run `39209084530`: Java 21 build/compileGameTestJava, client startup/model/mixin smoke, the native K-menu render/input fixture, the dedicated regression GameTests and the full NeoForge 21.1.259 pack-runtime integration suite. The native fixture explicitly checks that `header.sp.label` can be selected independently before the parent SP group is dragged and undo/redo is exercised.
 
 The validated production artifact is `ForeverSkyblock-1.21.1-NeoForge-0.25.2.jar`, SHA-256 `df750cea1e972817749bf5b889a97eef9a333b8d076fb02791c1200be919d1f0`. Automated validation does not replace TeKatz's real-player usability acceptance.
