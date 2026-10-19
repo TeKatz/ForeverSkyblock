@@ -302,6 +302,7 @@ public final class PremiumSkillScreen extends Screen {
     private void buildContracts() {
         var cards=new ArrayList<Entry>();
         for(var c:EditorClient.contracts()) {
+            var configured=EditorClient.document().contract(c.id());if(configured!=null&&!configured.enabled())continue;
             if(!(contractTitle(c).getString()+" "+contractDescription(c).getString()).toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)))continue;
             var cs=contractState(c); if(filter==1&&cs!=null&&cs.completions()>0||filter==2&&(cs==null||cs.completions()==0))continue;
             cards.add(new Entry(contractTitle(c),contractDescription(c),item(c.iconId()),"contracts",()->literal("+"+c.rewardSp()+" SP"),
@@ -437,7 +438,7 @@ public final class PremiumSkillScreen extends Screen {
                 ()->ready()&&state().rank(reach.id())>0,CYAN,()->openSkill(reach),w/4-9);
         var products=List.of(ShopCatalog.NO_PHANTOMS,ShopCatalog.NO_RAIN,ShopCatalog.PERMANENT_DAY).stream().map(p->EditorClient.product(p.id())).toList();
         for(int i=0;i<products.size();i++) {
-            var p=products.get(i);
+            var p=products.get(i);if(!productVisible(p))continue;
             addNode(p.id(),w*(2*(i+1)+1)/8,108,()->productTitle(p),()->literal(p.spCost()+" SP"),productIcon(p),
                     ()->productStage(p)>=3,GREEN,()->openProduct(p),w/4-9);
         }
@@ -449,13 +450,14 @@ public final class PremiumSkillScreen extends Screen {
         // The operator transaction probe remains accessible without polluting the player-facing tree.
         if(ready()&&state().canTestPoints()) body.add(new MenuButton(5,409,Math.min(215,w-10),20,()->t("development_product"),()->true,()->openProduct(ShopCatalog.TEST),false,null));
         int extra=430;
-        for(var custom:EditorClient.products())if(ShopCatalog.PRODUCTS.stream().noneMatch(base->base.id().equals(custom.id()))){
+        for(var custom:EditorClient.products())if(productVisible(custom)&&ShopCatalog.PRODUCTS.stream().noneMatch(base->base.id().equals(custom.id()))){
             int row=extra;addNode(custom.id(),center,row,()->productTitle(custom),()->literal(custom.spCost()+" SP"),productIcon(custom),()->productStage(custom)>0,0xFFBD9AF2,()->openProduct(custom),Math.min(205,w-10));extra+=105;
         }
         for(String id:GraphGeometry.shopQuests(EditorClient.document())){var quest=EditorClient.document().quest(id);var point=GraphGeometry.point(EditorClient.document(),"shop:quest/"+id,true);addNode("shop:quest/"+id,Math.round(point.x()*w/640F),Math.round(point.y()),()->questTitle(quest),()->questStatus(quest),item(quest.icon()),()->editorComplete(quest),GOLD,()->openEditorQuest(quest),Math.max(80,w/4-9));}
         body.contentHeight=Math.max(body.contentHeight,Math.max(ready()&&state().canTestPoints()?439:405,extra>430?extra:0));body.restore();
     }
     private void shopEdge(GuiGraphics g,int left,int top,String a,int ax,int ay,String b,int bx,int by,int color){
+        var product=EditorClient.product(b);if(product!=null&&!productVisible(product))return;
         var na=EditorClient.document().nodes().get(a);var nb=EditorClient.document().nodes().get(b);int w=body.widthValue()-5;
         if(na!=null){ax=Math.round(na.x()*w/640F);ay=Math.round(na.y());}if(nb!=null){bx=Math.round(nb.x()*w/640F);by=Math.round(nb.y());}
         int middle=(ay+by)/2;line(g,left+ax,top+ay,left+ax,top+middle,color);line(g,left+ax,top+middle,left+bx,top+middle,color);line(g,left+bx,top+middle,left+bx,top+by,color);
@@ -500,6 +502,7 @@ public final class PremiumSkillScreen extends Screen {
     }
     private Component productTitle(ShopCatalog.Product p) {return literal(german()?p.titleDe():p.titleEn());}
     private int productStage(ShopCatalog.Product p) {if(EditorClient.simulation()>0)return EditorClient.simulation()==3?6:0;var s=state()==null?null:state().products().get(p.id());return s==null?0:s.stage();}
+    private boolean productVisible(ShopCatalog.Product p){var configured=EditorClient.document().product(p.id());return configured==null||configured.enabled()||productStage(p)>0;}
     private ItemStack productIcon(ShopCatalog.Product p) {
         if(EditorClient.customized()){var custom=EditorClient.document().product(p.id());if(custom!=null)return item(custom.icon());}
         if(p.id().equals(ShopCatalog.NO_PHANTOMS.id()))return Items.PHANTOM_MEMBRANE.getDefaultInstance();

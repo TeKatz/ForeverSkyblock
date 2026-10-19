@@ -22,6 +22,10 @@ The integrated baseline is **0.24.0**, merged through [PR #16](https://github.co
 - [Iron balancing and Packed Mud — 0.23.0](MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud): six-second Logs, higher Iron costs, Packed Mud mixing and centered Garden badges.
 - [K-menu overhaul — 0.24.0](K_MENU_DESIGN2.md): round Shop nodes, readable details, compact profile, subtle motion and real statistics. Island Level uses shared world milestones from this update without extra SP.
 
+## Development branch
+
+[K-menu Studio](K_MENU_EDITOR.md) describes the unmerged `feature/kmenu-admin-editor` 0.25.0 implementation, authoring workflow and validation boundary. The integrated main branch includes the approved 0.24.1 header artwork through PR #17.
+
 ## Feature documentation
 
 | Document | Scope |

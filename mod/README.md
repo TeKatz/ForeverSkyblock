@@ -1,6 +1,8 @@
-# Forever Skyblock mod — 0.24.0 K-menu overhaul
+# Forever Skyblock mod — 0.25.0 K-menu Studio development
 
-Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
+Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz.
+
+`feature/kmenu-admin-editor` builds 0.25.0 on the integrated 0.24.1 header-art baseline. It adds a native admin layout/quest/node editor, server-owned publication and portable/repository export. Matching client/server builds are required for the added `kmenu-editor-1` channel. See [K_MENU_EDITOR.md](../docs/K_MENU_EDITOR.md). Main integration and publication are separate steps. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
 The integrated `main` baseline is **0.24.0** through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16), including all 0.21–0.23 animation, crop, harvest-routing and balancing updates. The K-menu has round Shop nodes, improved Challenge/Contract browsing and details, a compact profile with actual skin face, custom status icons and subtle motion. Server-supplied playtime/deaths/kills and shared world-milestone Island Level use protocol **skills-9**; matching client/server versions are required. Player profile schema remains 4/5/6; the backed-up world-progress file migrates to schema 2. See [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md). No release is published by this integration.
 
@@ -123,7 +125,7 @@ See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the ful
 ./gradlew build
 ```
 
-Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.24.0.jar`.
+Output on this branch: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.25.0.jar`.
 
 
 The 0.22.0 source passed 73 unit tests, client startup/model checks and both 81-test GameTest suites, including the real Wooden Hopper on NeoForge 21.1.259. Exact source/artifact evidence and the client visual test boundary are recorded in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0220-validation-and-test-artifact).

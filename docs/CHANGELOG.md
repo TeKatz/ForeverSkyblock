@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.25.0 — K-menu Studio (development branch, not merged)
+
+- Add native admin layout, quest/chapter, node, Shop-package and Contract authoring for the K-menu.
+- Add private draft history, live native previews, safe publication/revision leases, conflict reconciliation and backup restoration.
+- Add server-owned multi-objective quests with persistent SP/PP rewards and bounded per-tick evidence batching.
+- Reuse existing world-bound package delivery/resource-contract recovery; preserve published IDs and package contents.
+- Export one validated ZIP or a local repository configuration; bundle repository exports as defaults.
+- Keep existing recipes, machines, world identity, profile schemas, Tier rules and fixed island unchanged.
+- Validation and remaining acceptance: [K_MENU_EDITOR.md](K_MENU_EDITOR.md).
+
+
 The complete 0.21–0.24 stack is integrated into `main` through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16), authorized October 19, 2026. Version entries and branch names below record development origins. This integration publishes no release and leaves the fixed starter-island NBT unchanged.
 
 ## 0.24.0 — K-menu overhaul

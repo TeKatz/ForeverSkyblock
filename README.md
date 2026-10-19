@@ -1,6 +1,8 @@
 # Forever Skyblock
 
-The integrated `main` baseline is **0.24.0**, including the machine animation overhaul, Wheat Garden crops, separate harvest ports, Iron/Hopper balancing and Packed Mud, followed by the rebuilt K-menu with round Shop nodes, readable detail windows, compact profile and authoritative statistics. Integrated through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16); see [current state](docs/CURRENT_STATE.md) and [K-menu behavior and validation](docs/K_MENU_DESIGN2.md).
+The integrated `main` baseline is **0.24.1**, including the machine animation overhaul, Wheat Garden crops, separate harvest ports, Iron/Hopper balancing and Packed Mud, followed by the rebuilt K-menu with round Shop nodes, readable detail windows, compact profile and authoritative statistics. Integrated through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16); see [current state](docs/CURRENT_STATE.md) and [K-menu behavior and validation](docs/K_MENU_DESIGN2.md).
+
+This development branch adds **0.25.0 K-menu Studio**: native layout/quest/node authoring, server-validated publication, drafts, conflict reconciliation and repository export. It is not merged into `main`. See [the editor guide and compatibility boundary](docs/K_MENU_EDITOR.md).
 
 **Forever Skyblock** is an Expert Skyblock modpack for **Minecraft 1.21.1 / NeoForge** built around deliberate progression, meaningful resource loops and long-term automation.
 

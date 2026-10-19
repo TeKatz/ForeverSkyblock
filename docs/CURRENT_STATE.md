@@ -1,12 +1,14 @@
 # Current integrated state
 
+Main now includes **0.24.1 header artwork through PR #17** on top of the 0.24.0 behavior below. The unmerged **0.25.0 K-menu Studio** work is isolated on `feature/kmenu-admin-editor`; see [K_MENU_EDITOR.md](K_MENU_EDITOR.md). Its editor behavior is not yet an integrated-main feature.
+
 Updated October 19, 2026 for the authorized integration of the 0.21–0.24 animation, automation, balancing and K-menu stack through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16).
 
 ## Baseline
 
 | Item | Current value |
 | --- | --- |
-| Mod version | **0.24.0** |
+| Mod version | **0.24.1** |
 | Minecraft | **1.21.1** |
 | Java | **21** |
 | Pack runtime | **NeoForge 21.1.259** |
