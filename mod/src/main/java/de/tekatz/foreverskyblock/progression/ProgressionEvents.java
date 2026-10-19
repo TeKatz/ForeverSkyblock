@@ -45,6 +45,7 @@ public final class ProgressionEvents {
             ProgressionService.get(player.server).evidence(player, java.util.List.of(ChallengeEvents.Evidence.completed(ChallengeRules.FOUNDATIONS)));
     }
     @SubscribeEvent public static void stopped(ServerStoppedEvent event) { ProgressionService.stop(event.getServer()); }
+
     @SubscribeEvent public static void commands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("foreverskills")
                 .executes(context -> { var player = context.getSource().getPlayerOrException(); ProgressionService.get(player.server).open(player); return 1; })
@@ -55,6 +56,33 @@ public final class ProgressionEvents {
                                     boolean granted = ProgressionService.get(player.server).grant(player, IntegerArgumentType.getInteger(context, "points"));
                                     if (granted) context.getSource().sendSuccess(() -> Component.translatable("message.forever_skyblock.points_granted", player.getDisplayName()), true);
                                     return granted ? 1 : 0;
-                                })))));
+                                }))))
+                .then(Commands.literal("admin").requires(source -> source.hasPermission(2))
+                        .then(Commands.literal("sp")
+                                .then(Commands.argument("player",EntityArgument.player())
+                                        .then(Commands.argument("amount",IntegerArgumentType.integer(1,1000)).executes(context->{
+                                            var player=EntityArgument.getPlayer(context,"player");int amount=IntegerArgumentType.getInteger(context,"amount");
+                                            boolean ok=ProgressionService.get(player.server).grant(player,amount);return adminResult(context.getSource(),player,ok,"+"+amount+" SP");
+                                        }))))
+                        .then(Commands.literal("perk")
+                                .then(Commands.argument("player",EntityArgument.player())
+                                        .executes(context->{var player=EntityArgument.getPlayer(context,"player");boolean ok=admin(player).adminGrantPerks(player,1);return adminResult(context.getSource(),player,ok,"+1 PP");})
+                                        .then(Commands.argument("amount",IntegerArgumentType.integer(1,1000)).executes(context->{
+                                            var player=EntityArgument.getPlayer(context,"player");int amount=IntegerArgumentType.getInteger(context,"amount");boolean ok=admin(player).adminGrantPerks(player,amount);return adminResult(context.getSource(),player,ok,"+"+amount+" PP");
+                                        }))))
+                        .then(Commands.literal("tierup")
+                                .then(Commands.argument("player",EntityArgument.player()).executes(context->{var player=EntityArgument.getPlayer(context,"player");boolean ok=admin(player).adminTierUp(player);return adminResult(context.getSource(),player,ok,"Shop Tier +1");})))
+                        .then(Commands.literal("tier")
+                                .then(Commands.argument("player",EntityArgument.player())
+                                        .then(Commands.argument("tier",IntegerArgumentType.integer(0,4)).executes(context->{var player=EntityArgument.getPlayer(context,"player");int tier=IntegerArgumentType.getInteger(context,"tier");boolean ok=admin(player).adminSetTier(player,tier);return adminResult(context.getSource(),player,ok,"Shop Tier "+tier);}))))
+                        .then(Commands.literal("hardreset")
+                                .then(Commands.argument("player",EntityArgument.player()).executes(context->{var player=EntityArgument.getPlayer(context,"player");boolean ok=admin(player).adminHardReset(player);return adminResult(context.getSource(),player,ok,"HARD RESET");})))));
+    }
+
+    private static ProgressionAdminAccess admin(ServerPlayer player){return (ProgressionAdminAccess)ProgressionService.get(player.server);}
+    private static int adminResult(net.minecraft.commands.CommandSourceStack source,ServerPlayer player,boolean ok,String action){
+        if(ok)source.sendSuccess(()->Component.literal("[Forever Skyblock] "+player.getGameProfile().getName()+": "+action),true);
+        else source.sendFailure(Component.literal("[Forever Skyblock] Admin operation failed: "+action));
+        return ok?1:0;
     }
 }
