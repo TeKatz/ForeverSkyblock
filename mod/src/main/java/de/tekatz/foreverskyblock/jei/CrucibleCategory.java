@@ -1,11 +1,13 @@
 package de.tekatz.foreverskyblock.jei;
 
 import de.tekatz.foreverskyblock.ForeverSkyblock;
+import de.tekatz.foreverskyblock.blockentity.CrucibleBlockEntity;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
+import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.Minecraft;
@@ -30,22 +32,22 @@ public final class CrucibleCategory implements IRecipeCategory<CrucibleCategory.
     @Override public Component getTitle() { return Component.literal("Crucible Melting"); }
     @Override public IDrawable getIcon() { return icon; }
     @Override public int getWidth() { return 160; }
-    @Override public int getHeight() { return 96; }
+    @Override public int getHeight() { return 104; }
 
     @Override public void setRecipe(IRecipeLayoutBuilder builder, Process recipe, IFocusGroup focuses) {
         if (recipe == Process.COBBLE_LAVA) {
-            builder.addInputSlot(14, 12).addItemStack(new ItemStack(Items.COBBLESTONE));
+            builder.addInputSlot(14, 12).addItemStack(new ItemStack(Items.COBBLESTONE, CrucibleBlockEntity.COBBLE_PER_BATCH));
             builder.addOutputSlot(126, 12).addItemStack(new ItemStack(Items.LAVA_BUCKET));
         } else if (recipe == Process.FRAGMENTS_LAVA) {
-            builder.addInputSlot(14, 12).addItemStack(new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), 4));
+            builder.addInputSlot(14, 12).addItemStack(new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), CrucibleBlockEntity.FRAGMENTS_PER_BATCH));
             builder.addOutputSlot(126, 12).addItemStack(new ItemStack(Items.LAVA_BUCKET));
         } else {
             builder.addInputSlot(14, 12).addItemStack(new ItemStack(Items.LAVA_BUCKET));
             builder.addOutputSlot(126, 12).addItemStack(new ItemStack(Items.OBSIDIAN));
-            builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 76, 67)
+            builder.addSlot(RecipeIngredientRole.CATALYST, 126, 83)
                     .addItemStack(new ItemStack(ForeverSkyblock.FREEZING_CHAMBER_MARK_I.get()));
         }
-        builder.addSlot(mezz.jei.api.recipe.RecipeIngredientRole.CATALYST, 14, 67)
+        builder.addSlot(RecipeIngredientRole.CATALYST, 14, 83)
                 .addItemStack(new ItemStack(ForeverSkyblock.CRUCIBLE.get()));
     }
 
@@ -53,17 +55,40 @@ public final class CrucibleCategory implements IRecipeCategory<CrucibleCategory.
         g.fill(0, 0, getWidth(), getHeight(), 0xFF241D19);
         slot.draw(g, 13, 11);
         slot.draw(g, 125, 11);
-        var font = Minecraft.getInstance().font;
-        g.fill(55, 17, 105, 23, 0xFF59463B);
-        g.fill(55, 17, 91, 23, 0xFFFF6A20);
-        Component middle = recipe == Process.OBSIDIAN ? Component.literal("1000 mB + Freezing") : Component.literal("→ 1000 mB lava");
-        g.drawCenteredString(font, middle, 80, 38, 0xFFFFC58D);
-        if (recipe != Process.OBSIDIAN) {
-            g.drawCenteredString(font, Component.literal("Torch 300s · Campfire 80s · Lava 30s · Superheat 8s"), 80, 51, 0xFFB9C0C4);
+
+        int track = recipe == Process.OBSIDIAN ? 0xFF40565A : 0xFF59463B;
+        int fill = recipe == Process.OBSIDIAN ? 0xFF50D4DE : 0xFFFF6A20;
+        g.fill(55, 17, 105, 23, track);
+        g.fill(55, 17, 91, 23, fill);
+
+        if (recipe == Process.COBBLE_LAVA) {
+            centeredFit(g, Component.literal("8 Cobblestone → 1000 mB lava"), 80, 37, 148, 0xFFFFC58D, 1.0F);
+            centeredFit(g, Component.literal("Torch 300s · Campfire 80s"), 80, 51, 148, 0xFFB9C0C4, 1.0F);
+            centeredFit(g, Component.literal("Lava 30s · Superheat 8s"), 80, 62, 148, 0xFFB9C0C4, 1.0F);
+        } else if (recipe == Process.FRAGMENTS_LAVA) {
+            centeredFit(g, Component.literal("40 Stone Fragments → 1000 mB lava"), 80, 37, 148, 0xFFFFC58D, 1.0F);
+            centeredFit(g, Component.literal("Torch 300s · Campfire 80s"), 80, 51, 148, 0xFFB9C0C4, 1.0F);
+            centeredFit(g, Component.literal("Lava 30s · Superheat 8s"), 80, 62, 148, 0xFFB9C0C4, 1.0F);
         } else {
-            g.drawCenteredString(font, Component.literal("Adjacent Freezing Chamber converts stored lava"), 80, 51, 0xFFB9D9E5);
+            centeredFit(g, Component.literal("1000 mB lava → 1 Obsidian"), 80, 37, 148, 0xFFB9EDF2, 1.0F);
+            centeredFit(g, Component.literal("Adjacent Freezing Chamber · 5s"), 80, 52, 148, 0xFFB9D9E5, 1.0F);
+            centeredFit(g, Component.literal("Uses the Crucible's stored lava"), 80, 63, 148, 0xFF9EADB5, .92F);
         }
-        g.drawString(font, Component.literal("Machine"), 34, 71, 0xFFB0B7BC, false);
-        if (recipe == Process.OBSIDIAN) g.drawString(font, Component.literal("Freezing"), 96, 71, 0xFFB0D7DD, false);
+
+        var font = Minecraft.getInstance().font;
+        g.drawString(font, Component.literal("Crucible"), 35, 87, 0xFFB0B7BC, false);
+        if (recipe == Process.OBSIDIAN) {
+            centeredFit(g, Component.literal("Freezing"), 108, 87, 34, 0xFFB0D7DD, .82F);
+        }
+    }
+
+    private static void centeredFit(GuiGraphics g, Component text, int centerX, int y, int maxWidth, int color, float maximumScale) {
+        var font = Minecraft.getInstance().font;
+        float scale = Math.min(maximumScale, (float) maxWidth / Math.max(1, font.width(text)));
+        g.pose().pushPose();
+        g.pose().translate(centerX, y, 0);
+        g.pose().scale(scale, scale, 1.0F);
+        g.drawString(font, text, -font.width(text) / 2, 0, color, false);
+        g.pose().popPose();
     }
 }
