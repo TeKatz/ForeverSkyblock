@@ -137,6 +137,7 @@ public final class ForeverSkyblock {
         modBus.addListener(ForeverSkyblock::addCreativeContents);
         modBus.addListener(ForeverSkyblock::registerCapabilities);
         modBus.addListener(SkillNetwork::register);
+        modBus.addListener(de.tekatz.foreverskyblock.network.EditorNetwork::register);
         modBus.addListener(CondenserNetwork::register);
         modBus.addListener(de.tekatz.foreverskyblock.tools.ToolPolicy::modifyComponents);
     }

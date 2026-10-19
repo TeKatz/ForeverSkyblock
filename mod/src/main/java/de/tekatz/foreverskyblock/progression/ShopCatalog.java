@@ -49,8 +49,10 @@ public final class ShopCatalog {
 
     private ShopCatalog() { }
 
+    public static List<Product> all() { return de.tekatz.foreverskyblock.editor.EditorRuntime.products(); }
+
     public static Product find(String id) {
-        for (var product : PRODUCTS) if (product.id().equals(id)) return product;
+        for (var product : all()) if (product.id().equals(id)) return product;
         return null;
     }
 

@@ -12,7 +12,7 @@ This directory contains **integrated-state documentation**, live feature documen
 6. [VALIDATION.md](VALIDATION.md) — detailed automated checks and user-reported in-game validation history.
 7. [CHANGELOG.md](CHANGELOG.md) — concise version-level history.
 
-The integrated baseline is **0.24.0**, merged through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16) on October 19, 2026. This includes the complete 0.21–0.24 stack. The fixed starter-island NBT is unchanged; no release is implied by the merge.
+The integrated baseline is **0.24.1**, including the approved header artwork through [PR #17](https://github.com/TeKatz/ForeverSkyblock/pull/17) after the gameplay stack in [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16) on October 19, 2026. This includes the complete 0.21–0.24 stack. The fixed starter-island NBT is unchanged; no release is implied by the merge.
 
 ## Integrated 0.21–0.24 updates
 
@@ -21,6 +21,10 @@ The integrated baseline is **0.24.0**, merged through [PR #16](https://github.co
 - [Separate Garden harvest ports — 0.22.1](MACHINE_ANIMATIONS.md#0221-separate-garden-harvest-ports): two unfiltered hoppers separate primary/secondary harvest; the Condenser GUI explains both ports.
 - [Iron balancing and Packed Mud — 0.23.0](MATERIAL_PROCESSING.md#0230-balancing-and-packed-mud): six-second Logs, higher Iron costs, Packed Mud mixing and centered Garden badges.
 - [K-menu overhaul — 0.24.0](K_MENU_DESIGN2.md): round Shop nodes, readable details, compact profile, subtle motion and real statistics. Island Level uses shared world milestones from this update without extra SP.
+
+## Development branch
+
+[K-menu Studio](K_MENU_EDITOR.md) describes the unmerged `feature/kmenu-admin-editor` 0.25.0 implementation, authoring workflow and validation boundary. The integrated main branch includes the approved 0.24.1 header artwork through PR #17.
 
 ## Feature documentation
 

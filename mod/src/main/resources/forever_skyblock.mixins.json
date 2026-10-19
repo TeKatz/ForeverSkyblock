@@ -20,10 +20,17 @@
     "ToolRepairRecipeMixin",
     "PersonalCraftMixin",
     "PersonalKillMixin",
-    "ProgressionServiceWorldMixin"
+    "ProgressionServiceWorldMixin",
+    "ProgressionServiceAdminMixin"
   ],
   "client": [
-    "PremiumSkillScreenHeaderArtMixin"
+    "PremiumSkillScreenHeaderArtMixin",
+    "PremiumSkillScreenPanelMotionMixin",
+    "PremiumSkillScreenOverviewMixin",
+    "PremiumSkillScreenButtonStyleMixin",
+    "KMenuEditorShopNodeMixin",
+    "KMenuEditorDeletedGraphMixin",
+    "KMenuEditorUxMixin"
   ],
   "injectors": {
     "defaultRequire": 1

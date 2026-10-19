@@ -57,6 +57,7 @@ public final class ProgressionService {
     }
     public static void stop(MinecraftServer server) { SERVICES.remove(server); }
     public void login(ServerPlayer player) {
+        de.tekatz.foreverskyblock.editor.EditorService.get(player.server);
         try {
             String recovery = recoverState(player);
             SkillCatalog.apply(player, store.load(player.getUUID()));
@@ -100,6 +101,7 @@ public final class ProgressionService {
         try {
             ProgressionProfile previous = store.load(player.getUUID()); String message;
             if (previous.meta().claimed(world, product.id())) message = "world_already_claimed";
+            else if (!de.tekatz.foreverskyblock.editor.EditorRuntime.productUnlocked(id, previous)) message = "world_requires_tier";
             else if (previous.meta().shopTier() < product.requiredTier()) message = "world_requires_tier";
             else if (previous.perkPoints() < product.ppCost()) message = "not_enough_perks";
             else if (previous.points() < product.spCost()) message = "not_enough_points";
@@ -167,7 +169,7 @@ public final class ProgressionService {
     /** Resource turn-ins use a durable intent plus forced player-data checkpoints around inventory removal. */
     public synchronized void submitContract(ServerPlayer player, String id, UUID request) {
         ContractCatalog.Contract contract = ContractCatalog.find(id);
-        if (contract == null || !contract.resource() || request == null) { sync(player, false, "unknown_contract"); return; }
+        if (contract == null || !de.tekatz.foreverskyblock.editor.EditorRuntime.contractEnabled(id) || !contract.resource() || request == null) { sync(player, false, "unknown_contract"); return; }
         try {
             if (!recoverPendingContract(player)) { sync(player, false, "contract_recovery_required"); return; }
             ProgressionProfile before = store.load(player.getUUID());
@@ -214,6 +216,19 @@ public final class ProgressionService {
         } catch (IOException | IllegalArgumentException | ArithmeticException e) { error(player, false, e); return false; }
     }
 
+    public void editorEvents(ServerPlayer player, de.tekatz.foreverskyblock.editor.EditorDocument document,
+                            java.util.List<de.tekatz.foreverskyblock.editor.QuestRules.Event> events) {
+        if (!ChallengeEvents.realPlayer(player)) return;
+        try {
+            var previous = store.load(player.getUUID());
+            var next = store.update(player.getUUID(), state -> de.tekatz.foreverskyblock.editor.QuestRules.recordBatch(state,document,events));
+            if (!next.equals(previous)) {
+                for(var quest:document.quests()) if(!previous.milestones().contains(quest.id()) && next.milestones().contains(quest.id()) && connected(player))
+                    player.sendSystemMessage(Component.literal(quest.title().en()+" +"+quest.rewardSp()+" SP / +"+quest.rewardPp()+" PP"));
+                sync(player,false,"");
+            }
+        } catch (IOException | RuntimeException e) { error(player,false,e); }
+    }
     public int perkPoints(ServerPlayer player) throws IOException { return store.load(player.getUUID()).perkPoints(); }
     public int jetpackStage(ServerPlayer player) {
         try { return JetpackResearch.stage(store.load(player.getUUID())::rank); } catch (IOException e) { return 0; }
@@ -254,10 +269,15 @@ public final class ProgressionService {
     private void notifyProgress(ServerPlayer player, ProgressionProfile previous, ProgressionProfile next) {
         for (var milestone : MilestoneCatalog.MILESTONES)
             if (!previous.milestones().contains(milestone.id()) && next.milestones().contains(milestone.id()) && connected(player))
-                player.sendSystemMessage(SkillMessages.milestone(milestone));
+            {
+                var override=de.tekatz.foreverskyblock.editor.EditorRuntime.quest(milestone.id());
+                if(override!=null&&(override.rewardSp()!=milestone.reward()||override.rewardPp()>0))
+                    player.sendSystemMessage(Component.literal(override.title().en()+" +"+override.rewardSp()+" SP / +"+override.rewardPp()+" PP"));
+                else player.sendSystemMessage(SkillMessages.milestone(milestone));
+            }
         if (connected(player) && next.meta().shopTier() > previous.meta().shopTier()) player.sendSystemMessage(Component.translatable(
                 "message.forever_skyblock.tier_unlocked", Component.translatable("gui.forever_skyblock.meta.tier." + next.meta().shopTier())));
-        for (var contract : ContractCatalog.CONTRACTS) {
+        for (var contract : ContractCatalog.all()) {
             long oldCount = previous.meta().contracts().getOrDefault(contract.id(), MetaProgress.ContractState.empty()).completions();
             long newCount = next.meta().contracts().getOrDefault(contract.id(), MetaProgress.ContractState.empty()).completions();
             if (newCount > oldCount && connected(player)) player.sendSystemMessage(Component.literal(contract.titleEn() + ": ")
@@ -425,6 +445,7 @@ public final class ProgressionService {
                 world = new SkillNetwork.WorldState(false, worldName, java.util.Set.of());
             }
             SkillNetwork.send(player, profile, local, open, true, message, world);
+            de.tekatz.foreverskyblock.editor.EditorService.get(player.server).sync(player, profile, open);
         } catch (IOException e) { error(player, open, e); }
     }
     private void error(ServerPlayer player, boolean open, Exception e) {

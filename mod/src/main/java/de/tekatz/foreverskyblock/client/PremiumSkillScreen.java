@@ -3,6 +3,8 @@ package de.tekatz.foreverskyblock.client;
 import static de.tekatz.foreverskyblock.client.MenuArt.*;
 import com.mojang.blaze3d.vertex.Tesselator;
 import de.tekatz.foreverskyblock.ForeverSkyblock;
+import de.tekatz.foreverskyblock.editor.*;
+import de.tekatz.foreverskyblock.editor.EditorDocument.*;
 import de.tekatz.foreverskyblock.compat.IronJetpacksBridge;
 import de.tekatz.foreverskyblock.network.SkillNetwork;
 import de.tekatz.foreverskyblock.progression.*;
@@ -31,6 +33,15 @@ public final class PremiumSkillScreen extends Screen {
     private enum Page { OVERVIEW, CHALLENGES, SHOP, RESEARCH, PERKS, PROFILE }
     private enum Sort { PROGRESS, REWARD, NAME }
     private static final List<String> CATEGORIES = List.of("all", "forever", "ae2", "mekanism", "powah", "mystical_agriculture", "combat", "contracts");
+    private final boolean authoringPreview;
+    private Screen previewDetail;
+    private List<String> categories() {
+        if(!EditorClient.customized())return CATEGORIES;
+        var result=new ArrayList<String>();result.add("all");
+        EditorClient.document().chapters().stream().sorted(Comparator.comparingInt(Chapter::order)).forEach(c->result.add(c.id()));
+        if(!result.contains("contracts"))result.add("contracts");
+        return result;
+    }
     private Page page = Page.CHALLENGES;
     private Sort sort = Sort.PROGRESS;
     private int category, filter, x, y, ticks;
@@ -49,7 +60,22 @@ public final class PremiumSkillScreen extends Screen {
                           Supplier<Component> actionLabel, BooleanSupplier enabled, Runnable action) { }
     private interface Painter { void draw(GuiGraphics g, int left, int top, int width, int mx, int my); }
 
-    public PremiumSkillScreen() { super(text("title")); }
+    public PremiumSkillScreen() { this(false); }
+    public PremiumSkillScreen(boolean preview) { super(text("title"));authoringPreview=preview; }
+    public void editorReload(){remember();rebuildWidgets();}
+    public void editorProgressRefresh(){if(page==Page.CHALLENGES){remember();rebuildBody();}}
+    public void editorPage(String value){page=Page.valueOf(value);rebuildWidgets();}
+    public Screen editorPreviewDetail(int kind){
+        previewDetail=null;
+        if(kind==1)openEditorQuest(EditorClient.document().quests().getFirst());
+        else if(kind==2)openProduct(ShopCatalog.ADVANCED_AE2_STARTER);
+        else if(kind==3)openContract(ContractCatalog.NITRO);
+        return previewDetail==null?this:previewDetail;
+    }
+    public Screen editorActivePreview(){return previewDetail==null?this:previewDetail;}
+    @Override public void onClose(){if(!authoringPreview)super.onClose();}
+    @Override public void render(GuiGraphics g,int mx,int my,float dt){super.render(g,mx,my,dt);EditorClient.decorations(g,page.name(),x,y);}
+
     private static Component text(String key, Object... args) { return Component.translatable("gui.forever_skyblock.meta." + key, args); }
     private static Component old(String key, Object... args) { return Component.translatable("gui.forever_skyblock.skills." + key, args); }
     private static Component literal(Object value) { return Component.literal(String.valueOf(value)); }
@@ -58,6 +84,7 @@ public final class PremiumSkillScreen extends Screen {
     private boolean ready() { return state() != null && state().available(); }
     private String location() { return page.name() + (page == Page.CHALLENGES ? ":" + category : ""); }
     private Component categoryName(String id) {
+        if(EditorClient.customized())for(var chapter:EditorClient.document().chapters())if(chapter.id().equals(id))return literal(chapter.title().value(EditorClient.german()));
         String s = text("sub." + id).getString(); int split = s.indexOf(": ");
         return literal(split < 0 ? s : s.substring(split + 2));
     }
@@ -66,7 +93,7 @@ public final class PremiumSkillScreen extends Screen {
             case "mekanism" -> 0xFF68DFD1; case "powah", "contracts" -> GOLD; case "combat" -> 0xFFFF929D; default -> CYAN; };
     }
     @Override protected void init() {
-        layout = PremiumMenuLayout.fit(width, height); x = (width-layout.width())/2; y = (height-layout.height())/2;
+        layout = PremiumMenuLayout.fit(width, height); EditorClient.beginFrame(layout.width()); category=Math.min(category,categories().size()-1); x = (width-layout.width())/2; y = (height-layout.height())/2;
         search = null; body = rail = null;
         int left = x+layout.padding(), top = y+layout.navTop(), bw = (layout.width()-2*layout.padding()-5)/6;
         for (Page target : Page.values()) {
@@ -76,6 +103,8 @@ public final class PremiumSkillScreen extends Screen {
         }
         addRenderableWidget(new MenuButton(x+layout.width()-layout.padding()-18,y+layout.padding(),18,18,
                 ()->literal("×"),()->true,this::onClose,false,null));
+        if(!authoringPreview && (EditorClient.canEdit() || ready()&&state().canTestPoints()))
+            addRenderableWidget(new MenuButton(x+layout.width()-layout.padding()-40,y+layout.padding(),18,18,()->literal("✎"),()->true,EditorClient::requestOpen,false,null));
         if (page == Page.CHALLENGES) initChallenges();
         else if (page == Page.SHOP) initShop();
         else if (page == Page.PROFILE || page == Page.OVERVIEW) initProfile();
@@ -87,11 +116,11 @@ public final class PremiumSkillScreen extends Screen {
     public void refresh() {
         // Stats refreshes do not reset search focus, animation, graph selection or scroll position.
         var next=state();
-        if (next != lastSnapshot && page == Page.CHALLENGES && !"contracts".equals(CATEGORIES.get(category))
+        if (next != lastSnapshot && page == Page.CHALLENGES && !"contracts".equals(categories().get(category))
                 && (lastSnapshot == null || next == null || !next.milestones().equals(lastSnapshot.milestones()) || !next.progress().equals(lastSnapshot.progress()))) {
             remember(); rebuildBody();
         }
-        if(next!=lastSnapshot && page==Page.CHALLENGES && category==7 && filter!=0
+        if(next!=lastSnapshot && page==Page.CHALLENGES && categories().get(category).equals("contracts") && filter!=0
                 && (lastSnapshot==null || next==null || !next.contracts().equals(lastSnapshot.contracts()))) {
             remember(); rebuildBody();
         }
@@ -122,12 +151,12 @@ public final class PremiumSkillScreen extends Screen {
         panel(g,l,t,w,layout.contentBottom()-layout.contentTop(),0xBC091822,0xFF203D4D);
         int titleLeft=page==Page.CHALLENGES?x+layout.challengeMainX():l;
         int titleW=page==Page.CHALLENGES?layout.challengeMainWidth()-(layout.tiny()?0:112):w;
-        centered(g,page==Page.CHALLENGES&&category==7?categoryName("contracts"):pageName(page),titleLeft+5,t+3,titleW-10,20,WHITE,.86F);
+        centered(g,page==Page.CHALLENGES&&categories().get(category).equals("contracts")?categoryName("contracts"):pageName(page),titleLeft+5,t+3,titleW-10,20,WHITE,.86F);
         if(page==Page.CHALLENGES&&layout.challengeSidebarWidth()>0) {
             int sx=l+6, sw=layout.challengeSidebarWidth()-12;
-            panel(g,sx,bodyTop(),sw,20,0xFF0D2331,BORDER);
+            if(search!=null)panel(g,search.getX()-5,search.getY()-4,search.getWidth()+10,search.getHeight()+6,0xFF0D2331,BORDER);
         }
-        int reveal=(int)((w-16)*MenuMotion.reveal(entered,System.nanoTime()));
+        int reveal=(int)((w-16)*MenuMotion.reveal(entered,System.nanoTime(),EditorClient.document().settings().animationMillis()));
         g.fill(l+8,t+24,l+8+reveal,t+25,0xFF326675);
     }
     private void drawHeader(GuiGraphics g) {
@@ -174,10 +203,11 @@ public final class PremiumSkillScreen extends Screen {
         if(ticks<0) return literal("—"); long minutes=ticks/1200;
         return literal(minutes/60+"h "+String.format(Locale.ROOT,"%02d",minutes%60)+"m");
     }
-    private int completed() { return (int)MilestoneCatalog.MILESTONES.stream().filter(m->state().milestones().contains(m.id())).count(); }
+    private int completed() { if(EditorClient.customized())return EditorClient.completedCount();return (int)MilestoneCatalog.MILESTONES.stream().filter(m->state().milestones().contains(m.id())).count(); }
     private int bodyTop() { return y+layout.contentTop()+31; }
     private MenuPanel newBody(int left,int top,int w) {
-        return addRenderableWidget(new MenuPanel(left,top,w,Math.max(25,y+layout.contentBottom()-top-5),location()));
+        var r=EditorClient.rect("body."+page.name().toLowerCase(Locale.ROOT),left,top,w,Math.max(25,y+layout.contentBottom()-top-5));
+        return addRenderableWidget(new MenuPanel(r.x(),r.y(),r.width(),r.height(),location()));
     }
     private void rebuildBody() {
         if(body!=null) removeWidget(body);
@@ -187,12 +217,14 @@ public final class PremiumSkillScreen extends Screen {
         int side=layout.challengeSidebarWidth();
         if(side>0) {
             int sx=x+layout.padding()+6, w=side-12, sy=bodyTop();
-            search=new EditBox(font,sx+5,sy+4,w-10,14,t("search")) {
+            var searchRect=EditorClient.rect("search",sx+5,sy+4,w-10,14);
+            search=new EditBox(font,searchRect.x(),searchRect.y(),searchRect.width(),searchRect.height(),t("search")) {
                 @Override public void renderWidget(GuiGraphics g,int mx,int my,float dt) {
                     if(getValue().isEmpty()&&!isFocused())centered(g,t("search"),getX(),getY(),getWidth(),14,MUTED,.75F);
                     else super.renderWidget(g,mx,my,dt);
                 }
             };
+            search.visible=!EditorClient.style("search").hidden();
             search.setBordered(false); search.setMaxLength(80); search.setValue(query); search.setHint(t("search"));
             search.setTextColor(WHITE);
             search.setResponder(v->{query=v; positions.put(location(),0D); rebuildBody();});
@@ -202,25 +234,27 @@ public final class PremiumSkillScreen extends Screen {
                 addRenderableWidget(new MenuButton(sx+f*(bw+2),sy+23,bw,17,()->t("filter."+chosen),()->true,
                         ()->{remember(); filter=chosen; positions.put(location(),0D); rebuildWidgets();},f==filter,null));
             }
-            rail=addRenderableWidget(new MenuPanel(sx,sy+48,w,Math.max(25,y+layout.contentBottom()-sy-53),"rail"));
-            for(int i=0;i<CATEGORIES.size();i++) {
-                final int chosen=i; String id=CATEGORIES.get(i); int count="contracts".equals(id)?ContractCatalog.CONTRACTS.size():"all".equals(id)?MilestoneCatalog.MILESTONES.size():(int)MilestoneCatalog.MILESTONES.stream().filter(m->id.equals(m.category())).count();
-                rail.add(new MenuButton(0,i*27,w-5,24,()->categoryName(id),()->true,
+            var rr=EditorClient.rect("categories",sx,sy+48,w,Math.max(25,y+layout.contentBottom()-sy-53));
+            rail=addRenderableWidget(new MenuPanel(rr.x(),rr.y(),rr.width(),rr.height(),"rail"));
+            for(int i=0;i<categories().size();i++) {
+                final int chosen=i; String id=categories().get(i); int count="contracts".equals(id)?EditorClient.contracts().size():EditorClient.customized()?(int)EditorClient.document().quests().stream().filter(q->q.enabled()&&(id.equals("all")||id.equals(q.chapter()))).count():"all".equals(id)?MilestoneCatalog.MILESTONES.size():(int)MilestoneCatalog.MILESTONES.stream().filter(m->id.equals(m.category())).count();
+                rail.add(new MenuButton(0,i*(24+EditorClient.document().settings().categoryGap()),rail.widthValue()-5,24,()->categoryName(id),()->true,
                         ()->{remember();category=chosen;entered=System.nanoTime();rebuildWidgets();},i==category,null) {
                     @Override protected void renderWidget(GuiGraphics g,int mx,int my,float dt) {
                         panel(g,getX(),getY(),width,height,selected?0xFF173846:isHoveredOrFocused()?0xFF122D3D:0xAA10212C,selected?accent(id):0xFF203B4C);
-                        ItemStack icon=PremiumIconResolver.categoryIcon(id);
-                        if(!"contracts".equals(id)) g.renderItem(icon,getX()+3,getY()+4);
+                        ItemStack icon=PremiumIconResolver.categoryIcon(id);boolean customIcon=false;
+                        for(var chapter:EditorClient.document().chapters())if(chapter.id().equals(id)&&!chapter.icon().isEmpty()){icon=item(chapter.icon());customIcon=true;}
+                        if(!"contracts".equals(id)||customIcon) g.renderItem(icon,getX()+3,getY()+4);
                         else mark(g,getX()+3,getY()+4,2,GOLD);
                         wrapped(g,getMessage(),getX()+24,getY()+4,width-45,selected?WHITE:MUTED,.62F,2);
                         centered(g,literal(count),getX()+width-20,getY(),17,height,accent(id),.66F);
                     }
                 });
             }
-            rail.contentHeight=CATEGORIES.size()*27; rail.restore();
+            rail.contentHeight=categories().size()*(24+EditorClient.document().settings().categoryGap()); rail.restore();
         } else {
-            addRenderableWidget(new MenuButton(x+layout.padding()+6,bodyTop(),110,18,()->categoryName(CATEGORIES.get(category)),()->true,
-                    ()->{remember();category=(category+1)%CATEGORIES.size();rebuildWidgets();},true,null));
+            addRenderableWidget(new MenuButton(x+layout.padding()+6,bodyTop(),110,18,()->categoryName(categories().get(category)),()->true,
+                    ()->{remember();category=(category+1)%categories().size();rebuildWidgets();},true,null));
             addRenderableWidget(new MenuButton(x+layout.padding()+120,bodyTop(),65,18,()->t("filter."+filter),()->true,
                     ()->{filter=(filter+1)%3;positions.put(location(),0D);rebuildWidgets();},false,null));
         }
@@ -238,11 +272,12 @@ public final class PremiumSkillScreen extends Screen {
     private void buildChallengeBody() {
         int top=bodyTop()+(layout.tiny()?22:0), left=x+layout.challengeMainX()+5, w=layout.challengeMainWidth()-10;
         body=newBody(left,top,w);
-        if("contracts".equals(CATEGORIES.get(category))) { buildContracts(); return; }
+        if("contracts".equals(categories().get(category))) { buildContracts(); return; }
+        if(EditorClient.customized()){buildEditorQuests();return;}
         var entries=new ArrayList<MilestoneCatalog.Milestone>();
         for(var m:MilestoneCatalog.MILESTONES) {
             boolean complete=ready()&&state().milestones().contains(m.id());
-            if(category>0&&!CATEGORIES.get(category).equals(m.category())) continue;
+            if(category>0&&!categories().get(category).equals(m.category())) continue;
             if(filter==1&&complete||filter==2&&!complete)continue;
             if(!(Component.translatable(m.titleKey()).getString()+" "+Component.translatable(m.descriptionKey()).getString()).toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)))continue;
             entries.add(m);
@@ -268,7 +303,8 @@ public final class PremiumSkillScreen extends Screen {
     }
     private void buildContracts() {
         var cards=new ArrayList<Entry>();
-        for(var c:ContractCatalog.CONTRACTS) {
+        for(var c:EditorClient.contracts()) {
+            var configured=EditorClient.document().contract(c.id());if(configured!=null&&!configured.enabled())continue;
             if(!(contractTitle(c).getString()+" "+contractDescription(c).getString()).toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)))continue;
             var cs=contractState(c); if(filter==1&&cs!=null&&cs.completions()>0||filter==2&&(cs==null||cs.completions()==0))continue;
             cards.add(new Entry(contractTitle(c),contractDescription(c),item(c.iconId()),"contracts",()->literal("+"+c.rewardSp()+" SP"),
@@ -277,28 +313,100 @@ public final class PremiumSkillScreen extends Screen {
         buildCards(cards,body.widthValue()>=300?2:1,true);
     }
     private void buildCards(List<Entry> entries,int columns,boolean contract) {
-        int gap=6,cw=(body.widthValue()-5-gap*(columns-1))/columns;
-        int ch=contract?100:Math.max(84,layout.challengeCardHeight()+15);
+        var cardStyle=EditorClient.style("card");
+        int gap=EditorClient.document().settings().cardGap(),cw=cardStyle.width()>0?cardStyle.width():(body.widthValue()-5-gap*(columns-1))/columns;
+        if(cardStyle.width()>0)columns=Math.max(1,(body.widthValue()-5+gap)/(cw+gap));
+        int ch=cardStyle.height()>0?cardStyle.height():contract?100:Math.max(84,layout.challengeCardHeight()+15);
         if(entries.isEmpty()) { body.paint=(g,l,t,w,mx,my)->centered(g,text("no_results"),l,t+12,w,30,MUTED,.8F);body.restore();return; }
         for(int i=0;i<entries.size();i++) {
-            var entry=entries.get(i); int dx=(i%columns)*(cw+gap),dy=(i/columns)*(ch+gap);
-            body.add(new MenuButton(dx,dy,cw,ch,()->entry.title(),()->true,entry.open(),false,null) {
+            var entry=entries.get(i); int dx=(i%columns)*(cw+gap)+cardStyle.x(),dy=(i/columns)*(ch+gap)+cardStyle.y();
+            body.add(new MenuButton(dx,dy,cw,ch,()->entry.title(),()->!cardStyle.hidden(),entry.open(),false,null) {
+                @Override protected boolean clicked(double mx,double my){return !cardStyle.hidden()&&super.clicked(mx,my);}
                 @Override protected void renderWidget(GuiGraphics g,int mx,int my,float dt) {
                     int c=entry.progress().get()>=1?GREEN:accent(entry.category());
-                    panel(g,getX(),getY(),width,height,isHoveredOrFocused()?0xFF142E3E:0xF00D202D,isHoveredOrFocused()?c:BORDER);
+                    if(cardStyle.hidden())return;
+                    EditorClient.capture("card",getX(),getY(),width,height);
+                    panel(g,getX(),getY(),width,height,EditorCodec.color(cardStyle.fill(),isHoveredOrFocused()?0xFF142E3E:0xF00D202D),EditorCodec.color(cardStyle.border(),isHoveredOrFocused()?c:BORDER));
                     g.fill(getX()+1,getY()+1,getX()+3,getY()+height-1,c);
-                    g.renderItem(entry.icon(),getX()+8,getY()+9);
-                    wrapped(g,entry.title().copy().withStyle(ChatFormatting.BOLD),getX()+30,getY()+8,width-38,WHITE,.72F,2);
-                    wrapped(g,entry.description(),getX()+8,getY()+31,width-16,MUTED,.65F,2);
+                    EditorClient.item(g,entry.icon(),getX()+8,getY()+9,"card.icon");
+                    EditorClient.text(g,entry.title().copy().withStyle(ChatFormatting.BOLD),getX()+30,getY()+8,width-38,20,EditorCodec.color(cardStyle.text(),WHITE),.72F*cardStyle.fontScale(),"card.title",true);
+                    EditorClient.text(g,entry.description(),getX()+8,getY()+31,width-16,18,MUTED,.65F*cardStyle.fontScale(),"card.description",true);
                     int footer=getY()+height-26,badgeW=Math.min(width/2,Math.max(38,Math.round(font.width(entry.badge().get())*.68F)+12));
                     label(g,entry.status().get(),getX()+8,footer,width-badgeW-23,c,.62F);
                     bar(g,getX()+8,footer+12,width-badgeW-24,entry.progress().get(),c);
                     panel(g,getX()+width-badgeW-7,footer-1,badgeW,18,0xFF14384D,0xFF376578);
-                    centered(g,entry.badge().get(),getX()+width-badgeW-7,footer-1,badgeW,18,WHITE,.69F);
+                    EditorClient.text(g,entry.badge().get(),getX()+width-badgeW-7,footer-1,badgeW,18,WHITE,.69F,"card.reward",false);
                 }
             });
         }
         body.contentHeight=((entries.size()+columns-1)/columns)*(ch+gap);body.restore();
+    }
+    private boolean editorComplete(Quest q){if(EditorClient.simulation()>0)return EditorClient.simulation()==3;return q.legacy()?ready()&&state().milestones().contains(q.id()):EditorClient.state(q.id()).complete();}
+    private boolean editorUnlocked(Quest q){
+        if(EditorClient.simulation()>0)return EditorClient.simulation()!=1;
+        if(!q.enabled())return false;
+        if(!q.legacy())return EditorClient.state(q.id()).unlocked();
+        if(!ready()||state().shopTier()<q.requiredTier())return false;
+        var completed=new HashSet<>(state().milestones());for(var other:EditorClient.document().quests())if(EditorClient.state(other.id()).complete())completed.add(other.id());
+        return QuestRules.dependencies(q.requires(),q.prerequisiteMatch(),completed);
+    }
+    private double editorRatio(Quest q){
+        if(EditorClient.simulation()>0)return EditorClient.simulation()==3?1:EditorClient.simulation()==2?.35:0;
+        if(editorComplete(q))return 1;
+        if(q.legacy())return !ready()?0:Math.clamp(state().progress().getOrDefault(q.id(),0)/(double)q.tasks().getFirst().count(),0,1);
+        var counts=EditorClient.state(q.id()).counts();
+        var ratios=q.tasks().stream().mapToDouble(t->Math.clamp(counts.getOrDefault(t.id(),0)/(double)t.count(),0,1));
+        return q.taskMatch()==Match.ANY?ratios.max().orElse(0):ratios.average().orElse(0);
+    }
+    private Component questTitle(Quest q){return literal(q.title().value(EditorClient.german()));}
+    private Component questDescription(Quest q){return literal(q.description().value(EditorClient.german()));}
+    private Component questReward(Quest q){return literal("+"+q.rewardSp()+" SP"+(q.rewardPp()>0?" · +"+q.rewardPp()+" PP":""));}
+    private Component questStatus(Quest q){return !editorUnlocked(q)&&!editorComplete(q)?literal(EditorClient.german()?"Gesperrt":"Locked"):literal(Math.round(editorRatio(q)*100)+"%");}
+    private void buildEditorQuests(){
+        var quests=new ArrayList<Quest>();String chapter=categories().get(category);
+        for(var q:EditorClient.document().quests()){
+            if(!q.enabled()||!chapter.equals("all")&&!q.chapter().equals(chapter))continue;
+            if(filter==1&&editorComplete(q)||filter==2&&!editorComplete(q))continue;
+            if(!(questTitle(q).getString()+" "+questDescription(q).getString()).toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)))continue;
+            quests.add(q);
+        }
+        quests.sort(switch(sort){case NAME->Comparator.comparing(q->questTitle(q).getString(),String.CASE_INSENSITIVE_ORDER);case REWARD->Comparator.comparingInt(Quest::rewardSp).reversed();case PROGRESS->Comparator.comparing((Quest q)->editorComplete(q)).thenComparingDouble(q->-editorRatio(q));});
+        if(EditorClient.document().settings().questGraph()){
+            int w=body.widthValue()-5,cols=Math.max(1,Math.min(3,w/145));
+            body.paint=(g,l,t,pw,mx,my)->{
+                for(int i=0;i<quests.size();i++){var q=quests.get(i);var b=questPoint(q.id(),i,cols,w);for(String dep:q.requires()){int j=-1;for(int k=0;k<quests.size();k++)if(quests.get(k).id().equals(dep)){j=k;break;}if(j>=0){var a=questPoint(dep,j,cols,w);arrow(g,l+a[0],t+a[1],l+b[0],t+b[1],18,q.prerequisiteMatch()==Match.ANY?GOLD:BORDER);}}}
+            };
+            int bottom=0;for(int i=0;i<quests.size();i++){var q=quests.get(i);var point=questPoint(q.id(),i,cols,w);addNode(q.id(),point[0],point[1],()->questTitle(q),()->questReward(q),item(q.icon()),()->editorComplete(q),editorUnlocked(q)?CYAN:DIM,()->openEditorQuest(q),Math.max(80,w/cols-12));bottom=Math.max(bottom,point[1]+95);}
+            body.contentHeight=Math.max(body.getContentHeight(),bottom);body.restore();return;
+        }
+        var entries=new ArrayList<Entry>();for(var q:quests)entries.add(new Entry(questTitle(q),questDescription(q),item(q.icon()),q.chapter(),()->questReward(q),()->editorRatio(q),()->questStatus(q),()->openEditorQuest(q)));
+        buildCards(entries,grid?layout.challengeColumns():1,false);
+    }
+    private int[] questPoint(String id,int i,int cols,int w){var node=GraphGeometry.point(EditorClient.document(),id,false);return new int[]{Math.round(node.x()*w/640F),Math.round(node.y())};}
+    private Component objectiveTarget(Task task,Quest quest){
+        var id=ResourceLocation.parse(task.target());
+        return switch(task.type()){
+            case LEGACY->questTitle(quest);
+            case CRAFT,SMELT,PICKUP->item(task.target()).getHoverName();
+            case BREAK,PLACE->BuiltInRegistries.BLOCK.getOptional(id).<Component>map(net.minecraft.world.level.block.Block::getName).orElse(literal(task.target()));
+            case KILL->task.target().equals("minecraft:any_hostile")?literal(EditorClient.german()?"Feindliche Kreaturen":"Hostile mobs"):BuiltInRegistries.ENTITY_TYPE.getOptional(id).<Component>map(net.minecraft.world.entity.EntityType::getDescription).orElse(literal(task.target()));
+            case DIMENSION->literal(switch(task.target()){case "minecraft:overworld"->EditorClient.german()?"Oberwelt":"Overworld";case "minecraft:the_nether"->"Nether";case "minecraft:the_end"->EditorClient.german()?"Das Ende":"The End";default->id.getPath().replace('_',' ');});
+            case ADVANCEMENT->literal(id.getPath().replace('_',' ').replace('/', ' '));
+        };
+    }
+    private String objectiveAction(TaskType type){return EditorClient.german()?switch(type){case LEGACY->"Fortschritt";case CRAFT->"Herstellen";case SMELT->"Schmelzen";case PICKUP->"Aufheben";case KILL->"Besiegen";case DIMENSION->"Besuchen";case BREAK->"Abbauen";case PLACE->"Platzieren";case ADVANCEMENT->"Erreichen";}:switch(type){case LEGACY->"Progress";case CRAFT->"Craft";case SMELT->"Smelt";case PICKUP->"Pick up";case KILL->"Defeat";case DIMENSION->"Visit";case BREAK->"Break";case PLACE->"Place";case ADVANCEMENT->"Earn";};}
+    private void openEditorQuest(Quest q){
+        open(new Detail(questTitle(q),item(q.icon()),accent(q.chapter()),()->questReward(q).copy().append(" · ").append(categoryName(q.chapter())),
+                ()->{var desc=questDescription(q).copy().append("\n\n");var progress=EditorClient.state(q.id()).counts();
+                    if(q.tasks().size()>1)desc.append(EditorClient.german()?q.taskMatch()==Match.ALL?"Erfülle alle Aufgaben:\n":"Erfülle mindestens eine Aufgabe:\n":q.taskMatch()==Match.ALL?"Complete all objectives:\n":"Complete at least one objective:\n");
+                    for(var task:q.tasks()){
+                        int count=q.legacy()?editorComplete(q)?task.count():ready()?state().progress().getOrDefault(q.id(),0):0:progress.getOrDefault(task.id(),0);
+                        desc.append("\n• "+objectiveAction(task.type())+": ").append(objectiveTarget(task,q)).append(" · "+count+" / "+task.count());
+                    }
+                    if(q.legacy()){var definition=ChallengeRules.find(q.id());if(definition!=null&&definition.target()>1&&!definition.objectives().isEmpty()){desc.append("\n");for(String id:definition.objectives().stream().sorted().toList())desc.append("\n• ").append(item(id).getHoverName());}desc.append("\n\n").append(t("challenge_rules"));}
+                    if(q.requiredTier()>=0)desc.append("\n\n").append(text("world_requires_tier",text("tier."+q.requiredTier())));
+                    if(!q.requires().isEmpty()){desc.append("\n\n"+(EditorClient.german()?q.prerequisiteMatch()==Match.ALL?"Alle Voraussetzungen:":"Mindestens eine Voraussetzung:":q.prerequisiteMatch()==Match.ALL?"All prerequisites:":"At least one prerequisite:"));for(String id:q.requires()){var dependency=EditorClient.document().quest(id);desc.append("\n• "+(dependency==null?id:dependency.title().value(EditorClient.german())));}}
+                    return desc;},()->questStatus(q),()->editorRatio(q),()->t("close"),()->true,()->minecraft.setScreen(this)));
     }
     private void openChallenge(MilestoneCatalog.Milestone m) {
         open(new Detail(Component.translatable(m.titleKey()),PremiumIconResolver.challengeIcon(m),accent(m.category()),
@@ -326,44 +434,60 @@ public final class PremiumSkillScreen extends Screen {
         body=newBody(x+layout.padding()+7,bodyTop(),layout.width()-2*layout.padding()-14);
         int w=body.widthValue()-5, center=w*5/8;
         body.paint=(g,l,t,w0,mx,my)->{
-            // Lines represent actual tier prerequisites. Products are siblings, never a false purchase chain.
-            int a=ready()&&state().shopTier()>=0?0xFF4B8A8B:BORDER;
-            int b=ready()&&state().shopTier()>=1?0xFF4B8A8B:BORDER;
-            line(g,l+center+18,t+22,l+w-7,t+22,b);
-            line(g,l+w-7,t+22,l+w-7,t+245,b);
-            line(g,l+w-7,t+245,l+center,t+245,b);
-            line(g,l+w/8,t+40,l+w/8,t+90,0xFF3B6576);
-            int fork=t+62; line(g,l+center,t+35,l+center,fork,a);
-            line(g,l+w*3/8,fork,l+w*7/8,fork,a);
-            for(int i=1;i<4;i++) line(g,l+w*(2*i+1)/8,fork,l+w*(2*i+1)/8,t+108,a);
-            line(g,l+center,t+245,l+center,t+326,b);
+            int a=ready()&&state().shopTier()>=0?0xFF4B8A8B:BORDER,b=ready()&&state().shopTier()>=1?0xFF4B8A8B:BORDER;
+            shopEdge(g,l,t,"shop:permanent",w/8,22,"shop:reach",w/8,108,0xFF3B6576);
+            shopEdge(g,l,t,"shop:tier0",center,22,"shop:tier1",center,245,b);
+            String[] ids={ShopCatalog.NO_PHANTOMS.id(),ShopCatalog.NO_RAIN.id(),ShopCatalog.PERMANENT_DAY.id()};
+            for(int i=0;i<ids.length;i++){var product=EditorClient.product(ids[i]);if(product.requiredTier()<=1)shopEdge(g,l,t,product.requiredTier()==0?"shop:tier0":"shop:tier1",center,product.requiredTier()==0?22:245,ids[i],w*(2*(i+1)+1)/8,108,product.requiredTier()==0?a:b);}
+            var starter=EditorClient.product(ShopCatalog.ADVANCED_AE2_STARTER.id());if(starter.requiredTier()<=1)shopEdge(g,l,t,starter.requiredTier()==0?"shop:tier0":"shop:tier1",center,starter.requiredTier()==0?22:245,starter.id(),center,326,b);
+            for(var product:EditorClient.document().products())for(String prerequisite:product.requires()){
+                var a0=GraphGeometry.point(EditorClient.document(),"shop:quest/"+prerequisite,true);var b0=GraphGeometry.point(EditorClient.document(),product.id(),true);
+                shopEdge(g,l,t,"shop:quest/"+prerequisite,Math.round(a0.x()*w/640F),Math.round(a0.y()),product.id(),Math.round(b0.x()*w/640F),Math.round(b0.y()),GOLD);
+            }
+            for(var product:EditorClient.document().products())if(product.id().startsWith("forever_skyblock:shop/custom/")&&product.requiredTier()<=1){
+                var b0=GraphGeometry.point(EditorClient.document(),product.id(),true);shopEdge(g,l,t,product.requiredTier()==0?"shop:tier0":"shop:tier1",center,product.requiredTier()==0?22:245,product.id(),Math.round(b0.x()*w/640F),Math.round(b0.y()),BORDER);
+            }
             centered(g,t("tree_hint"),l+5,t+383,w-10,15,MUTED,.66F);
         };
-        addNode(w/8,22,()->t("permanent_root"),()->t("sp_only"),Items.NETHER_STAR.getDefaultInstance(),
+        addNode("shop:permanent",w/8,22,()->t("permanent_root"),()->t("sp_only"),Items.NETHER_STAR.getDefaultInstance(),
                 ()->ready(),CYAN,()->navigate(Page.PROFILE),w/4-9);
-        addNode(center,22,()->text("tier.0"),()->Component.translatable("milestone.forever_skyblock.first_foundations"),Items.COBBLESTONE.getDefaultInstance(),
+        addNode("shop:tier0",center,22,()->text("tier.0"),()->Component.translatable("milestone.forever_skyblock.first_foundations"),Items.COBBLESTONE.getDefaultInstance(),
                 ()->ready()&&state().shopTier()>=0,GOLD,()->openTier(0),Math.min(190,w-10));
         var reach=SkillCatalog.find(SkillCatalog.EXTENDED_REACH);
-        addNode(w/8,108,()->Component.translatable(reach.titleKey()),()->old("cost",reach.cost()),reach.icon().getDefaultInstance(),
+        addNode("shop:reach",w/8,108,()->Component.translatable(reach.titleKey()),()->old("cost",reach.cost()),reach.icon().getDefaultInstance(),
                 ()->ready()&&state().rank(reach.id())>0,CYAN,()->openSkill(reach),w/4-9);
-        var products=List.of(ShopCatalog.NO_PHANTOMS,ShopCatalog.NO_RAIN,ShopCatalog.PERMANENT_DAY);
+        var products=List.of(ShopCatalog.NO_PHANTOMS,ShopCatalog.NO_RAIN,ShopCatalog.PERMANENT_DAY).stream().map(p->EditorClient.product(p.id())).toList();
         for(int i=0;i<products.size();i++) {
-            var p=products.get(i);
-            addNode(w*(2*(i+1)+1)/8,108,()->productTitle(p),()->literal(p.spCost()+" SP"),productIcon(p),
+            var p=products.get(i);if(!productVisible(p))continue;
+            addNode(p.id(),w*(2*(i+1)+1)/8,108,()->productTitle(p),()->productPrice(p),productIcon(p),
                     ()->productStage(p)>=3,GREEN,()->openProduct(p),w/4-9);
         }
-        addNode(center,245,()->text("tier.1"),()->Component.translatable("milestone.forever_skyblock.dragon_slayer"),Items.DRAGON_HEAD.getDefaultInstance(),
+        addNode("shop:tier1",center,245,()->text("tier.1"),()->Component.translatable("milestone.forever_skyblock.dragon_slayer"),Items.DRAGON_HEAD.getDefaultInstance(),
                 ()->ready()&&state().shopTier()>=1,GOLD,()->openTier(1),Math.min(190,w-10));
-        var p=ShopCatalog.ADVANCED_AE2_STARTER;
-        addNode(center,326,()->productTitle(p),()->literal(p.spCost()+" SP"),productIcon(p),
+        var p=EditorClient.product(ShopCatalog.ADVANCED_AE2_STARTER.id());
+        addNode(p.id(),center,326,()->productTitle(p),()->productPrice(p),productIcon(p),
                 ()->productStage(p)>0,0xFFBD9AF2,()->openProduct(p),Math.min(205,w-10));
         // The operator transaction probe remains accessible without polluting the player-facing tree.
         if(ready()&&state().canTestPoints()) body.add(new MenuButton(5,409,Math.min(215,w-10),20,()->t("development_product"),()->true,()->openProduct(ShopCatalog.TEST),false,null));
-        body.contentHeight=ready()&&state().canTestPoints()?439:405;body.restore();
+        int extra=430;
+        for(var custom:EditorClient.products())if(productVisible(custom)&&ShopCatalog.PRODUCTS.stream().noneMatch(base->base.id().equals(custom.id()))){
+            int row=extra;addNode(custom.id(),center,row,()->productTitle(custom),()->productPrice(custom),productIcon(custom),()->productStage(custom)>0,0xFFBD9AF2,()->openProduct(custom),Math.min(205,w-10));extra+=105;
+        }
+        for(String id:GraphGeometry.shopQuests(EditorClient.document())){var quest=EditorClient.document().quest(id);var point=GraphGeometry.point(EditorClient.document(),"shop:quest/"+id,true);addNode("shop:quest/"+id,Math.round(point.x()*w/640F),Math.round(point.y()),()->questTitle(quest),()->questStatus(quest),item(quest.icon()),()->editorComplete(quest),GOLD,()->openEditorQuest(quest),Math.max(80,w/4-9));}
+        body.contentHeight=Math.max(body.contentHeight,Math.max(ready()&&state().canTestPoints()?439:405,extra>430?extra:0));body.restore();
     }
-    private void addNode(int cx,int cy,Supplier<Component> title,Supplier<Component> subtitle,ItemStack icon,BooleanSupplier owned,int color,Runnable action,int labelWidth) {
-        int radius=18;
-        body.add(new MenuButton(cx-radius,cy-radius,radius*2+1,88,title,()->true,action,false,null) {
+    private void shopEdge(GuiGraphics g,int left,int top,String a,int ax,int ay,String b,int bx,int by,int color){
+        var product=EditorClient.product(b);if(product!=null&&!productVisible(product))return;
+        var na=EditorClient.document().nodes().get(a);var nb=EditorClient.document().nodes().get(b);int w=body.widthValue()-5;
+        if(na!=null){ax=Math.round(na.x()*w/640F);ay=Math.round(na.y());}if(nb!=null){bx=Math.round(nb.x()*w/640F);by=Math.round(nb.y());}
+        int middle=(ay+by)/2;line(g,left+ax,top+ay,left+ax,top+middle,color);line(g,left+ax,top+middle,left+bx,top+middle,color);line(g,left+bx,top+middle,left+bx,top+by,color);
+    }
+    private void addNode(String nodeId,int cx,int cy,Supplier<Component> title,Supplier<Component> subtitle,ItemStack icon,BooleanSupplier owned,int color,Runnable action,int labelWidth) {
+        var position=EditorClient.document().nodes().get(nodeId);
+        if(position!=null){cx=Math.round(position.x()*(body.widthValue()-5)/640F);cy=Math.round(position.y());}
+        final int radius=position==null?18:position.radius();
+        body.contentHeight=Math.max(body.contentHeight,cy+95);
+        body.add(new MenuButton(cx-radius,cy-radius,radius*2+1,Math.max(88,radius*2+1),title,()->true,action,false,null) {
             @Override public boolean isMouseOver(double mx,double my) { return visible&&MenuMotion.insideNode(mx,my,getX()+radius,getY()+radius,radius); }
             @Override protected boolean clicked(double mx,double my) { return active&&isMouseOver(mx,my); }
             @Override protected void renderWidget(GuiGraphics g,int mx,int my,float dt) {
@@ -396,26 +520,35 @@ public final class PremiumSkillScreen extends Screen {
                 ()->t(ready()&&state().shopTier()>=tier?"tier_unlocked":"tier_requirement",Component.translatable(milestone.titleKey())),
                 ()->ready()&&state().shopTier()>=tier?1D:ratio(milestone),()->text("page.challenges"),()->true,()->{minecraft.setScreen(this);navigate(Page.CHALLENGES);}));
     }
+    private Component productPrice(ShopCatalog.Product p){return literal(p.spCost()+" SP"+(p.ppCost()>0?" + "+p.ppCost()+" PP":""));}
     private Component productTitle(ShopCatalog.Product p) {return literal(german()?p.titleDe():p.titleEn());}
-    private int productStage(ShopCatalog.Product p) {var s=state()==null?null:state().products().get(p.id());return s==null?0:s.stage();}
+    private int productStage(ShopCatalog.Product p) {if(EditorClient.simulation()>0)return EditorClient.simulation()==3?6:0;var s=state()==null?null:state().products().get(p.id());return s==null?0:s.stage();}
+    private boolean productVisible(ShopCatalog.Product p){var configured=EditorClient.document().product(p.id());return configured==null||configured.enabled()||productStage(p)>0;}
     private ItemStack productIcon(ShopCatalog.Product p) {
-        if(p==ShopCatalog.NO_PHANTOMS)return Items.PHANTOM_MEMBRANE.getDefaultInstance();
-        if(p==ShopCatalog.NO_RAIN)return Items.WATER_BUCKET.getDefaultInstance();
-        if(p==ShopCatalog.PERMANENT_DAY)return Items.SUNFLOWER.getDefaultInstance();
+        if(EditorClient.customized()){var custom=EditorClient.document().product(p.id());if(custom!=null)return item(custom.icon());}
+        if(p.id().equals(ShopCatalog.NO_PHANTOMS.id()))return Items.PHANTOM_MEMBRANE.getDefaultInstance();
+        if(p.id().equals(ShopCatalog.NO_RAIN.id()))return Items.WATER_BUCKET.getDefaultInstance();
+        if(p.id().equals(ShopCatalog.PERMANENT_DAY.id()))return Items.SUNFLOWER.getDefaultInstance();
         return p.developmentOnly()?Items.PAPER.getDefaultInstance():ForeverSkyblock.WORLD_SUPPLY_CACHE.get().getDefaultInstance();
     }
     private boolean canBuyProduct(String id) {
-        var p=ShopCatalog.find(id); if(!ready()||p==null||!state().worldAvailable()||ClientSkills.pending())return false;
+        var p=EditorClient.product(id); if(!ready()||p==null||!state().worldAvailable()||ClientSkills.pending())return false;
         var ps=state().products().get(id);
         if(ps==null||!ps.available()||p.developmentOnly()&&!state().canTestPoints())return false;
         if(p.deliverable()&&ps.stage()==1)return true;
         return ps.stage()==0&&state().shopTier()>=p.requiredTier()&&state().points()>=p.spCost()&&state().perkPoints()>=p.ppCost();
     }
     private Component productStatus(String id) {
-        var p=ShopCatalog.find(id);if(!ready()||p==null)return old("unavailable");
+        var p=EditorClient.product(id);if(!ready()||p==null)return old("unavailable");
         if(ClientSkills.pending())return old("waiting");
         if(!state().worldAvailable())return text("world_unavailable");
-        var ps=state().products().get(id);if(ps==null||!ps.available())return t("integration_missing");
+        var ps=state().products().get(id);
+        var authored=EditorClient.document().product(id);
+        if(ps!=null&&ps.stage()==0&&authored!=null){
+            if(!authored.enabled())return literal(EditorClient.german()?"Deaktiviert":"Disabled");
+            if(authored.requires().stream().anyMatch(q->!state().milestones().contains(q)&&!EditorClient.state(q).complete()))return literal(EditorClient.german()?"Erfülle zuerst die Quest-Voraussetzungen":"Complete prerequisite quests first");
+        }
+        if(ps==null||!ps.available())return t("integration_missing");
         return switch(ps.stage()) {
             case 1 -> t("claim_package"); case 2,4 -> t("recovering"); case 3 -> t("package_delivered");case 5 -> t("package_opened");
             case 6 -> t(p.worldUpgrade()?"active":"claimed");
@@ -425,19 +558,24 @@ public final class PremiumSkillScreen extends Screen {
     }
     private void openProduct(ShopCatalog.Product p) {
         open(new Detail(productTitle(p),productIcon(p),p.worldUpgrade()?GREEN:0xFFBD9AF2,
-                ()->literal(p.spCost()+" SP  ·  ").copy().append(text("tier."+p.requiredTier())).append("  ·  ").append(text("current_world_scope")),
+                ()->productPrice(p).copy().append("  ·  ").append(text("tier."+p.requiredTier())).append("  ·  ").append(text("current_world_scope")),
                 ()->{
                     var desc=literal(german()?p.descriptionDe():p.descriptionEn()).copy().append("\n\n").append(t(p.developmentOnly()?"development_rules":p.worldUpgrade()?"world_upgrade_rules":"world_package_rules"));
+                    var customized=EditorClient.document().product(p.id());
+                    if(customized!=null&&!customized.requires().isEmpty()){desc.append("\n\n"+(EditorClient.german()?"Voraussetzungen:":"Prerequisites:"));for(String id:customized.requires())desc.append("\n• "+EditorClient.document().quest(id).title().value(EditorClient.german()));}
                     if(!p.contents().isEmpty()) {desc.append("\n\n").append(t("contents"));for(var e:p.contents())desc.append("\n"+e.count()+" × ").append(item(e.itemId()).getHoverName());}
                     return desc;
                 },()->productStatus(p.id()),()->productStage(p)>0?1D:0D,()->productStatus(p.id()),()->canBuyProduct(p.id()),()->confirmProduct(p.id())));
     }
     private void confirmProduct(String id) {
-        var p=ShopCatalog.find(id);if(p==null||!canBuyProduct(id))return;
+        if(authoringPreview)return;
+        var p=EditorClient.product(id);if(p==null||!canBuyProduct(id))return;
         if(p.deliverable()&&productStage(p)==1) {ClientSkills.claimProduct(id);return;}
         Screen returnTo=minecraft.screen;
+        Component confirmation=p.ppCost()>0?literal(EditorClient.german()?productTitle(p).getString()+" für "+productPrice(p).getString()+" in "+state().worldName()+" kaufen?":"Buy "+productTitle(p).getString()+" for "+productPrice(p).getString()+" in "+state().worldName()+"?"):
+                t(p.worldUpgrade()?"confirm_upgrade":"confirm_package",productTitle(p),p.spCost(),state().worldName());
         minecraft.setScreen(new ConfirmScreen(yes->{minecraft.setScreen(returnTo);if(yes)ClientSkills.buyProduct(id);},
-                t("purchase_title"),t(p.worldUpgrade()?"confirm_upgrade":"confirm_package",productTitle(p),p.spCost(),state().worldName()),text("purchase_confirm"),Component.translatable("gui.cancel")));
+                t("purchase_title"),confirmation,text("purchase_confirm"),Component.translatable("gui.cancel")));
     }
     private boolean canBuySkill(String id) {
         var s=SkillCatalog.find(id);
@@ -488,22 +626,26 @@ public final class PremiumSkillScreen extends Screen {
         body.contentHeight=footer+(ready()&&state().canTestPoints()?56:29);body.restore();
     }
     private void drawProfile(GuiGraphics g,int l,int top,int w) {
+        EditorClient.group(g,"profile.identity",l,top,w,56,()->{
         face(g,l+10,top+9,32);
         label(g,minecraft.player==null?t("player"):minecraft.player.getDisplayName(),l+54,top+9,w-65,WHITE,1F);
         label(g,ready()?old(state().local()?"local_scope":"server_scope"):old("storage_error"),l+54,top+25,w-65,MUTED,.67F);
         label(g,ready()?t("world_name",state().worldName()):text("world_identity_error"),l+10,top+43,w-20,GREEN,.7F);
+        });
         int cols=w>=460?3:2,gap=6,cw=(w-gap*(cols-1))/cols;
         var st=state()==null?SkillNetwork.MenuStatistics.UNKNOWN:state().statistics();
         List<Component> names=List.of(t("sp"),t("pp"),t("challenges"),t("playtime"),t("island"),t("unlocks"),t("deaths"),t("mob_kills"),text("current_world_claims"));
         List<Component> values=List.of(ready()?literal(state().points()):literal("—"),ready()?literal(state().perkPoints()):literal("—"),
-                ready()?literal(completed()+" / "+MilestoneCatalog.MILESTONES.size()):literal("—"),playtime(st.playTicks()),st.islandLevel()<0?literal("—"):literal(st.islandLevel()),
+                ready()?literal(completed()+" / "+(EditorClient.customized()?EditorClient.questCount():MilestoneCatalog.MILESTONES.size())):literal("—"),playtime(st.playTicks()),st.islandLevel()<0?literal("—"):literal(st.islandLevel()),
                 ready()?literal(state().skills().size()):literal("—"),literal(st.deaths()<0?"—":st.deaths()),literal(st.mobKills()<0?"—":st.mobKills()),ready()?literal(state().worldClaims().size()):literal("—"));
+        EditorClient.group(g,"profile.stats",l,top+56,w,((9+cols-1)/cols)*44,()->{
         for(int i=0;i<names.size();i++) {
             int dx=l+(i%cols)*(cw+gap),dy=top+56+(i/cols)*44;
             panel(g,dx,dy,cw,38,0xD1102734,BORDER);
             centered(g,names.get(i),dx+4,dy+5,cw-8,12,MUTED,.67F);
             centered(g,values.get(i),dx+4,dy+18,cw-8,17,i%3==1?GOLD:CYAN,.95F);
         }
+        });
         int fy=top+56+((9+cols-1)/cols)*44+6;
         label(g,t("statistics_scope"),l+6,fy,w-12,MUTED,.65F);
         label(g,t("island_rules"),l+6,fy+12,w-12,GREEN,.65F);
@@ -517,6 +659,7 @@ public final class PremiumSkillScreen extends Screen {
         }
     }
     private void confirmReset() {
+        if(authoringPreview)return;
         if(!ready()||ClientSkills.pending())return;
         int sp=SkillCatalog.SKILLS.stream().mapToInt(s->state().rank(s.id())*s.cost()).sum(),pp=SkillCatalog.SKILLS.stream().mapToInt(s->state().rank(s.id())*s.perkCost()).sum();
         minecraft.setScreen(new ConfirmScreen(yes->{minecraft.setScreen(this);if(yes)ClientSkills.reset();},old("reset_title"),old("reset_description",sp,pp),old("reset_confirm"),Component.translatable("gui.cancel")));
@@ -527,6 +670,7 @@ public final class PremiumSkillScreen extends Screen {
         else {panel(g,x,y,size,size,0xFF1F3B49,CYAN);centered(g,literal("?"),x,y,size,size,CYAN,1F);}
     }
     private void pageIcon(GuiGraphics g,Page p,int x,int y) {
+        var override=EditorClient.style("nav."+p.name().toLowerCase(Locale.ROOT)).icon();if(!override.isEmpty()){g.renderItem(item(override),x,y);return;}
         if(p==Page.PROFILE){face(g,x,y,14);return;}
         ItemStack icon=switch(p){case OVERVIEW->Items.COMPASS.getDefaultInstance();case CHALLENGES->Items.IRON_SWORD.getDefaultInstance();
             case SHOP->Items.CHEST.getDefaultInstance();case RESEARCH->Items.BOOK.getDefaultInstance();default->ForeverSkyblock.FOREVER_CORE.get().getDefaultInstance();};
@@ -534,16 +678,21 @@ public final class PremiumSkillScreen extends Screen {
     }
     private class MenuButton extends Button {
         final Supplier<Component> title; final BooleanSupplier enabled; final boolean selected; final Page tab;
+        private String elementId="";
         MenuButton(int x,int y,int w,int h,Supplier<Component> title,BooleanSupplier enabled,Runnable action,boolean selected,Page tab) {
             super(x,y,w,h,title.get(),b->action.run(),DEFAULT_NARRATION);this.title=title;this.enabled=enabled;this.selected=selected;this.tab=tab;
+            if(tab!=null){elementId="nav."+tab.name().toLowerCase(Locale.ROOT);var r=EditorClient.rect(elementId,x,y,w,h);setX(r.x());setY(r.y());setWidth(r.width());setHeight(r.height());}
         }
-        @Override public void onPress() {if(enabled.getAsBoolean())super.onPress();}
+        @Override public void onPress() {if(authoringPreview && tab==null && (page==Page.PROFILE||page==Page.OVERVIEW))return;if(enabled.getAsBoolean())super.onPress();}
         @Override protected void renderWidget(GuiGraphics g,int mx,int my,float dt) {
             active=enabled.getAsBoolean();setMessage(title.get());
-            panel(g,getX(),getY(),width,height,selected?0xFF163A4B:isHoveredOrFocused()?0xFF173141:0xD00D202B,selected?CYAN:BORDER);
+            var style=elementId.isEmpty()?Style.defaults():EditorClient.style(elementId);
+            if(style.hidden())return;
+            if(!elementId.isEmpty())EditorClient.capture(elementId,getX(),getY(),width,height);
+            panel(g,getX(),getY(),width,height,EditorCodec.color(style.fill(),selected?0xFF163A4B:isHoveredOrFocused()?0xFF173141:0xD00D202B),EditorCodec.color(style.border(),selected?CYAN:BORDER));
             if(selected)g.fill(getX()+1,getY()+height-2,getX()+width-1,getY()+height-1,CYAN);
-            boolean icon=tab!=null&&width>68; if(icon)pageIcon(g,tab,getX()+7,getY()+(height-16)/2);
-            centered(g,title.get(),getX()+(icon?25:4),getY(),width-(icon?29:8),height,active?selected?WHITE:MUTED:DIM,.74F);
+            boolean icon=tab!=null&&width>68;if(icon){g.pose().pushPose();g.pose().translate(getX()+7,getY()+(height-16)/2,0);g.pose().scale(style.itemScale(),style.itemScale(),1);pageIcon(g,tab,0,0);g.pose().popPose();}
+            centered(g,title.get(),getX()+(icon?25:4),getY(),width-(icon?29:8),height,EditorCodec.color(style.text(),active?selected?WHITE:MUTED:DIM),.74F*style.fontScale());
         }
     }
     /** Children, narration, clipping and hit testing share exactly the same animated coordinates. */
@@ -552,8 +701,9 @@ public final class PremiumSkillScreen extends Screen {
         private final List<int[]> offsets=new ArrayList<>();
         final MenuMotion motion=new MenuMotion();
         private final String key;
+        private boolean scrollbarDragging;
         private final long born=System.nanoTime();
-        private int entryOffset(){return (int)Math.round(5*(1-MenuMotion.reveal(born,System.nanoTime())));}
+        private int entryOffset(){return (int)Math.round(5*(1-MenuMotion.reveal(born,System.nanoTime(),EditorClient.document().settings().animationMillis())));}
         int contentHeight; Painter paint;
         MenuPanel(int x,int y,int w,int h,String key) {
             super(PremiumSkillScreen.this.minecraft,w,h,y,x,0,3,0x00000000,CYAN,0xFF91E9FF);this.key=key;contentHeight=h;
@@ -569,25 +719,47 @@ public final class PremiumSkillScreen extends Screen {
             }
         }
         @Override protected int getContentHeight(){return Math.max(height,contentHeight);}
-        @Override protected void drawBackground(GuiGraphics g,Tesselator tess,float tick){}
+        @Override protected void drawBackground(GuiGraphics g,Tesselator tess,float tick){var style=EditorClient.style(key.equals("rail")?"categories":key.equals("detail")?"detail.prose":"body."+page.name().toLowerCase(Locale.ROOT));if(!style.fill().isEmpty()||!style.border().isEmpty())panel(g,left,top,width,height,EditorCodec.color(style.fill(),0),EditorCodec.color(style.border(),0));}
         @Override protected void drawPanel(GuiGraphics g,int entryRight,int baseY,Tesselator tess,int mx,int my){
             scrollDistance=(float)motion.advance(System.nanoTime());position();
             if(paint!=null)paint.draw(g,left,top-(int)motion.value()+entryOffset(),width,mx,my);
             for(var b:buttons)if(b.visible)b.render(g,mx,my,0);
             g.flush();
         }
+        /** GuiGraphics clipping/bar drawing follows the preview pose and preserves enclosing scissor state. */
+        @Override public void render(GuiGraphics g,int mx,int my,float partialTick){
+            if(width<=0||height<=0)return;
+            // 1.21.1 GuiGraphics scissors use screen coordinates rather than the current pose.
+            var matrix=g.pose().last().pose();
+            var clipStart=new org.joml.Vector3f(left,top,0).mulPosition(matrix);
+            var clipEnd=new org.joml.Vector3f(right,bottom,0).mulPosition(matrix);
+            g.enableScissor((int)Math.floor(clipStart.x()),(int)Math.floor(clipStart.y()),(int)Math.ceil(clipEnd.x()),(int)Math.ceil(clipEnd.y()));
+            try{
+                var tess=Tesselator.getInstance();drawBackground(g,tess,partialTick);drawPanel(g,right,top-(int)scrollDistance,tess,mx,my);
+                int maximum=Math.max(0,getContentHeight()-height);
+                if(maximum>0){int thumb=thumbHeight(),barTop=top+(int)Math.round(motion.value()*(height-thumb)/maximum);g.fill(right-3,barTop,right,barTop+thumb,CYAN);g.fill(right-2,barTop,right-1,barTop+thumb,0xFF91E9FF);}
+            }finally{g.flush();g.disableScissor();}
+        }
+        private int thumbHeight(){return Math.clamp((int)((long)height*height/Math.max(1,getContentHeight())),Math.min(16,Math.max(1,height/2)),height);}
         @Override public boolean mouseScrolled(double mx,double my,double horizontal,double vertical){
-            if(!isMouseOver(mx,my))return false;motion.scroll(-vertical*29,contentHeight-height);return true;
+            if(!isMouseOver(mx,my))return false;motion.scroll(-vertical*EditorClient.document().settings().scrollSpeed(),contentHeight-height);return true;
         }
-        @Override public boolean mouseClicked(double mx,double my,int button){position();return isMouseOver(mx,my)&&super.mouseClicked(mx,my,button);}
+        @Override public boolean mouseClicked(double mx,double my,int button){
+            position();if(!isMouseOver(mx,my))return false;
+            if(button==0&&mx>=right-3&&contentHeight>height){scrollbarDragging=true;setDragging(true);setFocused(null);return true;}
+            for(var child:buttons)if(child.visible&&child.mouseClicked(mx,my,button)){setFocused(child);if(button==0)setDragging(true);return true;}
+            return false;
+        }
         @Override public boolean mouseDragged(double mx,double my,int button,double dx,double dy){
-            boolean result=super.mouseDragged(mx,my,button,dx,dy);if(result)motion.snap(Math.clamp(scrollDistance,0,Math.max(0,contentHeight-height)));return result;
+            if(!scrollbarDragging)return false;
+            motion.snap(Math.clamp(motion.value()+dy*Math.max(0,contentHeight-height)/Math.max(1,height-thumbHeight()),0,Math.max(0,contentHeight-height)));scrollDistance=(float)motion.value();position();return true;
         }
+        @Override public boolean mouseReleased(double mx,double my,int button){boolean result=scrollbarDragging;scrollbarDragging=false;setDragging(false);if(getFocused()!=null)result|=getFocused().mouseReleased(mx,my,button);return result;}
         @Override public List<? extends GuiEventListener> children(){return buttons;}
         @Override public NarratableEntry.NarrationPriority narrationPriority(){return getFocused()==null?NarratableEntry.NarrationPriority.NONE:NarratableEntry.NarrationPriority.FOCUSED;}
         @Override public void updateNarration(NarrationElementOutput o){o.add(NarratedElementType.TITLE,pageName(page));}
     }
-    private void open(Detail detail){remember();minecraft.setScreen(new DetailScreen(detail));}
+    private void open(Detail detail){remember();if(authoringPreview){previewDetail=new DetailScreen(detail);previewDetail.init(minecraft,width,height);}else minecraft.setScreen(new DetailScreen(detail));}
     private final class DetailScreen extends Screen {
         final Detail detail; private long start=System.nanoTime();private int dx,dy,dw,dh;private MenuPanel prose;
         DetailScreen(Detail detail){super(detail.title());this.detail=detail;}
@@ -595,30 +767,33 @@ public final class PremiumSkillScreen extends Screen {
             if(PremiumSkillScreen.this.width!=width || PremiumSkillScreen.this.height!=height)
                 PremiumSkillScreen.this.resize(minecraft,width,height);
             dw=Math.min(width-22,430);dh=Math.min(height-22,300);dx=(width-dw)/2;dy=(height-dh)/2;
-            prose=addRenderableWidget(new MenuPanel(dx+13,dy+69,dw-26,dh-112,"detail"));
-            prose.paint=(g,l,t,w,mx,my)->wrapped(g,detail.description().get(),l,t,w-7,MUTED,.83F,Integer.MAX_VALUE);
-            prose.contentHeight=wrappedHeight(detail.description().get(),dw-33,.83F)+8;
+            var rect=EditorClient.rect("detail",dx,dy,dw,dh);dx=rect.x();dy=rect.y();dw=rect.width();dh=rect.height();if(EditorClient.style("detail").hidden())return;
+            var pr=EditorClient.rect("detail.prose",dx+13,dy+69,dw-26,Math.max(20,dh-112));
+            prose=addRenderableWidget(new MenuPanel(pr.x(),pr.y(),pr.width(),pr.height(),"detail"));
+            prose.paint=(g,l,t,w,mx,my)->wrapped(g,detail.description().get(),l,t,w-7,EditorCodec.color(EditorClient.style("detail.prose").text(),MUTED),.83F*EditorClient.style("detail.prose").fontScale(),Integer.MAX_VALUE);
+            prose.contentHeight=wrappedHeight(detail.description().get(),pr.width()-7,.83F*EditorClient.style("detail.prose").fontScale())+8;
             addRenderableWidget(new MenuButton(dx+12,dy+dh-30,70,20,()->t("back"),()->true,this::onClose,false,null));
-            addRenderableWidget(new MenuButton(dx+90,dy+dh-30,dw-102,20,detail.actionLabel(),detail.enabled(),detail.action(),false,null));
+            addRenderableWidget(new MenuButton(dx+90,dy+dh-30,dw-102,20,detail.actionLabel(),detail.enabled(),()->{if(authoringPreview)previewDetail=null;else detail.action().run();},false,null));
         }
         @Override public void tick(){if(++ticks%100==0)ClientSkills.refreshMenu();}
         @Override public boolean isPauseScreen(){return false;}
-        @Override public void onClose(){minecraft.setScreen(PremiumSkillScreen.this);}
+        @Override public void onClose(){if(authoringPreview)previewDetail=null;else minecraft.setScreen(PremiumSkillScreen.this);}
         @Override public boolean keyPressed(int key,int scan,int modifiers){if(ClientSkills.OPEN.matches(key,scan)){minecraft.setScreen(null);return true;}return super.keyPressed(key,scan,modifiers);}
         @Override public void render(GuiGraphics g,int mx,int my,float tick){
             PremiumSkillScreen.this.render(g,-100,-100,tick);
+            if(EditorClient.style("detail").hidden())return;
             g.flush();
             g.pose().pushPose();g.pose().translate(0,0,400);
             super.render(g,mx,my,tick);
             g.flush();g.pose().popPose();
         }
         @Override public void renderBackground(GuiGraphics g,int mx,int my,float tick){
-            double reveal=MenuMotion.reveal(start,System.nanoTime());
+            double reveal=MenuMotion.reveal(start,System.nanoTime(),EditorClient.document().settings().animationMillis());
             g.fill(0,0,width,height,((int)(178*reveal)<<24)|0x020911);
-            panel(g,dx-2,dy-2,dw+4,dh+4,0xFF081822,detail.accent());
+            panel(g,dx-2,dy-2,dw+4,dh+4,EditorCodec.color(EditorClient.style("detail").fill(),0xFF081822),EditorCodec.color(EditorClient.style("detail").border(),detail.accent()));
             g.fill(dx,dy,dx+(int)(dw*reveal),dy+2,detail.accent());
-            circle(g,dx+28,dy+29,19,0xFF183542);g.renderItem(detail.icon(),dx+20,dy+21);
-            wrapped(g,detail.title().copy().withStyle(ChatFormatting.BOLD),dx+55,dy+13,dw-69,WHITE,.95F,2);
+            circle(g,dx+28,dy+29,19,0xFF183542);EditorClient.item(g,detail.icon(),dx+20,dy+21,"detail.icon");
+            EditorClient.text(g,detail.title().copy().withStyle(ChatFormatting.BOLD),dx+55,dy+13,dw-69,22,WHITE,.95F,"detail.title",true);
             label(g,detail.summary().get(),dx+55,dy+39,dw-69,detail.accent(),.7F);
             bar(g,dx+13,dy+59,dw-26,detail.ratio().get(),detail.accent());
             label(g,detail.progress().get(),dx+14,dy+dh-42,dw-28,detail.accent(),.67F);

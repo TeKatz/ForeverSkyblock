@@ -1,6 +1,8 @@
 # Forever Skyblock
 
-The integrated `main` baseline is **0.24.0**, including the machine animation overhaul, Wheat Garden crops, separate harvest ports, Iron/Hopper balancing and Packed Mud, followed by the rebuilt K-menu with round Shop nodes, readable detail windows, compact profile and authoritative statistics. Integrated through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16); see [current state](docs/CURRENT_STATE.md) and [K-menu behavior and validation](docs/K_MENU_DESIGN2.md).
+The integrated `main` baseline is **0.24.1**, including the machine animation overhaul, Wheat Garden crops, separate harvest ports, Iron/Hopper balancing and Packed Mud, followed by the rebuilt K-menu with round Shop nodes, readable detail windows, compact profile and authoritative statistics. The gameplay stack was integrated through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16), followed by approved header artwork through [PR #17](https://github.com/TeKatz/ForeverSkyblock/pull/17); see [current state](docs/CURRENT_STATE.md) and [K-menu behavior and validation](docs/K_MENU_DESIGN2.md).
+
+This development branch adds **0.25.0 K-menu Studio**: native layout/quest/node authoring, server-validated publication, drafts, conflict reconciliation and repository export. It is not merged into `main`. See [the editor guide and compatibility boundary](docs/K_MENU_EDITOR.md).
 
 **Forever Skyblock** is an Expert Skyblock modpack for **Minecraft 1.21.1 / NeoForge** built around deliberate progression, meaningful resource loops and long-term automation.
 
@@ -95,12 +97,12 @@ The final goal is a long-form Expert Skyblock experience where the player can lo
 
 ## Current project status
 
-- **Main mod version:** `0.24.0`
+- **Main mod version:** `0.24.1`
 - **Minecraft:** 1.21.1
 - **Java:** 21
 - **Pack runtime:** NeoForge 21.1.259
 - **Progression protocol:** `skills-9` (matching client/server required)
-- **Current integrated baseline:** animation, automation, balancing and K-menu updates through 0.24.0
+- **Current integrated baseline:** animation, automation, balancing and K-menu updates through 0.24.1
 - **Persistence:** player schema 4/5/6; world-progress schema 2
 - **Release status:** active development; repository integration does not imply a public release
 

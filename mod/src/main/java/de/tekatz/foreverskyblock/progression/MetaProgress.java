@@ -126,7 +126,7 @@ public record MetaProgress(int shopTier, Map<String, Progress> progress, Account
             ProgressionProfile.validateId(id);
             if (state == null) throw new IllegalArgumentException("Missing contract state");
             var definition = ContractCatalog.find(id);
-            if (definition != null && state.revision() == 1 && state.progress() >= definition.target())
+            if (definition != null && !de.tekatz.foreverskyblock.editor.EditorRuntime.customContract(id) && state.revision() == 1 && state.progress() >= definition.target())
                 throw new IllegalArgumentException("Completed contract progress must reset before persistence");
         });
         pendingContracts = Map.copyOf(pendingContracts);

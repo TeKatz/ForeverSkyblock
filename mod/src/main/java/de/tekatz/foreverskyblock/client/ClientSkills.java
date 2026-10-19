@@ -55,5 +55,5 @@ public final class ClientSkills {
         while (OPEN.consumeClick()) if (minecraft.player != null && minecraft.screen == null)
             PacketDistributor.sendToServer(new SkillNetwork.Request(0, ""));
     }
-    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { snapshot = null; pending = false; visibilityChanged.run(); }
+    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { snapshot = null; pending = false; EditorClient.clear(); visibilityChanged.run(); }
 }

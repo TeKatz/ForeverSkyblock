@@ -3,20 +3,22 @@ package de.tekatz.foreverskyblock.client;
 import static de.tekatz.foreverskyblock.client.MenuArt.*;
 
 import de.tekatz.foreverskyblock.ForeverSkyblock;
+import de.tekatz.foreverskyblock.editor.EditorCodec;
+import de.tekatz.foreverskyblock.editor.EditorDocument.Style;
 import de.tekatz.foreverskyblock.network.SkillNetwork;
 import de.tekatz.foreverskyblock.progression.ChallengeRules;
 import de.tekatz.foreverskyblock.progression.MilestoneCatalog;
 import java.util.Locale;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Items;
 
 /**
- * Renders the K-menu header with the six approved image assets.
- *
- * The PNGs are scaled-only derivatives of the six user-approved concept images. No alternate art is generated
- * or substituted here. Header geometry remains responsive while the exact asset content is preserved.
+ * Renders the K-menu header with the approved image assets while exposing its useful sub-parts to K-menu Studio.
+ * Parent groups still move/resize as one unit, while labels, values and icons have their own editor hit boxes/styles.
  */
 public final class KMenuHeaderArt {
     private static final ResourceLocation BRAND = texture("header_brand.png");
@@ -37,137 +39,98 @@ public final class KMenuHeaderArt {
     }
 
     public static void render(GuiGraphics graphics, int screenX, int screenY, PremiumMenuLayout layout) {
-        int left = screenX + layout.padding();
-        int top = screenY + layout.padding();
-        int height = layout.headerHeight() - 5;
-        int available = layout.width() - 2 * layout.padding() - 23;
-        int brandWidth = layout.tiny() ? 0 : layout.compact() ? 104 : 154;
-
-        if (brandWidth > 0) {
-            drawImage(graphics, BRAND, left, top, Math.max(1, brandWidth - 4), height,
-                    BRAND_SOURCE_WIDTH, BRAND_SOURCE_HEIGHT);
+        int left=screenX+layout.padding(),top=screenY+layout.padding(),height=layout.headerHeight()-5;
+        int available=layout.width()-2*layout.padding()-23;
+        int brandWidth=layout.tiny()?0:layout.compact()?104:154;
+        if(brandWidth>0){
+            var brand=EditorClient.rect("header.brand",left,top,brandWidth-4,height);Style style=EditorClient.style("header.brand");
+            if(brand.width()>0&&brand.height()>0){effectBackdrop(graphics,brand.x(),brand.y(),brand.width(),brand.height(),style);drawImage(graphics,BRAND,brand.x(),brand.y(),brand.width(),brand.height(),BRAND_SOURCE_WIDTH,BRAND_SOURCE_HEIGHT);}
         }
-
-        int remaining = available - brandWidth;
-        int gap = 4;
-        int skillWidth = (int) (remaining * .18);
-        int perkWidth = skillWidth;
-        int statsWidth = (int) (remaining * .25);
-        int tierWidth = remaining - skillWidth - perkWidth - statsWidth - gap * 3;
-        int sectionX = left + brandWidth;
-
-        SkillNetwork.Snapshot state = ClientSkills.snapshot();
-        boolean ready = state != null && state.available();
-
-        drawCurrency(graphics, sectionX, top, skillWidth, height, SKILL_POINTS,
-                t("sp"), ready ? literal(state.points()) : literal("—"), CYAN);
-        sectionX += skillWidth + gap;
-
-        drawCurrency(graphics, sectionX, top, perkWidth, height, PERK_POINTS,
-                t("pp"), ready ? literal(state.perkPoints()) : literal("—"), GOLD);
-        sectionX += perkWidth + gap;
-
-        panel(graphics, sectionX, top, tierWidth, height, 0xB9102532, BORDER);
-        boolean tierIcon = tierWidth > 85;
-        int tierIconSize = iconSize(height);
-        if (tierIcon) {
-            drawImage(graphics, SHOP_TIER, sectionX + 5, top + (height - tierIconSize) / 2,
-                    tierIconSize, tierIconSize, ICON_SOURCE_SIZE, ICON_SOURCE_SIZE);
+        int remaining=available-brandWidth,gap=4,skillWidth=(int)(remaining*.18),perkWidth=skillWidth,statsWidth=(int)(remaining*.25);
+        int tierWidth=remaining-skillWidth-perkWidth-statsWidth-gap*3;
+        int spX=left+brandWidth,ppX=spX+skillWidth+gap,tierX=ppX+perkWidth+gap,statsX=tierX+tierWidth+gap;
+        var state=ClientSkills.snapshot();boolean ready=state!=null&&state.available();
+        drawCurrency(graphics,"header.sp",spX,top,skillWidth,height,SKILL_POINTS,t("sp"),ready?literal(state.points()):literal("—"),CYAN);
+        drawCurrency(graphics,"header.pp",ppX,top,perkWidth,height,PERK_POINTS,t("pp"),ready?literal(state.perkPoints()):literal("—"),GOLD);
+        drawTier(graphics,tierX,top,tierWidth,height,state,ready);
+        var statsRect=EditorClient.rect("header.stats",statsX,top,statsWidth,height);
+        if(statsRect.width()>0&&statsRect.height()>0){
+            Style style=EditorClient.style("header.stats");var prior=pushStyle(style);
+            try{panel(graphics,statsRect.x(),statsRect.y(),statsRect.width(),statsRect.height(),0xB9102532,BORDER);}finally{pushStyle(prior);}
+            var stats=state==null?SkillNetwork.MenuStatistics.UNKNOWN:state.statistics();int row=statsRect.height()/2;
+            drawStat(graphics,"header.stats.playtime",statsRect.x(),statsRect.y(),statsRect.width(),row,PLAYTIME,t("playtime"),playtime(stats.playTicks()),CYAN,style);
+            drawStat(graphics,"header.stats.island",statsRect.x(),statsRect.y()+row,statsRect.width(),statsRect.height()-row,ISLAND_LEVEL,t("island"),stats.islandLevel()<0?literal("—"):literal(stats.islandLevel()+" / "+ChallengeRules.ALL.size()),GREEN,style);
         }
-        int tierTextX = sectionX + (tierIcon ? tierIconSize + 10 : 4);
-        int tierTextWidth = tierWidth - (tierIcon ? tierIconSize + 14 : 8);
-        centered(graphics, t("tier"), tierTextX, top + 3, tierTextWidth, 12, MUTED, .62F);
-        centered(graphics, ready ? meta("tier." + state.shopTier()) : literal("—"),
-                tierTextX, top + 15, tierTextWidth, 15, WHITE, .78F);
-        if (height >= 44) {
-            int completed = ready ? completed(state) : 0;
-            bar(graphics, tierTextX, top + height - 9, tierTextWidth,
-                    completed / (double) MilestoneCatalog.MILESTONES.size(), GOLD);
-            if (height > 55) {
-                centered(graphics, literal(completed + " / " + MilestoneCatalog.MILESTONES.size()),
-                        tierTextX, top + 34, tierTextWidth, 10, MUTED, .6F);
-            }
-        }
-        sectionX += tierWidth + gap;
-
-        panel(graphics, sectionX, top, statsWidth, height, 0xB9102532, BORDER);
-        int rowHeight = height / 2;
-        SkillNetwork.MenuStatistics statistics = state == null
-                ? SkillNetwork.MenuStatistics.UNKNOWN : state.statistics();
-        drawStat(graphics, sectionX, top, statsWidth, rowHeight, PLAYTIME,
-                t("playtime"), playtime(statistics.playTicks()), CYAN);
-        drawStat(graphics, sectionX, top + rowHeight, statsWidth, height - rowHeight, ISLAND_LEVEL,
-                t("island"), statistics.islandLevel() < 0
-                        ? literal("—")
-                        : literal(statistics.islandLevel() + " / " + ChallengeRules.ALL.size()), GREEN);
     }
 
-    private static void drawCurrency(GuiGraphics graphics, int x, int y, int width, int height,
-                                     ResourceLocation icon, Component title, Component value, int color) {
-        panel(graphics, x, y, width, height, 0xB9102532, BORDER);
-        boolean showIcon = width >= 57;
-        int size = iconSize(height);
-        int textLane = showIcon ? size + 10 : 2;
-        if (showIcon) {
-            drawImage(graphics, icon, x + 5, y + (height - size) / 2,
-                    size, size, ICON_SOURCE_SIZE, ICON_SOURCE_SIZE);
-        }
-        centered(graphics, title, x + textLane, y + 4, width - textLane - 3, 12, MUTED, .62F);
-        centered(graphics, value.copy().withStyle(ChatFormatting.BOLD), x + textLane, y + 18,
-                width - textLane - 3, height - 24, color, height < 45 ? .95F : 1.1F);
+    private static void drawTier(GuiGraphics graphics,int x,int top,int width,int height,SkillNetwork.Snapshot state,boolean ready){
+        var r=EditorClient.rect("header.tier",x,top,width,height);if(r.width()<=0||r.height()<=0)return;
+        Style parent=EditorClient.style("header.tier");var prior=pushStyle(parent);
+        try{panel(graphics,r.x(),r.y(),r.width(),r.height(),0xB9102532,BORDER);}finally{pushStyle(prior);}
+        boolean icon=r.width()>85;int size=iconSize(r.height());
+        if(icon)drawEditableIcon(graphics,"header.tier.icon",SHOP_TIER,r.x()+5,r.y()+(r.height()-size)/2,size,size);
+        int tx=r.x()+(icon?size+10:4),tw=r.width()-(icon?size+14:8);
+        drawEditableText(graphics,"header.tier.label",t("tier"),tx,r.y()+3,tw,12,MUTED,.62F,parent,true);
+        drawEditableText(graphics,"header.tier.value",ready?meta("tier."+state.shopTier()):literal("—"),tx,r.y()+15,tw,15,WHITE,.78F,parent,false);
+        if(r.height()>=44){int count=ready?completed(state):0;bar(graphics,tx,r.y()+r.height()-9,tw,count/(double)Math.max(1,EditorClient.questCount()),GOLD);
+            if(r.height()>55){var saved=pushStyle(parent);try{centered(graphics,literal(count+" / "+EditorClient.questCount()),tx,r.y()+34,tw,10,MUTED,.6F);}finally{pushStyle(saved);}}}
     }
 
-    private static void drawStat(GuiGraphics graphics, int x, int y, int width, int height,
-                                 ResourceLocation icon, Component title, Component value, int color) {
-        boolean showIcon = width > 68;
-        int size = height >= 28 ? 20 : 18;
-        int textOffset = showIcon ? size + 10 : 4;
-        if (showIcon) {
-            drawImage(graphics, icon, x + 5, y + (height - size) / 2,
-                    size, size, ICON_SOURCE_SIZE, ICON_SOURCE_SIZE);
-        }
-        centered(graphics, title, x + textOffset, y + 1, width - textOffset - 4, 10, MUTED, .53F);
-        centered(graphics, value, x + textOffset, y + 11, width - textOffset - 4,
-                Math.max(9, height - 12), WHITE, .7F);
+    private static void drawCurrency(GuiGraphics graphics,String id,int x,int y,int width,int height,
+                                     ResourceLocation icon,Component title,Component value,int color) {
+        var r=EditorClient.rect(id,x,y,width,height);if(r.width()<=0||r.height()<=0)return;
+        Style parent=EditorClient.style(id);var prior=pushStyle(parent);
+        try{panel(graphics,r.x(),r.y(),r.width(),r.height(),0xB9102532,BORDER);}finally{pushStyle(prior);}
+        boolean showIcon=r.width()>=57;int size=iconSize(r.height());int textLane=showIcon?size+10:2;
+        if(showIcon)drawEditableIcon(graphics,id+".icon",icon,r.x()+5,r.y()+(r.height()-size)/2,size,size);
+        drawEditableText(graphics,id+".label",title,r.x()+textLane,r.y()+4,r.width()-textLane-3,12,MUTED,.62F,parent,true);
+        drawEditableText(graphics,id+".value",value.copy().withStyle(ChatFormatting.BOLD),r.x()+textLane,r.y()+18,r.width()-textLane-3,r.height()-24,color,r.height()<45?.95F:1.1F,parent,false);
+    }
+
+    private static void drawStat(GuiGraphics graphics,String id,int x,int y,int width,int height,
+                                 ResourceLocation icon,Component title,Component value,int color,Style parent) {
+        boolean showIcon=width>68;int size=height>=28?20:18;int textOffset=showIcon?size+10:4;
+        if(showIcon)drawEditableIcon(graphics,id+".icon",icon,x+5,y+(height-size)/2,size,size);
+        drawEditableText(graphics,id+".label",title,x+textOffset,y+1,width-textOffset-4,10,MUTED,.53F,parent,true);
+        drawEditableText(graphics,id+".value",value,x+textOffset,y+11,width-textOffset-4,Math.max(9,height-12),WHITE,.7F,parent,false);
+    }
+
+    private static void drawEditableIcon(GuiGraphics graphics,String id,ResourceLocation fallback,int x,int y,int width,int height){
+        var r=EditorClient.rect(id,x,y,width,height);if(r.width()<=0||r.height()<=0)return;Style style=EditorClient.style(id);
+        effectBackdrop(graphics,r.x(),r.y(),r.width(),r.height(),style);
+        if(style.icon().isEmpty()){drawImage(graphics,fallback,r.x(),r.y(),r.width(),r.height(),ICON_SOURCE_SIZE,ICON_SOURCE_SIZE);return;}
+        var item=BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(style.icon())).orElse(Items.BARRIER);
+        graphics.pose().pushPose();graphics.pose().translate(r.x(),r.y(),0);graphics.pose().scale(r.width()/16F*style.itemScale(),r.height()/16F*style.itemScale(),1);graphics.renderItem(item.getDefaultInstance(),0,0);graphics.pose().popPose();
+    }
+
+    private static void drawEditableText(GuiGraphics graphics,String id,Component fallback,int x,int y,int width,int height,int color,float scale,Style parent,boolean editableLabel){
+        var r=EditorClient.rect(id,x,y,width,height);if(r.width()<=0||r.height()<=0)return;Style style=EditorClient.style(id);
+        Component value=fallback;
+        if(editableLabel){String label=style.label(fallback.getString(),EditorClient.german());if(!label.equals(fallback.getString()))value=Component.literal(label);}
+        int inherited=EditorCodec.color(parent.text(),color);var prior=pushStyle(style);
+        try{centered(graphics,value,r.x(),r.y(),r.width(),r.height(),inherited,scale*parent.fontScale());}finally{pushStyle(prior);}
     }
 
     private static int iconSize(int headerHeight) {
-        if (headerHeight >= 55) return 24;
-        if (headerHeight >= 44) return 20;
-        return 18;
+        if(headerHeight>=55)return 24;if(headerHeight>=44)return 20;return 18;
     }
 
-    private static void drawImage(GuiGraphics graphics, ResourceLocation texture,
-                                  int x, int y, int width, int height, int sourceWidth, int sourceHeight) {
-        if (width <= 0 || height <= 0) return;
-        graphics.pose().pushPose();
-        graphics.pose().translate(x, y, 0.0F);
-        graphics.pose().scale(width / (float) sourceWidth, height / (float) sourceHeight, 1.0F);
-        graphics.blit(texture, 0, 0, 0, 0, sourceWidth, sourceHeight, sourceWidth, sourceHeight);
-        graphics.pose().popPose();
+    private static void drawImage(GuiGraphics graphics,ResourceLocation texture,int x,int y,int width,int height,int sourceWidth,int sourceHeight) {
+        if(width<=0||height<=0)return;
+        graphics.pose().pushPose();graphics.pose().translate(x,y,0.0F);graphics.pose().scale(width/(float)sourceWidth,height/(float)sourceHeight,1.0F);
+        graphics.blit(texture,0,0,0,0,sourceWidth,sourceHeight,sourceWidth,sourceHeight);graphics.pose().popPose();
     }
 
     private static int completed(SkillNetwork.Snapshot state) {
-        return (int) MilestoneCatalog.MILESTONES.stream()
-                .filter(milestone -> state.milestones().contains(milestone.id()))
-                .count();
+        if(EditorClient.customized())return EditorClient.completedCount();
+        return (int)MilestoneCatalog.MILESTONES.stream().filter(milestone->state.milestones().contains(milestone.id())).count();
     }
 
     private static Component playtime(long ticks) {
-        if (ticks < 0) return literal("—");
-        long minutes = ticks / 1200;
-        return literal(minutes / 60 + "h " + String.format(Locale.ROOT, "%02d", minutes % 60) + "m");
+        if(ticks<0)return literal("—");long minutes=ticks/1200;return literal(minutes/60+"h "+String.format(Locale.ROOT,"%02d",minutes%60)+"m");
     }
 
-    private static Component t(String key, Object... args) {
-        return Component.translatable("gui.forever_skyblock.overhaul." + key, args);
-    }
-
-    private static Component meta(String key, Object... args) {
-        return Component.translatable("gui.forever_skyblock.meta." + key, args);
-    }
-
-    private static Component literal(Object value) {
-        return Component.literal(String.valueOf(value));
-    }
+    private static Component t(String key,Object...args){return Component.translatable("gui.forever_skyblock.overhaul."+key,args);}
+    private static Component meta(String key,Object...args){return Component.translatable("gui.forever_skyblock.meta."+key,args);}
+    private static Component literal(Object value){return Component.literal(String.valueOf(value));}
 }
