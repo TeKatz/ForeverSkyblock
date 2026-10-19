@@ -242,9 +242,9 @@ public final class PremiumSkillScreen extends Screen {
                         ()->{remember();category=chosen;entered=System.nanoTime();rebuildWidgets();},i==category,null) {
                     @Override protected void renderWidget(GuiGraphics g,int mx,int my,float dt) {
                         panel(g,getX(),getY(),width,height,selected?0xFF173846:isHoveredOrFocused()?0xFF122D3D:0xAA10212C,selected?accent(id):0xFF203B4C);
-                        ItemStack icon=PremiumIconResolver.categoryIcon(id);
-                        for(var chapter:EditorClient.document().chapters())if(chapter.id().equals(id)&&!chapter.icon().isEmpty())icon=item(chapter.icon());
-                        if(!"contracts".equals(id)) g.renderItem(icon,getX()+3,getY()+4);
+                        ItemStack icon=PremiumIconResolver.categoryIcon(id);boolean customIcon=false;
+                        for(var chapter:EditorClient.document().chapters())if(chapter.id().equals(id)&&!chapter.icon().isEmpty()){icon=item(chapter.icon());customIcon=true;}
+                        if(!"contracts".equals(id)||customIcon) g.renderItem(icon,getX()+3,getY()+4);
                         else mark(g,getX()+3,getY()+4,2,GOLD);
                         wrapped(g,getMessage(),getX()+24,getY()+4,width-45,selected?WHITE:MUTED,.62F,2);
                         centered(g,literal(count),getX()+width-20,getY(),17,height,accent(id),.66F);
