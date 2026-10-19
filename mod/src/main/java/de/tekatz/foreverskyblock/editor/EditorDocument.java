@@ -16,15 +16,34 @@ public record EditorDocument(int schema, long revision, Map<String, Style> layou
         public String value(boolean german) { return german && !de.isBlank() ? de : en; }
     }
     public enum Anchor { START, CENTER, END }
+    /**
+     * Presentation override for a native K-menu element. Effect fields are deliberately additive so older
+     * 0.25.x documents decode with their original appearance and only opt in when authored in Studio.
+     */
     public record Style(int x, int y, int width, int height, Anchor anchorX, Anchor anchorY,
                         float fontScale, float itemScale, String fill, String border, String text, boolean hidden, String icon,
-                        String labelEn, String labelDe) {
+                        String labelEn, String labelDe, String effect, String effectColor, float effectStrength, boolean textShadow) {
         public Style {
             if(icon==null)icon="";
             if(labelEn==null)labelEn="";
             if(labelDe==null)labelDe="";
+            if(effect==null||effect.isBlank())effect="NONE";
+            effect=effect.toUpperCase(Locale.ROOT);
+            if(effectColor==null)effectColor="";
+            // Gson supplies zero for fields absent from an older document. Treat that exactly like the old default.
+            if(!Float.isFinite(effectStrength)||effectStrength<=0)effectStrength=1F;
         }
-        public static Style defaults() { return new Style(0,0,0,0,Anchor.START,Anchor.START,1,1,"","","",false,"","",""); }
+        /** 0.25.2 constructor retained for source/tests that build a Style directly. */
+        public Style(int x,int y,int width,int height,Anchor anchorX,Anchor anchorY,float fontScale,float itemScale,
+                     String fill,String border,String text,boolean hidden,String icon,String labelEn,String labelDe) {
+            this(x,y,width,height,anchorX,anchorY,fontScale,itemScale,fill,border,text,hidden,icon,labelEn,labelDe,"NONE","",1F,false);
+        }
+        /** Pre-header-editor constructor retained for older tests and migration fixtures. */
+        public Style(int x,int y,int width,int height,Anchor anchorX,Anchor anchorY,float fontScale,float itemScale,
+                     String fill,String border,String text,boolean hidden) {
+            this(x,y,width,height,anchorX,anchorY,fontScale,itemScale,fill,border,text,hidden,"","","","NONE","",1F,false);
+        }
+        public static Style defaults() { return new Style(0,0,0,0,Anchor.START,Anchor.START,1,1,"","","",false,"","","","NONE","",1F,false); }
         public String label(String fallback,boolean german) {
             String value=german&&!labelDe.isBlank()?labelDe:labelEn;
             return value.isBlank()?fallback:value;
