@@ -43,7 +43,7 @@ public record EditorDocument(int schema, long revision, Map<String, Style> layou
     public enum DecorationType { TEXT, PANEL, ITEM, BAR }
     public record Decoration(String id, String page, DecorationType type, Text title, String icon,
                              String binding, int x, int y, int width, int height, String color) { }
-    public record Settings(int grid, boolean snap, int animationMillis, float scrollSpeed, boolean questGraph) { }
+    public record Settings(int grid, boolean snap, int animationMillis, float scrollSpeed, boolean questGraph, int cardGap, int categoryGap) { }
     public Quest quest(String id) { return quests.stream().filter(q->q.id().equals(id)).findFirst().orElse(null); }
     public Product product(String id) { return products.stream().filter(p->p.id().equals(id)).findFirst().orElse(null); }
     public Contract contract(String id) { return contracts.stream().filter(c->c.id().equals(id)).findFirst().orElse(null); }

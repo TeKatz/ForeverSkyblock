@@ -25,7 +25,7 @@ public final class EditorCodec {
     private static void checkNumbers(JsonElement tree,String path){
         if(tree.isJsonArray()){int i=0;for(var e:tree.getAsJsonArray())checkNumbers(e,path+"/"+i++);return;}
         if(!tree.isJsonObject())return;
-        var integral=Set.of("schema","revision","grid","animationMillis","x","y","width","height","order","count","rewardSp","rewardPp","requiredTier","spCost","ppCost","radius");
+        var integral=Set.of("schema","revision","grid","animationMillis","cardGap","categoryGap","x","y","width","height","order","count","rewardSp","rewardPp","requiredTier","spCost","ppCost","radius");
         for(var entry:tree.getAsJsonObject().entrySet()){
             String key=entry.getKey();var value=entry.getValue();
             if(integral.contains(key)&&value.isJsonPrimitive()&&!(path.startsWith("/nodes/")&&(key.equals("x")||key.equals("y")))){
@@ -89,6 +89,7 @@ public final class EditorCodec {
             range(w.x(),-4096,4096);range(w.y(),-4096,4096);range(w.width(),1,4096);range(w.height(),1,4096);color(w.color());
         }
         range(d.settings().grid(),1,64);range(d.settings().animationMillis(),0,2000);finite(d.settings().scrollSpeed(),1,200);
+        range(d.settings().cardGap(),0,32);range(d.settings().categoryGap(),0,24);
     }
     /** Published entries are tombstoned/disabled rather than removed, preserving old progress and entitlements. */
     public static void validateUpdate(EditorDocument old,EditorDocument next) {

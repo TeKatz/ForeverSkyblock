@@ -33,7 +33,7 @@ public final class KMenuEditorScreen extends Screen {
     private PremiumSkillScreen previewMenu;
     private Screen previewScreen;
     private Map<String,EditorClient.Rect> previewBounds=Map.of();
-    private float previewScale=1,previewX,previewY,zoom=1,panX=28,panY=30;
+    private float previewScale=1,previewX,previewY,zoom=1,panX=28,panY=30,layoutZoom=1,layoutPanX,layoutPanY;
     private String dragging="";private double dragX,dragY;private float startX,startY;private int startW,startH;
     private EditorDocument gesture;
     private long lastDraft;
@@ -91,7 +91,8 @@ public final class KMenuEditorScreen extends Screen {
         if(mode==Mode.QUESTS){button(canvasLeft,106,70,"+ Objective","+ Aufgabe",this::addTask);button(canvasLeft+73,106,70,"Node graph","Node-Baum",()->{applyPending();mode=Mode.GRAPH;rebuild();});}
         if(mode==Mode.SHOP)button(canvasLeft,106,70,"+ Item","+ Item",this::addStack);
     }
-    private JsonObject root(){return EditorCodec.JSON.toJsonTree(session.current()).getAsJsonObject();}
+    private EditorDocument cachedDocument;private JsonObject cachedRoot;
+    private JsonObject root(){if(cachedDocument!=session.current()){cachedDocument=session.current();cachedRoot=EditorCodec.JSON.toJsonTree(cachedDocument).getAsJsonObject();}return cachedRoot;}
     private JsonObject target(JsonObject root){
         if(mode==Mode.SETTINGS)return root.getAsJsonObject("settings");
         if(mode==Mode.LAYOUT){if(selected.startsWith("decoration/")){String id=selected.substring(11);for(var e:root.getAsJsonArray("decorations"))if(e.getAsJsonObject().get("id").getAsString().equals(id))return e.getAsJsonObject();return null;}
@@ -127,9 +128,9 @@ public final class KMenuEditorScreen extends Screen {
             for(String key:List.of("x","y","width","height"))field(obj,key,key);
             choice(obj,"anchorX","Horizontal anchor","START","CENTER","END");choice(obj,"anchorY","Vertical anchor","START","CENTER","END");
             for(String key:List.of("fontScale","itemScale","fill","border","text"))field(obj,key,key);
-            choice(obj,"hidden","Hidden","false","true");return;
+            choice(obj,"hidden","Hidden","false","true");inspectorAction("Center horizontally","Horizontal zentrieren",()->align(false));inspectorAction("Center vertically","Vertikal zentrieren",()->align(true));return;
         }
-        if(mode==Mode.SETTINGS){serverTools();field(obj,"grid","Grid size");choice(obj,"snap","Snap to grid","true","false");field(obj,"animationMillis","Animation milliseconds");field(obj,"scrollSpeed","Scroll speed");choice(obj,"questGraph","Quest graph view","false","true");return;}
+        if(mode==Mode.SETTINGS){serverTools();field(obj,"grid","Grid size");choice(obj,"snap","Snap to grid","true","false");field(obj,"animationMillis","Animation milliseconds");field(obj,"scrollSpeed","Scroll speed");field(obj,"cardGap","Card gap");field(obj,"categoryGap","Category gap");choice(obj,"questGraph","Quest graph view","false","true");return;}
         if(obj.has("id"))readOnlyId(obj.get("id").getAsString());
         if(obj.has("enabled"))choice(obj,"enabled","Enabled","true","false");
         if(obj.has("title")){field(obj,"title.en","Title · English");field(obj,"title.de","Titel · Deutsch");}
@@ -152,6 +153,7 @@ public final class KMenuEditorScreen extends Screen {
         if(mode==Mode.SHOP){field(obj,"spCost","Price · SP");field(obj,"ppCost","Price · PP");prerequisites(obj);var stacks=obj.getAsJsonArray("contents");for(int i=0;i<stacks.size();i++){field(obj,"contents."+i+".item","Package item "+(i+1));field(obj,"contents."+i+".count","Stack size");if(opened.product(selected)==null&&stacks.size()>1){final int stackIndex=i;inspectorAction("Remove item","Item entfernen",()->{applyPending();session.edit(r->find(r.getAsJsonArray("products"),selected).getAsJsonArray("contents").remove(stackIndex));rebuild();});}}nodeFields();return;}
         if(mode==Mode.CONTRACTS){choice(obj,"type","Contract type","RESOURCE","WITHER","DRAGON");if(obj.get("type").getAsString().equals("RESOURCE"))field(obj,"item","Consumed item");field(obj,"count","Required quantity");field(obj,"rewardSp","Reward · SP (1–10)");}
     }
+    private void align(boolean vertical){applyPending();var rect=previewBounds.get(selected);if(rect==null)return;int[] viewport=VIEWPORTS[viewportIndex];int delta=vertical?(viewport[1]-rect.height())/2-rect.y():(viewport[0]-rect.width())/2-rect.x();session.edit(r->{var obj=target(r);String key=vertical?"y":"x";obj.addProperty(key,obj.get(key).getAsInt()+delta);});rebuild();}
     private void inspectorAction(String en,String de,Runnable action){int y=propertyY;propertyY+=26;if(y>=108&&y+20<=height-31)button(width-rightWidth,y,rightWidth-8,en,de,action::run);}
     private void readOnlyId(String id){int y=propertyY;propertyY+=35;if(y<108||y+32>height-31)return;fieldLabels.add(new FieldLabel("ID",width-rightWidth,y));var box=addRenderableWidget(new EditBox(font,width-rightWidth,y+12,rightWidth-8,18,Component.literal("ID")));box.setMaxLength(128);box.setValue(id);box.setEditable(false);}
     private void prerequisites(JsonObject obj){int y=propertyY;propertyY+=40;if(y<108||y+35>height-31)return;fieldLabels.add(new FieldLabel("Prerequisites: "+obj.getAsJsonArray("requires").size(),width-rightWidth,y));button(width-rightWidth,y+12,rightWidth-8,"Connect in node view","Im Node-Baum verbinden",()->{applyPending();if(mode==Mode.SHOP){chooseQuestDependency(selected,hasShiftDown());return;}mode=Mode.GRAPH;linkTool=true;linkSource="";rebuild();});}
@@ -184,7 +186,7 @@ public final class KMenuEditorScreen extends Screen {
     private void drawEntries(GuiGraphics g,int mx,int my){var entries=entries();int rows=Math.max(1,(height-145)/25);listScroll=Math.clamp(listScroll,0,Math.max(0,entries.size()-rows));
         for(int i=0;i<rows&&i+listScroll<entries.size();i++){String id=entries.get(i+listScroll);int y=109+i*25;MenuArt.panel(g,8,y,leftWidth-8,23,id.equals(selected)?0xFF1B4053:my>=y&&my<y+23?0xFF142D3E:0xFF0C2030,id.equals(selected)?MenuArt.CYAN:MenuArt.BORDER);MenuArt.label(g,Component.literal(entryName(id)),12,y+7,leftWidth-17,id.equals(selected)?MenuArt.WHITE:MenuArt.MUTED,.75F);}
     }
-    private void drawPreview(GuiGraphics g,int mx,int my,float dt){if(previewScreen==null)return;int[] v=VIEWPORTS[viewportIndex];previewScale=Math.min((canvasRight-canvasLeft-12)/(float)v[0],(canvasBottom-138)/(float)v[1]);previewScale=Math.max(.05F,previewScale);previewX=canvasLeft+(canvasRight-canvasLeft-v[0]*previewScale)/2;previewY=134+(canvasBottom-134-v[1]*previewScale)/2;
+    private void drawPreview(GuiGraphics g,int mx,int my,float dt){if(previewScreen==null)return;int[] v=VIEWPORTS[viewportIndex];previewScale=Math.min((canvasRight-canvasLeft-12)/(float)v[0],(canvasBottom-138)/(float)v[1]);previewScale=Math.max(.05F,previewScale)*layoutZoom;previewX=canvasLeft+(canvasRight-canvasLeft-v[0]*previewScale)/2+layoutPanX;previewY=134+(canvasBottom-134-v[1]*previewScale)/2+layoutPanY;
         EditorClient.preview(gesture==null?session.current():gesture);try {g.pose().pushPose();g.pose().translate(previewX,previewY,0);g.pose().scale(previewScale,previewScale,1);previewScreen.render(g,tryMode?(int)((mx-previewX)/previewScale):-100,tryMode?(int)((my-previewY)/previewScale):-100,dt);g.flush();g.pose().popPose();previewBounds=EditorClient.bounds();}finally{EditorClient.preview(null);}
         var r=previewBounds.get(selected);if(r!=null&&!tryMode){int x=(int)(previewX+r.x()*previewScale),y=(int)(previewY+r.y()*previewScale),w=(int)(r.width()*previewScale),h=(int)(r.height()*previewScale);outline(g,x,y,w,h,MenuArt.CYAN);g.fill(x+w-3,y+h-3,x+w+3,y+h+3,MenuArt.GOLD);}
     }
@@ -225,9 +227,10 @@ public final class KMenuEditorScreen extends Screen {
         if(mx<leftWidth+1&&my>=109&&my<109+Math.max(1,(height-145)/25)*25){var list=entries();int i=listScroll+(int)((my-109)/25);if(i<list.size()){run(()->{applyPending();selected=list.get(i);propertyScroll=0;pending.clear();focusSelected();rebuild();});return true;}}
         if(mx>=canvasLeft&&mx<canvasRight&&my>=130&&my<canvasBottom){
             if(!pending.isEmpty()){try{applyPending();}catch(RuntimeException e){message=e.getMessage();return true;}}
-            if(mode==Mode.LAYOUT){if(tryMode){EditorClient.preview(session.current());try{boolean handled=previewScreen.mouseClicked((mx-previewX)/previewScale,(my-previewY)/previewScale,button);previewScreen=previewMenu.editorActivePreview();return handled;}finally{EditorClient.preview(null);}}
+            if(mode==Mode.LAYOUT){if(button==2){layoutZoom=1;layoutPanX=layoutPanY=0;return true;}if(tryMode){EditorClient.preview(session.current());try{boolean handled=previewScreen.mouseClicked((mx-previewX)/previewScale,(my-previewY)/previewScale,button);previewScreen=previewMenu.editorActivePreview();return handled;}finally{EditorClient.preview(null);}}
                 var entries=new ArrayList<>(previewBounds.entrySet());Collections.reverse(entries);String hit="";for(var e:entries)if(e.getValue().contains((mx-previewX)/previewScale,(my-previewY)/previewScale)){hit=e.getKey();break;}
                 if(!hit.isEmpty()){selected=hit;pending.clear();propertyScroll=0;beginGesture(mx,my);var o=target(root());startX=o.get("x").getAsFloat();startY=o.get("y").getAsFloat();startW=o.get("width").getAsInt()==0?previewBounds.get(hit).width():o.get("width").getAsInt();startH=o.get("height").getAsInt()==0?previewBounds.get(hit).height():o.get("height").getAsInt();rebuild();return true;}
+                panning=true;dragX=mx;dragY=my;return true;
             }else if(mode==Mode.GRAPH||mode==Mode.SHOP){var ids=graphIds();String hit="";for(int i=ids.size()-1;i>=0;i--){var n=node(ids.get(i),i);if(Math.hypot(mx-gx(n.x()),my-gy(n.y()))<=n.radius()*zoom+4){hit=ids.get(i);break;}}
                 if(!hit.isEmpty()){String id=hit;if(linkTool||unlinkTool){if(linkSource.isEmpty()){linkSource=id;return true;}String source=linkSource;linkSource="";run(()->connect(source,id,unlinkTool));return true;}
                     selected=id;pending.clear();propertyScroll=0;var n=node(id,ids.indexOf(id));beginGesture(mx,my);startX=n.x();startY=n.y();rebuild();return true;}
@@ -245,10 +248,10 @@ public final class KMenuEditorScreen extends Screen {
             }else {var n=new Node(EditorSession.snap(startX+(mx-dragX)/zoom,grid,snap),EditorSession.snap(startY+(my-dragY)/zoom,grid,snap),node(dragging,graphIds().indexOf(dragging)).radius());json.getAsJsonObject("nodes").add(dragging,EditorCodec.JSON.toJsonTree(n));}
             gesture=EditorCodec.decode(json.toString());if(mode==Mode.LAYOUT){EditorClient.preview(gesture);try{previewMenu.init(minecraft,VIEWPORTS[viewportIndex][0],VIEWPORTS[viewportIndex][1]);previewMenu.editorPage(page);previewScreen=previewMenu.editorPreviewDetail(previewState);}finally{EditorClient.preview(null);}}
         });return true;}
-        if(panning){panX+=dx;panY+=dy;return true;}return super.mouseDragged(mx,my,button,dx,dy);
+        if(panning){if(mode==Mode.LAYOUT){layoutPanX+=dx;layoutPanY+=dy;}else{panX+=dx;panY+=dy;}return true;}return super.mouseDragged(mx,my,button,dx,dy);
     }
     @Override public boolean mouseReleased(double x,double y,int b){if(!dragging.isEmpty()){if(gesture!=null)session.replace(gesture);dragging="";gesture=null;rebuild();return true;}panning=false;return super.mouseReleased(x,y,b);}
-    @Override public boolean mouseScrolled(double x,double y,double h,double v){if(x>width-rightWidth-8){propertyScroll=Math.clamp(propertyScroll-(int)(v*42),0,maxPropertyScroll);rebuild();return true;}if(x<leftWidth+3){listScroll=Math.max(0,listScroll-(int)(v*3));return true;}if(mode==Mode.GRAPH||mode==Mode.SHOP){float next=Math.clamp((float)(zoom*Math.pow(1.12,v)),.35F,2);panX=(float)(x-canvasLeft-(x-canvasLeft-panX)*next/zoom);panY=(float)(y-134-(y-134-panY)*next/zoom);zoom=next;return true;}if(mode==Mode.LAYOUT&&tryMode){EditorClient.preview(session.current());try{return previewScreen.mouseScrolled((x-previewX)/previewScale,(y-previewY)/previewScale,h,v);}finally{EditorClient.preview(null);}}return super.mouseScrolled(x,y,h,v);}
+    @Override public boolean mouseScrolled(double x,double y,double h,double v){if(x>width-rightWidth-8){propertyScroll=Math.clamp(propertyScroll-(int)(v*42),0,maxPropertyScroll);rebuild();return true;}if(x<leftWidth+3){listScroll=Math.max(0,listScroll-(int)(v*3));return true;}if(mode==Mode.GRAPH||mode==Mode.SHOP){float next=Math.clamp((float)(zoom*Math.pow(1.12,v)),.35F,2);panX=(float)(x-canvasLeft-(x-canvasLeft-panX)*next/zoom);panY=(float)(y-134-(y-134-panY)*next/zoom);zoom=next;return true;}if(mode==Mode.LAYOUT&&!tryMode){float next=Math.clamp((float)(layoutZoom*Math.pow(1.12,v)),.5F,4),ratio=next/layoutZoom;float cx=(canvasLeft+canvasRight)/2F,cy=(134+canvasBottom)/2F;layoutPanX=(float)(x-cx-(x-cx-layoutPanX)*ratio);layoutPanY=(float)(y-cy-(y-cy-layoutPanY)*ratio);layoutZoom=next;return true;}if(mode==Mode.LAYOUT&&tryMode){EditorClient.preview(session.current());try{return previewScreen.mouseScrolled((x-previewX)/previewScale,(y-previewY)/previewScale,h,v);}finally{EditorClient.preview(null);}}return super.mouseScrolled(x,y,h,v);}
     @Override public boolean keyPressed(int key,int scan,int modifiers){if(hasControlDown()&&key==GLFW.GLFW_KEY_S){saveDraft();return true;}if(hasControlDown()&&key==GLFW.GLFW_KEY_Z){pending.clear();if(hasShiftDown())session.redo();else session.undo();rebuild();return true;}if(key==GLFW.GLFW_KEY_ENTER){run(()->{applyPending();rebuild();});return true;}return super.keyPressed(key,scan,modifiers);}
     private void connect(String source,String destination,boolean remove){
         if(source.equals(destination))return;

@@ -32,7 +32,7 @@ public final class EditorDefaults {
         var contracts=new ArrayList<Contract>();for(var c:ContractCatalog.CONTRACTS)contracts.add(new Contract(c.id(),true,new Text(c.titleEn(),c.titleDe()),
                 new Text(c.descriptionEn(),c.descriptionDe()),c.iconId(),ContractType.valueOf(c.trigger().name()),c.itemId()==null?"":c.itemId(),c.target(),c.rewardSp(),c.requiredTier()));
         var layout=new LinkedHashMap<String,Style>();for(String id:ELEMENTS)layout.put(id,Style.defaults());
-        return new EditorDocument(SCHEMA,0,layout,chapters,quests,products,contracts,Map.of(),List.of(),new Settings(4,true,200,29,false));
+        return new EditorDocument(SCHEMA,0,layout,chapters,quests,products,contracts,Map.of(),List.of(),new Settings(4,true,200,29,false,6,3));
     }
     private static JsonObject language(String lang) {
         try(var in=EditorDefaults.class.getResourceAsStream("/assets/forever_skyblock/lang/"+lang+".json")) {

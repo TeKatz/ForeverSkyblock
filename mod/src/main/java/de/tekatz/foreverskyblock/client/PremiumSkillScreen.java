@@ -237,7 +237,7 @@ public final class PremiumSkillScreen extends Screen {
             rail=addRenderableWidget(new MenuPanel(rr.x(),rr.y(),rr.width(),rr.height(),"rail"));
             for(int i=0;i<categories().size();i++) {
                 final int chosen=i; String id=categories().get(i); int count="contracts".equals(id)?EditorClient.contracts().size():EditorClient.customized()?(int)EditorClient.document().quests().stream().filter(q->q.enabled()&&(id.equals("all")||id.equals(q.chapter()))).count():"all".equals(id)?MilestoneCatalog.MILESTONES.size():(int)MilestoneCatalog.MILESTONES.stream().filter(m->id.equals(m.category())).count();
-                rail.add(new MenuButton(0,i*27,rail.widthValue()-5,24,()->categoryName(id),()->true,
+                rail.add(new MenuButton(0,i*(24+EditorClient.document().settings().categoryGap()),rail.widthValue()-5,24,()->categoryName(id),()->true,
                         ()->{remember();category=chosen;entered=System.nanoTime();rebuildWidgets();},i==category,null) {
                     @Override protected void renderWidget(GuiGraphics g,int mx,int my,float dt) {
                         panel(g,getX(),getY(),width,height,selected?0xFF173846:isHoveredOrFocused()?0xFF122D3D:0xAA10212C,selected?accent(id):0xFF203B4C);
@@ -249,7 +249,7 @@ public final class PremiumSkillScreen extends Screen {
                     }
                 });
             }
-            rail.contentHeight=categories().size()*27; rail.restore();
+            rail.contentHeight=categories().size()*(24+EditorClient.document().settings().categoryGap()); rail.restore();
         } else {
             addRenderableWidget(new MenuButton(x+layout.padding()+6,bodyTop(),110,18,()->categoryName(categories().get(category)),()->true,
                     ()->{remember();category=(category+1)%categories().size();rebuildWidgets();},true,null));
@@ -312,7 +312,7 @@ public final class PremiumSkillScreen extends Screen {
     }
     private void buildCards(List<Entry> entries,int columns,boolean contract) {
         var cardStyle=EditorClient.style("card");
-        int gap=6,cw=cardStyle.width()>0?cardStyle.width():(body.widthValue()-5-gap*(columns-1))/columns;
+        int gap=EditorClient.document().settings().cardGap(),cw=cardStyle.width()>0?cardStyle.width():(body.widthValue()-5-gap*(columns-1))/columns;
         if(cardStyle.width()>0)columns=Math.max(1,(body.widthValue()-5+gap)/(cw+gap));
         int ch=cardStyle.height()>0?cardStyle.height():contract?100:Math.max(84,layout.challengeCardHeight()+15);
         if(entries.isEmpty()) { body.paint=(g,l,t,w,mx,my)->centered(g,text("no_results"),l,t+12,w,30,MUTED,.8F);body.restore();return; }
