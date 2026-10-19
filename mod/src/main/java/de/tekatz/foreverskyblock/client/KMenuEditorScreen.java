@@ -206,9 +206,9 @@ public final class KMenuEditorScreen extends Screen {
         var ids=graphIds();
         if(mode==Mode.GRAPH)for(int i=0;i<ids.size();i++){var q=session.current().quest(ids.get(i));var b=node(q.id(),i);for(String dep:q.requires()){int j=ids.indexOf(dep);if(j<0)continue;var a=node(dep,j);MenuArt.arrow(g,gx(a.x()),gy(a.y()),gx(b.x()),gy(b.y()),(int)(b.radius()*zoom),q.prerequisiteMatch()==Match.ANY?MenuArt.GOLD:0xFF4D95A1);}}
         if(mode==Mode.SHOP){
-            String[][] edges={{"shop:permanent","shop:reach"},{"shop:tier0","shop:tier1"},{"shop:tier0",de.tekatz.foreverskyblock.progression.ShopCatalog.NO_PHANTOMS.id()},{"shop:tier0",de.tekatz.foreverskyblock.progression.ShopCatalog.NO_RAIN.id()},{"shop:tier0",de.tekatz.foreverskyblock.progression.ShopCatalog.PERMANENT_DAY.id()},{"shop:tier1",de.tekatz.foreverskyblock.progression.ShopCatalog.ADVANCED_AE2_STARTER.id()}};
+            String[][] edges={{"shop:permanent","shop:reach"},{"shop:tier0","shop:tier1"}};
             for(var edge:edges)graphEdge(g,edge[0],edge[1],MenuArt.BORDER);
-            for(var p:session.current().products()){for(String prerequisite:p.requires())graphEdge(g,"shop:quest/"+prerequisite,p.id(),MenuArt.GOLD);if(p.id().startsWith("forever_skyblock:shop/custom/"))graphEdge(g,p.requiredTier()==0?"shop:tier0":"shop:tier1",p.id(),MenuArt.BORDER);}
+            for(var p:session.current().products()){for(String prerequisite:p.requires())graphEdge(g,"shop:quest/"+prerequisite,p.id(),MenuArt.GOLD);if(p.enabled()&&p.requiredTier()<=1&&!p.id().equals(de.tekatz.foreverskyblock.progression.ShopCatalog.TEST.id()))graphEdge(g,p.requiredTier()==0?"shop:tier0":"shop:tier1",p.id(),MenuArt.BORDER);}
         }
         for(int i=0;i<ids.size();i++){String id=ids.get(i);var n=node(id,i);if(id.equals(dragging)&&gesture!=null)n=gesture.nodes().getOrDefault(id,n);int x=gx(n.x()),y=gy(n.y()),r=Math.max(6,(int)(n.radius()*zoom));
             boolean enabled=id.startsWith("shop:")||mode==Mode.SHOP?true:session.current().quest(id).enabled();int color=id.equals(selected)?MenuArt.CYAN:!enabled?MenuArt.DIM:MenuArt.BORDER;

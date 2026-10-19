@@ -437,13 +437,13 @@ public final class PremiumSkillScreen extends Screen {
             shopEdge(g,l,t,"shop:permanent",w/8,22,"shop:reach",w/8,108,0xFF3B6576);
             shopEdge(g,l,t,"shop:tier0",center,22,"shop:tier1",center,245,b);
             String[] ids={ShopCatalog.NO_PHANTOMS.id(),ShopCatalog.NO_RAIN.id(),ShopCatalog.PERMANENT_DAY.id()};
-            for(int i=0;i<ids.length;i++)shopEdge(g,l,t,"shop:tier0",center,22,ids[i],w*(2*(i+1)+1)/8,108,a);
-            shopEdge(g,l,t,"shop:tier1",center,245,ShopCatalog.ADVANCED_AE2_STARTER.id(),center,326,b);
+            for(int i=0;i<ids.length;i++){var product=EditorClient.product(ids[i]);if(product.requiredTier()<=1)shopEdge(g,l,t,product.requiredTier()==0?"shop:tier0":"shop:tier1",center,product.requiredTier()==0?22:245,ids[i],w*(2*(i+1)+1)/8,108,product.requiredTier()==0?a:b);}
+            var starter=EditorClient.product(ShopCatalog.ADVANCED_AE2_STARTER.id());if(starter.requiredTier()<=1)shopEdge(g,l,t,starter.requiredTier()==0?"shop:tier0":"shop:tier1",center,starter.requiredTier()==0?22:245,starter.id(),center,326,b);
             for(var product:EditorClient.document().products())for(String prerequisite:product.requires()){
                 var a0=GraphGeometry.point(EditorClient.document(),"shop:quest/"+prerequisite,true);var b0=GraphGeometry.point(EditorClient.document(),product.id(),true);
                 shopEdge(g,l,t,"shop:quest/"+prerequisite,Math.round(a0.x()*w/640F),Math.round(a0.y()),product.id(),Math.round(b0.x()*w/640F),Math.round(b0.y()),GOLD);
             }
-            for(var product:EditorClient.document().products())if(product.id().startsWith("forever_skyblock:shop/custom/")){
+            for(var product:EditorClient.document().products())if(product.id().startsWith("forever_skyblock:shop/custom/")&&product.requiredTier()<=1){
                 var b0=GraphGeometry.point(EditorClient.document(),product.id(),true);shopEdge(g,l,t,product.requiredTier()==0?"shop:tier0":"shop:tier1",center,product.requiredTier()==0?22:245,product.id(),Math.round(b0.x()*w/640F),Math.round(b0.y()),BORDER);
             }
             centered(g,t("tree_hint"),l+5,t+383,w-10,15,MUTED,.66F);
@@ -458,19 +458,19 @@ public final class PremiumSkillScreen extends Screen {
         var products=List.of(ShopCatalog.NO_PHANTOMS,ShopCatalog.NO_RAIN,ShopCatalog.PERMANENT_DAY).stream().map(p->EditorClient.product(p.id())).toList();
         for(int i=0;i<products.size();i++) {
             var p=products.get(i);if(!productVisible(p))continue;
-            addNode(p.id(),w*(2*(i+1)+1)/8,108,()->productTitle(p),()->literal(p.spCost()+" SP"),productIcon(p),
+            addNode(p.id(),w*(2*(i+1)+1)/8,108,()->productTitle(p),()->productPrice(p),productIcon(p),
                     ()->productStage(p)>=3,GREEN,()->openProduct(p),w/4-9);
         }
         addNode("shop:tier1",center,245,()->text("tier.1"),()->Component.translatable("milestone.forever_skyblock.dragon_slayer"),Items.DRAGON_HEAD.getDefaultInstance(),
                 ()->ready()&&state().shopTier()>=1,GOLD,()->openTier(1),Math.min(190,w-10));
         var p=EditorClient.product(ShopCatalog.ADVANCED_AE2_STARTER.id());
-        addNode(p.id(),center,326,()->productTitle(p),()->literal(p.spCost()+" SP"),productIcon(p),
+        addNode(p.id(),center,326,()->productTitle(p),()->productPrice(p),productIcon(p),
                 ()->productStage(p)>0,0xFFBD9AF2,()->openProduct(p),Math.min(205,w-10));
         // The operator transaction probe remains accessible without polluting the player-facing tree.
         if(ready()&&state().canTestPoints()) body.add(new MenuButton(5,409,Math.min(215,w-10),20,()->t("development_product"),()->true,()->openProduct(ShopCatalog.TEST),false,null));
         int extra=430;
         for(var custom:EditorClient.products())if(productVisible(custom)&&ShopCatalog.PRODUCTS.stream().noneMatch(base->base.id().equals(custom.id()))){
-            int row=extra;addNode(custom.id(),center,row,()->productTitle(custom),()->literal(custom.spCost()+" SP"),productIcon(custom),()->productStage(custom)>0,0xFFBD9AF2,()->openProduct(custom),Math.min(205,w-10));extra+=105;
+            int row=extra;addNode(custom.id(),center,row,()->productTitle(custom),()->productPrice(custom),productIcon(custom),()->productStage(custom)>0,0xFFBD9AF2,()->openProduct(custom),Math.min(205,w-10));extra+=105;
         }
         for(String id:GraphGeometry.shopQuests(EditorClient.document())){var quest=EditorClient.document().quest(id);var point=GraphGeometry.point(EditorClient.document(),"shop:quest/"+id,true);addNode("shop:quest/"+id,Math.round(point.x()*w/640F),Math.round(point.y()),()->questTitle(quest),()->questStatus(quest),item(quest.icon()),()->editorComplete(quest),GOLD,()->openEditorQuest(quest),Math.max(80,w/4-9));}
         body.contentHeight=Math.max(body.contentHeight,Math.max(ready()&&state().canTestPoints()?439:405,extra>430?extra:0));body.restore();
@@ -519,6 +519,7 @@ public final class PremiumSkillScreen extends Screen {
                 ()->t(ready()&&state().shopTier()>=tier?"tier_unlocked":"tier_requirement",Component.translatable(milestone.titleKey())),
                 ()->ready()&&state().shopTier()>=tier?1D:ratio(milestone),()->text("page.challenges"),()->true,()->{minecraft.setScreen(this);navigate(Page.CHALLENGES);}));
     }
+    private Component productPrice(ShopCatalog.Product p){return literal(p.spCost()+" SP"+(p.ppCost()>0?" + "+p.ppCost()+" PP":""));}
     private Component productTitle(ShopCatalog.Product p) {return literal(german()?p.titleDe():p.titleEn());}
     private int productStage(ShopCatalog.Product p) {if(EditorClient.simulation()>0)return EditorClient.simulation()==3?6:0;var s=state()==null?null:state().products().get(p.id());return s==null?0:s.stage();}
     private boolean productVisible(ShopCatalog.Product p){var configured=EditorClient.document().product(p.id());return configured==null||configured.enabled()||productStage(p)>0;}
@@ -556,7 +557,7 @@ public final class PremiumSkillScreen extends Screen {
     }
     private void openProduct(ShopCatalog.Product p) {
         open(new Detail(productTitle(p),productIcon(p),p.worldUpgrade()?GREEN:0xFFBD9AF2,
-                ()->literal(p.spCost()+" SP  ·  ").copy().append(text("tier."+p.requiredTier())).append("  ·  ").append(text("current_world_scope")),
+                ()->productPrice(p).copy().append("  ·  ").append(text("tier."+p.requiredTier())).append("  ·  ").append(text("current_world_scope")),
                 ()->{
                     var desc=literal(german()?p.descriptionDe():p.descriptionEn()).copy().append("\n\n").append(t(p.developmentOnly()?"development_rules":p.worldUpgrade()?"world_upgrade_rules":"world_package_rules"));
                     var customized=EditorClient.document().product(p.id());
@@ -570,8 +571,10 @@ public final class PremiumSkillScreen extends Screen {
         var p=EditorClient.product(id);if(p==null||!canBuyProduct(id))return;
         if(p.deliverable()&&productStage(p)==1) {ClientSkills.claimProduct(id);return;}
         Screen returnTo=minecraft.screen;
+        Component confirmation=p.ppCost()>0?literal(EditorClient.german()?productTitle(p).getString()+" für "+productPrice(p).getString()+" in "+state().worldName()+" kaufen?":"Buy "+productTitle(p).getString()+" for "+productPrice(p).getString()+" in "+state().worldName()+"?"):
+                t(p.worldUpgrade()?"confirm_upgrade":"confirm_package",productTitle(p),p.spCost(),state().worldName());
         minecraft.setScreen(new ConfirmScreen(yes->{minecraft.setScreen(returnTo);if(yes)ClientSkills.buyProduct(id);},
-                t("purchase_title"),t(p.worldUpgrade()?"confirm_upgrade":"confirm_package",productTitle(p),p.spCost(),state().worldName()),text("purchase_confirm"),Component.translatable("gui.cancel")));
+                t("purchase_title"),confirmation,text("purchase_confirm"),Component.translatable("gui.cancel")));
     }
     private boolean canBuySkill(String id) {
         var s=SkillCatalog.find(id);
