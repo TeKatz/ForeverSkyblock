@@ -1,8 +1,10 @@
 package de.tekatz.foreverskyblock.mixin;
 
-import de.tekatz.foreverskyblock.client.EditorClient;
+import de.tekatz.foreverskyblock.client.EditorStyleBridge;
+import de.tekatz.foreverskyblock.editor.EditorDocument;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Locale;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -14,7 +16,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.*;
 
-/** Stable panel rebuilds plus horizontal navigation for authored Shop trees wider than the visible body. */
+/** Stable panel rebuilds, authored background effects and horizontal navigation for wide Shop trees. */
 @Mixin(targets="de.tekatz.foreverskyblock.client.PremiumSkillScreen$MenuPanel")
 public abstract class PremiumSkillScreenPanelMotionMixin {
     @Shadow @Final private List<Button> buttons;
@@ -23,11 +25,28 @@ public abstract class PremiumSkillScreenPanelMotionMixin {
     @Shadow int contentHeight;
     @Unique private double foreverSkyblock$horizontal;
     @Unique private boolean foreverSkyblock$horizontalDragging;
+    @Unique private EditorDocument.Style foreverSkyblock$previousStyle;
 
     @Inject(method="entryOffset",at=@At("HEAD"),cancellable=true)
     private void foreverSkyblock$keepRebuiltPanelsStationary(CallbackInfoReturnable<Integer> cir){cir.setReturnValue(0);}
 
     @Unique private boolean foreverSkyblock$isShop(){return "SHOP".equals(key);}
+    @Unique private String foreverSkyblock$styleId(){
+        if("rail".equals(key))return "categories";
+        if("detail".equals(key))return "detail.prose";
+        String page=key==null?"":key.split(":",2)[0].toLowerCase(Locale.ROOT);
+        return page.isEmpty()?"":"body."+page;
+    }
+
+    @Inject(method="drawBackground",at=@At("HEAD"))
+    private void foreverSkyblock$beginBackgroundEffect(GuiGraphics g,net.minecraft.client.renderer.Tesselator tess,float tick,CallbackInfo ci){
+        String id=foreverSkyblock$styleId();if(!id.isEmpty())foreverSkyblock$previousStyle=EditorStyleBridge.pushEffects(id);
+    }
+    @Inject(method="drawBackground",at=@At("RETURN"))
+    private void foreverSkyblock$endBackgroundEffect(GuiGraphics g,net.minecraft.client.renderer.Tesselator tess,float tick,CallbackInfo ci){
+        if(foreverSkyblock$previousStyle!=null){EditorStyleBridge.restore(foreverSkyblock$previousStyle);foreverSkyblock$previousStyle=null;}
+    }
+
     @Unique private int foreverSkyblock$field(String name){
         try{Field field=ScrollPanel.class.getDeclaredField(name);field.setAccessible(true);return field.getInt(this);}catch(ReflectiveOperationException e){return 0;}
     }
