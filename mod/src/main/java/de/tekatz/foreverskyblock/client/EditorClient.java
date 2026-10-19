@@ -58,13 +58,18 @@ public final class EditorClient {
     public static void item(GuiGraphics g,ItemStack stack,int x,int y,String id) {
         var s=style(id);var r=rect(id,x,y,16,16);if(r.width()==0||r.height()==0)return;
         if(!s.icon().isEmpty())stack=net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(net.minecraft.resources.ResourceLocation.parse(s.icon())).orElse(net.minecraft.world.item.Items.BARRIER).getDefaultInstance();
+        MenuArt.effectBackdrop(g,r.x(),r.y(),r.width(),r.height(),s);
         g.pose().pushPose();g.pose().translate(r.x(),r.y(),0);g.pose().scale(r.width()/16F*s.itemScale(),r.height()/16F*s.itemScale(),1);g.renderItem(stack,0,0);g.pose().popPose();
     }
     public static void text(GuiGraphics g,Component text,int x,int y,int w,int h,int color,float scale,String id,boolean wrap) {
         var s=style(id);var r=rect(id,x,y,w,h);if(r.width()<=0||r.height()<=0)return;
         int c=EditorCodec.color(s.text(),color);float fs=scale*s.fontScale();
-        if(wrap)MenuArt.wrapped(g,text,r.x(),r.y(),r.width(),c,fs,Math.max(1,(int)(r.height()/(11*fs))));
-        else MenuArt.centered(g,text,r.x(),r.y(),r.width(),r.height(),c,fs);
+        var effects=new Style(0,0,0,0,Anchor.START,Anchor.START,1,1,"","","",false,"","","",s.effect(),s.effectColor(),s.effectStrength(),s.textShadow());
+        var previous=MenuArt.pushStyle(effects);
+        try{
+            if(wrap)MenuArt.wrapped(g,text,r.x(),r.y(),r.width(),c,fs,Math.max(1,(int)(r.height()/(11*fs))));
+            else MenuArt.centered(g,text,r.x(),r.y(),r.width(),r.height(),c,fs);
+        }finally{MenuArt.pushStyle(previous);}
     }
     public static void requestOpen(){PacketDistributor.sendToServer(new EditorNetwork.Request(0,UUID.randomUUID(),0,1,0,""));}
     public static void publish(EditorDocument d){
