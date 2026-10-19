@@ -20,7 +20,7 @@ public final class QuestRules {
                 if(q.legacy()&&state.revision()==1)count=state.evidence().size();
                 else if(state.revision()==2)for(String token:state.evidence())if(token.startsWith("g/"+task.id()+"="))try{count=Integer.parseInt(token.substring(token.indexOf('=')+1));}catch(NumberFormatException ignored){}
             }
-            map.put(task.id(),p.milestones().contains(q.id())?task.count():Math.min(task.count(),Math.max(0,count)));
+            map.put(task.id(),q.legacy()&&p.milestones().contains(q.id())?task.count():Math.min(task.count(),Math.max(0,count)));
         }
         return map;
     }

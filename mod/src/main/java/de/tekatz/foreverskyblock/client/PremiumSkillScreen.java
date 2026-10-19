@@ -382,11 +382,29 @@ public final class PremiumSkillScreen extends Screen {
         buildCards(entries,grid?layout.challengeColumns():1,false);
     }
     private int[] questPoint(String id,int i,int cols,int w){var node=GraphGeometry.point(EditorClient.document(),id,false);return new int[]{Math.round(node.x()*w/640F),Math.round(node.y())};}
+    private Component objectiveTarget(Task task,Quest quest){
+        var id=ResourceLocation.parse(task.target());
+        return switch(task.type()){
+            case LEGACY->questTitle(quest);
+            case CRAFT,SMELT,PICKUP->item(task.target()).getHoverName();
+            case BREAK,PLACE->BuiltInRegistries.BLOCK.getOptional(id).map(net.minecraft.world.level.block.Block::getName).orElse(literal(task.target()));
+            case KILL->task.target().equals("minecraft:any_hostile")?literal(EditorClient.german()?"Feindliche Kreaturen":"Hostile mobs"):BuiltInRegistries.ENTITY_TYPE.getOptional(id).map(net.minecraft.world.entity.EntityType::getDescription).orElse(literal(task.target()));
+            case DIMENSION->literal(switch(task.target()){case "minecraft:overworld"->EditorClient.german()?"Oberwelt":"Overworld";case "minecraft:the_nether"->"Nether";case "minecraft:the_end"->EditorClient.german()?"Das Ende":"The End";default->id.getPath().replace('_',' ');});
+            case ADVANCEMENT->literal(id.getPath().replace('_',' ').replace('/', ' '));
+        };
+    }
+    private String objectiveAction(TaskType type){return EditorClient.german()?switch(type){case LEGACY->"Fortschritt";case CRAFT->"Herstellen";case SMELT->"Schmelzen";case PICKUP->"Aufheben";case KILL->"Besiegen";case DIMENSION->"Besuchen";case BREAK->"Abbauen";case PLACE->"Platzieren";case ADVANCEMENT->"Erreichen";}:switch(type){case LEGACY->"Progress";case CRAFT->"Craft";case SMELT->"Smelt";case PICKUP->"Pick up";case KILL->"Defeat";case DIMENSION->"Visit";case BREAK->"Break";case PLACE->"Place";case ADVANCEMENT->"Earn";};}
     private void openEditorQuest(Quest q){
         open(new Detail(questTitle(q),item(q.icon()),accent(q.chapter()),()->questReward(q).copy().append(" · ").append(categoryName(q.chapter())),
                 ()->{var desc=questDescription(q).copy().append("\n\n");var progress=EditorClient.state(q.id()).counts();
-                    for(var task:q.tasks())desc.append("\n• "+task.type()+" · "+task.target()+" · "+(q.legacy()?ready()?state().progress().getOrDefault(q.id(),0):0:progress.getOrDefault(task.id(),0))+" / "+task.count());
-                    if(!q.requires().isEmpty()){desc.append("\n\n"+(EditorClient.german()?"Voraussetzungen":"Prerequisites")+" ("+q.prerequisiteMatch()+"):");for(String id:q.requires()){var dependency=EditorClient.document().quest(id);desc.append("\n• "+(dependency==null?id:dependency.title().value(EditorClient.german())));}}
+                    if(q.tasks().size()>1)desc.append(EditorClient.german()?q.taskMatch()==Match.ALL?"Erfülle alle Aufgaben:\n":"Erfülle mindestens eine Aufgabe:\n":q.taskMatch()==Match.ALL?"Complete all objectives:\n":"Complete at least one objective:\n");
+                    for(var task:q.tasks()){
+                        int count=q.legacy()?editorComplete(q)?task.count():ready()?state().progress().getOrDefault(q.id(),0):0:progress.getOrDefault(task.id(),0);
+                        desc.append("\n• "+objectiveAction(task.type())+": ").append(objectiveTarget(task,q)).append(" · "+count+" / "+task.count());
+                    }
+                    if(q.legacy()){var definition=ChallengeRules.find(q.id());if(definition!=null&&definition.target()>1&&!definition.objectives().isEmpty()){desc.append("\n");for(String id:definition.objectives().stream().sorted().toList())desc.append("\n• ").append(item(id).getHoverName());}desc.append("\n\n").append(t("challenge_rules"));}
+                    if(q.requiredTier()>=0)desc.append("\n\n").append(text("world_requires_tier",text("tier."+q.requiredTier())));
+                    if(!q.requires().isEmpty()){desc.append("\n\n"+(EditorClient.german()?q.prerequisiteMatch()==Match.ALL?"Alle Voraussetzungen:":"Mindestens eine Voraussetzung:":q.prerequisiteMatch()==Match.ALL?"All prerequisites:":"At least one prerequisite:"));for(String id:q.requires()){var dependency=EditorClient.document().quest(id);desc.append("\n• "+(dependency==null?id:dependency.title().value(EditorClient.german())));}}
                     return desc;},()->questStatus(q),()->editorRatio(q),()->t("close"),()->true,()->minecraft.setScreen(this)));
     }
     private void openChallenge(MilestoneCatalog.Milestone m) {
