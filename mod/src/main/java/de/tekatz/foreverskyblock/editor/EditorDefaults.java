@@ -17,7 +17,7 @@ public final class EditorDefaults {
     public static EditorDocument create() {
         var en=language("en_us");var de=language("de_de");
         String[] cats={"forever","ae2","mekanism","powah","mystical_agriculture","combat","contracts"};
-        var chapters=new ArrayList<Chapter>();for(int i=0;i<cats.length;i++)chapters.add(new Chapter(cats[i],new Text(category(value(en,"gui.forever_skyblock.meta.sub."+cats[i],cats[i])),category(value(de,"gui.forever_skyblock.meta.sub."+cats[i],cats[i]))),"minecraft:book",i));
+        var chapters=new ArrayList<Chapter>();for(int i=0;i<cats.length;i++)chapters.add(new Chapter(cats[i],new Text(category(value(en,"gui.forever_skyblock.meta.sub."+cats[i],cats[i])),category(value(de,"gui.forever_skyblock.meta.sub."+cats[i],cats[i]))),"",i));
         String[] icons={"cobblestone","flint","stone_pickaxe","iron_pickaxe","diamond_pickaxe","netherite_pickaxe","netherrack","nether_star","end_stone","dragon_head","iron_sword","chest","crafting_table","redstone","compass","ender_chest","iron_ingot","diamond_pickaxe","glowstone_dust","nether_star"};
         var quests=new ArrayList<Quest>();int i=0;
         for(var q:ChallengeRules.ALL) {

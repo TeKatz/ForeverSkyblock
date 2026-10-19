@@ -147,7 +147,7 @@ public final class KMenuEditorScreen extends Screen {
         if(mode==Mode.CHAPTERS){field(obj,"order","Order");return;}
         if(obj.has("requiredTier"))field(obj,"requiredTier","Required tier (-1 = none)");
         if(mode==Mode.QUESTS||mode==Mode.GRAPH){
-            choice(obj,"chapter","Chapter",session.current().chapters().stream().map(Chapter::id).toArray(String[]::new));
+            choice(obj,"chapter","Chapter",session.current().chapters().stream().filter(c->!c.id().equals("contracts")).map(Chapter::id).toArray(String[]::new));
             field(obj,"rewardSp","Reward · SP");field(obj,"rewardPp","Reward · PP");choice(obj,"taskMatch","Complete objectives","ALL","ANY");choice(obj,"prerequisiteMatch","Prerequisites","ALL","ANY");
             var tasks=obj.getAsJsonArray("tasks");for(int i=0;i<tasks.size();i++) {
                 var task=tasks.get(i).getAsJsonObject();boolean legacy=task.get("type").getAsString().equals("LEGACY");
@@ -223,7 +223,7 @@ public final class KMenuEditorScreen extends Screen {
     private void graphEdge(GuiGraphics g,String source,String destination,int color){var a=GraphGeometry.point(session.current(),source,true);var b=GraphGeometry.point(session.current(),destination,true);MenuArt.arrow(g,gx(a.x()),gy(a.y()),gx(b.x()),gy(b.y()),(int)(b.radius()*zoom),color);}
     private int gx(float x){return (int)(canvasLeft+panX+x*zoom);}private int gy(float y){return (int)(134+panY+y*zoom);}
     private void drawContent(GuiGraphics g){var o=target(root());if(o==null)return;int x=canvasLeft+12,y=145,w=canvasRight-canvasLeft-24;
-        if(o.has("icon"))g.renderItem(BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(o.get("icon").getAsString())).orElse(Items.BARRIER).getDefaultInstance(),x,y);
+        if(o.has("icon")&&!o.get("icon").getAsString().isEmpty())g.renderItem(BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(o.get("icon").getAsString())).orElse(Items.BARRIER).getDefaultInstance(),x,y);
         if(o.has("title"))MenuArt.wrapped(g,Component.literal(EditorCodec.JSON.fromJson(o.get("title"),Text.class).value(EditorClient.german())),x+25,y,w-25,MenuArt.WHITE,.9F,3);
         y+=36;if(o.has("description"))y=MenuArt.wrapped(g,Component.literal(EditorCodec.JSON.fromJson(o.get("description"),Text.class).value(EditorClient.german())),x,y,w,MenuArt.MUTED,.8F,10)+15;
         if(mode==Mode.QUESTS){var q=session.current().quest(selected);for(var t:q.tasks()){MenuArt.label(g,Component.literal(t.type()+" · "+t.target()+" × "+t.count()),x,y,w,MenuArt.CYAN,.65F);y+=16;}MenuArt.label(g,Component.literal("+"+q.rewardSp()+" SP / +"+q.rewardPp()+" PP"),x,y+8,w,MenuArt.GOLD,.9F);}

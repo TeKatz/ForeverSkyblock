@@ -41,11 +41,11 @@ public final class EditorCodec {
         require(d!=null&&d.schema()==SCHEMA&&d.revision()>=0,"Unsupported schema or revision");
         require(d.quests().size()<=128&&d.chapters().size()<=32&&d.products().size()<=32&&d.contracts().size()<=32
                 &&d.layout().size()<=256&&d.nodes().size()<=256&&d.decorations().size()<=64,"Too many entries");
-        var chapters=new HashSet<String>(); for(var c:d.chapters()){key(c.id());unique(chapters,c.id());text(c.title(),120);id(c.icon());range(c.order(),-1000,1000);}
+        var chapters=new HashSet<String>(); for(var c:d.chapters()){key(c.id());require(!c.id().equals("all"),"The all category is reserved");unique(chapters,c.id());text(c.title(),120);require(c.icon()!=null,"Missing chapter icon");if(!c.icon().isEmpty())id(c.icon());range(c.order(),-1000,1000);}
         var ids=new HashSet<String>();
         for(var q:d.quests()) {
             id(q.id());unique(ids,q.id());text(q.title(),160);text(q.description(),6000);id(q.icon());
-            require(chapters.contains(q.chapter()),"Missing chapter: "+q.chapter());
+            require(chapters.contains(q.chapter())&&!q.chapter().equals("contracts"),"Missing or reserved quest chapter: "+q.chapter());
             require(q.taskMatch()!=null&&q.prerequisiteMatch()!=null&&!q.tasks().isEmpty()&&q.tasks().size()<=16&&q.requires().size()<=32,"Invalid task structure");
             range(q.requiredTier(),-1,4);range(q.rewardSp(),0,10000);range(q.rewardPp(),0,1000);
             require(q.rewardSp()+q.rewardPp()>0,"A quest needs a reward");
@@ -78,6 +78,8 @@ public final class EditorCodec {
             id(c.id());unique(contracts,c.id());text(c.title(),160);text(c.description(),6000);id(c.icon());require(c.type()!=null,"Missing contract type");
             range(c.requiredTier(),0,4);range(c.count(),1,1_000_000);range(c.rewardSp(),1,10);if(c.type()==ContractType.RESOURCE)id(c.item());
             require(ContractCatalog.CONTRACTS.stream().anyMatch(x->x.id().equals(c.id()))||c.id().startsWith("forever_skyblock:contract/custom/"),"Invalid contract ID");
+            var original=ContractCatalog.CONTRACTS.stream().filter(x->x.id().equals(c.id())).findFirst().orElse(null);
+            if(original!=null)require(c.type().name().equals(original.trigger().name())&&Objects.equals(c.item(),original.itemId()==null?"":original.itemId()),"Existing contract type/item must retain its original meaning");
             require(!ids.contains(c.id())&&!products.contains(c.id()),"ID collision");
         }
         d.layout().forEach((key,s)->{require(key.length()<=160&&key.matches("[a-zA-Z0-9_./:-]+"),"Invalid layout key");range(s.x(),-4096,4096);range(s.y(),-4096,4096);range(s.width(),0,4096);range(s.height(),0,4096);
@@ -90,6 +92,9 @@ public final class EditorCodec {
         }
         range(d.settings().grid(),1,64);range(d.settings().animationMillis(),0,2000);finite(d.settings().scrollSpeed(),1,200);
         range(d.settings().cardGap(),0,32);range(d.settings().categoryGap(),0,24);
+        for(var q:ChallengeRules.ALL)require(d.quest(q.id())!=null,"Retain and disable built-in challenges instead of removing them: "+q.id());
+        for(var p:ShopCatalog.PRODUCTS)require(d.product(p.id())!=null,"Retain and disable built-in products instead of removing them: "+p.id());
+        for(var c:ContractCatalog.CONTRACTS)require(d.contract(c.id())!=null,"Retain and disable built-in contracts instead of removing them: "+c.id());
     }
     /** Published entries are tombstoned/disabled rather than removed, preserving old progress and entitlements. */
     public static void validateUpdate(EditorDocument old,EditorDocument next) {
