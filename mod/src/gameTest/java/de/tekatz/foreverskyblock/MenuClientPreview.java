@@ -97,7 +97,8 @@ public final class MenuClientPreview {
     private static void linkNodes()throws Exception{var button=editor.children().stream().filter(w->w instanceof net.minecraft.client.gui.components.Button b&&b.getMessage().getString().equals("Link")).map(w->(net.minecraft.client.gui.components.Button)w).findFirst().orElseThrow();button.onPress();Field f=KMenuEditorScreen.class.getDeclaredField("canvasLeft");f.setAccessible(true);double left=f.getInt(editor)+editorFloat("panX"),top=134+editorFloat("panY");float zoom=editorFloat("zoom");editor.mouseClicked(left+70*zoom,top+30*zoom,0);editor.mouseClicked(left+680*zoom,top+85*zoom,0);if(!editorSession().current().quest(newQuest).requires().contains(ChallengeRules.FOUNDATIONS.id()))throw new IllegalStateException("Native graph linking did not create its prerequisite");System.out.println("MENU_EDITOR_INPUT_PASSED link-quest-prerequisite");}
     private static float editorFloat(String name)throws Exception{Field f=KMenuEditorScreen.class.getDeclaredField(name);f.setAccessible(true);return f.getFloat(editor);}
     private static void dragHeader()throws Exception{
-        var parent=EditorClient.bounds().get("header.sp"),label=EditorClient.bounds().get("header.sp.label");
+        var parent=EditorClient.bounds().get("header.sp");
+        var label=EditorClient.bounds().get("header.sp.label");
         if(parent==null||label==null)throw new IllegalStateException("Native editable header geometry missing");
         float scale=editorFloat("previewScale"),x=editorFloat("previewX"),y=editorFloat("previewY");
         double lx=x+(label.x()+label.width()/2F)*scale,ly=y+(label.y()+label.height()/2F)*scale;
