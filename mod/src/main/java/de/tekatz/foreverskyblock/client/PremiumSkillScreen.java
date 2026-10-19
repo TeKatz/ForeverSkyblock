@@ -671,6 +671,7 @@ public final class PremiumSkillScreen extends Screen {
         private final List<int[]> offsets=new ArrayList<>();
         final MenuMotion motion=new MenuMotion();
         private final String key;
+        private boolean scrollbarDragging;
         private final long born=System.nanoTime();
         private int entryOffset(){return (int)Math.round(5*(1-MenuMotion.reveal(born,System.nanoTime(),EditorClient.document().settings().animationMillis())));}
         int contentHeight; Painter paint;
@@ -695,13 +696,31 @@ public final class PremiumSkillScreen extends Screen {
             for(var b:buttons)if(b.visible)b.render(g,mx,my,0);
             g.flush();
         }
+        /** GuiGraphics clipping/bar drawing follows the preview pose and preserves enclosing scissor state. */
+        @Override public void render(GuiGraphics g,int mx,int my,float partialTick){
+            if(width<=0||height<=0)return;
+            g.enableScissor(left,top,right,bottom);
+            try{
+                var tess=Tesselator.getInstance();drawBackground(g,tess,partialTick);drawPanel(g,right,top-(int)scrollDistance,tess,mx,my);
+                int maximum=Math.max(0,getContentHeight()-height);
+                if(maximum>0){int thumb=thumbHeight(),barTop=top+(int)Math.round(motion.value()*(height-thumb)/maximum);g.fill(right-3,barTop,right,barTop+thumb,CYAN);g.fill(right-2,barTop,right-1,barTop+thumb,0xFF91E9FF);}
+            }finally{g.flush();g.disableScissor();}
+        }
+        private int thumbHeight(){return Math.clamp((int)((long)height*height/Math.max(1,getContentHeight())),Math.min(16,Math.max(1,height/2)),height);}
         @Override public boolean mouseScrolled(double mx,double my,double horizontal,double vertical){
             if(!isMouseOver(mx,my))return false;motion.scroll(-vertical*EditorClient.document().settings().scrollSpeed(),contentHeight-height);return true;
         }
-        @Override public boolean mouseClicked(double mx,double my,int button){position();return isMouseOver(mx,my)&&super.mouseClicked(mx,my,button);}
-        @Override public boolean mouseDragged(double mx,double my,int button,double dx,double dy){
-            boolean result=super.mouseDragged(mx,my,button,dx,dy);if(result)motion.snap(Math.clamp(scrollDistance,0,Math.max(0,contentHeight-height)));return result;
+        @Override public boolean mouseClicked(double mx,double my,int button){
+            position();if(!isMouseOver(mx,my))return false;
+            if(button==0&&mx>=right-3&&contentHeight>height){scrollbarDragging=true;setDragging(true);setFocused(null);return true;}
+            for(var child:buttons)if(child.visible&&child.mouseClicked(mx,my,button)){setFocused(child);if(button==0)setDragging(true);return true;}
+            return false;
         }
+        @Override public boolean mouseDragged(double mx,double my,int button,double dx,double dy){
+            if(!scrollbarDragging)return false;
+            motion.snap(Math.clamp(motion.value()+dy*Math.max(0,contentHeight-height)/Math.max(1,height-thumbHeight()),0,Math.max(0,contentHeight-height)));scrollDistance=(float)motion.value();position();return true;
+        }
+        @Override public boolean mouseReleased(double mx,double my,int button){boolean result=scrollbarDragging;scrollbarDragging=false;setDragging(false);if(getFocused()!=null)result|=getFocused().mouseReleased(mx,my,button);return result;}
         @Override public List<? extends GuiEventListener> children(){return buttons;}
         @Override public NarratableEntry.NarrationPriority narrationPriority(){return getFocused()==null?NarratableEntry.NarrationPriority.NONE:NarratableEntry.NarrationPriority.FOCUSED;}
         @Override public void updateNarration(NarrationElementOutput o){o.add(NarratedElementType.TITLE,pageName(page));}
