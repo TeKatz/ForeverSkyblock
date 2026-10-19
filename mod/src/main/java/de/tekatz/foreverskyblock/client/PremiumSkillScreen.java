@@ -203,7 +203,7 @@ public final class PremiumSkillScreen extends Screen {
         if(ticks<0) return literal("—"); long minutes=ticks/1200;
         return literal(minutes/60+"h "+String.format(Locale.ROOT,"%02d",minutes%60)+"m");
     }
-    private int completed() { return (int)MilestoneCatalog.MILESTONES.stream().filter(m->state().milestones().contains(m.id())).count(); }
+    private int completed() { if(EditorClient.customized())return EditorClient.completedCount();return (int)MilestoneCatalog.MILESTONES.stream().filter(m->state().milestones().contains(m.id())).count(); }
     private int bodyTop() { return y+layout.contentTop()+31; }
     private MenuPanel newBody(int left,int top,int w) {
         var r=EditorClient.rect("body."+page.name().toLowerCase(Locale.ROOT),left,top,w,Math.max(25,y+layout.contentBottom()-top-5));
@@ -371,7 +371,7 @@ public final class PremiumSkillScreen extends Screen {
         if(EditorClient.document().settings().questGraph()){
             int w=body.widthValue()-5,cols=Math.max(1,Math.min(3,w/145));
             body.paint=(g,l,t,pw,mx,my)->{
-                for(int i=0;i<quests.size();i++){var q=quests.get(i);var b=questPoint(q.id(),i,cols,w);for(String dep:q.requires()){int j=-1;for(int k=0;k<quests.size();k++)if(quests.get(k).id().equals(dep)){j=k;break;}if(j>=0){var a=questPoint(dep,j,cols,w);line(g,l+a[0],t+a[1],l+b[0],t+b[1],q.prerequisiteMatch()==Match.ANY?GOLD:BORDER);}}}
+                for(int i=0;i<quests.size();i++){var q=quests.get(i);var b=questPoint(q.id(),i,cols,w);for(String dep:q.requires()){int j=-1;for(int k=0;k<quests.size();k++)if(quests.get(k).id().equals(dep)){j=k;break;}if(j>=0){var a=questPoint(dep,j,cols,w);arrow(g,l+a[0],t+a[1],l+b[0],t+b[1],18,q.prerequisiteMatch()==Match.ANY?GOLD:BORDER);}}}
             };
             int bottom=0;for(int i=0;i<quests.size();i++){var q=quests.get(i);var point=questPoint(q.id(),i,cols,w);addNode(q.id(),point[0],point[1],()->questTitle(q),()->questReward(q),item(q.icon()),()->editorComplete(q),editorUnlocked(q)?CYAN:DIM,()->openEditorQuest(q),Math.max(80,w/cols-12));bottom=Math.max(bottom,point[1]+95);}
             body.contentHeight=Math.max(body.getContentHeight(),bottom);body.restore();return;
@@ -419,6 +419,13 @@ public final class PremiumSkillScreen extends Screen {
             String[] ids={ShopCatalog.NO_PHANTOMS.id(),ShopCatalog.NO_RAIN.id(),ShopCatalog.PERMANENT_DAY.id()};
             for(int i=0;i<ids.length;i++)shopEdge(g,l,t,"shop:tier0",center,22,ids[i],w*(2*(i+1)+1)/8,108,a);
             shopEdge(g,l,t,"shop:tier1",center,245,ShopCatalog.ADVANCED_AE2_STARTER.id(),center,326,b);
+            for(var product:EditorClient.document().products())for(String prerequisite:product.requires()){
+                var a0=GraphGeometry.point(EditorClient.document(),"shop:quest/"+prerequisite,true);var b0=GraphGeometry.point(EditorClient.document(),product.id(),true);
+                shopEdge(g,l,t,"shop:quest/"+prerequisite,Math.round(a0.x()*w/640F),Math.round(a0.y()),product.id(),Math.round(b0.x()*w/640F),Math.round(b0.y()),GOLD);
+            }
+            for(var product:EditorClient.document().products())if(product.id().startsWith("forever_skyblock:shop/custom/")){
+                var b0=GraphGeometry.point(EditorClient.document(),product.id(),true);shopEdge(g,l,t,product.requiredTier()==0?"shop:tier0":"shop:tier1",center,product.requiredTier()==0?22:245,product.id(),Math.round(b0.x()*w/640F),Math.round(b0.y()),BORDER);
+            }
             centered(g,t("tree_hint"),l+5,t+383,w-10,15,MUTED,.66F);
         };
         addNode("shop:permanent",w/8,22,()->t("permanent_root"),()->t("sp_only"),Items.NETHER_STAR.getDefaultInstance(),
@@ -445,6 +452,7 @@ public final class PremiumSkillScreen extends Screen {
         for(var custom:EditorClient.products())if(ShopCatalog.PRODUCTS.stream().noneMatch(base->base.id().equals(custom.id()))){
             int row=extra;addNode(custom.id(),center,row,()->productTitle(custom),()->literal(custom.spCost()+" SP"),productIcon(custom),()->productStage(custom)>0,0xFFBD9AF2,()->openProduct(custom),Math.min(205,w-10));extra+=105;
         }
+        for(String id:GraphGeometry.shopQuests(EditorClient.document())){var quest=EditorClient.document().quest(id);var point=GraphGeometry.point(EditorClient.document(),"shop:quest/"+id,true);addNode("shop:quest/"+id,Math.round(point.x()*w/640F),Math.round(point.y()),()->questTitle(quest),()->questStatus(quest),item(quest.icon()),()->editorComplete(quest),GOLD,()->openEditorQuest(quest),Math.max(80,w/4-9));}
         body.contentHeight=Math.max(body.contentHeight,Math.max(ready()&&state().canTestPoints()?439:405,extra>430?extra:0));body.restore();
     }
     private void shopEdge(GuiGraphics g,int left,int top,String a,int ax,int ay,String b,int bx,int by,int color){
@@ -523,6 +531,8 @@ public final class PremiumSkillScreen extends Screen {
                 ()->literal(p.spCost()+" SP  ·  ").copy().append(text("tier."+p.requiredTier())).append("  ·  ").append(text("current_world_scope")),
                 ()->{
                     var desc=literal(german()?p.descriptionDe():p.descriptionEn()).copy().append("\n\n").append(t(p.developmentOnly()?"development_rules":p.worldUpgrade()?"world_upgrade_rules":"world_package_rules"));
+                    var customized=EditorClient.document().product(p.id());
+                    if(customized!=null&&!customized.requires().isEmpty()){desc.append("\n\n"+(EditorClient.german()?"Voraussetzungen:":"Prerequisites:"));for(String id:customized.requires())desc.append("\n• "+EditorClient.document().quest(id).title().value(EditorClient.german()));}
                     if(!p.contents().isEmpty()) {desc.append("\n\n").append(t("contents"));for(var e:p.contents())desc.append("\n"+e.count()+" × ").append(item(e.itemId()).getHoverName());}
                     return desc;
                 },()->productStatus(p.id()),()->productStage(p)>0?1D:0D,()->productStatus(p.id()),()->canBuyProduct(p.id()),()->confirmProduct(p.id())));
@@ -594,7 +604,7 @@ public final class PremiumSkillScreen extends Screen {
         var st=state()==null?SkillNetwork.MenuStatistics.UNKNOWN:state().statistics();
         List<Component> names=List.of(t("sp"),t("pp"),t("challenges"),t("playtime"),t("island"),t("unlocks"),t("deaths"),t("mob_kills"),text("current_world_claims"));
         List<Component> values=List.of(ready()?literal(state().points()):literal("—"),ready()?literal(state().perkPoints()):literal("—"),
-                ready()?literal(completed()+" / "+MilestoneCatalog.MILESTONES.size()):literal("—"),playtime(st.playTicks()),st.islandLevel()<0?literal("—"):literal(st.islandLevel()),
+                ready()?literal(completed()+" / "+(EditorClient.customized()?EditorClient.questCount():MilestoneCatalog.MILESTONES.size())):literal("—"),playtime(st.playTicks()),st.islandLevel()<0?literal("—"):literal(st.islandLevel()),
                 ready()?literal(state().skills().size()):literal("—"),literal(st.deaths()<0?"—":st.deaths()),literal(st.mobKills()<0?"—":st.mobKills()),ready()?literal(state().worldClaims().size()):literal("—"));
         EditorClient.group(g,"profile.stats",l,top+56,w,((9+cols-1)/cols)*44,()->{
         for(int i=0;i<names.size();i++) {

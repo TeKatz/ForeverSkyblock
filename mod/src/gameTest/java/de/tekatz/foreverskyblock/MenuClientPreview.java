@@ -2,6 +2,9 @@ package de.tekatz.foreverskyblock;
 
 import de.tekatz.foreverskyblock.client.ClientSkills;
 import de.tekatz.foreverskyblock.client.PremiumSkillScreen;
+import de.tekatz.foreverskyblock.client.KMenuEditorScreen;
+import de.tekatz.foreverskyblock.client.EditorClient;
+import de.tekatz.foreverskyblock.editor.*;
 import de.tekatz.foreverskyblock.network.SkillNetwork;
 import de.tekatz.foreverskyblock.progression.*;
 import java.lang.reflect.*;
@@ -19,6 +22,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 public final class MenuClientPreview {
     private static int ticks, stage, startup;
     private static PremiumSkillScreen menu;
+    private static KMenuEditorScreen editor;
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) throws Exception {
         if(!Boolean.getBoolean("forever_skyblock.menuVisualTests"))return;
         var mc=Minecraft.getInstance();
@@ -61,8 +65,34 @@ public final class MenuClientPreview {
                 Field f=PremiumSkillScreen.class.getDeclaredField("category");f.setAccessible(true);
                 if(f.getInt(menu)!=7)throw new IllegalStateException("Scrolled category did not receive click");
             }
-            default -> {System.out.println("MENU_VISUAL_COMPLETE");mc.stop();}
+            case 17 -> {
+                mc.getLanguageManager().setSelected("en_us");mc.reloadResourcePacks();mc.options.guiScale().set(2);mc.resizeDisplay();
+                editor=new KMenuEditorScreen(menu,EditorDefaults.create());mc.setScreen(editor);
+            }
+            case 18 -> dragHeader();
+            case 19 -> editorMode(mc,"QUESTS");
+            case 20 -> {var add=KMenuEditorScreen.class.getDeclaredMethod("addEntry");add.setAccessible(true);add.invoke(editor);}
+            case 21 -> editorMode(mc,"GRAPH");
+            case 22 -> {editorMode(mc,"SHOP");}
+            case 23 -> editorMode(mc,"CONTRACTS");
+            case 24 -> {editorMode(mc,"LAYOUT");setEditor("previewState",1);editor.resize(mc,editor.width,editor.height);}
+            case 25 -> {setEditor("viewportIndex",1);editor.resize(mc,editor.width,editor.height);}
+            case 26 -> {mc.getLanguageManager().setSelected("de_de");mc.reloadResourcePacks();editorMode(mc,"LAYOUT");}
+            case 27 -> {editorMode(mc,"SETTINGS");}
+            default -> {System.out.println("MENU_EDITOR_VISUAL_COMPLETE");System.out.println("MENU_VISUAL_COMPLETE");mc.stop();}
         }
+    }
+    private static void setEditor(String name,Object value)throws Exception{Field f=KMenuEditorScreen.class.getDeclaredField(name);f.setAccessible(true);f.set(editor,value);}
+    @SuppressWarnings({"rawtypes","unchecked"})
+    private static void editorMode(Minecraft mc,String name)throws Exception{Class type=Class.forName(KMenuEditorScreen.class.getName()+"$Mode");setEditor("mode",Enum.valueOf(type,name));String selection=switch(name){case "LAYOUT"->"header.sp";case "QUESTS","GRAPH"->ChallengeRules.FOUNDATIONS.id();case "SHOP"->ShopCatalog.NO_RAIN.id();case "CONTRACTS"->ContractCatalog.SINGULARITY.id();case "CHAPTERS"->"forever";default->"settings";};setEditor("selected",selection);setEditor("propertyScroll",0);editor.resize(mc,editor.width,editor.height);}
+    private static float editorFloat(String name)throws Exception{Field f=KMenuEditorScreen.class.getDeclaredField(name);f.setAccessible(true);return f.getFloat(editor);}
+    private static void dragHeader()throws Exception{
+        var rect=EditorClient.bounds().get("header.sp");if(rect==null)throw new IllegalStateException("Native header geometry missing");float scale=editorFloat("previewScale"),x=editorFloat("previewX"),y=editorFloat("previewY");double mx=x+(rect.x()+rect.width()/2F)*scale,my=y+(rect.y()+rect.height()/2F)*scale;
+        editor.mouseClicked(mx,my,0);editor.mouseDragged(mx+12*scale,my+8*scale,0,12*scale,8*scale);editor.mouseReleased(mx+12*scale,my+8*scale,0);
+        Field f=KMenuEditorScreen.class.getDeclaredField("session");f.setAccessible(true);var session=(EditorSession)f.get(editor);
+        if(session.current().layout().get("header.sp").x()!=12||session.current().layout().get("header.sp").y()!=8)throw new IllegalStateException("Native drag did not update the selected layout element");
+        session.undo();if(session.current().layout().get("header.sp").x()!=0)throw new IllegalStateException("Native drag undo failed");session.redo();
+        System.out.println("MENU_EDITOR_INPUT_PASSED drag-header undo redo");
     }
     private static void clickCard(Minecraft mc,String field,int index,boolean round,boolean opensDetail) throws Exception {
         Field f=PremiumSkillScreen.class.getDeclaredField(field);f.setAccessible(true);

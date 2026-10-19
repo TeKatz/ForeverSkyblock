@@ -40,5 +40,5 @@ public final class EditorRuntime {
         return List.copyOf(result);
     }
     public static boolean contractEnabled(String id){var d=active;var c=d==null?null:d.contract(id);return c==null||c.enabled();}
-    public static boolean customContract(String id){var d=active;return d!=null&&d.contract(id)!=null;}
+    public static boolean customContract(String id){var d=active;var c=d==null?null:d.contract(id);if(c==null)return false;var original=ContractCatalog.CONTRACTS.stream().filter(x->x.id().equals(id)).findFirst().orElse(null);return original==null||original.target()!=c.count();}
 }

@@ -71,6 +71,11 @@ final class MenuArt {
         g.fill(x, y, x + width, y + 3, 0xFF193444);
         g.fill(x, y, x + (int) Math.round(width * Math.clamp(ratio, 0, 1)), y + 3, color);
     }
+    static void arrow(GuiGraphics g,int x1,int y1,int x2,int y2,int radius,int color){
+        double length=Math.hypot(x2-x1,y2-y1);if(length<radius+3)return;double ux=(x2-x1)/length,uy=(y2-y1)/length;
+        int tx=(int)(x2-ux*(radius+3)),ty=(int)(y2-uy*(radius+3));line(g,x1,y1,tx,ty,color);
+        line(g,tx,ty,(int)(tx-ux*6-uy*4),(int)(ty-uy*6+ux*4),color);line(g,tx,ty,(int)(tx-ux*6+uy*4),(int)(ty-uy*6-ux*4),color);
+    }
     static void mark(GuiGraphics g, int x, int y, int kind, int color) {
         // SP: open crystal; PP: four-point star; Tier: stepped crest. 16x16 design grid.
         if (kind == 0) {

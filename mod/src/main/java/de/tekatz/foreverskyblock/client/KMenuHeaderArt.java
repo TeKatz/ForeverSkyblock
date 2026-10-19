@@ -62,8 +62,8 @@ public final class KMenuHeaderArt {
         int tx=x+(icon?size+10:4),tw=width-(icon?size+14:8);
         centered(graphics,t("tier"),tx,top+3,tw,12,MUTED,.62F);
         centered(graphics,ready?meta("tier."+state.shopTier()):literal("—"),tx,top+15,tw,15,WHITE,.78F);
-        if(height>=44){int count=ready?completed(state):0;bar(graphics,tx,top+height-9,tw,count/(double)MilestoneCatalog.MILESTONES.size(),GOLD);
-            if(height>55)centered(graphics,literal(count+" / "+MilestoneCatalog.MILESTONES.size()),tx,top+34,tw,10,MUTED,.6F);}
+        if(height>=44){int count=ready?completed(state):0;bar(graphics,tx,top+height-9,tw,count/(double)Math.max(1,EditorClient.questCount()),GOLD);
+            if(height>55)centered(graphics,literal(count+" / "+EditorClient.questCount()),tx,top+34,tw,10,MUTED,.6F);}
     }
 
     private static void drawCurrency(GuiGraphics graphics, int x, int y, int width, int height,
@@ -112,6 +112,7 @@ public final class KMenuHeaderArt {
     }
 
     private static int completed(SkillNetwork.Snapshot state) {
+        if(EditorClient.customized())return EditorClient.completedCount();
         return (int) MilestoneCatalog.MILESTONES.stream()
                 .filter(milestone -> state.milestones().contains(milestone.id()))
                 .count();

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'de.tekatz.foreverskyblock'
-version = '0.24.1'
+version = '0.25.0'
 base.archivesName = 'ForeverSkyblock-1.21.1-NeoForge'
 
 repositories {
@@ -107,4 +107,12 @@ tasks.withType(AbstractArchiveTask).configureEach {
 tasks.named('test') {
     useJUnitPlatform()
     testLogging { exceptionFormat = 'full'; events 'passed', 'failed', 'skipped' }
+}
+
+// Repository exports become bundled defaults; instance config still overrides them.
+tasks.named('processResources') {
+    from('../pack/config/forever_skyblock') {
+        include 'kmenu.json'
+        into 'assets/forever_skyblock/editor'
+    }
 }

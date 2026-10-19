@@ -25,6 +25,8 @@ public final class EditorClient {
     private EditorClient() { }
     public static EditorDocument document(){if(preview!=null)return preview;if(published!=null)return published;return Defaults.VALUE;}
     private static final class Defaults {static final EditorDocument VALUE=EditorDefaults.create();}
+    public static int questCount(){return (int)document().quests().stream().filter(Quest::enabled).count();}
+    public static int completedCount(){var snapshot=ClientSkills.snapshot();return (int)document().quests().stream().filter(q->q.enabled()&&(q.legacy()?snapshot!=null&&snapshot.milestones().contains(q.id()):state(q.id()).complete())).count();}
     public static boolean customized(){return published!=null||preview!=null;}
     public static java.util.List<de.tekatz.foreverskyblock.progression.ShopCatalog.Product> products(){return EditorRuntime.products(document());}
     public static de.tekatz.foreverskyblock.progression.ShopCatalog.Product product(String id){return products().stream().filter(p->p.id().equals(id)).findFirst().orElse(null);}
@@ -94,12 +96,12 @@ public final class EditorClient {
             String value=w.title().value(german());var s=ClientSkills.snapshot();
             if(s!=null&&!w.binding().isEmpty())value=switch(w.binding()) {
                 case "SP"->""+s.points();case "PP"->""+s.perkPoints();case "TIER"->""+s.shopTier();case "PLAYTIME"->s.statistics().playTicks()/1200+"m";
-                case "ISLAND"->""+s.statistics().islandLevel();case "DEATHS"->""+s.statistics().deaths();case "KILLS"->""+s.statistics().mobKills();case "CHALLENGES"->""+s.milestones().size();default->value;};
+                case "ISLAND"->""+s.statistics().islandLevel();case "DEATHS"->""+s.statistics().deaths();case "KILLS"->""+s.statistics().mobKills();case "CHALLENGES"->""+completedCount();default->value;};
             switch(w.type()) {
                 case TEXT->MenuArt.centered(g,Component.literal(value),x,y,w.width(),w.height(),color,1);
                 case PANEL->MenuArt.panel(g,x,y,w.width(),w.height(),color,MenuArt.BORDER);
                 case ITEM->{var item=net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(net.minecraft.resources.ResourceLocation.parse(w.icon())).orElse(net.minecraft.world.item.Items.BARRIER);g.pose().pushPose();g.pose().translate(x,y,0);g.pose().scale(w.width()/16F,w.height()/16F,1);g.renderItem(item.getDefaultInstance(),0,0);g.pose().popPose();}
-                case BAR->MenuArt.bar(g,x,y,w.width(),s==null?0:s.milestones().size()/(double)Math.max(1,document().quests().size()),color);
+                case BAR->MenuArt.bar(g,x,y,w.width(),s==null?0:completedCount()/(double)Math.max(1,questCount()),color);
             }
         }
     }

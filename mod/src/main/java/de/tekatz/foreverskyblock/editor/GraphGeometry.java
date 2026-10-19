@@ -11,6 +11,7 @@ public final class GraphGeometry {
     public static Node point(EditorDocument d,String id,boolean shop) {
         var saved=d.nodes().get(id);if(saved!=null)return saved;
         if(shop){
+            if(id.startsWith("shop:quest/")){int i=shopQuests(d).indexOf(id.substring(11));return new Node(80,430+Math.max(0,i)*100,18);}
             if(id.equals("shop:permanent"))return new Node(80,22,18);
             if(id.equals("shop:tier0"))return new Node(400,22,18);
             if(id.equals("shop:reach"))return new Node(80,108,18);
@@ -25,6 +26,7 @@ public final class GraphGeometry {
         int i=0;for(var q:d.quests()){if(q.id().equals(id))break;i++;}
         return new Node(70+(i%4)*155,30+(i/4)*115,18);
     }
+    public static List<String> shopQuests(EditorDocument d){var result=new LinkedHashSet<String>();for(var p:d.products())result.addAll(p.requires());return List.copyOf(result);}
     public static Map<String,Node> arrange(EditorDocument d) {
         var depths=new HashMap<String,Integer>();for(var q:d.quests())depth(d,q.id(),depths);
         var lanes=new HashMap<Integer,Integer>();var starts=new HashMap<Integer,Integer>();var sizes=new TreeMap<Integer,Integer>();

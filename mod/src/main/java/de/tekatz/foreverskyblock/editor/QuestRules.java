@@ -31,23 +31,27 @@ public final class QuestRules {
             if(q.legacy()||before.milestones().contains(q.id())||!unlocked(q,before))continue;
             var counts=counts(q,profile);var old=profile.meta().progress().get(q.id());
             if(old!=null&&old.revision()!=2)continue;
-            String seen=event.identity().isEmpty()?"":"seen/"+event.identity();
-            if(old!=null&&!seen.isEmpty()&&old.evidence().contains(seen))continue;
-            boolean changed=false;
+            if(old!=null&&!event.identity().isEmpty()&&old.evidence().stream().anyMatch(s->s.equals("seen/"+event.identity())||s.startsWith("seen/")&&s.endsWith("/"+event.identity())))continue;
+            boolean changed=false,matched=false;
             for(var task:q.tasks())if(task.type()==event.type()&&(task.target().equals(event.target())||task.type()==TaskType.KILL&&task.target().equals("minecraft:any_hostile")&&event.identity().startsWith("h/"))) {
+                matched=true;
                 int next=(int)Math.min(task.count(),(long)counts.get(task.id())+event.count());
                 if(next!=counts.get(task.id())){counts.put(task.id(),next);changed=true;}
             }
-            if(!changed)continue;
+            if(!changed){if(matched&&complete(q,counts))profile=award(profile,q.id(),q.rewardSp(),q.rewardPp());continue;}
             var evidence=new LinkedHashSet<String>();counts.forEach((key,n)->evidence.add("g/"+key+"="+n));
-            if(!seen.isEmpty())evidence.add(seen);
-            if(old!=null)old.evidence().stream().filter(s->s.startsWith("seen/")).sorted().limit(31).forEach(evidence::add);
+            if(!event.identity().isEmpty()){
+                long sequence=old==null?0:old.evidence().stream().filter(s->s.startsWith("seen/")).mapToLong(QuestRules::sequence).max().orElse(0);
+                evidence.add("seen/"+Math.addExact(sequence,1)+"/"+event.identity());
+                if(old!=null)old.evidence().stream().filter(s->s.startsWith("seen/")).sorted(Comparator.comparingLong(QuestRules::sequence).reversed()).limit(31).forEach(evidence::add);
+            }else if(old!=null)old.evidence().stream().filter(s->s.startsWith("seen/")).forEach(evidence::add);
             var progress=new LinkedHashMap<>(profile.meta().progress());progress.put(q.id(),new MetaProgress.Progress(2,evidence));profile=profile.withMeta(profile.meta().withProgress(progress));
-            boolean complete=q.taskMatch()==Match.ALL?q.tasks().stream().allMatch(t->counts.get(t.id())>=t.count()):q.tasks().stream().anyMatch(t->counts.get(t.id())>=t.count());
-            if(complete)profile=award(profile,q.id(),q.rewardSp(),q.rewardPp());
+            if(complete(q,counts))profile=award(profile,q.id(),q.rewardSp(),q.rewardPp());
         }
         return profile;
     }
+    private static long sequence(String token){try{int slash=token.indexOf('/',5);return slash<0?0:Long.parseLong(token.substring(5,slash));}catch(NumberFormatException e){return 0;}}
+    private static boolean complete(Quest q,Map<String,Integer> counts){return q.taskMatch()==Match.ALL?q.tasks().stream().allMatch(t->counts.get(t.id())>=t.count()):q.tasks().stream().anyMatch(t->counts.get(t.id())>=t.count());}
     public static ProgressionProfile award(ProgressionProfile p,String id,int sp,int pp) {
         if(p.milestones().contains(id))return p;
         var done=new LinkedHashSet<>(p.milestones());done.add(id);
