@@ -59,23 +59,27 @@ public final class ProgressionEvents {
                                 }))))
                 .then(Commands.literal("admin").requires(source -> source.hasPermission(2))
                         .then(Commands.literal("sp")
+                                .executes(context->{var player=context.getSource().getPlayerOrException();boolean ok=ProgressionService.get(player.server).grant(player,1);return adminResult(context.getSource(),player,ok,"+1 SP");})
                                 .then(Commands.argument("player",EntityArgument.player())
                                         .then(Commands.argument("amount",IntegerArgumentType.integer(1,1000)).executes(context->{
                                             var player=EntityArgument.getPlayer(context,"player");int amount=IntegerArgumentType.getInteger(context,"amount");
                                             boolean ok=ProgressionService.get(player.server).grant(player,amount);return adminResult(context.getSource(),player,ok,"+"+amount+" SP");
                                         }))))
                         .then(Commands.literal("perk")
+                                .executes(context->{var player=context.getSource().getPlayerOrException();boolean ok=admin(player).adminGrantPerks(player,1);return adminResult(context.getSource(),player,ok,"+1 PP");})
                                 .then(Commands.argument("player",EntityArgument.player())
                                         .executes(context->{var player=EntityArgument.getPlayer(context,"player");boolean ok=admin(player).adminGrantPerks(player,1);return adminResult(context.getSource(),player,ok,"+1 PP");})
                                         .then(Commands.argument("amount",IntegerArgumentType.integer(1,1000)).executes(context->{
                                             var player=EntityArgument.getPlayer(context,"player");int amount=IntegerArgumentType.getInteger(context,"amount");boolean ok=admin(player).adminGrantPerks(player,amount);return adminResult(context.getSource(),player,ok,"+"+amount+" PP");
                                         }))))
                         .then(Commands.literal("tierup")
+                                .executes(context->{var player=context.getSource().getPlayerOrException();boolean ok=admin(player).adminTierUp(player);return adminResult(context.getSource(),player,ok,"Shop Tier +1");})
                                 .then(Commands.argument("player",EntityArgument.player()).executes(context->{var player=EntityArgument.getPlayer(context,"player");boolean ok=admin(player).adminTierUp(player);return adminResult(context.getSource(),player,ok,"Shop Tier +1");})))
                         .then(Commands.literal("tier")
                                 .then(Commands.argument("player",EntityArgument.player())
                                         .then(Commands.argument("tier",IntegerArgumentType.integer(0,4)).executes(context->{var player=EntityArgument.getPlayer(context,"player");int tier=IntegerArgumentType.getInteger(context,"tier");boolean ok=admin(player).adminSetTier(player,tier);return adminResult(context.getSource(),player,ok,"Shop Tier "+tier);}))))
                         .then(Commands.literal("hardreset")
+                                .executes(context->{var player=context.getSource().getPlayerOrException();boolean ok=admin(player).adminHardReset(player);return adminResult(context.getSource(),player,ok,"HARD RESET");})
                                 .then(Commands.argument("player",EntityArgument.player()).executes(context->{var player=EntityArgument.getPlayer(context,"player");boolean ok=admin(player).adminHardReset(player);return adminResult(context.getSource(),player,ok,"HARD RESET");})))));
     }
 
