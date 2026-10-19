@@ -120,8 +120,10 @@ public final class KMenuEditorScreen extends Screen {
         fieldLabels.add(new FieldLabel(propertyLabel(label),x,y));
         var input=addRenderableWidget(new EditBox(font,x,y+12,rightWidth-31,18,Component.literal(label)));input.setMaxLength(path.startsWith("description")?6000:512);input.setValue(pending.getOrDefault(path,value.getAsString()));input.setCursorPosition(0);input.setHighlightPos(0);input.setResponder(s->pending.put(path,s));
         if(path.contains("description"))button(width-28,y+12,20,"…","…",()->minecraft.setScreen(new EditorTextScreen(this,input.getValue(),s->pending.put(path,s))));
-        else if(path.equals("icon")||path.endsWith(".target")||path.equals("item")||path.endsWith(".item"))button(width-28,y+12,20,"…","…",()->{String kind="item";if(path.endsWith(".target")){String type=at(obj,path.substring(0,path.lastIndexOf('.'))+".type").getAsString();kind=type.equals("KILL")?"entity":type.equals("BREAK")||type.equals("PLACE")?"block":"item";}String pickerKind=kind;minecraft.setScreen(new EditorRegistryPicker(this,pickerKind,s->pending.put(path,s)));});
+        else if(path.equals("icon")||path.equals("item")||path.endsWith(".item")||path.endsWith(".target")&&!taskPickerKind(obj,path).isEmpty())button(width-28,y+12,20,"…","…",()->{String kind=path.endsWith(".target")?taskPickerKind(obj,path):"item";minecraft.setScreen(new EditorRegistryPicker(this,kind,s->pending.put(path,s)));});
+
     }
+    private String taskPickerKind(JsonObject obj,String path){String typePath=path.substring(0,path.lastIndexOf('.'))+".type";String type=pending.getOrDefault(typePath,at(obj,typePath).getAsString());return switch(type){case "KILL"->"entity";case "BREAK","PLACE"->"block";case "CRAFT","SMELT","PICKUP"->"item";default->"";};}
     private void choice(JsonObject obj,String path,String label,String... values){int y=propertyY;propertyY+=35;if(y<108||y+32>height-31)return;int x=width-rightWidth;fieldLabels.add(new FieldLabel(propertyLabel(label),x,y));String current=pending.getOrDefault(path,at(obj,path).getAsString());String shown=choiceLabel(current);
         button(x,y+12,rightWidth-8,shown,shown,()->{int index=Arrays.asList(values).indexOf(current);pending.put(path,values[(index+1)%values.length]);rebuild();});}
     private void inspector(){
