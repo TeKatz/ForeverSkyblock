@@ -36,12 +36,15 @@ public abstract class KMenuEditorUxMixin extends Screen {
     @Redirect(method="init",at=@At(value="FIELD",target="Lde/tekatz/foreverskyblock/client/KMenuEditorScreen;rightWidth:I",opcode=Opcodes.PUTFIELD))
     private void foreverSkyblock$narrowInspector(KMenuEditorScreen instance,int value){rightWidth=value==0?0:Math.min(value,width>=900?196:184);}
 
-    /** The layout workspace always gets an obvious one-click full-preview toggle, independent of available centre width. */
+    /** The layout workspace always gets one obvious full-preview toggle, but never duplicates the native control. */
     @Inject(method="init",at=@At("TAIL"))
     private void foreverSkyblock$finishWorkspace(CallbackInfo ci){
         foreverSkyblock$shortenButtons();
-        if(foreverSkyblock$isLayoutSelection()){
-            addRenderableWidget(Button.builder(Component.literal(focusMode?(EditorClient.german()?"Panels":"Panels"):(EditorClient.german()?"Fokus":"Focus")),b->{focusMode=!focusMode;minecraft.setScreen((Screen)(Object)this);}).bounds(368,54,54,18).build());
+        boolean hasFocus=children().stream().anyMatch(listener->listener instanceof Button button&&switch(button.getMessage().getString()){
+            case "Focus","Fokus","Panels"->true;default->false;
+        });
+        if(foreverSkyblock$isLayoutSelection()&&!hasFocus){
+            addRenderableWidget(Button.builder(Component.literal(focusMode?"Panels":(EditorClient.german()?"Fokus":"Focus")),b->{focusMode=!focusMode;minecraft.setScreen((Screen)(Object)this);}).bounds(368,54,54,18).build());
         }
     }
 
