@@ -521,7 +521,13 @@ public final class PremiumSkillScreen extends Screen {
         var p=EditorClient.product(id);if(!ready()||p==null)return old("unavailable");
         if(ClientSkills.pending())return old("waiting");
         if(!state().worldAvailable())return text("world_unavailable");
-        var ps=state().products().get(id);if(ps==null||!ps.available())return t("integration_missing");
+        var ps=state().products().get(id);
+        var authored=EditorClient.document().product(id);
+        if(ps!=null&&ps.stage()==0&&authored!=null){
+            if(!authored.enabled())return literal(EditorClient.german()?"Deaktiviert":"Disabled");
+            if(authored.requires().stream().anyMatch(q->!state().milestones().contains(q)&&!EditorClient.state(q).complete()))return literal(EditorClient.german()?"Erfülle zuerst die Quest-Voraussetzungen":"Complete prerequisite quests first");
+        }
+        if(ps==null||!ps.available())return t("integration_missing");
         return switch(ps.stage()) {
             case 1 -> t("claim_package"); case 2,4 -> t("recovering"); case 3 -> t("package_delivered");case 5 -> t("package_opened");
             case 6 -> t(p.worldUpgrade()?"active":"claimed");

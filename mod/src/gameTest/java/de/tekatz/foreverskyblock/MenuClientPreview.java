@@ -59,7 +59,7 @@ public final class MenuClientPreview {
             case 11 -> page(mc,"PROFILE");
             case 12 -> {page(mc,"CHALLENGES");Field f=PremiumSkillScreen.class.getDeclaredField("category");f.setAccessible(true);f.setInt(menu,7);mc.setScreen(null);mc.setScreen(menu);}
             case 13 -> {var m=PremiumSkillScreen.class.getDeclaredMethod("openContract",ContractCatalog.Contract.class);m.setAccessible(true);m.invoke(menu,ContractCatalog.NITRO);}
-            case 14 -> {page(mc,"SHOP");menu.mouseScrolled(mc.getWindow().getGuiScaledWidth()/2D,mc.getWindow().getGuiScaledHeight()-40,0,-12);}
+            case 14 -> {page(mc,"SHOP");menu.mouseScrolled(mc.getWindow().getGuiScaledWidth()/2D,mc.getWindow().getGuiScaledHeight()-40,0,-12);dragScrollbar();}
             case 15 -> {page(mc,"CHALLENGES");Field f=PremiumSkillScreen.class.getDeclaredField("category");f.setAccessible(true);f.setInt(menu,0);mc.setScreen(null);mc.setScreen(menu);menu.mouseScrolled(35,mc.getWindow().getGuiScaledHeight()-40,0,-12);}
             case 16 -> {
                 clickCard(mc,"rail",7,false,false);
@@ -104,6 +104,7 @@ public final class MenuClientPreview {
         session.undo();if(session.current().layout().get("header.sp").x()!=0)throw new IllegalStateException("Native drag undo failed");session.redo();
         System.out.println("MENU_EDITOR_INPUT_PASSED drag-header undo redo");
     }
+    private static void dragScrollbar()throws Exception{Field f=PremiumSkillScreen.class.getDeclaredField("body");f.setAccessible(true);var panel=(net.neoforged.neoforge.client.gui.widget.ScrollPanel)f.get(menu);Class<?> base=net.neoforged.neoforge.client.gui.widget.ScrollPanel.class;Field right=base.getDeclaredField("right"),top=base.getDeclaredField("top"),height=base.getDeclaredField("height");right.setAccessible(true);top.setAccessible(true);height.setAccessible(true);double x=right.getInt(panel)-1,y=top.getInt(panel)+height.getInt(panel)/2D;Field motion=panel.getClass().getDeclaredField("motion");motion.setAccessible(true);var value=(de.tekatz.foreverskyblock.client.MenuMotion)motion.get(panel);double before=value.value();menu.mouseClicked(x,y,0);menu.mouseDragged(x,y+18,0,0,18);menu.mouseReleased(x,y+18,0);if(value.value()<=before)throw new IllegalStateException("Native scrollbar drag did not move content");System.out.println("MENU_INPUT_PASSED scrollbar-drag");}
     private static void clickCard(Minecraft mc,String field,int index,boolean round,boolean opensDetail) throws Exception {
         Field f=PremiumSkillScreen.class.getDeclaredField(field);f.setAccessible(true);
         var panel=(net.neoforged.neoforge.client.gui.widget.ScrollPanel)f.get(menu);

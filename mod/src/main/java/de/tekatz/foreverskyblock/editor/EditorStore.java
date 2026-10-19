@@ -24,7 +24,7 @@ public final class EditorStore {
     }
     public void save(EditorDocument next) throws IOException {
         String data=EditorCodec.encode(next);
-        if(Files.exists(file)){
+        if(Files.exists(file)&&Files.size(file)<=EditorDocument.MAX_BYTES){
             String previous=Files.readString(file);
             try{EditorCodec.decode(previous);atomic(file.resolveSibling(file.getFileName()+".bak"),previous);}
             catch(IllegalArgumentException ignored){/* Preserve the last valid backup while repairing a corrupt primary. */}
@@ -57,17 +57,18 @@ public final class EditorStore {
         try(var zip=new ZipInputStream(Files.newInputStream(path))) {
             for(ZipEntry e;(e=zip.getNextEntry())!=null;) {
                 if(++count>2||(!e.getName().equals(REPO_PATH)&&!e.getName().equals("kmenu-export-manifest.json")))throw new IOException("Unexpected export entry");
-                byte[] bytes=zip.readNBytes(EditorDocument.MAX_BYTES+1);if(bytes.length>EditorDocument.MAX_BYTES)throw new IOException("Export exceeds size limit");
+                int limit=e.getName().equals(REPO_PATH)?EditorDocument.MAX_BYTES:2048;
+                byte[] bytes=zip.readNBytes(limit+1);if(bytes.length>limit)throw new IOException("Export exceeds size limit");
                 String s=new String(bytes,StandardCharsets.UTF_8);
                 if(e.getName().equals(REPO_PATH)){if(json!=null)throw new IOException("Duplicate document");json=s;}else {if(manifest!=null)throw new IOException("Duplicate manifest");manifest=s;}
             }
         }
         if(json==null||manifest==null)throw new IOException("Incomplete export");
-        try{var m=EditorCodec.JSON.fromJson(manifest,com.google.gson.JsonObject.class);if(!hash(json.getBytes(StandardCharsets.UTF_8)).equals(m.get("sha256").getAsString())||!REPO_PATH.equals(m.get("path").getAsString()))throw new IOException("Export checksum mismatch");return EditorCodec.decode(json);}
+        try{if(manifest.chars().filter(c->c=='{'||c=='[').count()>8)throw new IOException("Invalid export manifest");var m=EditorCodec.JSON.fromJson(manifest,com.google.gson.JsonObject.class);if(m.get("schema").getAsInt()!=1||!hash(json.getBytes(StandardCharsets.UTF_8)).equals(m.get("sha256").getAsString())||!REPO_PATH.equals(m.get("path").getAsString()))throw new IOException("Export checksum mismatch");var document=EditorCodec.decode(json);if(document.revision()!=m.get("revision").getAsLong())throw new IOException("Export revision mismatch");return document;}
         catch(RuntimeException e){throw new IOException("Invalid export",e);}
     }
     public static void exportRepository(EditorDocument d,Path repository) throws IOException {
-        Path root=repository.toRealPath();if(!Files.isRegularFile(root.resolve("mod/build.gradle"))||!Files.exists(root.resolve(".git")))throw new IOException("Select the ForeverSkyblock Git repository root");
+        Path root=repository.toRealPath();if(!Files.isRegularFile(root.resolve("mod/build.gradle"))||!Files.exists(root.resolve(".git"))||!Files.readString(root.resolve("mod/build.gradle")).contains("de.tekatz.foreverskyblock"))throw new IOException("Select the ForeverSkyblock Git repository root");
         Path parent=root.resolve("pack/config/forever_skyblock");Files.createDirectories(parent);
         if(!parent.toRealPath().startsWith(root))throw new IOException("Repository path escapes through a link");
         atomic(parent.resolve("kmenu.json"),EditorCodec.encode(d));

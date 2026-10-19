@@ -85,16 +85,19 @@ public final class EditorService {
     private void validateRegistry(EditorDocument d) {
         for(var q:d.quests())if(!q.legacy())for(var task:q.tasks()) {
             var id=ResourceLocation.parse(task.target());boolean exists=switch(task.type()) {
-                case CRAFT,SMELT,PICKUP -> BuiltInRegistries.ITEM.containsKey(id);
-                case BREAK,PLACE -> BuiltInRegistries.BLOCK.containsKey(id);
+                case CRAFT,SMELT,PICKUP -> BuiltInRegistries.ITEM.containsKey(id)&&BuiltInRegistries.ITEM.get(id)!=net.minecraft.world.item.Items.AIR;
+                case BREAK,PLACE -> BuiltInRegistries.BLOCK.containsKey(id)&&!BuiltInRegistries.BLOCK.get(id).defaultBlockState().isAir();
                 case KILL -> task.target().equals("minecraft:any_hostile")||BuiltInRegistries.ENTITY_TYPE.containsKey(id);
                 case DIMENSION -> server.levelKeys().stream().anyMatch(key->key.location().equals(id));
                 case ADVANCEMENT -> server.getAdvancements().get(id)!=null;
                 default -> true;
             };EditorCodec.require(exists,"Unknown quest target: "+task.target());
         }
-        for(var p:d.products())if(ShopCatalog.PRODUCTS.stream().noneMatch(x->x.id().equals(p.id())))for(var stack:p.contents())EditorCodec.require(BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(stack.item())),"Unknown package item: "+stack.item());
-        for(var c:d.contracts())if(c.type()==EditorDocument.ContractType.RESOURCE&&ContractCatalog.CONTRACTS.stream().noneMatch(x->x.id().equals(c.id())))EditorCodec.require(BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(c.item())),"Unknown contract item: "+c.item());
+        for(var p:d.products())if(ShopCatalog.PRODUCTS.stream().noneMatch(x->x.id().equals(p.id())))for(var stack:p.contents()){
+            var item=BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(stack.item())).orElse(null);EditorCodec.require(item!=null&&item!=net.minecraft.world.item.Items.AIR,"Unknown package item: "+stack.item());
+            EditorCodec.require(stack.count()<=item.getDefaultInstance().getMaxStackSize(),"Stack exceeds item maximum: "+stack.item());
+        }
+        for(var c:d.contracts())if(c.type()==EditorDocument.ContractType.RESOURCE&&ContractCatalog.CONTRACTS.stream().noneMatch(x->x.id().equals(c.id()))){var item=BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(c.item())).orElse(null);EditorCodec.require(item!=null&&item!=net.minecraft.world.item.Items.AIR,"Unknown contract item: "+c.item());}
     }
     private void activate(EditorDocument next) throws IOException {
         EditorEvents.flush(server);
