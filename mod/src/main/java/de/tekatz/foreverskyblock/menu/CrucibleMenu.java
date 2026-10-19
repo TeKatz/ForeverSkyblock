@@ -15,7 +15,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 public final class CrucibleMenu extends AbstractContainerMenu {
-    public static final int INPUT_X = 42, OUTPUT_X = 188, MACHINE_Y = 92;
+    public static final int INPUT_X = 42, OUTPUT_X = 188, MACHINE_Y = 94;
     public static final int BUTTON_TOGGLE_MODE = 0;
     public static final int MACHINE_SLOT_COUNT = CrucibleBlockEntity.MACHINE_SLOTS;
 
@@ -58,6 +58,8 @@ public final class CrucibleMenu extends AbstractContainerMenu {
     public boolean hasFreezer() { return data.get(5) != 0; }
     public int mode() { return data.get(6); }
     public int status() { return data.get(7); }
+    public int freezeProgress() { return data.get(8); }
+    public int freezeDuration() { return CrucibleBlockEntity.FREEZE_DURATION; }
     public boolean canToggleMode() { return hasTank() && hasFreezer(); }
 
     @Override public boolean clickMenuButton(Player player, int id) {
