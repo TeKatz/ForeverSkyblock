@@ -79,7 +79,8 @@ public final class ProgressionEvents {
                                 .then(Commands.argument("player",EntityArgument.player()).executes(context->{var player=EntityArgument.getPlayer(context,"player");boolean ok=admin(player).adminHardReset(player);return adminResult(context.getSource(),player,ok,"HARD RESET");})))));
     }
 
-    private static ProgressionAdminAccess admin(ServerPlayer player){return (ProgressionAdminAccess)ProgressionService.get(player.server);}
+    /** The interface is attached at runtime by ProgressionServiceAdminMixin. */
+    private static ProgressionAdminAccess admin(ServerPlayer player){return (ProgressionAdminAccess)(Object)ProgressionService.get(player.server);}
     private static int adminResult(net.minecraft.commands.CommandSourceStack source,ServerPlayer player,boolean ok,String action){
         if(ok)source.sendSuccess(()->Component.literal("[Forever Skyblock] "+player.getGameProfile().getName()+": "+action),true);
         else source.sendFailure(Component.literal("[Forever Skyblock] Admin operation failed: "+action));
