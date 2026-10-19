@@ -44,35 +44,46 @@ public final class CrucibleGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void lavaHeatMeltsCobbleAndUpdatesVisibleFill(GameTestHelper h) {
+    public static void crucibleHasStablePlayerFacingName(GameTestHelper h) {
+        check(h, "Crucible".equals(ForeverSkyblock.CRUCIBLE.get().getName().getString()), "Crucible uses the intended player-facing name");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void lavaHeatMeltsEightCobbleAndUpdatesVisibleFill(GameTestHelper h) {
         CrucibleBlockEntity crucible = setup(h, Blocks.LAVA);
-        crucible.inventory().setStackInSlot(CrucibleBlockEntity.INPUT, new ItemStack(Items.COBBLESTONE));
+        crucible.inventory().setStackInSlot(CrucibleBlockEntity.INPUT, new ItemStack(Items.COBBLESTONE, 9));
         tick(h, crucible, 600);
-        check(h, crucible.lavaMb() == 1000, "One cobblestone creates one bucket of lava");
-        check(h, crucible.inventory().getStackInSlot(CrucibleBlockEntity.INPUT).isEmpty(), "Cobblestone is consumed exactly once");
+        check(h, crucible.lavaMb() == 1000, "Eight cobblestone create one bucket of lava");
+        check(h, crucible.inventory().getStackInSlot(CrucibleBlockEntity.INPUT).getCount() == 1, "Exactly eight cobblestone are consumed");
         check(h, h.getBlockState(POS).getValue(CrucibleBlock.FILL) == 2, "One of four buckets advances the visible fill to two of eight stages");
         h.succeed();
     }
 
     @GameTest(template = "empty")
-    public static void fourFragmentsMatchOneCobblestoneBatch(GameTestHelper h) {
+    public static void fortyFragmentsMatchEightCobblestoneBatch(GameTestHelper h) {
         CrucibleBlockEntity crucible = setup(h, Blocks.LAVA);
-        crucible.inventory().setStackInSlot(CrucibleBlockEntity.INPUT, new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), 5));
+        crucible.inventory().setStackInSlot(CrucibleBlockEntity.INPUT, new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), 41));
         tick(h, crucible, 600);
-        check(h, crucible.lavaMb() == 1000, "Four fragments create one bucket of lava");
-        check(h, crucible.inventory().getStackInSlot(CrucibleBlockEntity.INPUT).getCount() == 1, "Exactly four fragments are consumed");
+        check(h, crucible.lavaMb() == 1000, "Forty fragments create one bucket of lava");
+        check(h, crucible.inventory().getStackInSlot(CrucibleBlockEntity.INPUT).getCount() == 1, "Exactly forty fragments are consumed");
         h.succeed();
     }
 
     @GameTest(template = "empty")
-    public static void freezingChamberConvertsStoredLavaToObsidian(GameTestHelper h) {
+    public static void freezingChamberShowsProgressBeforeProducingObsidian(GameTestHelper h) {
         CrucibleBlockEntity crucible = setup(h, Blocks.LAVA);
         h.setBlock(POS.east(), ForeverSkyblock.FREEZING_CHAMBER_MARK_I.get());
-        crucible.inventory().setStackInSlot(CrucibleBlockEntity.INPUT, new ItemStack(Items.COBBLESTONE));
-        tick(h, crucible, 601);
+        crucible.inventory().setStackInSlot(CrucibleBlockEntity.INPUT, new ItemStack(Items.COBBLESTONE, 8));
+        tick(h, crucible, 650);
         check(h, crucible.hasFreezer(), "Adjacent Freezing Chamber is detected");
         check(h, crucible.mode() == CrucibleBlockEntity.MODE_OBSIDIAN, "Freezing-only setup selects Obsidian route");
-        check(h, crucible.lavaMb() == 0, "One bucket is consumed by freezing");
+        check(h, crucible.lavaMb() == 1000, "Stored lava remains visible while freezing is in progress");
+        check(h, crucible.freezeProgress() == 50, "Obsidian conversion exposes its real halfway progress");
+        check(h, crucible.inventory().getStackInSlot(CrucibleBlockEntity.OUTPUT).isEmpty(), "Obsidian is not produced before freezing completes");
+        tick(h, crucible, 50);
+        check(h, crucible.lavaMb() == 0, "One bucket is consumed after freezing completes");
+        check(h, crucible.freezeProgress() == 0, "Freezing progress resets after completion");
         check(h, crucible.inventory().getStackInSlot(CrucibleBlockEntity.OUTPUT).is(Items.OBSIDIAN), "Freezing produces one Obsidian");
         h.succeed();
     }
@@ -80,7 +91,7 @@ public final class CrucibleGameTests {
     @GameTest(template = "empty")
     public static void itemAndFluidCapabilitiesRespectAutomationDirections(GameTestHelper h) {
         CrucibleBlockEntity crucible = setup(h, Blocks.LAVA);
-        ItemStack remainder = crucible.automation(Direction.UP).insertItem(CrucibleBlockEntity.INPUT, new ItemStack(Items.COBBLESTONE), false);
+        ItemStack remainder = crucible.automation(Direction.UP).insertItem(CrucibleBlockEntity.INPUT, new ItemStack(Items.COBBLESTONE, 8), false);
         check(h, remainder.isEmpty(), "Top/side automation accepts Crucible input");
         check(h, crucible.automation(Direction.DOWN).insertItem(CrucibleBlockEntity.INPUT, new ItemStack(Items.COBBLESTONE), false).getCount() == 1,
                 "Bottom automation is output-only");
