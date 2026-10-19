@@ -13,7 +13,10 @@ public final class EditorRuntime {
     public static Quest quest(String id){var d=active;return d==null?null:d.quest(id);}
     public static boolean productUnlocked(String id,ProgressionProfile profile){var d=active;var p=d==null?null:d.product(id);return p==null||p.enabled()&&QuestRules.dependencies(p.requires(),Match.ALL,profile.milestones());}
     public static List<ShopCatalog.Product> products() {
-        var d=active;if(d==null)return ShopCatalog.PRODUCTS;
+        return products(active);
+    }
+    public static List<ShopCatalog.Product> products(EditorDocument d) {
+        if(d==null)return ShopCatalog.PRODUCTS;
         var result=new ArrayList<ShopCatalog.Product>();
         for(var p:d.products()) {
             var original=ShopCatalog.PRODUCTS.stream().filter(o->o.id().equals(p.id())).findFirst().orElse(null);
@@ -26,7 +29,10 @@ public final class EditorRuntime {
         return List.copyOf(result);
     }
     public static List<ContractCatalog.Contract> contracts() {
-        var d=active;if(d==null)return ContractCatalog.CONTRACTS;
+        return contracts(active);
+    }
+    public static List<ContractCatalog.Contract> contracts(EditorDocument d) {
+        if(d==null)return ContractCatalog.CONTRACTS;
         var result=new ArrayList<ContractCatalog.Contract>();
         for(var c:d.contracts())result.add(new ContractCatalog.Contract(c.id(),ContractCatalog.Trigger.valueOf(c.type().name()),c.requiredTier(),c.count(),c.rewardSp(),c.type()==ContractType.RESOURCE?c.item():null,c.icon(),
                 c.title().en(),c.title().de().isBlank()?c.title().en():c.title().de(),c.description().en(),c.description().de().isBlank()?c.description().en():c.description().de()));

@@ -21,11 +21,16 @@ public final class EditorClient {
     private static Map<String,QuestState> progress=Map.of();
     private static boolean canEdit;
     private static String status="";
-    private static int viewport=640;
+    private static int viewport=640,simulation;
     private EditorClient() { }
     public static EditorDocument document(){if(preview!=null)return preview;if(published!=null)return published;return Defaults.VALUE;}
     private static final class Defaults {static final EditorDocument VALUE=EditorDefaults.create();}
     public static boolean customized(){return published!=null||preview!=null;}
+    public static java.util.List<de.tekatz.foreverskyblock.progression.ShopCatalog.Product> products(){return EditorRuntime.products(document());}
+    public static de.tekatz.foreverskyblock.progression.ShopCatalog.Product product(String id){return products().stream().filter(p->p.id().equals(id)).findFirst().orElse(null);}
+    public static java.util.List<de.tekatz.foreverskyblock.progression.ContractCatalog.Contract> contracts(){return EditorRuntime.contracts(document());}
+    public static void simulation(int value){simulation=value;}
+    public static int simulation(){return preview==null?0:simulation;}
     public static boolean canEdit(){return canEdit;}
     public static boolean german(){return Minecraft.getInstance().getLanguageManager().getSelected().startsWith("de_");}
     public static String status(){return status;}

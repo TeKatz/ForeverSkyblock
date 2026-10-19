@@ -21,11 +21,11 @@ public final class KMenuEditorScreen extends Screen {
     private enum Mode { LAYOUT,QUESTS,GRAPH,SHOP,CONTRACTS,CHAPTERS,SETTINGS }
     private final Screen parent;
     private EditorSession session;
-    private final EditorDocument opened;
+    private EditorDocument opened;
     private Mode mode=Mode.LAYOUT;
     private String selected="header.sp",filter="",page="CHALLENGES",variant="",linkSource="",message="";
     private int listScroll,propertyScroll,leftWidth,rightWidth,canvasLeft,canvasRight,canvasTop=82,canvasBottom,propertyY,viewportIndex;
-    private int previewState;private boolean linkTool,unlinkTool,resizeTool,tryMode,panning;
+    private int previewState,simulation;private boolean linkTool,unlinkTool,resizeTool,tryMode,panning;
     private final Map<String,String> pending=new LinkedHashMap<>();
     private final List<FieldLabel> fieldLabels=new ArrayList<>();
     private record FieldLabel(String label,int x,int y) { }
@@ -70,6 +70,7 @@ public final class KMenuEditorScreen extends Screen {
         button(canvasLeft+51,106,48,variant.isEmpty()?"All":"Size",variant.isEmpty()?"Alle":"Größe",()->{variant=variant.isEmpty()?(viewportIndex==1?"small/":viewportIndex==2?"wide/":"compact/"):"";rebuild();});
         button(canvasLeft+102,106,48,"+ Text","+ Text",this::addDecoration);
         if(canvasRight-canvasLeft>205)button(canvasLeft+153,106,48,"Detail","Details",()->{previewState=(previewState+1)%4;buildPreview();});
+        if(canvasRight-canvasLeft>255)button(canvasLeft+204,106,48,"State "+simulation,"Status "+simulation,()->{simulation=(simulation+1)%4;buildPreview();rebuild();});
     }
     private void graphTools(){
         int w=Math.max(35,(canvasRight-canvasLeft-8)/4);
@@ -79,6 +80,7 @@ public final class KMenuEditorScreen extends Screen {
         button(canvasLeft+3*(w+2),84,w,"Center","Zentrieren",()->{zoom=1;panX=28;panY=30;});
         button(canvasLeft,106,60,"+ New","+ Neu",this::addEntry);button(canvasLeft+63,106,64,"Duplicate","Duplizieren",this::duplicate);
         if(canvasRight-canvasLeft>185)button(canvasLeft+130,106,55,"Disable","Deaktiv.",this::disable);
+        if(mode==Mode.SHOP&&canvasRight-canvasLeft>245)button(canvasLeft+188,106,54,"+ Item","+ Item",this::addStack);
     }
     private void contentTools(){
         button(canvasLeft,84,54,"+ New","+ Neu",this::addEntry);button(canvasLeft+57,84,64,"Duplicate","Duplizieren",this::duplicate);
@@ -143,11 +145,11 @@ public final class KMenuEditorScreen extends Screen {
         if(mode==Mode.SHOP){field(obj,"spCost","Price · SP");field(obj,"ppCost","Price · PP");prerequisites(obj);var stacks=obj.getAsJsonArray("contents");for(int i=0;i<stacks.size();i++){field(obj,"contents."+i+".item","Package item "+(i+1));field(obj,"contents."+i+".count","Stack size");}nodeFields();return;}
         if(mode==Mode.CONTRACTS){choice(obj,"type","Contract type","RESOURCE","WITHER","DRAGON");if(obj.get("type").getAsString().equals("RESOURCE"))field(obj,"item","Consumed item");field(obj,"count","Required quantity");field(obj,"rewardSp","Reward · SP (1–10)");}
     }
-    private void prerequisites(JsonObject obj){int y=propertyY;propertyY+=40;if(y<108||y+35>height-31)return;fieldLabels.add(new FieldLabel("Prerequisites: "+obj.getAsJsonArray("requires").size(),width-rightWidth,y));button(width-rightWidth,y+12,rightWidth-8,"Connect in node view","Im Node-Baum verbinden",()->{applyPending();if(mode!=Mode.SHOP)mode=Mode.GRAPH;linkTool=true;linkSource="";rebuild();});}
+    private void prerequisites(JsonObject obj){int y=propertyY;propertyY+=40;if(y<108||y+35>height-31)return;fieldLabels.add(new FieldLabel("Prerequisites: "+obj.getAsJsonArray("requires").size(),width-rightWidth,y));button(width-rightWidth,y+12,rightWidth-8,"Connect in node view","Im Node-Baum verbinden",()->{applyPending();if(mode==Mode.SHOP){chooseQuestDependency(selected,hasShiftDown());return;}mode=Mode.GRAPH;linkTool=true;linkSource="";rebuild();});}
     private void nodeFields(){int y=propertyY;propertyY+=38;if(y>=108&&y+35<=height-31)button(width-rightWidth,y+12,rightWidth-8,"Reset node position","Node-Position zurücksetzen",()->{session.edit(r->r.getAsJsonObject("nodes").remove(selected));rebuild();});}
     private void buildPreview(){
         if(minecraft==null||mode!=Mode.LAYOUT)return;
-        EditorClient.preview(session.current());try{previewMenu=new PremiumSkillScreen(true);int[] v=VIEWPORTS[viewportIndex];previewMenu.init(minecraft,v[0],v[1]);previewMenu.editorPage(page);previewScreen=previewMenu.editorPreviewDetail(previewState);}finally{EditorClient.preview(null);}
+        EditorClient.simulation(simulation);EditorClient.preview(session.current());try{previewMenu=new PremiumSkillScreen(true);int[] v=VIEWPORTS[viewportIndex];previewMenu.init(minecraft,v[0],v[1]);previewMenu.editorPage(page);previewScreen=previewMenu.editorPreviewDetail(previewState);}finally{EditorClient.preview(null);}
     }
     private List<String> entries(){List<String> values;
         if(mode==Mode.LAYOUT){var ids=new ArrayList<>(EditorDefaults.ELEMENTS);for(var w:session.current().decorations())ids.add("decoration/"+w.id());values=ids;}
@@ -204,9 +206,9 @@ public final class KMenuEditorScreen extends Screen {
     @Override public boolean mouseClicked(double mx,double my,int button){
         if(mx<leftWidth+1&&my>=109&&my<canvasBottom){var list=entries();int i=listScroll+(int)((my-109)/25);if(i<list.size()){run(()->{applyPending();selected=list.get(i);propertyScroll=0;pending.clear();rebuild();});return true;}}
         if(mx>=canvasLeft&&mx<canvasRight&&my>=130&&my<canvasBottom){
-            if(mode==Mode.LAYOUT){if(tryMode){EditorClient.preview(session.current());try{return previewScreen.mouseClicked((mx-previewX)/previewScale,(my-previewY)/previewScale,button);}finally{EditorClient.preview(null);}}
+            if(mode==Mode.LAYOUT){if(tryMode){EditorClient.preview(session.current());try{boolean handled=previewScreen.mouseClicked((mx-previewX)/previewScale,(my-previewY)/previewScale,button);previewScreen=previewMenu.editorActivePreview();return handled;}finally{EditorClient.preview(null);}}
                 var entries=new ArrayList<>(previewBounds.entrySet());Collections.reverse(entries);String hit="";for(var e:entries)if(e.getValue().contains((mx-previewX)/previewScale,(my-previewY)/previewScale)){hit=e.getKey();break;}
-                if(!hit.isEmpty()){selected=hit;pending.clear();propertyScroll=0;beginGesture(mx,my);var s=EditorClient.style(selected);startX=s.x();startY=s.y();startW=s.width()==0?previewBounds.get(hit).width():s.width();startH=s.height()==0?previewBounds.get(hit).height():s.height();rebuild();return true;}
+                if(!hit.isEmpty()){selected=hit;pending.clear();propertyScroll=0;beginGesture(mx,my);var o=target(root());startX=o.get("x").getAsFloat();startY=o.get("y").getAsFloat();startW=o.get("width").getAsInt()==0?previewBounds.get(hit).width():o.get("width").getAsInt();startH=o.get("height").getAsInt()==0?previewBounds.get(hit).height():o.get("height").getAsInt();rebuild();return true;}
             }else if(mode==Mode.GRAPH||mode==Mode.SHOP){var ids=graphIds();String hit="";for(int i=ids.size()-1;i>=0;i--){var n=node(ids.get(i),i);if(Math.hypot(mx-gx(n.x()),my-gy(n.y()))<=n.radius()*zoom+4){hit=ids.get(i);break;}}
                 if(!hit.isEmpty()){String id=hit;if(linkTool||unlinkTool){if(linkSource.isEmpty()){linkSource=id;return true;}String source=linkSource;linkSource="";run(()->connect(source,id,unlinkTool));return true;}
                     selected=id;pending.clear();propertyScroll=0;var n=node(id,ids.indexOf(id));beginGesture(mx,my);startX=n.x();startY=n.y();rebuild();return true;}
@@ -272,7 +274,7 @@ public final class KMenuEditorScreen extends Screen {
     private void confirmPublish(){applyPending();EditorCodec.validateUpdate(opened,session.current());confirm(tr("Publish this draft for every player on this server? Existing completed quests keep their rewards.","Diesen Entwurf für alle Spieler auf diesem Server aktivieren? Abgeschlossene Quests behalten ihre Belohnungen."),()->{saveDraft();EditorClient.publish(session.current());});}
     private void confirm(Component text,Runnable yes){confirm(text,yes,()->minecraft.setScreen(this));}
     private void confirm(Component text,Runnable yes,Runnable no){minecraft.setScreen(new ConfirmScreen(ok->{minecraft.setScreen(this);run(ok?yes:no);},tr("K-menu editor","K-Menü-Editor"),text));}
-    public void serverReply(EditorNetwork.Reply r){if(r.kind()==2){message=r.message();if(message.startsWith("Published")){pending.clear();session=new EditorSession(EditorClient.document());rebuild();}}else if(r.kind()==0&&r.revision()!=opened.revision())message=tr("Server revision changed. Your draft is preserved; reopen to reconcile.","Serverversion geändert. Dein Entwurf bleibt erhalten; zum Abgleichen neu öffnen.").getString();}
+    public void serverReply(EditorNetwork.Reply r){if(r.kind()==2){message=r.message();if(message.startsWith("Published")){pending.clear();opened=EditorClient.document();session=new EditorSession(opened);rebuild();}}else if(r.kind()==0&&r.revision()!=opened.revision())message=tr("Server revision changed. Your draft is preserved; reopen to reconcile.","Serverversion geändert. Dein Entwurf bleibt erhalten; zum Abgleichen neu öffnen.").getString();}
     @Override public void onFilesDrop(List<Path> paths){if(paths.size()!=1){message="Drop one JSON or export ZIP";return;}run(()->{Path p=paths.getFirst();var d=p.toString().endsWith(".zip")?EditorStore.importZip(p):EditorStore.read(p);session.replace(d.withRevision(opened.revision()));pending.clear();rebuild();});}
     @Override public void onClose(){if(session.dirty()||!pending.isEmpty())confirm(tr("Save your draft before closing?","Entwurf vor dem Schließen speichern?"),()->{saveDraft();minecraft.setScreen(parent);},()->minecraft.setScreen(parent));else minecraft.setScreen(parent);}
     @Override public boolean isPauseScreen(){return false;}
