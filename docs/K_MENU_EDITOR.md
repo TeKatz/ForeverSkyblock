@@ -1,38 +1,77 @@
-# K-menu Studio — 0.25.0 development branch
+# K-menu Studio — 0.25.1 development polish
 
-Implemented on `feature/kmenu-admin-editor`, based on integrated **0.24.1** commit `c7246d00456c9c4c23905f496316a72bbcd473e8`. This document describes the branch, not an integration into `main` or a public release. Machines, recipes, the fixed starter island and existing skill effects remain outside the editor.
+The K-menu Studio was introduced on `feature/kmenu-admin-editor` as the 0.25.0 development build. The follow-up branch `feature/kmenu-editor-polish` keeps the same editor data model, publication rules and gameplay boundary while addressing the first real-player usability feedback before integration into `main`.
+
+This document describes development branches, not a public release. The integrated `main` baseline remains 0.24.1 until a separate merge is approved. Machines, recipes, the fixed starter island and existing skill effects remain outside the editor.
 
 ## Open and work
 
-Open the K-menu and use the pencil button beside Close, or run `/forevereditor`. The server checks permission level 2 or integrated-server ownership for every editor operation. Ordinary players receive the published presentation and quest state, not permission to publish it.
+Open the K-menu and use the pencil button beside Close, or run `/forevereditor`. The server checks permission level 2 or integrated-server ownership for every authoritative editor operation.
 
-The workspace contains a searchable element/content list, a native Minecraft preview or graph canvas, and a property inspector. Scroll the inspector to reach lower properties. **Apply properties / Enter** validates and commits a field edit to the draft. A failed edit remains visible for correction. **Undo / Redo** operates on draft changes; one completed drag is one history entry. **Ctrl+S** saves the draft locally. Closing a changed draft offers to save it.
+The editor remains a three-part workspace: content selection, a native Minecraft preview/graph canvas and a typed property inspector. The 0.25.1 polish reduces the amount of permanently visible chrome and adds explicit guidance:
 
-Nothing in a draft changes another player's rules. **Check** validates it; **Publish** presents a confirmation, uploads bounded chunks, rechecks authorization, references, registries and the expected server revision, then atomically replaces the server document. All connected players receive the new catalog without a restart. Failed validation/publication preserves the active document.
+- the top toolbar now keeps **Undo**, **Redo**, **Files…**, **Validate**, **Publish** and **More…** as the primary workflow;
+- **Files…** contains save/load draft plus import/export;
+- **More…** contains the destructive reset and server-revision reconciliation actions;
+- the active workspace tab is visibly marked;
+- **Help** or **F1** opens a quick-start screen with mode-specific instructions and keyboard shortcuts;
+- the footer explains the current mode and selected element instead of showing only an opaque internal ID;
+- inspector properties are grouped into collapsible sections instead of one long unstructured list.
 
-## Layout
+`Ctrl+S` saves the local draft. `Ctrl+Z` and `Ctrl+Shift+Z` perform undo/redo. Enter applies pending inspector fields. Closing a dirty editor still offers to save the draft.
 
-- Select header groups, navigation tabs, the search field, category rail, content panels, card templates and their title/description/icon/reward areas, profile sections and detail-window sections.
-- Drag to move; switch **Move / Resize** to resize. Use the inspector actions to center an element horizontally or vertically. Grid snapping uses the configured grid; hold Alt to move freely. Numeric properties allow exact changes.
-- Width/height **0** retains the original calculated size. START/CENTER/END anchors decide how replacement dimensions sit inside the original rectangle.
-- Colors use **AARRGGBB**; blank retains the original color. Font/item scale and visibility are available where the selected renderer supports them.
-- The layout canvas supports wheel zoom and empty-canvas panning; middle-click resets its view. Switch between 640×360, 480×270 and 944×522 logical preview viewports. **All / Size** selects a common override or a small/compact/wide override. Minecraft's existing responsive layout still provides defaults.
-- **Try** routes input through the preview's native widgets. Purchase, respec, test-point and detail actions cannot modify gameplay from this preview.
-- **Detail** previews challenge, package and contract windows. **State** switches between live, locked, available/partial and completed sample states for quest/node presentation.
-- Add decorative text, panels, registered item icons or progress bars. Text can show SP, PP, Tier, playtime, Island Level, deaths, kills or completed challenges. These are display bindings, not executable scripts.
-- Settings control grid/snap, entry/reveal duration, scroll speed, card/category spacing and the live quest graph/card view.
+Nothing in a draft changes another player's rules. **Validate** checks the draft. **Publish** presents a confirmation, uploads bounded chunks, rechecks authorization, references, registries and the expected server revision, then atomically replaces the server document. Failed validation/publication preserves the active document.
 
-Repeated cards use one shared template. This is deliberate: changing a reward label's alignment should affect every generated card. Some responsive layout relationships still come from Java; this is not a Java source-code editor or a universal editor for other mods' screens.
+## Layout workspace
+
+The layout editor can select header groups, navigation tabs, search/category regions, content panels, repeated card templates, profile sections, detail-window regions and custom decorative elements.
+
+The 0.25.1 toolbar uses descriptive state labels rather than terse developer labels:
+
+- **Page: …** chooses the live K-menu page being previewed;
+- **Viewport: 640×360 / 480×270 / 944×522** switches the logical preview size;
+- **Interaction: Select / Try** separates authoring from real widget interaction;
+- **Edit: Move / Resize** controls drag behavior;
+- **All sizes / This size** selects a common style override or the active responsive-size override;
+- **Detail: Menu / Quest detail / Shop detail / Contract detail** selects the preview surface;
+- **State: Live / Locked / Available / Completed** chooses the sample presentation state;
+- **Focus preview** temporarily hides both side panels to maximize the canvas.
+
+Dragging moves or resizes the selected element. Grid snapping uses the configured grid; hold Alt for free movement. Wheel input zooms the layout canvas, empty-space dragging pans it and middle-click resets the layout view. Exact numeric values remain available in the inspector.
+
+Width/height `0` retains the original calculated size. START/CENTER/END anchors decide how replacement dimensions sit inside the original rectangle. Colors use AARRGGBB; blank values keep the original color. Supported renderers expose font scale, item scale and visibility.
+
+### Stable editor preview
+
+The first 0.25.0 player test found that ordinary selection clicks recreated the native preview and therefore restarted its reveal animation every time. 0.25.1 deliberately renders **Select** mode with an editor-only preview copy whose animation duration is zero. Selection, property editing and viewport changes therefore remain visually stable.
+
+**Try** mode still uses the actual configured animation duration and routes input through the native K-menu widgets, so animations and interactions can be tested intentionally. Preview purchases, respecs, test-point actions and detail actions remain non-destructive.
+
+Changing the logical viewport now rebuilds the editor controls as well as the preview, so the viewport button text always reflects the active size.
+
+## Inspector organization
+
+The right inspector now groups related fields into collapsible sections. Depending on the workspace these include:
+
+- **Position & size**, **Anchors**, **Appearance**, **Alignment** for layout elements;
+- **Content & status** for authored entries;
+- **Progression & rewards**, **Objectives**, **Dependencies & node** for quests;
+- **Pricing & requirements**, **Package contents**, **Node** for Shop products;
+- **Contract rules** for contracts;
+- **Chapter order** for chapters;
+- **Server & recovery** and **Editor behavior** for Settings.
+
+Collapsing a section changes only editor presentation. It does not change the document being authored.
 
 ## Quests and chapters
 
-The initial document mirrors all **20 existing challenges / 58 SP**. Their IDs, original event adapters, original Tier 0/I milestones and saved completions remain intact. Titles, descriptions, icons, chapter, enabled state, rewards and prerequisites can be authored. Legacy evidence targets can be reduced, but not increased beyond their original evidence capacity. Built-in trigger types remain protected; duplicate a built-in challenge to create a custom task structure.
+The initial document mirrors all 20 existing challenges / 58 SP. Their IDs, original event adapters, Tier 0/I milestones and saved completions remain intact. Titles, descriptions, icons, chapter, enabled state, rewards and prerequisites can be authored. Built-in trigger identities remain protected; duplicate a built-in challenge to create a custom objective structure.
 
 New quest IDs use `forever_skyblock:quest/…`. A quest supports up to 16 individually identified objectives:
 
 | Objective | Authoritative source |
 | --- | --- |
-| CRAFT | Player crafting result event |
+| CRAFT | Player crafting-result event |
 | SMELT | Player collection of furnace/smelting output |
 | PICKUP | Items actually transferred from an item entity into player inventory |
 | KILL | Vanilla personal kill attribution; exact entity ID or `minecraft:any_hostile` |
@@ -40,65 +79,52 @@ New quest IDs use `forever_skyblock:quest/…`. A quest supports up to 16 indivi
 | BREAK / PLACE | Uncancelled block event, checked after the operation at the end of the server tick |
 | ADVANCEMENT | Earned advancement ID |
 
-Automated output is not automatically credited as personal crafting/smelting. PICKUP counts pickup actions and can intentionally be repeated by dropping/picking up items; use another objective if unique acquisition is required. BREAK/PLACE similarly measure those actions, not unique blocks. New observation mechanisms, machine-operation objectives, custom abilities and arbitrary scripts require code.
+Automated machine output is not automatically credited as personal crafting/smelting. PICKUP and BREAK/PLACE measure actions rather than unique resources. New machine-operation objectives, arbitrary scripts and new gameplay effects still require code.
 
-Dimension and advancement targets are entered directly as resource IDs; the registry picker covers item, block and entity objectives. A blank chapter icon preserves the original automatic category icon; supplying an item ID overrides it.
+Objectives and prerequisite quests independently support ALL / ANY. Add chapters and order them; connect quests in the graph to express unlocks. A cycle, missing dependency, duplicate ID or unknown custom registry target blocks publication.
 
-Objectives and prerequisite quests independently support **ALL / ANY**. Required Tier and SP/PP reward values are server-owned. Add chapters and order them; connect quests in the graph to express unlocks. A cycle, missing dependency, duplicate ID or unknown custom registry target prevents publication.
+Permanent completions remain permanent. Editing a completed quest cannot pay it again. Existing progress is retained by stable quest/objective IDs. Published task identities/types/targets remain protected; use a new quest ID when changing a published task's meaning. Published entries are disabled rather than deleted.
 
-Quest evidence is reduced in original event order and saved once per affected player per server tick. Pending evidence is flushed on logout, server stopping and before activating another document. Per-player event queues, objective counters, identity guards, document size and graph sizes are bounded.
+## Graph workspace
 
-Permanent completions remain permanent: changing a title, reward, target or prerequisite never pays an already completed quest again. Reduced targets for incomplete custom quests are evaluated on the next qualifying action. Existing progress is retained by stable quest/objective IDs. Published task identities/types/targets are protected; use a new quest ID when changing a task's meaning. Draft tasks can be added/removed before publication. Published entries are disabled rather than deleted. The editor's progress shares the existing permanent player-profile storage and SP/PP accounting; it does not award extra Island Level or replace the separate FTB Quests book.
+Drag nodes, pan empty canvas and use the wheel to zoom. **Auto arrange** lays out the quest graph and **Center view** restores the default view. Node coordinates and radius can also be edited in the inspector.
 
-## Node editor
+For quest links, **Link** selects the prerequisite first and the dependent quest second. **Unlink** uses the same order. Quest edges come from prerequisite IDs and preserve ALL/ANY semantics.
 
-Drag nodes, pan empty canvas, use the wheel to zoom, and use **Arrange / Center**. Node coordinates and radius can also be edited in the inspector. Geometry is shared with the live menu, including circular hit areas. Quest edges come from prerequisite IDs and show ALL/ANY semantics. **Link** selects a prerequisite, then its dependent quest; **Unlink** removes that relationship.
-
-The Shop includes its existing permanent-skill/Tier roots, existing world upgrades/packages, new packages and quest-prerequisite nodes. Root positions can be changed without changing their gameplay meaning. **Requires / Unlink** selects a quest prerequisite for the selected product. Existing product branches retain their real Tier rules; visual repositioning cannot invent purchases or replace server checks.
+The Shop graph includes the existing permanent-skill/Tier roots, existing world upgrades/packages, new packages and quest-prerequisite nodes. Node position changes presentation only; visual repositioning cannot bypass server-owned purchase rules.
 
 ## Shop and contracts
 
-- Edit product names/descriptions/icons, prices, Tier, enabled state and quest requirements. New products use `forever_skyblock:shop/custom/…` and support up to 16 item stacks through the existing owner/world-bound package-delivery mechanism.
-- Package contents become immutable under a published ID. Existing package contents are protected immediately. Duplicate a package to create a different offer; price changes affect future purchases. Paid receipts retain their original costs, and disabled offers remain resolvable for existing claims and recovery.
-- World-upgrade effects and research/skill effects remain the existing Java implementations. The editor does not create arbitrary new gameplay effects.
-- Edit contracts' text/icon, enabled state, target, reward (1–10 SP), required Tier and supported resource/boss type. New IDs use `forever_skyblock:contract/custom/…`.
-- Resource contracts use the existing explicit consumption, write-ahead intent, forced player-data checkpoints and idempotent payout/recovery. A published contract's type/item is immutable; an in-flight intent keeps its original item count and reward.
+Products can edit names/descriptions/icons, SP/PP prices, Tier, enabled state and quest requirements. New package IDs use `forever_skyblock:shop/custom/…` and support up to 16 item stacks through the existing owner/world-bound delivery mechanism.
 
-## Files, import and repository export
+Published package contents are immutable under an existing ID. Duplicate the product to create a materially different package. Paid receipts retain their original costs and disabled offers remain resolvable for existing claims/recovery.
 
-The authoritative instance/server file is **`config/forever_skyblock/kmenu.json`**. The previous valid document is kept as `.json.bak`. Invalid or missing-primary-with-backup files are reported rather than silently overwritten; edited challenge/contract rewards and new purchases fail closed until the operator reloads a repaired file or restores a valid backup. Existing machines and ordinary skill effects remain available. Restoring a backup retains newer published IDs as disabled entries.
+Contracts can edit text/icon, enabled state, target, reward (1–10 SP), required Tier and the supported resource/Wither/Dragon types. New IDs use `forever_skyblock:contract/custom/…`. Resource contracts retain the existing explicit consumption, write-ahead intent, checkpoints and idempotent payout/recovery rules.
 
-Client drafts are under `forever_skyblock/editor/<connection-key>/draft.json`, with exports in its `exports/` directory. Import accepts a JSON document or an editor ZIP, including file drag/drop. Export offers:
+## Files, import, export and reconciliation
 
-1. One ZIP containing `pack/config/forever_skyblock/kmenu.json` and a revision/SHA-256 manifest. Imports read only those two bounded entries and never extract supplied paths.
-2. Direct export to a selected local ForeverSkyblock Git checkout. The editor validates the repository root and destination and writes the same pack-owned configuration path. It does not commit, push, merge or store GitHub credentials.
+The authoritative instance/server file is `config/forever_skyblock/kmenu.json`; the previous valid document is retained as `.json.bak`. Invalid primary/backup states fail closed rather than silently replacing published gameplay data.
 
-The Gradle build includes an exported pack configuration as a bundled default. A deployed instance/server config takes precedence. Existing installations therefore need the exported config distributed with the updated pack as well as the JAR when replacing an existing override.
+Client drafts live under `forever_skyblock/editor/<connection-key>/draft.json`, with exports in its `exports/` directory. Import accepts a JSON document or bounded editor ZIP, including file drag/drop. Export can create:
 
-**Reconcile** performs a field-level three-way merge when another administrator publishes while a draft is open. Independent changes merge automatically; conflicting paths are shown with a choice between draft/server values. A revision lease on publication prevents silent overwrites. Exported files can be committed and reviewed using ordinary Git; sending one ZIP also remains supported.
+1. a portable ZIP containing `pack/config/forever_skyblock/kmenu.json` plus revision/SHA-256 manifest; or
+2. the same configuration directly inside a selected local ForeverSkyblock Git checkout.
 
-## Compatibility and validation
+The editor does not commit, push, merge or store GitHub credentials.
 
-- Minecraft 1.21.1, Java 21, NeoForge default 21.1.249 and pack runtime 21.1.259.
-- Existing `skills-9` payloads/profile schemas 4/5/6 and world-progress schema 2 are retained. The mandatory additional `kmenu-editor-1` channel requires matching new client/server builds.
-- Custom aggregate evidence uses revision 2 within the existing extensible challenge-progress map. No existing milestone, contract receipt, delivery, world identity or core-redemption data is cleared.
-- No new challenges, packages or balance changes are shipped as default gameplay content.
-- The fixed `forever_me_start.nbt` must retain SHA-256 `1ae2e4b779b1c6b56320aede0af2a711d4bd247a976771c95f633e05c1beb0c1`.
+**Merge newer server changes** performs the existing field-level three-way reconciliation when another administrator publishes while a draft is open. Independent field edits merge automatically. Same-field conflicts require an explicit draft/server choice. The publication revision lease prevents silent overwrites.
 
-Focused tests cover document bounds/references/cycles, original default parity, multi-objective reducers, prerequisites, replay guards, reward/accounting persistence, respec retention, immutable published identities/packages, target/reward edits, history, merge conflicts, rollback, atomic backups and ZIP integrity/path rejection. Dedicated GameTests cover real packet codecs/size bounds and default gameplay parity. Opt-in native client fixtures extend the existing K-menu rendering/input checks with editor pages, alternate viewport/detail/language previews and mouse-drag undo/redo. Test fixtures remain outside the production JAR.
+## Compatibility boundary
 
-### Validated development build — October 19, 2026
+- Minecraft 1.21.1, Java 21.
+- NeoForge development baseline 21.1.249; pack integration target 21.1.259.
+- Existing `skills-9` payloads, player schemas 4/5/6 and world-progress schema 2 are retained.
+- The additional mandatory `kmenu-editor-1` network channel requires matching editor-capable client/server builds.
+- No new challenge, package or balance content is introduced by the editor polish.
+- The fixed `forever_me_start.nbt` is not part of this branch.
 
-Source `910f902ff853b0051e5ecfb96a60bb773f901db1` passed [Actions run 39200171912](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39200171912):
+## Validation history
 
-- Java 21 build, all **96 unit tests**, client startup/model/mixin smoke checks.
-- **95 required GameTests on each runtime**, NeoForge 21.1.249 and pack runtime 21.1.259.
-- **32 native-client fixture stages**, EN/DE and multiple viewport sizes, completed successfully.
-- **7 input checks**: card/circular hit areas, category scrolling, scrollbar dragging, editor header dragging with undo/redo, and quest linking at a non-default zoom.
-- Earlier native captures were visually inspected during implementation; this caught and corrected blurred editor screens and pose/scissor clipping in scaled previews.
+The original 0.25.0 implementation source `910f902ff853b0051e5ecfb96a60bb773f901db1` passed Actions run `39200171912`: 96 unit tests, client startup/model/mixin smoke, 95 required GameTests on each NeoForge runtime, 32 native-client fixture stages and seven native input checks. Its test artifact was `ForeverSkyblock-1.21.1-NeoForge-0.25.0.jar`.
 
-The [production artifact](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39200171912/artifacts/12164010725), named **ForeverSkyblock-Mod**, contains the 0.25.0 build. The GitHub artifact ZIP is **5,389,672 bytes** with archive SHA-256 `982247a243118ca333197ec631f374ec4e8041ae24619b8bbf60caf2e9fae184`. The expected production filename is `ForeverSkyblock-1.21.1-NeoForge-0.25.0.jar`. [Native fixture evidence](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39200171912/artifacts/12164125034) is uploaded separately.
-
-The local execution environment disconnected during handoff. The final uploaded ZIP/JAR contents and final screenshots were therefore not independently re-opened after this run; no inner-JAR hash or final archive resource audit is claimed. The successful CI build and test logs above were checked through GitHub.
-
-Remaining acceptance: TeKatz's full player instance, including actual skin/resources, multiplayer publication conflicts, server restart with exported configuration, and the final downloaded JAR's contents. Matching 0.25.0 client/server builds are required. This remains an unmerged development branch and draft PR, with no release published.
+The 0.25.1 polish is developed on `feature/kmenu-editor-polish`. It must pass the same build, native render/input fixture and both server-regression suites before a test JAR is treated as validated. Real-player usability acceptance remains a separate manual test by TeKatz; automated fixtures do not certify that the editor feels good to use.
