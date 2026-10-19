@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "MCM",
+    "M M",
+    "CCC"
+  ],
+  "key": {
+    "M": { "item": "minecraft:mud_bricks" },
+    "C": { "item": "minecraft:cobblestone" }
+  },
+  "result": {
+    "id": "forever_skyblock:crucible",
+    "count": 1
+  }
+}

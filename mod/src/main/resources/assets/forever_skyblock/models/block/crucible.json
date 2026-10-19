@@ -1,0 +1,56 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": true,
+  "textures": {
+    "body": "minecraft:block/polished_deepslate",
+    "rim": "minecraft:block/deepslate_tiles",
+    "metal": "minecraft:block/iron_block",
+    "particle": "minecraft:block/polished_deepslate"
+  },
+  "elements": [
+    {
+      "from": [1,0,1], "to": [15,4,15],
+      "faces": {
+        "down":{"texture":"#body"}, "up":{"texture":"#body"},
+        "north":{"texture":"#body"}, "south":{"texture":"#body"},
+        "west":{"texture":"#body"}, "east":{"texture":"#body"}
+      }
+    },
+    {
+      "from": [0,4,0], "to": [16,14,3],
+      "faces": {
+        "up":{"texture":"#rim"}, "down":{"texture":"#body"},
+        "north":{"texture":"#rim"}, "south":{"texture":"#body"},
+        "west":{"texture":"#rim"}, "east":{"texture":"#rim"}
+      }
+    },
+    {
+      "from": [0,4,13], "to": [16,14,16],
+      "faces": {
+        "up":{"texture":"#rim"}, "down":{"texture":"#body"},
+        "north":{"texture":"#body"}, "south":{"texture":"#rim"},
+        "west":{"texture":"#rim"}, "east":{"texture":"#rim"}
+      }
+    },
+    {
+      "from": [0,4,3], "to": [3,14,13],
+      "faces": {
+        "up":{"texture":"#rim"}, "down":{"texture":"#body"},
+        "north":{"texture":"#body"}, "south":{"texture":"#body"},
+        "west":{"texture":"#rim"}, "east":{"texture":"#body"}
+      }
+    },
+    {
+      "from": [13,4,3], "to": [16,14,13],
+      "faces": {
+        "up":{"texture":"#rim"}, "down":{"texture":"#body"},
+        "north":{"texture":"#body"}, "south":{"texture":"#body"},
+        "west":{"texture":"#body"}, "east":{"texture":"#rim"}
+      }
+    },
+    { "from": [2,1,2], "to": [4,6,4], "faces": {"north":{"texture":"#metal"},"south":{"texture":"#metal"},"west":{"texture":"#metal"},"east":{"texture":"#metal"}} },
+    { "from": [12,1,2], "to": [14,6,4], "faces": {"north":{"texture":"#metal"},"south":{"texture":"#metal"},"west":{"texture":"#metal"},"east":{"texture":"#metal"}} },
+    { "from": [2,1,12], "to": [4,6,14], "faces": {"north":{"texture":"#metal"},"south":{"texture":"#metal"},"west":{"texture":"#metal"},"east":{"texture":"#metal"}} },
+    { "from": [12,1,12], "to": [14,6,14], "faces": {"north":{"texture":"#metal"},"south":{"texture":"#metal"},"west":{"texture":"#metal"},"east":{"texture":"#metal"}} }
+  ]
+}

@@ -28,7 +28,7 @@ public final class CondenserJeiPlugin implements IModPlugin {
     @Override public ResourceLocation getPluginUid() { return ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "jei"); }
     @Override public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime runtime) { JetpackJeiVisibility.available(runtime);
         de.tekatz.foreverskyblock.client.ClientMachineRecipes.install(
-                () -> runtime.getRecipesGui().showTypes(java.util.List.of(TYPE, FreezingCategory.TYPE)),
+                () -> runtime.getRecipesGui().showTypes(java.util.List.of(TYPE, FreezingCategory.TYPE, CrucibleCategory.TYPE)),
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(WASHING_TYPE)),
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(GARDEN_TYPE)),
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(AscensionCategory.TYPE)));
@@ -40,10 +40,15 @@ public final class CondenserJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new FreezingCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new WashingCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new GardenCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new CrucibleCategory(registration.getJeiHelpers().getGuiHelper()));
     }
     @Override public void registerRecipes(IRecipeRegistration registration) {
         registration.addRecipes(AscensionCategory.TYPE, java.util.List.of(AscensionCategory.Conversion.CORE));
         registration.addRecipes(FreezingCategory.TYPE, java.util.List.of(FreezingCategory.Process.ICE));
+        registration.addRecipes(CrucibleCategory.TYPE, java.util.List.of(
+                CrucibleCategory.Process.COBBLE_LAVA,
+                CrucibleCategory.Process.FRAGMENTS_LAVA,
+                CrucibleCategory.Process.OBSIDIAN));
         var level = Minecraft.getInstance().level;
         if (level != null) {
             registration.addRecipes(TYPE, level.getRecipeManager().getAllRecipesFor(ForeverSkyblock.CONDENSING.get()));
@@ -61,6 +66,8 @@ public final class CondenserJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(ForeverSkyblock.WASHING_BASIN.get(), WASHING_TYPE);
         registration.addRecipeCatalyst(ForeverSkyblock.CONDENSER_MARK_II.get(), GARDEN_TYPE);
         registration.addRecipeCatalyst(ForeverSkyblock.GARDEN_CHAMBER_MARK_I.get(), GARDEN_TYPE);
+        registration.addRecipeCatalyst(ForeverSkyblock.CRUCIBLE.get(), CrucibleCategory.TYPE);
+        registration.addRecipeCatalyst(ForeverSkyblock.FREEZING_CHAMBER_MARK_I.get(), CrucibleCategory.TYPE);
     }
     private CondenserRecipeTransferHandler transfers;
     @Override public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
