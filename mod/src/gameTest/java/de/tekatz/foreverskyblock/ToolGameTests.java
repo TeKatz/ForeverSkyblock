@@ -48,6 +48,7 @@ public final class ToolGameTests {
     private static final String[] TOOLS = {"pickaxe", "axe", "shovel", "hoe"};
     private static final String[] TIERS = {"wooden", "stone", "iron", "golden", "diamond", "netherite"};
     private static final String[][] PATTERNS = {{"XXX", "XTX", " C "}, {"XX ", "XTX", " C "}, {" X ", "XTX", " C "}, {"XX ", " TX", " C "}};
+    private static final String[][] IRON_PATTERNS = {{"XBX", "XTX", " C "}, {"BX ", "XTX", " C "}, {" B ", "XTX", " C "}, {"BX ", " TX", " C "}};
     private static final int[] COUNTS = {5, 4, 3, 3};
     private static ResourceLocation id(String path) { return ResourceLocation.withDefaultNamespace(path); }
     private static ResourceLocation toolId(String path) { return ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "tools/" + path); }
@@ -55,7 +56,7 @@ public final class ToolGameTests {
     private static CraftingInput grid(String[] pattern, Item material, Item core, Item reinforcement) {
         var stacks = new ArrayList<ItemStack>();
         for (String row : pattern) for (char c : row.toCharArray()) stacks.add(switch (c) {
-            case 'X' -> new ItemStack(material); case 'T' -> new ItemStack(core); case 'C' -> new ItemStack(reinforcement); default -> ItemStack.EMPTY;
+            case 'B' -> new ItemStack(Items.IRON_BLOCK); case 'X' -> new ItemStack(material); case 'T' -> new ItemStack(core); case 'C' -> new ItemStack(reinforcement); default -> ItemStack.EMPTY;
         });
         return CraftingInput.of(3, 3, stacks);
     }
@@ -73,13 +74,18 @@ public final class ToolGameTests {
             var holder = manager.byKey(toolId(name)).orElseThrow();
             check(h, holder.value() instanceof ShapedRecipe, "Use standard editable shaped recipe: " + name);
             var recipe = (ShapedRecipe) holder.value();
-            var input = grid(PATTERNS[tool], material(tier), core(tier, TOOLS[tool]), reinforcement(tier));
+            var input = grid(tier == 2 ? IRON_PATTERNS[tool] : PATTERNS[tool], material(tier), core(tier, TOOLS[tool]), reinforcement(tier));
             check(h, recipe.matches(input, h.getLevel()), "Exact handoff pattern matches: " + name + " size=" + recipe.getWidth() + "x" + recipe.getHeight() + " expected=" + input.items() + " actual=" + recipe.getIngredients().stream().map(g -> java.util.Arrays.toString(g.getItems())).toList());
             var result = recipe.assemble(input, h.getLevel().registryAccess());
             check(h, result.is(item(name)) && result.getCount() == 1 && !result.isDamageableItem(), "One permanent tool per recipe");
             Item headMaterial = material(tier);
             long head = input.items().stream().filter(s -> s.is(headMaterial)).count();
-            check(h, head == COUNTS[tool], "Exact primary material count");
+            check(h, head == COUNTS[tool] - (tier == 2 ? 1 : 0), "Exact primary material count");
+            if (tier == 2) {
+                check(h, input.items().stream().filter(stack -> stack.is(Items.IRON_BLOCK)).count() == 1, "Every Iron tool consumes exactly one Iron Block");
+                check(h, !recipe.matches(grid(PATTERNS[tool], Items.IRON_INGOT, core(tier, TOOLS[tool]), Items.CHAIN), h.getLevel()),
+                        "Previous all-ingot custom recipe is no longer valid: " + name);
+            }
             check(h, recipe.getRemainingItems(input).stream().allMatch(ItemStack::isEmpty), "Prior-tier core is consumed, never returned");
             String[] vanilla = switch (tool) { case 0 -> new String[]{"XXX", " T ", " T "}; case 1 -> new String[]{"XX ", "XT ", " T "}; case 2 -> new String[]{" X ", " T ", " T "}; default -> new String[]{"XX ", " T ", " T "}; };
             Item oldMaterial = tier == 1 ? Items.COBBLESTONE : material(tier);

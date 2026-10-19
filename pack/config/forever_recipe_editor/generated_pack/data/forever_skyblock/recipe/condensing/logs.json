@@ -1,0 +1,8 @@
+{
+  "type": "forever_skyblock:condensing",
+  "ingredient": {
+    "tag": "minecraft:logs"
+  },
+  "fragment_count": 4,
+  "processing_time": 120
+}

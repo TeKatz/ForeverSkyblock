@@ -1,12 +1,14 @@
-# Forever Skyblock mod — 0.20.1 material processing and Garden automation
+# Forever Skyblock mod — 0.24.0 K-menu overhaul
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz. Java package and Gradle group: `de.tekatz.foreverskyblock`.
 
-Version 0.20.1 is the integrated early material-processing baseline after PR #15. No release publication is implied by the merge.
+The integrated `main` baseline is **0.24.0** through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16), including all 0.21–0.23 animation, crop, harvest-routing and balancing updates. The K-menu has round Shop nodes, improved Challenge/Contract browsing and details, a compact profile with actual skin face, custom status icons and subtle motion. Server-supplied playtime/deaths/kills and shared world-milestone Island Level use protocol **skills-9**; matching client/server versions are required. Player profile schema remains 4/5/6; the backed-up world-progress file migrates to schema 2. See [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md). No release is published by this integration.
+
+The final 0.24.0 source passed 78 unit tests, native-client render/input checks and both 90-test server suites, including NeoForge 21.1.259. The fresh JAR was checked against all 158 source resources and excludes the visual fixture/GameTests. Exact source, run and artifact hash are recorded in [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md#validation-and-acceptance).
 
 ## Early material progression
 
-The Condenser Mark I, Mixing Chamber and Freezing Chamber remain the primitive foundation. The 0.19.x-0.20.1 stack adds the deterministic route from Water/Farming to Iron, then uses Iron to unlock a higher automation tier and close the wood loop.
+The Condenser Mark I, Mixing Chamber and Freezing Chamber remain the primitive foundation. The 0.19.x-0.20.1 stack introduced the deterministic route from Water/Farming to Iron. Iron unlocks the higher automation tier that closes the wood loop.
 
 ### Mud
 
@@ -16,7 +18,7 @@ Condenser + Mixing Chamber:
 - 160 ticks / 8 seconds;
 - no power.
 
-The intended continuation uses Vanilla Wheat + Mud -> Packed Mud -> Mud Bricks.
+Both Condenser tiers with Mixing Chamber now automate **1 Wheat + 1 Mud -> 1 Packed Mud / 8 seconds**. Vanilla crafting remains available; Packed Mud -> Mud Bricks continues the route.
 
 ### Washing Basin
 
@@ -54,7 +56,7 @@ It retains Mark-I recipes, locks, automation and Mixing/Freezing compatibility, 
 - **4 Stone Fragments -> 1 Stone Meal**;
 - **4 Wheat Seeds + 1 Bone Meal -> 2 Oak Saplings** with a Mixing Chamber.
 
-Only Oak is advertised at this stage because the current progression guarantees Oak but does not yet provide first-acquisition paths for the other tree species.
+Oak is currently the only supported tree because the opening progression does not yet provide first-acquisition paths for other tree species. Wheat is also available as a Garden crop.
 
 A single Bone Meal use on a normal placed Vanilla Sapling now attempts full tree growth immediately, removing the random early-game wait while keeping normal space/tree-generation constraints.
 
@@ -71,14 +73,18 @@ Crafting uses:
 
 The block is a Mark-II-only exclusive upgrade. While directly adjacent to Condenser Mark II, Garden mode overrides normal Condensing, Mixing and Freezing, but preserves all hidden items, filters and partial progress for resume after detaching the chamber.
 
-Initial Garden recipe:
+Garden recipes:
 
 - retained specimen: **1 Oak Sapling**;
 - 320 ticks / **16 seconds**;
 - **4 Oak Logs + 8 Oak Leaves**;
 - the specimen is never consumed.
 
-Garden mode exposes a one-item specimen slot and two automation-accessible harvest outputs. The Garden Chamber itself remains a passive adjacent upgrade with no standalone inventory or GUI.
+Wheat uses a retained **1 Wheat Seeds** specimen and produces **4 Wheat + 2 Wheat Seeds** every **320 ticks / 16 seconds**. Wheat receives synchronized green-to-gold crop animations in the GUI, controller and greenhouse. Both harvest outputs must have room. The existing Oak GUI tree is preserved.
+
+With Wooden Hopper installed, its recipe now uses **2 Iron Ingots** in the top corners, **3 Planks** in the remaining positions and **1 wooden Chest**. The cheaper original is removed at recipe reload; without that optional mod the replacement is not loaded. Before the first real-player Emerald pickup, the entire Vanilla Trader caravan attempt and fresh untamed Trader llamas are blocked. Saved/tamed Trader llamas and ordinary llamas remain intact.
+
+Garden mode exposes a one-item specimen slot and two automation-accessible harvest outputs. A hopper below Condenser Mark II extracts only the primary harvest; a hopper below the Garden Chamber extracts only the secondary harvest. Place the blocks side by side for two accessible bottom ports. The Chamber delegates to the controller's existing secondary slot and has no standalone inventory or GUI. Both outputs remain manually accessible in the Condenser GUI, with block icons, numbered downward arrows, a persistent routing legend and localized tooltips.
 
 ## JEI, GUI and presentation
 
@@ -103,11 +109,11 @@ This intentionally removes permanent manual tree chopping from the mature early-
 
 ## Compatibility and fixed pack state
 
-No progression-profile schema or `skills-8` protocol change is required. The fixed starter-island NBT is unchanged.
+The machine changes required no profile/protocol change. The subsequent 0.24.0 K-menu statistics use `skills-9` while preserving player profile schema 4/5/6. The fixed starter-island NBT is unchanged.
 
 Default development baseline: NeoForge 21.1.249. Pack-runtime integration target: NeoForge 21.1.259.
 
-Final pre-merge head `aec270d7bc0caea5952af034ed8505ce0fd3d68f` passed GitHub Actions run #259.
+Historical 0.20.1 pre-merge head `aec270d7bc0caea5952af034ed8505ce0fd3d68f` passed GitHub Actions run #259. Current 0.24.0 validation is recorded above and in [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md#validation-and-acceptance).
 
 See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the full behavior and validation boundary.
 
@@ -117,4 +123,25 @@ See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the ful
 ./gradlew build
 ```
 
-Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.20.1.jar`.
+Output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.24.0.jar`.
+
+
+The 0.22.0 source passed 73 unit tests, client startup/model checks and both 81-test GameTest suites, including the real Wooden Hopper on NeoForge 21.1.259. Exact source/artifact evidence and the client visual test boundary are recorded in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0220-validation-and-test-artifact).
+
+
+The 0.22.1 source passed 73 unit tests, client startup/model checks and both 85-test server suites. Real Vanilla hoppers separated Oak harvest; the actual pack Wooden Hoppers separated Wheat harvest. Exact artifact evidence and remaining client checks are in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0221-validation-and-test-artifact).
+
+
+## Integrated 0.23.0 balancing
+
+- Both Condenser tiers: **1 Log -> 4 Stone Fragments / 120 ticks (6 seconds)**; Planks, Leaves and other existing cycles retain their timing.
+- Both tiers with Mixing Chamber: **1 Mud + 1 Wheat -> 1 Packed Mud / 160 ticks (8 seconds)**, swappable inputs, no power and the existing Condensing JEI category. The Vanilla crafting alternative is retained.
+- Normal Hopper: **2 Iron Blocks + 3 Iron Ingots + 1 Chest**; the old Vanilla/NeoForge recipe and competing static-output recipes are removed. Wooden Hopper pricing is unchanged.
+- Iron Pickaxe/Axe/Shovel/Hoe: **one Iron Block** plus **4/3/2/2 Ingots**, respectively, the matching Stone tool and one Chain. Prior tool/durability behavior is unchanged. Matching Recipe Editor snapshots are included in the repository.
+- Garden output badges and tooltip hit areas are centered on the actual output slot centres.
+
+One Garden still produces 15 Logs/minute while one six-second Condenser consumes 10/minute, before pauses. This requested trial reduces backlog growth but does not make that single-processor line balanced.
+
+Existing Recipe Editor installations should also apply `ForeverSkyblock-0.23.0-RecipeEditor-Update.zip` at the instance root. Its nine data files refresh the matching overrides under `config/forever_recipe_editor/generated_pack/data/`; an old local Iron-tool override would otherwise keep the old cost and fail the new challenge ingredient proof.
+
+The 0.23.0 source passed 74 unit tests, client startup/model checks and both 89-test server suites. The strict Iron Tools challenge proof was updated with the recipe costs and its existing rewards remain covered. Exact source/artifact evidence is in [MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md#0230-validation-and-artifacts).

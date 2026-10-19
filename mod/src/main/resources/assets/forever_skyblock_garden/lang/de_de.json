@@ -13,5 +13,10 @@
   "gui.forever_skyblock.machine.garden_insert": "Passendes Pflanzen-Exemplar einsetzen",
   "gui.forever_skyblock.machine.specimen": "EXEMPLAR",
   "gui.forever_skyblock.machine.harvest": "ERNTE",
-  "gui.forever_skyblock.machine.hint_garden": "Garden-Modus ist exklusiv; andere Chambers pausieren."
+  "gui.forever_skyblock.machine.hint_garden": "Garden-Modus ist exklusiv; andere Chambers pausieren.",
+  "gui.forever_skyblock.machine.garden_routes_title": "GETRENNTE ERNTEAUSGÄNGE",
+  "gui.forever_skyblock.machine.garden_routes_hint": "1: Unter MK II  |  2: Unter Garden Chamber",
+  "gui.forever_skyblock.machine.garden_route_primary": "Haupternte: Ein Hopper unter dem Condenser Mark II entnimmt ausschließlich den ersten Ernte-Output.",
+  "gui.forever_skyblock.machine.garden_route_secondary": "Nebenernte: Ein Hopper unter dem Garden Chamber entnimmt ausschließlich den zweiten Ernte-Output. Beide Items bleiben in dieser GUI zugänglich.",
+  "gui.forever_skyblock.machine.garden_route_help": "Condenser und Garden Chamber nebeneinander aufstellen, mit je einem Hopper darunter. 1: Haupternte unter MK II. 2: Nebenernte unter Garden Chamber. Der Garden-Modus pausiert die anderen Chambers."
 }

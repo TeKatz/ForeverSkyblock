@@ -144,6 +144,7 @@ public final class ForeverSkyblock {
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ASCENSION_ENTITY.get(), de.tekatz.foreverskyblock.blockentity.AscensionChamberBlockEntity::automation);
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, CONDENSER_ENTITY.get(), CondenserBlockEntity::automation);
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, GARDEN_CHAMBER_ENTITY.get(), GardenChamberBlockEntity::automation);
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, WASHING_BASIN_ENTITY.get(), WashingBasinBlockEntity::automation);
     }
 

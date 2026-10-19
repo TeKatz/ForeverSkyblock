@@ -22,7 +22,7 @@ jobs:
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
       - name: Build mod
-        run: ./gradlew build --no-daemon
+        run: ./gradlew build compileGameTestJava --no-daemon
       - name: Smoke-test client mixin application
         shell: bash
         run: |
@@ -35,6 +35,10 @@ jobs:
             echo 'Forever Skyblock client mixin application failed.' >&2
             exit 1
           fi
+          if grep -Eq 'Failed to load model forever_skyblock:|Unable to load model:.*forever_skyblock:|Unable to resolve texture.*forever_skyblock:' client-smoke.log; then
+            echo 'Forever Skyblock client model or texture loading failed.' >&2
+            exit 1
+          fi
           if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then
             echo "Client smoke test exited unexpectedly with status $status." >&2
             exit "$status"
@@ -43,6 +47,20 @@ jobs:
             echo 'Client smoke test never reached ModLauncher.' >&2
             exit 1
           fi
+      - name: Render K-menu visual fixtures
+        shell: bash
+        run: |
+          timeout --signal=TERM --kill-after=10s 120s xvfb-run -a -s '-screen 0 1920x1080x24' ./gradlew runClient -PcondenserTests -PmenuVisualTests --no-daemon > menu-visual.log 2>&1 || { cat menu-visual.log; exit 1; }
+          cat menu-visual.log
+          grep -q 'MENU_VISUAL_COMPLETE' menu-visual.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: K-Menu-Visual-QA
+          path: |
+            mod/**/screenshots/menu-*.png
+            mod/menu-visual.log
+          if-no-files-found: warn
       - name: Test dedicated-server regression suite
         run: ./gradlew runGameTestServer -PcondenserTests --no-daemon
       - name: Test full pack-runtime integrations on NeoForge 21.1.259

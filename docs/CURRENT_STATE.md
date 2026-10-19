@@ -1,103 +1,77 @@
 # Current integrated state
 
-Updated October 18, 2026 for the authorized integration of the material-processing and Garden-automation stack through **0.20.1** via PR #15.
+Updated October 19, 2026 for the authorized integration of the 0.21–0.24 animation, automation, balancing and K-menu stack through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16).
 
 ## Baseline
 
 | Item | Current value |
 | --- | --- |
-| Mod version | **0.20.1** |
+| Mod version | **0.24.0** |
 | Minecraft | **1.21.1** |
 | Java | **21** |
 | Pack runtime | **NeoForge 21.1.259** |
 | Default build baseline | NeoForge 21.1.249 |
-| Profile schema | **dynamic 4 / 5 / 6** |
-| Progression protocol | **skills-8** |
-| Integration PR | **#15** |
-| Final pre-merge feature head | `aec270d7bc0caea5952af034ed8505ce0fd3d68f` |
-| Verified pre-merge CI | GitHub Actions **#259**, success |
+| Player profile schema | **dynamic 4 / 5 / 6** |
+| World-progress schema | **2**, migrated from 1 with backup |
+| Progression protocol | **skills-9**, matching client/server required |
+| Integration PR | **#16** |
+| Validated source | `227c81611f8c8cda719c59106c80d6350a2034a1` |
+| Pre-merge validation | [Actions 39178417187](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39178417187), success |
 | Release | Not published by this merge |
 
-## Integrated gameplay and UI
+## Integrated gameplay and presentation
 
-`main` contains the complete progression/meta stack through 0.18.1 plus the 0.19.x-0.20.1 early material-processing expansion:
+The existing progression/meta foundation and 0.19–0.20 material-processing stack remain active. PR #16 includes all intervening feature branches:
 
-- repeatable contracts, real current-world package delivery, world QoL upgrades and the existing Tier 0/I meta-progression;
-- Condenser Mark I, Mixing Chamber, Freezing Chamber, persistent input locks and JEI integration;
-- Stone Meal-gated Crafting Table and 8 Leaves -> 1 Bone Meal early loop;
-- permanent Vanilla tool progression, Jetpack research, Ascension/Perk Points, challenges and the Design-2 K menu;
-- **4 Dirt + 1 Ice -> 4 Mud** through Condenser + Mixing Chamber, bridging Water/Farming into Vanilla Packed Mud and Mud Bricks;
-- a standalone **Washing Basin** that requires directly adjacent source water and processes **4 Stone Meal -> 1 Raw Iron** in 8 seconds without consuming the water;
-- a reproducible pre-Iron **Condenser Mark I** recipe using Mud Bricks, Cobblestone, Stone Meal and a Furnace;
-- Iron-gated **Condenser Mark II**, retaining the Mark-I/Mixing/Freezing behavior while adding **4 Stone Fragments -> 1 Stone Meal** automation;
-- the Mark-II Mixing recipe **4 Wheat Seeds + 1 Bone Meal -> 2 Oak Saplings**, avoiding the earlier Leaf-consumption softlock risk;
-- reliable Sapling growth: one Bone Meal use immediately advances a Vanilla Sapling through its growth attempt while normal tree-placement constraints still apply;
-- the exclusive **Garden Chamber** operating mode for Condenser Mark II: a retained Oak Sapling specimen grows for 16 seconds and produces **4 Oak Logs + 8 Oak Leaves** without consuming the specimen;
-- Garden mode pauses normal Condensing, Mixing and Freezing while preserving their stored items, filters and partial progress for exact resume after detaching the Garden Chamber;
-- dedicated Garden JEI presentation, Garden automation slots, a greenhouse-style Garden Chamber exterior with active interior animation, and a distinct green Condenser exterior/GUI state while Garden growth is running.
+- **0.21.1:** job-aware Condenser Mark I/II block and GUI animation, continuous ingredient/result routes and the rebuilt greenhouse. The approved Oak GUI tree is preserved without decorative harvest-item flights; the block tree has a fuller crown.
+- **0.22.0:** retained Wheat Seeds produce **4 Wheat + 2 Seeds every 16 seconds**, with shared crop profiles for GUI and both blocks. Garden labels and press-item scaling are centered. Wooden Hopper costs two Iron Ingots, three Planks and a wooden Chest. The Emerald gate blocks the whole Vanilla Trader caravan attempt and fresh untamed Trader llamas, preserving loaded/tamed and ordinary llamas.
+- **0.22.1:** separate Garden harvest ports: a hopper below MK II extracts the primary output; one below Garden Chamber extracts the secondary. Numbered GUI badges and a permanent legend explain placement. Both outputs remain in the controller and manually accessible; the Chamber has no independent inventory or GUI.
+- **0.23.0:** Logs become four Stone Fragments in **6 seconds** on both Condenser tiers; normal Hopper costs **2 Iron Blocks + 3 Ingots + 1 Chest**. Each permanent Iron tool requires one Iron Block plus its remaining Ingots, matching Stone tool and Chain. Both Condenser tiers with Mixing Chamber process **1 Mud + 1 Wheat -> 1 Packed Mud in 8 seconds**, with JEI support. Garden output badges are centered.
+- **0.24.0:** the K-menu owns its layout/input directly, with scrolling categories, readable animated Challenge/Contract details, round Shop nodes, compact profile with player-skin face, custom SP/PP/Tier icons and subtle motion. Purchases, rewards, recovery and respec retain their existing server rules.
 
-The Garden Chamber's player-facing name is intentionally **Garden Chamber**. Its internal registered ID remains `forever_skyblock:garden_chamber_mark_i` for compatibility with the already-tested 0.20.0 development worlds and items.
+See [MACHINE_ANIMATIONS.md](MACHINE_ANIMATIONS.md), [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md) and [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md) for behavior and version-specific evidence. Branch origins in historical validation sections are development history, not outstanding integrations.
 
-## Active early progression boundary
-
-The currently implemented early material route is:
+## Active early material route
 
 `Wood -> Stone Fragments -> Stone Meal / Dirt -> Ice / Water -> Farm -> Mud -> Packed Mud -> Mud Bricks -> Washing Basin -> Raw Iron -> Iron -> Condenser Mark II -> Garden Chamber`
 
-Important active recipes and machine rules:
+- Condenser: **1 Log -> 4 Stone Fragments / 6 seconds**; 1 Plank -> 1 Stone Fragment and 8 Leaves -> 1 Bone Meal retain their eight-second cycles.
+- Mixing: Stone Meal + Sapling -> Dirt; 4 Dirt + 1 Ice -> 4 Mud; 1 Mud + 1 Wheat -> 1 Packed Mud. Mark II additionally makes 2 Oak Saplings from 4 Wheat Seeds + 1 Bone Meal.
+- Freezing: the independent counter consumes 32 accepted items for 1 Ice. The Crafting Table remains Stone Meal-gated.
+- Washing Basin: **4 Stone Meal -> 1 Raw Iron / 8 seconds**, directly adjacent source water required and never consumed.
+- Mark II: 4 Stone Fragments -> 1 Stone Meal without the Mortar.
+- Garden + Mark II: retained Oak Sapling -> **4 Logs + 8 Leaves / 16 seconds**; retained Wheat Seeds -> **4 Wheat + 2 Seeds / 16 seconds**.
 
-- Condenser: 1 Log -> 4 Stone Fragments; 1 Plank -> 1 Stone Fragment; 8 Leaves -> 1 Bone Meal.
-- Mixing Chamber: Stone Meal + Sapling -> Dirt; 4 Dirt + 1 Ice -> 4 Mud; Mark II additionally uses 4 Wheat Seeds + 1 Bone Meal -> 2 Oak Saplings.
-- Freezing Chamber: any accepted item advances the independent 32-item counter; 32 consumed items create 1 Ice.
-- Washing Basin: 4 Stone Meal -> 1 Raw Iron, 8 seconds, adjacent source water required and never consumed.
-- Condenser Mark II: 4 Stone Fragments -> 1 Stone Meal without the Mortar.
-- Garden Chamber + Mark II: retained Oak Sapling specimen -> 4 Oak Logs + 8 Oak Leaves every 16 seconds.
+Garden mode is exclusive to Mark II and takes priority over normal Condensing, Mixing and Freezing. Stored items, filters and partial progress resume after detaching the Garden Chamber. Hidden inactive slots are not exposed to automation. Either full harvest output pauses production; no overflow is deleted. The compatibility-preserved Garden registry ID remains `forever_skyblock:garden_chamber_mark_i`.
 
-This closes the permanent manual wood dependency at the first-Iron/Mark-II tier: Garden Logs feed Stone Fragments, Garden Leaves feed Bone Meal, Mark II automates Stone Meal, and the Mixing Chamber can feed renewable Oak Saplings and Dirt.
+Existing Recipe Editor overrides must be refreshed with the nine matching 0.23.0 files described in [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md#iron-priced-normal-hopper-and-tools); stale local tool recipes can shadow the JAR's new prices.
 
-## Condenser module rules
+## Statistics and persistence
 
-Normal Condenser mode supports the existing live module states for Mixing and Freezing. Main, Mixing and Freezing inputs use persistent filters and hidden inactive slots are not exposed to automation.
+K-menu playtime, deaths and mob kills come from the player's real Vanilla server statistics in the current save. Island Level is shared save-wide progress: one level per distinct completed world milestone, currently at most 20. Tracking begins with this update, including partial tool sets and bounded kill evidence. Permanent profile history is not imported and the display awards no extra SP or gameplay bonus. This is not a separate team-island ranking.
 
-Garden Chamber is different: it is a **Mark-II-only exclusive mode** and takes priority over Mixing and Freezing whenever directly adjacent. The Garden interface replaces the normal process cards with the specimen/harvest layout and green landscape. Its specimen slot is limited to one supported item and is not consumed; the two harvest outputs are independently automation-accessible.
+Player profiles remain schema 4/5/6. World-progress schema 2 preserves stable world identity, the Trader unlock and world upgrades while adding milestone evidence. A rollback to 0.23.x requires restoring the pre-update world-progress file together with the earlier JAR. See [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md#island-level-explicitly-chosen-world-progress).
 
 ## Meta-progression boundary
 
-- **20 unique challenges / 58 SP** are active.
-- Permanent progression currently reaches **Tier 0 — Foundations** and **Tier I — Conqueror**.
-- Five repeatable contracts remain active after Tier I.
-- Iron Jetpacks research remains 5 / 10 / 20 / 40 SP, with Creative also requiring 1 PP.
-- Player-profile persistence remains dynamic schema 4/5/6 and protocol `skills-8`.
-- The active real current-world package remains the Tier-I **Advanced AE2 Starter Package** for 12 SP.
-- Tier-0 world upgrades remain No Phantoms, No More Rain and Permanent Day.
+- **20 unique challenges / 58 SP**, permanent **Tier 0 — Foundations** and **Tier I — Conqueror**.
+- Five repeatable contracts remain active after Tier I, with explicit resource turn-in in their detail view.
+- Jetpack research remains **5 / 10 / 20 / 40 SP**; Creative also requires **1 PP**.
+- The Tier-I Advanced AE2 Starter Package remains **12 SP** for the current world.
+- Tier-0 world upgrades remain No Phantoms (1 SP), No More Rain (2 SP) and Permanent Day (3 SP).
 
-## Explicitly not active / not finalized
+Tier II–IV, Industrial Contract, additional packages, final SP/contract/late-game balance, unresolved shared-machine attribution, Lava/Obsidian progression and first-acquisition routes for non-Oak trees remain unfinished. First Iron is implemented through the Washing Basin; Wheat is an active Garden crop.
 
-Do not infer implementation from planning documents for any of the following:
+## Balancing baseline
 
-- Tier II-IV;
-- final Challenge/SP balancing;
-- final repeatable-contract quantities/rewards beyond the currently integrated values;
-- additional valuable current-world shop packages;
-- the deferred Industrial Contract;
-- deferred shared-machine/multiblock objectives whose personal attribution is unresolved;
-- a finalized Lava progression route;
-- acquisition routes for non-Oak tree species and corresponding Garden recipes;
-- final late-game pack progression or final K-menu/meta-progression balance;
-- fabricated Playtime or Island Level values in the K-menu header.
+TeKatz's automated Iron/Bone Meal line demonstrated rapid bulk Iron after setup. Future costs must account for automated throughput and parallel scaling. The six-second Log trial reduces backlog growth but does not balance a single processor: one Garden supplies **15 Logs/minute**, while one Condenser consumes **10/minute** before pauses. See [the agreed Iron baseline](DESIGN.md#automated-iron-as-a-balancing-baseline--october-19-2026).
 
-The first-Iron route is **no longer open**: Washing Basin -> Raw Iron is now the implemented deterministic path.
+## Pack and validation boundary
 
-## Pack state
+The fixed island `pack/config/skyblockbuilder/templates/islands/forever_me_start.nbt` retains its exact bytes, spawn `[8, 4, 5]` facing east and eight-bread/one-seed 1k cell. Git blob: `4c0e3ada63bb61ef1d109ad110b66b6d359d473f`; SHA-256: `1ae2e4b779b1c6b56320aede0af2a711d4bd247a976771c95f633e05c1beb0c1`.
 
-The fixed starting island remains `pack/config/skyblockbuilder/templates/islands/forever_me_start.nbt` with spawn `[8, 4, 5]` facing east and the verified eight-bread/one-seed 1k cell. PR #15 does not modify the starter-island NBT.
+The October 18 mod-list inventory remains experimental runtime evidence, not a launcher lockfile or final mod selection.
 
-The supplied October 18 mod-list snapshot is documented separately. `pack/mods.inventory.json` and the mod-list documents remain development/runtime evidence rather than a final launcher/export lockfile.
+Validated source `227c81611f8c8cda719c59106c80d6350a2034a1` passed the Java 21 build, **78 unit tests**, client startup, **17 actual-client EN/DE fixture captures** with four input checks, and **90 GameTests on each runtime** (21.1.249 and pack 21.1.259). The fresh 0.24.0 JAR was inspected against all 158 resources and excludes test fixtures. Integration documentation changes no validated code/resources.
 
-## Validation boundary
-
-Final feature head `aec270d7bc0caea5952af034ed8505ce0fd3d68f` passed GitHub Actions run **#259** before merge. The workflow completed the Java 21 build/unit tests, headless NeoForge client mixin smoke test, dedicated regression GameTests and full NeoForge 21.1.259 pack-runtime integration suite.
-
-TeKatz also tested the 0.19.x/0.20.x progression in-game. Reported client issues included the initial Condenser Mark II exterior, Washing/JEI spacing, Freezing top seam, Garden JEI layout and Garden presentation; the branch was iterated through 0.20.1 before merge. Headless CI still does not prove final rendered pixels beyond those user-reported client checks.
-
-See [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md) for the early material/automation details, [FREEZING_CHAMBER.md](FREEZING_CHAMBER.md) for Freezing behavior, [EARLY_GAME_QOL.md](EARLY_GAME_QOL.md) for world QoL, and [VALIDATION.md](VALIDATION.md) for historical validation evidence.
+Native fixture rendering is distinct from a full player-instance test. Actual player skin/hat, full-pack scrolling/scale, live purchases and contract/respec flow, multiplayer milestones and reload separation still need acceptance in TeKatz's instance. Earlier user-reported machine tests remain attributed in the feature records. See [VALIDATION.md](VALIDATION.md) for evidence and [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md#validation-and-acceptance) for the current artifact hash.

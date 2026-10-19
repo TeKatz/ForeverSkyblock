@@ -39,6 +39,10 @@ public final class CondenserGameTests {
             check(h, output(logs) == 0 && output(planks) == 0, "No early output");
             check(h, logs.inventory().getStackInSlot(0).getCount() == 1, "Input retained until completion");
         });
+        h.runAfterDelay(130, () -> {
+            check(h, logs.menuData().get(1) == 120 && output(logs) == 4, "Log conversion finishes after six seconds");
+            check(h, output(planks) == 0 && planks.menuData().get(1) == 160, "Plank timing remains eight seconds");
+        });
         h.runAfterDelay(170, () -> {
             check(h, output(logs) == 4, "One log must produce four fragments");
             check(h, output(planks) == 1, "One plank must produce one fragment");
@@ -129,7 +133,7 @@ public final class CondenserGameTests {
         h.runAfterDelay(70, () -> {
             var registry = h.getLevel().registryAccess();
             var tag = machine.saveWithFullMetadata(registry);
-            check(h, tag.getInt("Progress") > 0 && tag.getInt("Progress") < 160, "Save partial progress");
+            check(h, tag.getInt("Progress") > 0 && tag.getInt("Progress") < 120, "Save partial progress");
             var restored = new CondenserBlockEntity(h.absolutePos(POS), machine.getBlockState());
             restored.loadWithComponents(tag, registry);
             check(h, restored.menuData().get(0) == machine.menuData().get(0), "Restore exact progress");

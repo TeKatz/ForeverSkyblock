@@ -178,8 +178,11 @@ public final class MaterialProcessingGameTests {
         machine.inventory().setStackInSlot(CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY, new ItemStack(Items.OAK_LEAVES, 8));
         check(h, bottom.extractItem(CondenserBlockEntity.GARDEN_OUTPUT_PRIMARY, 4, false).getCount() == 4,
                 "Bottom automation extracts Garden primary harvest");
-        check(h, bottom.extractItem(CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY, 8, false).getCount() == 8,
-                "Bottom automation extracts Garden secondary harvest");
+        check(h, bottom.extractItem(CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY, 8, false).isEmpty(),
+                "Condenser bottom must never mix secondary harvest into the primary route");
+        var secondary = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(POS.north()), Direction.DOWN);
+        check(h, secondary != null && secondary.extractItem(0, 8, false).getCount() == 8,
+                "Garden Chamber bottom extracts the controller's secondary harvest");
         h.succeed();
     }
 

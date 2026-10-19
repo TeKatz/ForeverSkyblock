@@ -5,6 +5,7 @@ import de.tekatz.foreverskyblock.blockentity.CondenserBlockEntity;
 import de.tekatz.foreverskyblock.menu.*;
 import de.tekatz.foreverskyblock.network.CondenserNetwork;
 import de.tekatz.foreverskyblock.recipe.CondenserInput;
+import de.tekatz.foreverskyblock.recipe.CondenserJob;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.renderer.Rect2i;
@@ -18,6 +19,33 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class CondenserScreen extends MachineScreen<CondenserMenu> {
     private MachineButton filters, recipes;
+    private CondenserJob shownJob = CondenserJob.IDLE;
+    private ItemStack resultPreview = ItemStack.EMPTY;
+    private Component recipeSummary;
+    private float framePartial;
+    private float processPhase() {
+        return MachineAnimation.phase(menu.progress() + (menu.status() == CondenserBlockEntity.RUNNING ? framePartial : 0), menu.duration());
+    }
+    private float gardenPhase() {
+        return MachineAnimation.phase(menu.gardenProgress() + (menu.gardenStatus() == CondenserBlockEntity.RUNNING ? framePartial : 0), menu.gardenDuration());
+    }
+    private void updatePresentation(float partialTick) {
+        framePartial = minecraft.isPaused() ? 0 : partialTick;
+        shownJob = CondenserJob.IDLE;
+        resultPreview = ItemStack.EMPTY;
+        recipeSummary = text(menu.machineTier() >= 2 ? "mk2_recipe" : "wood_recipe");
+        if (minecraft.level == null || menu.hasGardenChamber()) return;
+        var input = new CondenserInput(menu.getSlot(CondenserBlockEntity.INPUT).getItem(),
+                menu.hasMixingChamber() ? menu.getSlot(CondenserBlockEntity.SECOND_INPUT).getItem() : ItemStack.EMPTY);
+        var holder = CondenserBlockEntity.findMatchingRecipe(minecraft.level, input, menu.machineTier());
+        if (holder == null) return;
+        var recipe = holder.value();
+        shownJob = CondenserJob.of(recipe);
+        resultPreview = recipe.result();
+        recipeSummary = Component.literal(input.first().getHoverName().getString()
+                + (recipe.requiresModule() ? " + " + input.second().getHoverName().getString() : "")
+                + " → " + resultPreview.getHoverName().getString());
+    }
 
     public CondenserScreen(CondenserMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, MachineLayout.CONDENSER, false, CondenserBlockEntity.MACHINE_SLOTS);
@@ -79,6 +107,7 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
     }
 
     @Override protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+        updatePresentation(partialTick);
         int x = leftPos, y = topPos;
         skin.frame(g, x, y, imageWidth, imageHeight);
         g.renderItem(new ItemStack(menu.machineTier() >= 2 ? ForeverSkyblock.CONDENSER_MARK_II.get() : ForeverSkyblock.CONDENSER_MARK_I.get()), x + 18, y + 10);
@@ -88,7 +117,7 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         int color = visibleStatus == CondenserBlockEntity.BLOCKED ? 0xFFFFBF76
                 : menu.hasGardenChamber() ? 0xFF76D982 : MachineSkin.CYAN;
         g.fill(x + 177, y + 12, x + 181, y + 16, color);
-        String statusKey = visibleStatus == CondenserBlockEntity.RUNNING ? (menu.hasGardenChamber() ? "growing" : "processing")
+        String statusKey = visibleStatus == CondenserBlockEntity.RUNNING ? (menu.hasGardenChamber() ? "growing" : "job_" + shownJob.name().toLowerCase(java.util.Locale.ROOT))
                 : visibleStatus == CondenserBlockEntity.BLOCKED ? (menu.hasGardenChamber() ? "harvest_full" : "blocked")
                 : menu.hasGardenChamber() ? "garden_ready" : "idle";
         MachineSkin.text(g, font, text(statusKey), x + 186, y + 12, 43, color, .73F);
@@ -98,7 +127,8 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
             MachineSkin.centered(g, font, text("garden_connected"), x + 124, y + 34, 156, 0xFF8FE59B, .72F);
             renderGarden(g, x, y);
             MachineSkin.panel(g, x + 18, y + 183, 212, 16, 0xFF466252);
-            MachineSkin.centered(g, font, text("hint_garden"), x + 124, y + 188, 204, 0xFFB4D1BC, .65F);
+            MachineSkin.centered(g, font, text("garden_routes_title"), x + 124, y + 185, 204, 0xFFD0E7D4, .60F);
+            MachineSkin.centered(g, font, text("garden_routes_hint"), x + 124, y + 192, 204, 0xFFB4D1BC, .60F);
             inventory(g);
             return;
         }
@@ -126,7 +156,7 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
     }
 
     private void renderGarden(GuiGraphics g, int x, int y) {
-        MachineSkin.panel(g, x + 14, y + 44, 220, 134, 0xFF335544);
+        MachineSkin.panel(g, x + 14, y + 44, 220, 138, 0xFF335544);
 
         int left = x + 20, right = x + 228, top = y + 50, ground = y + 112;
         // Layered sky and distant landscape; deliberately pixel-art rather than flat rectangles.
@@ -145,74 +175,109 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         g.fill(x + 202, y + 59, x + 212, y + 69, 0xFFE8CF72);
         g.fill(x + 204, y + 61, x + 210, y + 67, 0xFFFFE29A);
 
-        long now = System.currentTimeMillis();
-        int cloud = (int) ((now / 95L) % 180L);
-        drawCloud(g, x + 24 + cloud, y + 61, left, right);
-        drawCloud(g, x + 172 - (cloud / 2), y + 76, left, right);
+        boolean running = menu.gardenStatus() == CondenserBlockEntity.RUNNING;
+        float phase = gardenPhase();
+        // Fixed greenhouse frame, rail and soil match the rebuilt block. Motion follows this job only.
+        g.fill(left, top, right, top + 3, 0xFF899F9B);
+        g.fill(left, top, left + 3, ground, 0xFF617A73);
+        g.fill(right - 3, top, right, ground, 0xFF617A73);
+        g.fill(left + 3, top + 3, right - 3, top + 4, 0xFFB5C9BA);
+        g.fill(x + 56, top + 4, x + 57, ground - 4, 0x445F9C98);
+        g.fill(x + 190, top + 4, x + 191, ground - 4, 0x445F9C98);
+        int lamp = left + 8 + Math.round((right - left - 33) * MachineAnimation.growth(phase));
+        g.fill(lamp, top + 4, lamp + 17, top + 6, 0xFF98AAA0);
+        g.fill(lamp + 2, top + 6, lamp + 15, top + 7, running ? 0xFFD8F5A4 : 0xFF60776B);
 
         ItemStack specimen = menu.getSlot(CondenserBlockEntity.GARDEN_SPECIMEN).getItem();
         if (!specimen.isEmpty()) {
-            float ratio = Math.min(1F, menu.gardenProgress() / (float) menu.gardenDuration());
-            renderGardenTree(g, x, y, ratio, now);
+            var crop = GardenPlantRenderer.cropProfile(specimen);
+            if (crop != null) GardenCropScene.draw(g, x + 124, y + 104, phase, running, crop);
+            else renderGardenTree(g, x, y, phase, running);
+            if (running) {
+                for (int i = 0; i < 4; i++) {
+                    int dropY = top + 10 + Math.round(((phase * 12 + i * .25F) % 1) * 36);
+                    int dropX = left + 13 + i * 58;
+                    g.fill(dropX, dropY, dropX + 1, dropY + 3, 0xFF96D7C4);
+                }
+                float harvest = MachineAnimation.harvest(phase);
+                if (harvest > 0) {
+                    int scanY = ground - 3 - Math.round(harvest * 39);
+                    g.fill(x + 94, scanY, x + 155, scanY + 1, 0xFFCAF1A0);
+                }
+            }
         } else {
-            renderGardenTree(g, x, y, 0.05F, now);
             MachineSkin.centered(g, font, text("garden_insert"), x + 124, y + 75, 166, 0xFFE1F1E4, .72F);
         }
 
         int barX = x + 66, barW = 116;
         MachineSkin.panel(g, barX, y + 122, barW, 9, 0xFF456250);
-        int filled = (barW - 4) * menu.gardenProgress() / menu.gardenDuration();
-        g.fill(barX + 2, y + 124, barX + 2 + filled, y + 129, 0xFF62C46B);
+        int filled = Math.round((barW - 4) * phase);
+        g.fill(barX + 2, y + 124, barX + 2 + filled, y + 129, menu.gardenStatus() == CondenserBlockEntity.BLOCKED ? 0xFFFFBF76 : 0xFF62C46B);
         MachineSkin.centered(g, font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f / %.1f s",
                 menu.gardenProgress() / 20F, menu.gardenDuration() / 20F)), barX + barW / 2, y + 134, barW + 10, 0xFFCAE0CE, .68F);
 
-        MachineSkin.centered(g, font, text("specimen"), x + CondenserMenu.GARDEN_SPECIMEN_X + 8, y + 143, 62, 0xFFBFD6C4, .69F);
-        MachineSkin.centered(g, font, text("harvest"), x + 190, y + 143, 75, 0xFFBFD6C4, .69F);
+        MachineSkin.centered(g, font, text("specimen"), x + CondenserMenu.GARDEN_SPECIMEN_X + 8, y + 139, 62, 0xFFBFD6C4, .69F);
+        MachineSkin.centered(g, font, text("harvest"), x + (CondenserMenu.GARDEN_PRIMARY_X + CondenserMenu.GARDEN_SECONDARY_X) / 2 + 8, y + 139, 75, 0xFFBFD6C4, .69F);
         skin.slot(g, x + CondenserMenu.GARDEN_SPECIMEN_X, y + CondenserMenu.GARDEN_Y, true);
         skin.slot(g, x + CondenserMenu.GARDEN_PRIMARY_X, y + CondenserMenu.GARDEN_Y, true);
         skin.slot(g, x + CondenserMenu.GARDEN_SECONDARY_X, y + CondenserMenu.GARDEN_Y, true);
+        harvestRoute(g, x + CondenserMenu.GARDEN_PRIMARY_X + 8, y + 172, 1,
+                new ItemStack(ForeverSkyblock.CONDENSER_MARK_II.get()));
+        harvestRoute(g, x + CondenserMenu.GARDEN_SECONDARY_X + 8, y + 172, 2,
+                new ItemStack(ForeverSkyblock.GARDEN_CHAMBER_MARK_I.get()));
     }
 
-    private void drawCloud(GuiGraphics g, int cx, int cy, int left, int right) {
-        int width = 28;
-        int x = cx;
-        while (x > right) x -= 196;
-        while (x + width < left) x += 196;
-        g.fill(x + 4, cy, x + 17, cy + 3, 0x99DCE8E7);
-        g.fill(x, cy + 3, x + 24, cy + 7, 0x99DCE8E7);
-        g.fill(x + 8, cy - 2, x + 14, cy + 5, 0xB5EFF5F3);
+    private void harvestRoute(GuiGraphics g, int centerX, int y, int number, ItemStack block) {
+        // The badge, its content and its hit area share the real output slot's centre.
+        g.fill(centerX - 12, y - 1, centerX + 12, y + 9, 0xFF294535);
+        g.pose().pushPose(); g.pose().translate(centerX - 11, y, 0); g.pose().scale(.5F, .5F, 1);
+        g.renderItem(block, 0, 0); g.pose().popPose();
+        MachineSkin.centered(g, font, Component.literal(Integer.toString(number)), centerX, y + 1, 5, 0xFFD0E7D4, .65F);
+        // Draw the arrow as geometry so its appearance does not depend on the language font.
+        int arrowX = centerX + 7;
+        g.fill(arrowX, y + 1, arrowX + 1, y + 6, 0xFF8FE59B);
+        g.fill(arrowX - 2, y + 4, arrowX + 3, y + 5, 0xFF8FE59B);
+        g.fill(arrowX - 1, y + 5, arrowX + 2, y + 6, 0xFF8FE59B);
+        g.fill(arrowX, y + 6, arrowX + 1, y + 7, 0xFF8FE59B);
     }
 
-    private void renderGardenTree(GuiGraphics g, int x, int y, float ratio, long now) {
-        float eased = ratio * ratio * (3F - 2F * ratio);
-        int baseY = y + 104;
-        int height = 5 + Math.round(31F * eased);
-        int topY = baseY - height;
-        int trunkWidth = ratio < .28F ? 2 : ratio < .58F ? 3 : 4;
-        int trunkLeft = x + 124 - trunkWidth / 2;
-        g.fill(trunkLeft, topY + 7, trunkLeft + trunkWidth, baseY, 0xFF68452B);
-        if (ratio > .35F) {
-            g.fill(x + 116, topY + 13, x + 124, topY + 15, 0xFF68452B);
-            g.fill(x + 124, topY + 17, x + 133, topY + 19, 0xFF765033);
-        }
-        if (ratio < .12F) {
-            g.fill(x + 122, baseY - 7, x + 125, baseY - 4, 0xFF5D9A4B);
-            g.fill(x + 125, baseY - 9, x + 128, baseY - 6, 0xFF73B65A);
+    @Override protected void renderMachineTooltip(GuiGraphics g, int mouseX, int mouseY) {
+        if (!menu.hasGardenChamber()) return;
+        String key = isHovering(CondenserMenu.GARDEN_PRIMARY_X - 4, 171, 24, 10, mouseX, mouseY)
+                ? "garden_route_primary"
+                : isHovering(CondenserMenu.GARDEN_SECONDARY_X - 4, 171, 24, 10, mouseX, mouseY)
+                ? "garden_route_secondary"
+                : isHovering(18, 183, 212, 16, mouseX, mouseY) ? "garden_route_help" : null;
+        if (key != null) g.renderTooltip(font, font.split(text(key), 210), mouseX, mouseY);
+    }
+
+    private void renderGardenTree(GuiGraphics g, int x, int y, float ratio, boolean running) {
+        float growth = MachineAnimation.growth(ratio);
+        int baseY = y + 104, height = 3 + Math.round(31F * growth);
+        int topY = baseY - height, cx = x + 124;
+        int trunkWidth = 1 + Math.round(3F * growth);
+        int trunkLeft = cx - trunkWidth / 2;
+        g.fill(trunkLeft, topY, trunkLeft + trunkWidth, baseY, 0xFF68452B);
+        if (trunkWidth > 2) g.fill(trunkLeft, topY, trunkLeft + 1, baseY, 0xFF92613C);
+        if (growth < .10F) {
+            g.fill(cx - 3, topY - 1, cx, topY + 2, 0xFF5D9A4B);
+            g.fill(cx + 1, topY - 3, cx + 4, topY, 0xFF83BF64);
             return;
         }
-
-        int r = 4 + Math.round(14F * eased);
-        int cy = topY + 8;
-        int shadow = 0xFF275E36, leaf = 0xFF347744, light = 0xFF4C9250, highlight = 0xFF65A95A;
-        g.fill(x + 124 - r, cy - r / 2, x + 124 + r, cy + r / 2 + 6, shadow);
-        g.fill(x + 116 - r / 2, cy + 1, x + 125, cy + r / 2 + 10, leaf);
-        g.fill(x + 123, cy - 4, x + 132 + r / 2, cy + r / 2 + 8, leaf);
-        g.fill(x + 121 - r / 2, cy - r / 2 - 3, x + 129 + r / 2, cy + 4, light);
-        g.fill(x + 111 + r / 3, cy + 1, x + 119 + r / 2, cy + 7, light);
-        g.fill(x + 128, cy, x + 135 + r / 3, cy + 6, highlight);
-        if (ratio > .72F) {
-            int shimmer = (int) ((now / 180L) % 3L);
-            g.fill(x + 116 + shimmer * 5, cy - 5 + shimmer * 2, x + 118 + shimmer * 5, cy - 3 + shimmer * 2, 0xFFE4E89A);
+        int r = 3 + Math.round(13F * growth), cy = topY + 2;
+        int bottom = Math.min(baseY - 2, cy + r / 2 + 5);
+        if (growth > .45F) {
+            g.fill(cx - r / 2, cy + 5, cx, cy + 7, 0xFF68452B);
+            g.fill(cx, cy + 9, cx + r / 2, cy + 11, 0xFF765033);
+        }
+        g.fill(cx - r, cy - r / 2, cx + r, bottom - 2, 0xFF275E36);
+        g.fill(cx - r + 3, cy + 1, cx + r - 2, bottom, 0xFF347744);
+        g.fill(cx - r + 2, cy - r / 2 - 2, cx + r - 4, cy + 3, 0xFF4C9250);
+        g.fill(cx - r / 2, cy - r / 2 - 4, cx + r / 2 + 2, cy, 0xFF65A95A);
+        g.fill(cx + r / 3, cy + 2, cx + r - 1, Math.min(bottom - 1, cy + 6), 0xFF65A95A);
+        if (running && ratio > .72F) {
+            int shimmer = (int) (ratio * 60) % 3;
+            g.fill(cx - 8 + shimmer * 5, cy - 4 + shimmer * 2, cx - 6 + shimmer * 5, cy - 2 + shimmer * 2, 0xFFE4E89A);
         }
     }
 
@@ -229,23 +294,17 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         skin.slot(g, x + CondenserMenu.MAIN_OUTPUT_X, y + CondenserMenu.MAIN_Y, true);
 
         int barX = x + (menu.hasMixingChamber() ? 111 : 83), barW = menu.hasMixingChamber() ? 70 : 98;
-        MachineSkin.panel(g, barX, y + 66, barW, 8, 0xFF637888);
-        int filled = Math.min(barW - 4, (barW - 4) * menu.progress() / menu.duration());
-        g.fill(barX + 2, y + 68, barX + 2 + filled, y + 72, MachineSkin.CYAN);
-        g.fill(barX + barW, y + 65, barX + barW + 3, y + 75, MachineSkin.CYAN);
+        boolean running = menu.status() == CondenserBlockEntity.RUNNING && shownJob != CondenserJob.IDLE;
+        CondenserProcessScene.draw(g, barX, y + 56, barW, menu.machineTier(), shownJob, processPhase(), running,
+                menu.status() == CondenserBlockEntity.BLOCKED, menu.getSlot(CondenserBlockEntity.INPUT).getItem(),
+                menu.getSlot(CondenserBlockEntity.SECOND_INPUT).getItem(), resultPreview);
         MachineSkin.centered(g, font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f / %.1f s",
-                menu.progress() / 20F, menu.duration() / 20F)), barX + barW / 2, y + 79, barW + 4, MachineSkin.MUTED, .7F);
-
-        Component summary = text(menu.machineTier() >= 2 ? "mk2_recipe" : "wood_recipe");
-        if (minecraft.level != null) {
-            var input = new CondenserInput(menu.getSlot(CondenserBlockEntity.INPUT).getItem(),
-                    menu.hasMixingChamber() ? menu.getSlot(CondenserBlockEntity.SECOND_INPUT).getItem() : ItemStack.EMPTY);
-            var recipe = CondenserBlockEntity.findMatchingRecipe(minecraft.level, input, menu.machineTier());
-            if (recipe != null) summary = Component.literal(menu.getSlot(CondenserBlockEntity.INPUT).getItem().getHoverName().getString()
-                    + (recipe.value().requiresModule() ? " + " + menu.getSlot(CondenserBlockEntity.SECOND_INPUT).getItem().getHoverName().getString() : "")
-                    + " → " + recipe.value().result().getHoverName().getString());
-        }
-        MachineSkin.text(g, font, summary, x + 20, y + 95, 207, MachineSkin.LIGHT, .84F);
+                menu.progress() / 20F, menu.duration() / 20F)), barX + barW / 2, y + 80, barW + 4, MachineSkin.MUTED, .65F);
+        g.fill(barX + 1, y + 88, barX + barW - 1, y + 91, 0xFF263844);
+        int filled = Math.round((barW - 2) * processPhase());
+        g.fill(barX + 1, y + 88, barX + 1 + filled, y + 91,
+                menu.status() == CondenserBlockEntity.BLOCKED ? 0xFFFFBF76 : CondenserProcessScene.color(shownJob));
+        MachineSkin.text(g, font, recipeSummary, x + 20, y + 95, 207, MachineSkin.LIGHT, .84F);
     }
 
     private void renderFreezing(GuiGraphics g, int x, int y) {
@@ -256,6 +315,11 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         MachineSkin.panel(g, barX, y + 132, barW, 8, 0xFF4E6879);
         int filled = (barW - 4) * menu.freezingProgress() / CondenserBlockEntity.FREEZING_REQUIRED_ITEMS;
         g.fill(barX + 2, y + 134, barX + 2 + filled, y + 138, MachineSkin.CYAN);
+        if (menu.freezingStatus() == CondenserBlockEntity.RUNNING) {
+            float time = minecraft.level == null ? 0 : (minecraft.level.getGameTime() % 32) + framePartial;
+            int travel = (int) (time * (barW - 9) / 32F);
+            g.fill(barX + 3 + travel, y + 134, barX + 6 + travel, y + 138, 0xFFE1F7FF);
+        }
         int freezeColor = menu.freezingStatus() == CondenserBlockEntity.BLOCKED ? 0xFFFFBF76 : MachineSkin.LIGHT;
         MachineSkin.centered(g, font, Component.literal(menu.freezingProgress() + " / " + CondenserBlockEntity.FREEZING_REQUIRED_ITEMS),
                 barX + barW / 2, y + 143, barW - 6, freezeColor, .7F);

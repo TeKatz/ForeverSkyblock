@@ -1,0 +1,7 @@
+{
+  "type": "forever_skyblock:garden",
+  "specimen": { "item": "minecraft:wheat_seeds" },
+  "primary_result": { "id": "minecraft:wheat", "count": 4 },
+  "secondary_result": { "id": "minecraft:wheat_seeds", "count": 2 },
+  "processing_time": 320
+}

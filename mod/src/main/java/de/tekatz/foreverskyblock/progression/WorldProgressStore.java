@@ -15,20 +15,33 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.UUID;
 
 /** World-owned progression that must survive player/profile changes and save renames. */
 public final class WorldProgressStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final long MAX_SIZE = 32_768;
+    private static final long MAX_SIZE = 131_072;
     private State cached;
 
-    public record State(UUID worldId, boolean wanderingTraderUnlocked, Set<String> upgrades) {
+    public record State(UUID worldId, boolean wanderingTraderUnlocked, Set<String> upgrades, Map<String, Set<String>> islandEvidence) {
         public State {
             if (worldId == null || upgrades == null || upgrades.size() > 64) throw new IllegalArgumentException("Invalid world progression");
             upgrades = Set.copyOf(upgrades);
+            var checked = new LinkedHashMap<String, Set<String>>();
+            islandEvidence.forEach((id, tokens) -> {
+                if (ChallengeRules.find(id) == null || tokens.size() > ChallengeRules.find(id).target())
+                    throw new IllegalArgumentException("Invalid island evidence");
+                for (String token : tokens) if (!IslandMilestones.validToken(id, token))
+                    throw new IllegalArgumentException("Invalid island token");
+                checked.put(id, Set.copyOf(tokens));
+            });
+            islandEvidence = Map.copyOf(checked);
             for (String id : upgrades) ProgressionProfile.validateId(id);
         }
+        public State(UUID worldId, boolean trader, Set<String> upgrades) { this(worldId, trader, upgrades, Map.of()); }
+        public int islandLevel() { return IslandMilestones.level(islandEvidence); }
         public boolean active(String id) { return upgrades.contains(id); }
     }
 
@@ -59,7 +72,7 @@ public final class WorldProgressStore {
     public synchronized State unlockTrader(Path worldRoot, UUID expectedWorld) throws IOException {
         State current = loadOrCreate(worldRoot, expectedWorld);
         if (current.wanderingTraderUnlocked()) return current;
-        State next = new State(expectedWorld, true, current.upgrades());
+        State next = new State(expectedWorld, true, current.upgrades(), current.islandEvidence());
         persist(worldRoot, next); cached = next; return next;
     }
 
@@ -68,8 +81,16 @@ public final class WorldProgressStore {
         State current = loadOrCreate(worldRoot, expectedWorld);
         if (current.active(id)) return current;
         var upgrades = new LinkedHashSet<>(current.upgrades()); upgrades.add(id);
-        State next = new State(expectedWorld, current.wanderingTraderUnlocked(), upgrades);
+        State next = new State(expectedWorld, current.wanderingTraderUnlocked(), upgrades, current.islandEvidence());
         persist(worldRoot, next); cached = next; return next;
+    }
+
+    public synchronized State recordMilestone(Path root, UUID world, String id, String token) throws IOException {
+        State current = loadOrCreate(root, world);
+        var evidence = IslandMilestones.record(current.islandEvidence(), id, token);
+        if (evidence == current.islandEvidence()) return current;
+        State next = new State(world, current.wanderingTraderUnlocked(), current.upgrades(), evidence);
+        persist(root, next); cached = next; return next;
     }
 
     Path file(Path worldRoot) { return worldRoot.resolve("data/forever_skyblock_world_progress.json"); }
@@ -80,22 +101,30 @@ public final class WorldProgressStore {
         try {
             if (Files.size(file) > MAX_SIZE) return null;
             JsonObject json = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
-            if (json.get("schema_version").getAsInt() != 1) return null;
+            int schema = json.get("schema_version").getAsInt();
+            if (schema != 1 && schema != 2) return null;
             UUID world = UUID.fromString(json.get("world_uuid").getAsString());
             if (!expectedWorld.equals(world)) return null;
             boolean trader = json.get("wandering_trader_unlocked").getAsBoolean();
             var upgrades = new LinkedHashSet<String>();
             for (var value : json.getAsJsonArray("world_upgrades")) if (!upgrades.add(value.getAsString())) return null;
-            return new State(world, trader, upgrades);
+            var evidence = new LinkedHashMap<String, Set<String>>();
+            if (schema == 2) for (var entry : json.getAsJsonObject("island_evidence").entrySet()) {
+                var tokens = new LinkedHashSet<String>();
+                for (var value : entry.getValue().getAsJsonArray()) if (!tokens.add(value.getAsString())) return null;
+                evidence.put(entry.getKey(), tokens);
+            }
+            return new State(world, trader, upgrades, evidence);
         } catch (IOException | RuntimeException ignored) { return null; }
     }
 
     private static byte[] encode(State state) {
         JsonObject json = new JsonObject();
-        json.addProperty("schema_version", 1);
+        json.addProperty("schema_version", 2);
         json.addProperty("world_uuid", state.worldId().toString());
         json.addProperty("wandering_trader_unlocked", state.wanderingTraderUnlocked());
         json.add("world_upgrades", GSON.toJsonTree(state.upgrades().stream().sorted().toList()));
+        json.add("island_evidence", GSON.toJsonTree(state.islandEvidence()));
         return (GSON.toJson(json) + "\n").getBytes(StandardCharsets.UTF_8);
     }
 

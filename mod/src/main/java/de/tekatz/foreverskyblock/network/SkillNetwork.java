@@ -27,7 +27,7 @@ public final class SkillNetwork {
     private SkillNetwork() { }
     public static void setClientReceiver(Consumer<Snapshot> receiver) { clientReceiver = receiver; }
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("skills-8");
+        var registrar = event.registrar("skills-9");
         registrar.playToServer(Request.TYPE, Request.CODEC, (request, context) -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             var service = ProgressionService.get(player.server);
@@ -37,6 +37,7 @@ public final class SkillNetwork {
             else if (request.action() == 3) service.testPoints(player);
             else if (request.action() == 4) service.buyProduct(player, request.skillId());
             else if (request.action() == 5) service.claimProduct(player, request.skillId());
+            else if (request.action() == 6) service.refreshMenu(player);
         });
         registrar.playToServer(ContractRequest.TYPE, ContractRequest.CODEC, (request, context) -> {
             if (context.player() instanceof ServerPlayer player) ProgressionService.get(player.server).submitContract(player, request.contractId(), request.requestId());
@@ -80,7 +81,24 @@ public final class SkillNetwork {
         }
         PacketDistributor.sendToPlayer(player, new Snapshot(profile.points(), profile.perkPoints(), skills, milestones, local, open,
                 available, message, ProgressionService.canTestPoints(player), profile.meta().shopTier(), progress,
-                profile.meta().accounting(), world.available(), world.name(), world.claims(), contracts, products));
+                profile.meta().accounting(), world.available(), world.name(), world.claims(), contracts, products, statistics(player)));
+    }
+    private static MenuStatistics statistics(ServerPlayer player) {
+        var stats = player.getStats();
+        int island = -1;
+        try { island = de.tekatz.foreverskyblock.progression.WorldQoLService.state(player.server).islandLevel(); }
+        catch (java.io.IOException | RuntimeException e) { com.mojang.logging.LogUtils.getLogger().error("Could not read island level", e); }
+        return new MenuStatistics(stats.getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.PLAY_TIME)),
+                island, stats.getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.DEATHS)),
+                stats.getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.MOB_KILLS)));
+    }
+    /** Per-player Vanilla world statistics plus the shared world-local milestone count. */
+    public record MenuStatistics(long playTicks, int islandLevel, int deaths, int mobKills) {
+        public static final MenuStatistics UNKNOWN = new MenuStatistics(-1, -1, -1, -1);
+        public MenuStatistics {
+            if (playTicks < -1 || playTicks > Integer.MAX_VALUE || islandLevel < -1 || islandLevel > 128
+                    || deaths < -1 || mobKills < -1) throw new IllegalArgumentException("Invalid menu statistics");
+        }
     }
     public record WorldState(boolean available, String name, Set<String> claims, UUID identity) {
         public WorldState {
@@ -102,7 +120,7 @@ public final class SkillNetwork {
     }
     public record Request(int action, String skillId) implements CustomPacketPayload {
         public Request {
-            if (action < 0 || action > 5 || skillId == null) throw new IllegalArgumentException("Invalid progression action");
+            if (action < 0 || action > 6 || skillId == null) throw new IllegalArgumentException("Invalid progression action");
             if (action == 1 || action == 4 || action == 5) ProgressionProfile.validateId(skillId);
             else if (!skillId.isEmpty()) throw new IllegalArgumentException("Unexpected progression action payload");
         }
@@ -126,13 +144,13 @@ public final class SkillNetwork {
                            boolean available, String message, boolean canTestPoints, int shopTier, Map<String, Integer> progress,
                            MetaProgress.Accounting accounting, boolean worldAvailable, String worldName,
                            Set<String> worldClaims, Map<String, ContractState> contracts,
-                           Map<String, ProductState> products) implements CustomPacketPayload {
+                           Map<String, ProductState> products, MenuStatistics statistics) implements CustomPacketPayload {
         public Snapshot {
             skills = Map.copyOf(skills); milestones = Set.copyOf(milestones); progress = Map.copyOf(progress);
             worldClaims = Set.copyOf(worldClaims); contracts = Map.copyOf(contracts); products = Map.copyOf(products);
             if (shopTier < -1 || shopTier > 4 || progress.size() > 128 || skills.size() > 128 || milestones.size() > 128
                     || worldClaims.size() > 128 || contracts.size() > 128 || products.size() > 128
-                    || accounting == null || message == null || message.length() > 128
+                    || statistics == null || accounting == null || message == null || message.length() > 128
                     || worldName == null || worldName.length() > 128)
                 throw new IllegalArgumentException("Invalid progression snapshot");
             progress.forEach((id, count) -> {
@@ -141,6 +159,13 @@ public final class SkillNetwork {
             for (String id : worldClaims) ProgressionProfile.validateId(id);
             contracts.forEach((id, state) -> { ProgressionProfile.validateId(id); if (state == null) throw new IllegalArgumentException("Missing contract state"); });
             products.forEach((id, state) -> { ProgressionProfile.validateId(id); if (state == null) throw new IllegalArgumentException("Missing product state"); });
+        }
+        public Snapshot(int points, int perkPoints, Map<String, Integer> skills, Set<String> milestones, boolean local, boolean open,
+                        boolean available, String message, boolean canTestPoints, int shopTier, Map<String, Integer> progress,
+                        MetaProgress.Accounting accounting, boolean worldAvailable, String worldName, Set<String> worldClaims,
+                        Map<String, ContractState> contracts, Map<String, ProductState> products) {
+            this(points, perkPoints, skills, milestones, local, open, available, message, canTestPoints, shopTier, progress,
+                    accounting, worldAvailable, worldName, worldClaims, contracts, products, MenuStatistics.UNKNOWN);
         }
         public Snapshot(int points, int perkPoints, Map<String, Integer> skills, Set<String> milestones, boolean local, boolean open,
                         boolean available, String message, boolean canTestPoints, int shopTier, Map<String, Integer> progress,
@@ -185,7 +210,8 @@ public final class SkillNetwork {
                     if (products.put(id, state) != null) throw new IllegalArgumentException("Duplicate product entry");
                 }
                 return new Snapshot(points, perks, skills, milestones, (flags & 1) != 0, (flags & 2) != 0,
-                        (flags & 4) != 0, message, (flags & 8) != 0, tier, progress, accounting, worldAvailable, worldName, worldClaims, contracts, products);
+                        (flags & 4) != 0, message, (flags & 8) != 0, tier, progress, accounting, worldAvailable, worldName, worldClaims, contracts, products,
+                        new MenuStatistics(buffer.readVarLong(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt()));
             }
             private int size(RegistryFriendlyByteBuf buffer) { int count = buffer.readVarInt(); if (count < 0 || count > 128) throw new IllegalArgumentException("Progression packet too large"); return count; }
             @Override public void encode(RegistryFriendlyByteBuf buffer, Snapshot value) {
@@ -205,6 +231,8 @@ public final class SkillNetwork {
                 buffer.writeVarInt(value.products().size()); value.products().forEach((id, state) -> {
                     buffer.writeUtf(id, 128); buffer.writeByte(state.stage()); buffer.writeBoolean(state.available());
                 });
+                buffer.writeVarLong(value.statistics().playTicks()); buffer.writeVarInt(value.statistics().islandLevel());
+                buffer.writeVarInt(value.statistics().deaths()); buffer.writeVarInt(value.statistics().mobKills());
             }
         };
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }

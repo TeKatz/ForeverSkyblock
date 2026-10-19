@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'de.tekatz.foreverskyblock'
-version = '0.20.1'
+version = '0.24.0'
 base.archivesName = 'ForeverSkyblock-1.21.1-NeoForge'
 
 repositories {
@@ -34,7 +34,13 @@ neoForge {
             server()
             programArgument '--nogui'
         }
-        client { client() }
+        client {
+            client()
+            if (project.hasProperty('menuVisualTests')) {
+                systemProperty 'forever_skyblock.menuVisualTests', 'true'
+                programArguments.addAll '--width', '1920', '--height', '1080'
+            }
+        }
         gameTestServer {
             type = 'gameTestServer'
             systemProperty 'neoforge.enabledGameTestNamespaces', 'forever_skyblock'
@@ -73,6 +79,7 @@ dependencies {
         runtimeOnly 'curse.maven:cucumber-272335:8035802'
     }
     if (project.hasProperty('toolIntegrationTests')) {
+        runtimeOnly 'curse.maven:wooden-hopper-440985:6753722'
         runtimeOnly('dev.ftb.mods:ftb-ultimine-neoforge:2101.1.15') { transitive = false }
         runtimeOnly('dev.ftb.mods:ftb-library-neoforge:2101.1.37') { transitive = false }
         runtimeOnly('dev.architectury:architectury-neoforge:13.0.11') { transitive = false }

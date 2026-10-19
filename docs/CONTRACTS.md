@@ -1,6 +1,6 @@
 # Repeatable contracts — integrated 0.14.0 behavior
 
-Repeatable contracts were introduced during Phase 5 / 0.14.0 and are integrated into the current 0.18.1 `main` baseline through PR #13. They remain intentionally conservative renewable-SP sinks rather than the primary progression source. No release publication is implied by that merge.
+Repeatable contracts were introduced during Phase 5 / 0.14.0 and are integrated through PR #13 and retained in the current 0.24.0 `main` baseline. They remain intentionally conservative renewable-SP sinks rather than the primary progression source. No release publication is implied by that merge.
 
 ## Purpose
 
@@ -53,14 +53,14 @@ Schema 5 adds bounded:
 
 Skill respec does not clear contract progress/completions, Shop Tier, world claims or Core receipts.
 
-The current integrated network protocol is **`skills-8`** because later world-shop delivery work extended the protocol after contracts were introduced. Matching client/server versions remain required.
+The current integrated network protocol is **`skills-9`** after the 0.24.0 authoritative-statistics extension. Matching client/server versions remain required.
 
 ## UI
 
-K -> Challenges -> Contracts shows the five live contract cards with current progress, lifetime completions, SP reward, Tier state and explicit resource turn-in buttons. Missing optional-mod items make the corresponding resource contract unavailable rather than substituting another item.
+K -> Challenges -> Contracts shows the five live contract cards with readable progress, SP reward and Tier state. Clicking a card opens an animated detail view with its full description, lifetime completions and payout explanation. Resource turn-in requires the explicit detail action; boss contracts explain automatic payout. Missing optional-mod items make the corresponding resource contract unavailable rather than substituting another item. See [K_MENU_DESIGN2.md](K_MENU_DESIGN2.md).
 
 ## Validation boundary
 
-The original Phase-5 source and later stacked regressions are covered by pure transaction tests, dedicated GameTests and the current full-pack integration suite. The final integrated 0.18.1 feature head `97715f06391339141032c5f0c859b5925f99539d` passed GitHub Actions run #195 before PR #13 merged it into `main`.
+The original Phase-5 source and later stacked regressions are covered by pure transaction tests, dedicated GameTests and the current full-pack integration suite. The historical 0.18.1 feature head `97715f06391339141032c5f0c859b5925f99539d` passed GitHub Actions run #195 before PR #13 merged it into `main`.
 
 The crash-safe intent design covers tested persistence/recovery boundaries, but a real forced-process-stop at every possible resource-turn-in checkpoint is not claimed as manually validated. Current quantities/rewards also remain candidates for later pack-balance tuning.

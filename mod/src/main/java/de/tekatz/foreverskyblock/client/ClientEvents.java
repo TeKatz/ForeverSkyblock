@@ -13,6 +13,9 @@ import de.tekatz.foreverskyblock.network.SkillNetwork;
 public final class ClientEvents {
     private ClientEvents() { }
     @SubscribeEvent public static void registerKeys(RegisterKeyMappingsEvent event) { event.register(ClientSkills.OPEN); }
+    @SubscribeEvent public static void registerItemColors(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Item event) {
+        event.register((stack, index) -> index == 0 ? 0x6A9D3D : -1, ForeverSkyblock.GARDEN_CHAMBER_MARK_I_ITEM.get());
+    }
     @SubscribeEvent public static void setup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             SkillNetwork.setClientReceiver(ClientSkills::accept);

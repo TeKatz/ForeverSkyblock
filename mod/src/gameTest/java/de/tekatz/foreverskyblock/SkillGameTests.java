@@ -79,7 +79,7 @@ public final class SkillGameTests {
                     Set.of(MilestoneCatalog.FIRST_FOUNDATIONS.id()), true, true, true, "purchased", true, 1,
                     Map.of("forever_skyblock:veteran", 630, "forever_skyblock:permanent_tools_i", 3),
                     new de.tekatz.foreverskyblock.progression.MetaProgress.Accounting(12, 1, 5, 0, 1, 0, 10, true),
-                    true, "Phase 7 Test", Set.of(ShopCatalog.ADVANCED_AE2_STARTER.id()), contractStates, productStates);
+                    true, "Phase 7 Test", Set.of(ShopCatalog.ADVANCED_AE2_STARTER.id()), contractStates, productStates, new SkillNetwork.MenuStatistics(72000, 7, 2, 480));
             SkillNetwork.Snapshot.CODEC.encode(buffer, state);
             h.assertTrue(state.equals(SkillNetwork.Snapshot.CODEC.decode(buffer)), "Authoritative profile snapshot round trips");
             h.succeed();
@@ -87,10 +87,12 @@ public final class SkillGameTests {
     }
     @GameTest(template = "empty")
     public static void malformedProgressionRequestsAreRejected(GameTestHelper h) {
-        h.assertTrue(rejected(() -> new SkillNetwork.Request(6, "")), "Unknown progression actions are rejected");
+        h.assertTrue(rejected(() -> new SkillNetwork.Request(7, "")), "Unknown progression actions are rejected");
         h.assertTrue(rejected(() -> new SkillNetwork.Request(0, SkillCatalog.EXTENDED_REACH)), "Open action rejects an unexpected id");
         h.assertTrue(rejected(() -> new SkillNetwork.Request(4, "not an id")), "World-shop action rejects malformed product ids");
         h.assertTrue(rejected(() -> new SkillNetwork.Request(5, "")), "World-package claim requires a product id");
+        h.assertTrue(rejected(() -> new SkillNetwork.MenuStatistics(-2,0,0,0)), "Invalid playtime is rejected");
+        h.assertTrue(rejected(() -> new SkillNetwork.MenuStatistics(20,-2,0,0)), "Invalid island level is rejected");
         h.succeed();
     }
     private static boolean rejected(Runnable action) {

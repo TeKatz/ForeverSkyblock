@@ -1,0 +1,15 @@
+{
+  "type": "forever_skyblock:condensing",
+  "ingredient": {
+    "item": "minecraft:mud"
+  },
+  "secondary_ingredient": {
+    "item": "minecraft:wheat"
+  },
+  "result": {
+    "id": "minecraft:packed_mud",
+    "count": 1
+  },
+  "processing_time": 160,
+  "minimum_tier": 1
+}

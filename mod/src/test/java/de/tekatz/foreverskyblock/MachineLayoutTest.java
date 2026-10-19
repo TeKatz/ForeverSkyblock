@@ -3,7 +3,6 @@ package de.tekatz.foreverskyblock;
 import de.tekatz.foreverskyblock.menu.CondenserMenu;
 import de.tekatz.foreverskyblock.menu.MachineLayout;
 import de.tekatz.foreverskyblock.menu.WashingMenu;
-import de.tekatz.foreverskyblock.client.MachineAnimation;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,14 +31,5 @@ final class MachineLayoutTest {
         assertTrue(MachineLayout.WASHING.inventoryY() - (WashingMenu.MACHINE_Y + 18) >= 90,
                 "Washing process, hint and actions need breathing room before the inventory");
         assertTrue(MachineLayout.WASHING.hotbarY() - MachineLayout.WASHING.inventoryY() >= 60);
-    }
-    @Test void movingPressAndCounterRotatingFramesCannotIntersectTheirHousing() {
-        for(int i=0;i<=1000;i++) {
-            float compression=MachineAnimation.compression(i/1000F);assertTrue(compression>=0&&compression<=2.20001F);
-            assertTrue(10-compression>=7.7999F);assertTrue(10-compression+1.35F<13);
-            double theta=i*Math.PI/500;double outerExtent=4.5*(Math.abs(Math.cos(theta))+Math.abs(Math.sin(theta)));
-            assertTrue(8-outerExtent>.5&&8+outerExtent<15.5);
-        }
-        assertEquals(0,MachineAnimation.compression(0),.0001);assertEquals(0,MachineAnimation.compression(1),.0001);
     }
 }

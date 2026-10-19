@@ -45,9 +45,11 @@ public final class ChallengeEvents {
             String tool = output.substring(output.indexOf('_') + 1);
             int materialCount = switch (tool) { case "pickaxe" -> 5; case "axe" -> 4; default -> 3; };
             boolean stone = definition == ChallengeRules.STONE_TOOLS;
-            if (counts.equals(Map.of(stone ? "forever_skyblock:stone_fragment" : "minecraft:iron_ingot", materialCount,
+            var expected = new HashMap<>(Map.of(stone ? "forever_skyblock:stone_fragment" : "minecraft:iron_ingot", stone ? materialCount : materialCount - 1,
                     "minecraft:" + (stone ? "wooden_" : "stone_") + tool, 1,
-                    stone ? "forever_skyblock:stone_meal" : "minecraft:chain", 1)))
+                    stone ? "forever_skyblock:stone_meal" : "minecraft:chain", 1));
+            if (!stone) expected.put("minecraft:iron_block", 1);
+            if (counts.equals(expected))
                 return List.of(new Evidence(definition.id(), output));
         }
         if (path.equals("tools/diamond_pickaxe") && output.equals("minecraft:diamond_pickaxe")

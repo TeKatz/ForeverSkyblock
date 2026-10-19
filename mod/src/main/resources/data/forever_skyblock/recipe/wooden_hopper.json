@@ -1,0 +1,12 @@
+{
+  "neoforge:conditions": [{ "type": "neoforge:mod_loaded", "modid": "woodenhopper" }],
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": ["I I", "WCW", " W "],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "W": { "tag": "minecraft:planks" },
+    "C": { "tag": "c:chests/wooden" }
+  },
+  "result": { "id": "woodenhopper:wooden_hopper", "count": 1 }
+}

@@ -1,111 +1,54 @@
-# K menu Design 2 overhaul — 0.13.4
+# K-menu overhaul — integrated 0.24.0
 
-**Status:** integrated into `main` through PR #11 on October 16, 2026. Minecraft 1.21.1, Java 21; pack runtime NeoForge 21.1.259. Integration does not imply a published release.
+Integrated into `main` through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16) on October 19, 2026, together with the preceding 0.21–0.23 stack. Developed on `feature/k-menu-overhaul` from validated 0.23.0 head `c08c9a3d65825d6025ba7981e28b2d41578579fd`, this update implements TeKatz's screenshots and requested redesign. No release is published by this integration.
 
-## Goal
+## Presentation and navigation
 
-This client-side navigation overhaul follows the approved Design 2 mockup as closely as practical while keeping all existing server-authoritative progression data and actions intact. It changes presentation and navigation, not the SP/PP economy, challenge triggers, profile schema, shop transactions or research rules.
+`PremiumSkillScreen` now owns its rendering, controls and geometry directly. The six accumulated premium visual/contract/shop mixins and their reflection-based client adapters are removed. The existing server transaction and world-upgrade reconciliation code remains in place.
 
-## 0.13.4 revision 3 alignment pass
+- Code-drawn crystal, star and crest identify SP, PP and Shop Tier. Header labels/values and rewards are centered using actual text width.
+- The right header shows authoritative Vanilla playtime and the new world-local Island Level.
+- Profile uses the actual client's skin face, including the hat layer, both in its tab and in its identity section.
+- The mod category rail has independent clipped scrolling. Its search placeholder and filter buttons are centered; search text remains normally editable, with right-click to clear and Escape to defocus.
+- Challenge titles and descriptions have separate wrapping lanes. Rewards and progress never share the same text rectangle. Full descriptions and required tool objectives are available in readable detail windows.
+- Contracts use the same clipped card browser, without the stray Book and Quill header image. Clicking any card opens its description, progress, repeat count and resource-consumption/automatic-payout explanation. Resource turn-in happens only through the explicit detail action and still uses the original server request.
+- All scroll regions ease toward bounded targets with frame-rate independent motion. Body entry is a five-pixel, 200 ms ease; tabs and detail windows use a short accent reveal. Controls and hitboxes use the same animated coordinates. Scrollbars remain draggable.
+- English and German labels are included. Small layouts collapse the category rail to compact category/filter controls. Each content view and detail prose remains scrollable.
 
-Revision 3 is based on direct 1920x1080 / GUI-scale-3 screenshots from the real pack. It fixes layout and icon problems that remained after the first premium passes:
+## Shop graph
 
-- the status header is rebuilt around fixed icon and text lanes instead of heavily compressed generic scaling;
-- Skill Points, Perk Points, Tier Status, Playtime and Island Level use consistent baselines, larger readable values and better-aligned icon areas;
-- the Tier Status placeholder item is replaced by a dedicated bronze tier badge drawn by the UI;
-- the challenge card renderer no longer draws a large secondary artwork block over the text lane;
-- challenge cards use the relevant integration item when the optional mod is installed: AE2 storage/crafting items, Mekanism Metallurgic Infuser and Digital Miner, Powah Energizing Orb and Mystical Agriculture Supremium Essence;
-- the challenge category rail resolves representative real items from AE2, Mekanism, Powah and Mystical Agriculture instead of Vanilla stand-ins;
-- optional integration icons are looked up from the runtime item registry with safe fallbacks, so there is no new hard class dependency on those mods;
-- wide content text has a minimum readable render scale while compact toolbar/filter controls remain small enough to fit;
-- challenge-card title, objective, category, progress and reward areas have explicit non-overlapping lanes.
+The Shop is a connected graph of round, clickable nodes, replacing the previous product strips. Node click areas are circular. Selected/owned states, prices and full descriptions are accessible through detail windows.
 
-The progression rules and networking are unchanged.
+The permanent-skill branch contains Extended Reach with its original SP-only prerequisite. It is deliberately separate from the Tier-0 product branch: the overhaul does not invent a new Tier requirement for that skill. Tier 0 branches to No Phantoms, No More Rain and Permanent Day as siblings; purchasing one is not a prerequisite for another. Tier I is reached through Dragon Slayer and connects to the Advanced AE2 Starter Package. Only implemented Tier 0/I and actual products are shown. No speculative Tier II-IV purchases are introduced.
 
-## Visual system
+Product details explain world-wide effects or show exact package contents. Original world identity, current-world scope, confirmation, SP/PP/tier checks, operator restrictions, claim/recovery/delivered/opened states and non-refundable purchases are preserved. The operator-only transaction probe is available below the graph.
 
-`PremiumSkillScreen` owns navigation, filtering, sorting, progression requests and data. Client-only visual mixins provide the presentation layer so the visual work remains isolated from progression behavior.
+Research still offers all four existing Jetpack stages, prerequisites, runtime variants and missing-integration status. Creative's 40 SP + 1 PP requirement is unchanged. Perks retains the Creative research action and explains where PP comes from.
 
-The integrated visual system includes:
+## Compact profile
 
-- a deep navy shell with drop shadows, inner rims and cyan highlights;
-- prominent Forever Skyblock branding and a status-header hierarchy;
-- Skill Point, Perk Point and Tier Status cards with clear visual separation;
-- a compact Playtime / Island Level area; these values remain unavailable until authoritative data sources exist;
-- highlighted navigation and selected states;
-- challenge-category rows with category colors and live counts;
-- challenge cards with relevant item icons, objective text, reward badges, progress bars and completion styling;
-- consistent panel depth and shadows across the screen.
+The identity block and stat grid show player name, scope, current world, SP, PP, completed challenges, playtime, Island Level, unlocked skills, deaths, mob kills and world claims. The lower section retains earned/spent/refunded/admin accounting and its legacy-history caveat, confirmed respec and operator test points.
 
-The responsive layout remains controlled by `PremiumMenuLayout`. At 640x360 logical GUI space — corresponding to 1920x1080 at GUI scale 3 — the challenge sidebar and three-column grid remain available.
+Playtime/deaths/mob kills refer to the current player's Vanilla statistics in the current save, not cross-world lifetime totals. They are read on the server. Playtime is displayed in hours/minutes; the server remains the source rather than a client timer.
 
-## Main structure
+## Island Level: explicitly chosen world progress
 
-The K menu uses one visual hierarchy across every page:
+TeKatz selected **world milestones**, rather than weighted placed blocks, as the level foundation. Each distinct completed world milestone adds one level; the current maximum is 20. World evidence is shared by players in the save, including partial tool sets and bounded, deduplicated hostile-kill UUIDs. It consumes only existing authoritative challenge events. Fake players, client requests, reopening menus, purchases and refunded skills cannot manufacture levels.
 
-1. Top status header with the Forever Skyblock identity plus real profile values for SP, PP and permanent Shop Tier.
-2. Full-width navigation for **Overview**, **Challenges**, **Shop**, **Research**, **Perks** and **Profile**.
-3. One content workspace below the navigation. Existing purchase, reset, research, profile and detail actions call the same server-authoritative handlers as before the visual overhaul.
+Tracking starts with this update. Existing permanent player-profile completion sets are not imported as if they had happened in the current world. Repeating a qualifying action in a new world can advance its world evidence even when that player's permanent challenge is already complete; the original personal SP reward is never replayed. No currency or gameplay bonus is awarded by the level display.
 
-## Challenge browser
+The existing world-progress file and backup migrate from schema 1 to schema 2, preserving the world UUID, Trader unlock and active world upgrades. World evidence survives save/restart/rename along with the existing world identity. It does not follow a player into another save. This is save-wide world progress, not a separate Skyblock Builder team-island ranking.
 
-Challenges provides:
+The schema-2 world-progress file requires this update's reader. To roll back to a 0.23.x build, restore the pre-update world-progress file with the earlier JAR; its schema-1 reader cannot load the new world state.
 
-- fixed **Filters** sidebar when enough logical width is available;
-- search field;
-- **All / Open / Completed** state controls;
-- category list with live counts for **All**, **Forever**, **Applied Energistics 2**, **Mekanism**, **Powah**, **Mystical Agriculture**, **Combat & Dimensions** and **Contracts**;
-- Progress / SP / A-Z sorting;
-- grid/list view toggle;
-- three columns at the primary target size;
-- category-colored cards with relevant item icon, title, objective, category, authoritative progress, progress bar and SP reward;
-- green completed-state treatment;
-- challenge details without relying on long hover-only text.
+Player profile schema remains dynamic 4/5/6. The added authoritative statistics extend the network snapshot to **skills-9**, requiring matching 0.24.0 client/server builds. A bounded read-only refresh occurs every five seconds while the menu/detail view is open; it does not retry purchases or contract recovery and does not recreate the UI on each statistics update.
 
-Contracts remains explanatory and inactive. The redesign does not fabricate repeatable rewards before that phase is implemented.
+## Validation and acceptance
 
-## Responsive behavior
+Automated checks cover bounded motion/circular hit areas, shared evidence validation, persistence/migration/backup recovery, unchanged progression rewards and statistics codec round trips. The opt-in GameTest-source client fixture renders the actual screen in English/German at full-HD GUI scale 3 and smaller logical viewports, including detail windows and lower scroll regions. It also routes real screen clicks through Challenge/Contract cards, rejects a round node's square corner, opens its center and selects a scrolled category. Its synthetic data and reflection setup are excluded from the delivered mod JAR. These images validate real Minecraft rendering of a fixture, not purchases in a running user's world or a live skin download.
 
-- Below the large-layout threshold, the permanent challenge sidebar collapses into compact controls.
-- The challenge grid changes from 3 columns to 2 and then 1.
-- Very small supported viewports use a compact header and reduced controls while retaining scrollable content.
-- All six primary sections remain available at every supported size.
+Source **`227c81611f8c8cda719c59106c80d6350a2034a1`** passed Actions run **`39178417187`**: Java 21 build, **78 unit tests**, client startup, actual-client rendering/input, and **90 required GameTests on each server runtime** (default 21.1.249 and pack 21.1.259). All four native input checks passed: challenge card, circle corner/center, contract card and scrolled category selection. Seventeen actual Minecraft fixture captures were produced; representative captures were inspected across English/German and the 640×360 / 480×270 logical GUI sizes. A real modal item-depth bug found in the captures was fixed before final validation.
 
-`PremiumMenuLayoutTest` covers the Design-2 geometry, including the 640x360 logical target.
+The fresh `ForeverSkyblock-1.21.1-NeoForge-0.24.0.jar` is **5,262,116 bytes**, from artifact **`12155336788`**, SHA-256 **`06694e5ead79a1d59e010c114663a9bc1a1bf767b960233255e3e0c2ea8098bb`**. All **158 resource files** match the checkout byte-for-byte; the menu/network/world-progress classes are Java 21, `skills-9` is present, and no GameTests or visual-fixture classes are included. The fixed island retains Git blob `4c0e3ada63bb61ef1d109ad110b66b6d359d473f`. The pre-merge evidence and integration-normalization commits change documentation only.
 
-## Preserved behavior
-
-The overhaul intentionally does not change:
-
-- active challenge definitions and SP rewards;
-- challenge evidence or attribution;
-- profile persistence and networking;
-- Shop Tier rules;
-- Extended Reach;
-- world-scoped shop transaction safety;
-- Iron Jetpacks research and reset/refund behavior;
-- PP / Ascension behavior;
-- machine GUIs, recipes, textures or the fixed starting-island NBT.
-
-No profile data is synthesized for visual parity with the concept image. Playtime and Island Level deliberately remain unavailable until those systems expose authoritative values.
-
-## Validation
-
-The 0.13.4 revision-3 feature head `f5a7bdadfab0d4480c45898b0b0f288bc7dbbc46` passed GitHub Actions run #151 before integration. The workflow compiled the mod and passed the dedicated Condenser and NeoForge 21.1.259 Phase 4 integration suites. Headless CI validates compilation and server behavior; it cannot certify rendered client pixels.
-
-For final client acceptance/release readiness, check:
-
-1. Open K at 1920x1080 / GUI scale 3 and compare the top status row with the approved reference.
-2. Verify Digital Extraction renders the Mekanism Digital Miner, Mekanized renders the Metallurgic Infuser and AE2/Powah/Mystical challenges use real integration items.
-3. Verify category-rail icons do not overlap labels/counts.
-4. Check title, description, category, progress and reward lanes across challenge rows.
-5. Open Shop, Research, Perks, Profile and Overview and verify body text remains comfortably readable.
-6. Click every primary section and return to Challenges.
-7. Test every Challenge category, including inactive Contracts.
-8. Search by title/description; click elsewhere to defocus and right-click the search box to clear it.
-9. Toggle All/Open/Completed, cycle sorting and switch grid/list mode.
-10. Verify live SP, PP, Tier, progress and counts update after qualifying actions without reconnecting.
-11. Recheck Shop purchases, Research, Perks, Profile reset confirmation and current-world shop actions.
-12. Inspect English/German labels, JEI overlap and mouse hitboxes.
-
-Any real client acceptance result should be recorded separately in [VALIDATION.md](VALIDATION.md).
+Remaining real-world acceptance: skin/hat rendering for the actual player; English/German readability at the chosen scale; search/category scrolling with the full modpack; click/drag and keyboard navigation; live reward/contract purchases/package delivery and respec with existing profiles; two players sharing world milestones; and world reload/new-world separation. The fixed starter-island NBT and prior machine/recipe behavior remain unchanged.

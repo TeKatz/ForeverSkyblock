@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.npc.WanderingTrader;
+import net.minecraft.world.entity.animal.horse.TraderLlama;
 import net.minecraft.world.item.Items;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -34,7 +35,9 @@ public final class WorldQoLEvents {
 
     @SubscribeEvent public static void entityJoins(EntityJoinLevelEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
-        if (event.getEntity() instanceof WanderingTrader && !WorldQoLService.wanderingTraderAllowed(level.getServer()))
+        if ((event.getEntity() instanceof WanderingTrader
+                || event.getEntity() instanceof TraderLlama llama && !event.loadedFromDisk() && !llama.isTamed())
+                && !WorldQoLService.wanderingTraderAllowed(level.getServer()))
             event.setCanceled(true);
         else if (event.getEntity() instanceof Phantom && WorldQoLService.upgradeActive(level.getServer(), ShopCatalog.NO_PHANTOMS.id()))
             event.setCanceled(true);

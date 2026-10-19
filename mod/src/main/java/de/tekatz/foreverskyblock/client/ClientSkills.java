@@ -37,6 +37,7 @@ public final class ClientSkills {
         if (value.open() && !(minecraft.screen instanceof PremiumSkillScreen)) minecraft.setScreen(new PremiumSkillScreen());
         if (minecraft.screen instanceof PremiumSkillScreen screen) screen.refresh();
     }
+    public static void refreshMenu() { if (!pending && Minecraft.getInstance().getConnection() != null) PacketDistributor.sendToServer(new SkillNetwork.Request(6, "")); }
     public static void buy(String skill) { if (!pending) { pending = true; PacketDistributor.sendToServer(new SkillNetwork.Request(1, skill)); } }
     public static void reset() { if (!pending) { pending = true; PacketDistributor.sendToServer(new SkillNetwork.Request(2, "")); } }
     public static void testPoints() {

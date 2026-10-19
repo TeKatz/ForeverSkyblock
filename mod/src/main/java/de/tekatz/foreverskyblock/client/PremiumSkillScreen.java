@@ -1,1071 +1,627 @@
 package de.tekatz.foreverskyblock.client;
 
+import static de.tekatz.foreverskyblock.client.MenuArt.*;
 import com.mojang.blaze3d.vertex.Tesselator;
 import de.tekatz.foreverskyblock.ForeverSkyblock;
 import de.tekatz.foreverskyblock.compat.IronJetpacksBridge;
 import de.tekatz.foreverskyblock.network.SkillNetwork;
-import de.tekatz.foreverskyblock.progression.ChallengeRules;
-import de.tekatz.foreverskyblock.progression.JetpackGate;
-import de.tekatz.foreverskyblock.progression.JetpackResearch;
-import de.tekatz.foreverskyblock.progression.MilestoneCatalog;
-import de.tekatz.foreverskyblock.progression.ShopCatalog;
-import de.tekatz.foreverskyblock.progression.SkillCatalog;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import de.tekatz.foreverskyblock.progression.*;
+import java.util.*;
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.narration.NarratedElementType;
-import net.minecraft.client.gui.narration.NarratableEntry;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.narration.*;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.client.gui.widget.ScrollPanel;
 import org.lwjgl.glfw.GLFW;
 
-/** Design-2 visual pass tuned directly against the approved mockup. */
+/** One presentation owner for geometry, animation and input; progression remains server-authoritative. */
 public final class PremiumSkillScreen extends Screen {
-    private static final int WHITE = 0xFFF6FAFF;
-    private static final int LIGHT = 0xFFDCE8F3;
-    private static final int MUTED = 0xFF9BAFC0;
-    private static final int DIM = 0xFF637B8F;
-    private static final int CYAN = 0xFF35C9FF;
-    private static final int CYAN_LIGHT = 0xFF7DE6FF;
-    private static final int GREEN = 0xFF43E58A;
-    private static final int GOLD = 0xFFFFC84E;
-    private static final int RED = 0xFFFF626E;
-    private static final int BORDER = 0xFF29465B;
-    private static final int PANEL = 0xD20A1520;
-    private static final int PANEL_LIGHT = 0xD8122331;
-    private static final int CARD = 0xD5152938;
-
     private enum Page { OVERVIEW, CHALLENGES, SHOP, RESEARCH, PERKS, PROFILE }
-    private enum SortMode { PROGRESS, REWARD, NAME }
-
-    private record Card(Component title, Component description, Component badge, ItemStack icon,
-                        String skill, String product, Runnable action, Component actionText) { }
-
+    private enum Sort { PROGRESS, REWARD, NAME }
+    private static final List<String> CATEGORIES = List.of("all", "forever", "ae2", "mekanism", "powah", "mystical_agriculture", "combat", "contracts");
     private Page page = Page.CHALLENGES;
-    private SortMode sortMode = SortMode.PROGRESS;
-    private final EnumMap<Page, Integer> subsections = new EnumMap<>(Page.class);
-    private final Map<String, Float> scrolls = new HashMap<>();
-    private PremiumMenuLayout layout;
-    private int x, y;
-    private int filter;
+    private Sort sort = Sort.PROGRESS;
+    private int category, filter, x, y, ticks;
+    private boolean grid = true;
     private String query = "";
-    private boolean gridView = true;
     private EditBox search;
-    private ChallengePanel challengePanel;
-    private GenericPanel genericPanel;
-    private MilestoneCatalog.Milestone detail;
+    private PremiumMenuLayout layout;
+    private MenuPanel body, rail;
+    private final Map<String, Double> positions = new HashMap<>();
+    private long entered = System.nanoTime();
     private SkillNetwork.Snapshot lastSnapshot;
+    private record Entry(Component title, Component description, ItemStack icon, String category,
+                         Supplier<Component> badge, Supplier<Double> progress, Supplier<Component> status, Runnable open) { }
+    private record Detail(Component title, ItemStack icon, int accent, Supplier<Component> summary,
+                          Supplier<Component> description, Supplier<Component> progress, Supplier<Double> ratio,
+                          Supplier<Component> actionLabel, BooleanSupplier enabled, Runnable action) { }
+    private interface Painter { void draw(GuiGraphics g, int left, int top, int width, int mx, int my); }
 
     public PremiumSkillScreen() { super(text("title")); }
-
-    private static Component text(String key, Object... args) {
-        return Component.translatable("gui.forever_skyblock.meta." + key, args);
+    private static Component text(String key, Object... args) { return Component.translatable("gui.forever_skyblock.meta." + key, args); }
+    private static Component old(String key, Object... args) { return Component.translatable("gui.forever_skyblock.skills." + key, args); }
+    private static Component literal(Object value) { return Component.literal(String.valueOf(value)); }
+    private static Component pageName(Page page) { return text("page." + page.name().toLowerCase(Locale.ROOT)); }
+    private SkillNetwork.Snapshot state() { return ClientSkills.snapshot(); }
+    private boolean ready() { return state() != null && state().available(); }
+    private String location() { return page.name() + (page == Page.CHALLENGES ? ":" + category : ""); }
+    private Component categoryName(String id) {
+        String s = text("sub." + id).getString(); int split = s.indexOf(": ");
+        return literal(split < 0 ? s : s.substring(split + 2));
     }
-
-    private static Component old(String key, Object... args) {
-        return Component.translatable("gui.forever_skyblock.skills." + key, args);
+    private static int accent(String id) {
+        return switch (id) { case "forever", "mystical_agriculture" -> GREEN; case "ae2" -> 0xFFBD9AF2;
+            case "mekanism" -> 0xFF68DFD1; case "powah", "contracts" -> GOLD; case "combat" -> 0xFFFF929D; default -> CYAN; };
     }
-
-    private static Component pageName(Page page) {
-        return text("page." + page.name().toLowerCase(Locale.ROOT));
-    }
-
-    private int sub() { return subsections.getOrDefault(page, 0); }
-    private String location() { return page.name() + ":" + sub(); }
-
-    private List<String> sections() {
-        return switch (page) {
-            case CHALLENGES -> List.of("all", "forever", "ae2", "mekanism", "powah", "mystical_agriculture", "combat", "contracts");
-            case SHOP -> List.of("permanent", "current_world", "tier_progress");
-            case RESEARCH -> List.of("jetpacks");
-            default -> List.of();
-        };
-    }
-
-    @Override
-    protected void init() {
-        layout = PremiumMenuLayout.fit(width, height);
-        x = (width - layout.width()) / 2;
-        y = (height - layout.height()) / 2;
-        clearWidgets();
-        search = null;
-        challengePanel = null;
-        genericPanel = null;
-
-        addNavigation();
-        addRenderableWidget(new ChromeButton(x + layout.width() - layout.padding() - 19, y + layout.padding(), 18, 18,
-                Component.literal("×"), false, b -> onClose()));
-
-        if (page == Page.CHALLENGES && detail == null) initChallenges();
-        else initGeneral();
-        lastSnapshot = ClientSkills.snapshot();
-        refresh();
-    }
-
-    private void addNavigation() {
-        int left = x + layout.padding();
-        int top = y + layout.navTop();
-        int gap = 1;
-        int available = layout.width() - layout.padding() * 2;
-        int bw = (available - gap * 5) / 6;
-        int i = 0;
+    @Override protected void init() {
+        layout = PremiumMenuLayout.fit(width, height); x = (width-layout.width())/2; y = (height-layout.height())/2;
+        search = null; body = rail = null;
+        int left = x+layout.padding(), top = y+layout.navTop(), bw = (layout.width()-2*layout.padding()-5)/6;
         for (Page target : Page.values()) {
-            var button = new NavButton(left + i * (bw + gap), top, bw, layout.navHeight(), target);
-            button.active = target != page;
-            addRenderableWidget(button);
-            i++;
+            final int bx = left+target.ordinal()*(bw+1);
+            addRenderableWidget(new MenuButton(bx,top,bw,layout.navHeight(),()->pageName(target),()->true,
+                    ()->navigate(target),target == page, target));
         }
+        addRenderableWidget(new MenuButton(x+layout.width()-layout.padding()-18,y+layout.padding(),18,18,
+                ()->literal("×"),()->true,this::onClose,false,null));
+        if (page == Page.CHALLENGES) initChallenges();
+        else if (page == Page.SHOP) initShop();
+        else if (page == Page.PROFILE || page == Page.OVERVIEW) initProfile();
+        else initResearch();
+        lastSnapshot = state();
     }
-
-    private void initChallenges() {
-        if (layout.challengeSidebarWidth() == 0) {
-            initCollapsedChallengeFilters();
-        } else {
-            int sidebarX = x + layout.padding() + 6;
-            int sidebarW = layout.challengeSidebarWidth() - 12;
-            int sy = y + layout.contentTop() + 28;
-            search = new EditBox(font, sidebarX + 7, sy + 3, sidebarW - 14, 14, text("search"));
-            search.setBordered(false);
-            search.setMaxLength(80);
-            search.setHint(text("search"));
-            search.setTextColor(LIGHT);
-            search.setTextColorUneditable(MUTED);
-            search.setValue(query);
-            search.setResponder(value -> {
-                query = value;
-                scrolls.put(location(), 0F);
-                replaceChallengePanel();
-            });
-            addRenderableWidget(search);
-
-            int fy = sy + 25;
-            int gap = 3;
-            int fw = (sidebarW - gap * 2) / 3;
-            for (int state = 0; state < 3; state++) {
-                final int selected = state;
-                addRenderableWidget(new ChromeButton(sidebarX + state * (fw + gap), fy, fw, 18,
-                        filterLabel(state), filter == state, b -> {
-                    filter = selected;
-                    scrolls.put(location(), 0F);
-                    rebuildWidgets();
-                }));
-            }
-
-            int rowH = layout.sidebarRowHeight();
-            int cy = fy + 25;
-            for (int i = 0; i < sections().size(); i++) {
-                final int chosen = i;
-                String category = sections().get(i);
-                addRenderableWidget(new CategoryButton(sidebarX, cy + i * rowH, sidebarW, rowH - 2,
-                        category, categoryLabel(category), categoryIcon(category), categoryCount(category), i == sub(),
-                        b -> navigate(Page.CHALLENGES, chosen)));
-            }
-        }
-
-        addChallengeToolbar();
-        replaceChallengePanel();
-    }
-
-    private void initCollapsedChallengeFilters() {
-        int mainX = x + layout.challengeMainX();
-        int top = y + layout.contentTop() + 27;
-        int mainW = layout.challengeMainWidth();
-        int half = (mainW - 4) / 2;
-        addRenderableWidget(new ChromeButton(mainX, top, half, 18, categoryLabel(sections().get(sub())), true,
-                b -> navigate(Page.CHALLENGES, (sub() + 1) % sections().size())));
-        addRenderableWidget(new ChromeButton(mainX + half + 4, top, half, 18, filterLabel(filter), false, b -> {
-            filter = (filter + 1) % 3;
-            rebuildWidgets();
-        }));
-    }
-
-    private void addChallengeToolbar() {
-        int right = x + layout.challengeMainX() + layout.challengeMainWidth();
-        int top = y + layout.contentTop() + 5;
-        if (!layout.tiny()) {
-            addRenderableWidget(new ChromeButton(right - 111, top, 72, 20,
-                    Component.literal("Sort: ").append(sortLabel()), false, b -> {
-                sortMode = SortMode.values()[(sortMode.ordinal() + 1) % SortMode.values().length];
-                scrolls.put(location(), 0F);
-                replaceChallengePanel();
-            }));
-            addRenderableWidget(new ViewButton(right - 36, top, 17, 20, true, gridView, b -> {
-                if (!gridView) { gridView = true; scrolls.put(location(), 0F); rebuildWidgets(); }
-            }));
-            addRenderableWidget(new ViewButton(right - 18, top, 17, 20, false, !gridView, b -> {
-                if (gridView) { gridView = false; scrolls.put(location(), 0F); rebuildWidgets(); }
-            }));
-        }
-    }
-
-    private void initGeneral() {
-        int contentTop = y + layout.contentTop();
-        if (detail != null) {
-            addRenderableWidget(new ChromeButton(x + layout.width() - layout.padding() - 82, contentTop + 5, 75, 20,
-                    text("back"), false, b -> { detail = null; rebuildWidgets(); }));
-        } else if (!sections().isEmpty() && page != Page.CHALLENGES) {
-            int left = x + layout.padding() + 8;
-            int top = contentTop + 27;
-            int gap = 4;
-            int count = sections().size();
-            int bw = Math.min(145, (layout.width() - layout.padding() * 2 - 16 - gap * (count - 1)) / count);
-            for (int i = 0; i < count; i++) {
-                final int chosen = i;
-                addRenderableWidget(new ChromeButton(left + i * (bw + gap), top, bw, 20,
-                        text("sub." + sections().get(i)), i == sub(), b -> navigate(page, chosen)));
-            }
-        }
-        replaceGenericPanel();
-    }
-
-    private void navigate(Page target, int subsection) {
-        rememberScroll();
-        page = target;
-        subsections.put(target, Math.max(0, subsection));
-        detail = null;
-        rebuildWidgets();
-    }
-
-    private void rememberScroll() {
-        if (challengePanel != null) scrolls.put(location(), challengePanel.position());
-        if (genericPanel != null && detail == null) scrolls.put(location(), genericPanel.position());
-    }
-
-    private Component filterLabel(int state) {
-        return switch (state) {
-            case 1 -> text("filter.1");
-            case 2 -> text("filter.2");
-            default -> Component.literal("All");
-        };
-    }
-
-    private Component sortLabel() {
-        return switch (sortMode) {
-            case PROGRESS -> Component.literal("Progress");
-            case REWARD -> Component.literal("SP");
-            case NAME -> Component.literal("A–Z");
-        };
-    }
-
-    private static String stripPrefix(String value) {
-        int split = value.indexOf(": ");
-        return split >= 0 ? value.substring(split + 2) : value;
-    }
-
-    private Component categoryLabel(String category) {
-        return Component.literal(stripPrefix(text("sub." + category).getString()));
-    }
-
-    private ItemStack categoryIcon(String category) {
-        return switch (category) {
-            case "forever" -> ForeverSkyblock.STONE_FRAGMENT.get().getDefaultInstance();
-            case "ae2" -> Items.AMETHYST_SHARD.getDefaultInstance();
-            case "mekanism" -> Items.IRON_BLOCK.getDefaultInstance();
-            case "powah" -> Items.GLOWSTONE_DUST.getDefaultInstance();
-            case "mystical_agriculture" -> Items.WHEAT_SEEDS.getDefaultInstance();
-            case "combat" -> Items.DIAMOND_SWORD.getDefaultInstance();
-            case "contracts" -> Items.WRITABLE_BOOK.getDefaultInstance();
-            default -> Items.NETHER_STAR.getDefaultInstance();
-        };
-    }
-
-    private int categoryCount(String category) {
-        if ("all".equals(category)) return MilestoneCatalog.MILESTONES.size();
-        if ("contracts".equals(category)) return 0;
-        return (int) MilestoneCatalog.MILESTONES.stream().filter(m -> category.equals(m.category())).count();
-    }
-
-    private int categoryColor(String category) {
-        return switch (category) {
-            case "forever" -> 0xFF43E786;
-            case "ae2" -> 0xFFC86DFA;
-            case "mekanism" -> 0xFF25D9D0;
-            case "powah" -> 0xFFFFC84E;
-            case "mystical_agriculture" -> 0xFF6EE56C;
-            case "combat" -> RED;
-            case "contracts" -> 0xFFFFC76A;
-            default -> CYAN;
-        };
-    }
-
-    private List<MilestoneCatalog.Milestone> challengeEntries() {
-        String section = sections().get(sub());
-        if ("contracts".equals(section)) return List.of();
-        var state = ClientSkills.snapshot();
-        boolean ready = state != null && state.available();
-        var result = new ArrayList<MilestoneCatalog.Milestone>();
-        for (var milestone : MilestoneCatalog.MILESTONES) {
-            if (!"all".equals(section) && !section.equals(milestone.category())) continue;
-            boolean complete = ready && state.milestones().contains(milestone.id());
-            if (filter == 1 && complete || filter == 2 && !complete) continue;
-            String haystack = (Component.translatable(milestone.titleKey()).getString() + " "
-                    + Component.translatable(milestone.descriptionKey()).getString()).toLowerCase(Locale.ROOT);
-            if (!haystack.contains(query.toLowerCase(Locale.ROOT))) continue;
-            result.add(milestone);
-        }
-        Comparator<MilestoneCatalog.Milestone> comparator = switch (sortMode) {
-            case NAME -> Comparator.comparing(m -> Component.translatable(m.titleKey()).getString(), String.CASE_INSENSITIVE_ORDER);
-            case REWARD -> Comparator.comparingInt(MilestoneCatalog.Milestone::reward).reversed()
-                    .thenComparing(m -> Component.translatable(m.titleKey()).getString(), String.CASE_INSENSITIVE_ORDER);
-            case PROGRESS -> Comparator
-                    .comparing((MilestoneCatalog.Milestone m) -> ready && state.milestones().contains(m.id()))
-                    .thenComparingDouble(m -> -progressRatio(state, m))
-                    .thenComparing(m -> Component.translatable(m.titleKey()).getString(), String.CASE_INSENSITIVE_ORDER);
-        };
-        result.sort(comparator);
-        return result;
-    }
-
-    private static double progressRatio(SkillNetwork.Snapshot state, MilestoneCatalog.Milestone milestone) {
-        if (state == null || !state.available()) return 0;
-        if (state.milestones().contains(milestone.id())) return 1;
-        int current = Math.max(0, state.progress().getOrDefault(milestone.id(), 0));
-        return milestone.target() <= 0 ? 0 : Math.min(1D, current / (double) milestone.target());
-    }
-
-    private void replaceChallengePanel() {
-        if (challengePanel != null) removeWidget(challengePanel);
-        if ("contracts".equals(sections().get(sub()))) {
-            challengePanel = null;
-            return;
-        }
-        challengePanel = addRenderableWidget(new ChallengePanel(challengeEntries()));
-        challengePanel.restore(scrolls.getOrDefault(location(), 0F));
-    }
-
-    private void replaceGenericPanel() {
-        if (genericPanel != null) removeWidget(genericPanel);
-        int top = y + layout.contentTop() + (detail != null ? 31 : !sections().isEmpty() && page != Page.CHALLENGES ? 53 : 30);
-        int left = x + layout.padding() + 7;
-        int w = layout.width() - layout.padding() * 2 - 14;
-        int h = Math.max(30, y + layout.contentBottom() - top);
-        genericPanel = addRenderableWidget(new GenericPanel(generalCards(), left, top, w, h));
-        if (detail == null) genericPanel.restore(scrolls.getOrDefault(location(), 0F));
-    }
-
-    private List<Card> generalCards() {
-        var cards = new ArrayList<Card>();
-        var state = ClientSkills.snapshot();
-        boolean ready = state != null && state.available();
-
-        if (detail != null) {
-            cards.add(new Card(Component.translatable(detail.titleKey()), Component.translatable(detail.descriptionKey()),
-                    text("milestone_badge", detail.reward()), detail.icon().getDefaultInstance(), "", "", null, Component.empty()));
-            return cards;
-        }
-
-        switch (page) {
-            case OVERVIEW -> {
-                long done = ready ? MilestoneCatalog.MILESTONES.stream().filter(m -> state.milestones().contains(m.id())).count() : 0;
-                cards.add(new Card(text("profile_summary"),
-                        ready ? text("summary", state.points(), state.perkPoints(), done, MilestoneCatalog.MILESTONES.size(), ClientSkills.jetpackStage()) : old("storage_error"),
-                        ready ? text("current_tier", tierName(state.shopTier())) : text("live_data"), Items.NETHER_STAR.getDefaultInstance(), "", "", null, Component.empty()));
-                cards.add(linkCard(text("page.challenges"), text("overview_challenges"), Items.IRON_SWORD.getDefaultInstance(), Page.CHALLENGES, 0));
-                cards.add(linkCard(text("page.shop"), text("overview_shop"), Items.CHEST.getDefaultInstance(), Page.SHOP, 0));
-                cards.add(linkCard(text("page.research"), text("overview_research"), Items.BOOK.getDefaultInstance(), Page.RESEARCH, 0));
-            }
-            case CHALLENGES -> { }
-            case SHOP -> {
-                if (sub() == 0) for (var skill : SkillCatalog.SKILLS) if (!skill.jetpack()) cards.add(skillCard(skill));
-                else if (sub() == 1) {
-                    cards.add(new Card(text("sub.current_world"), ready
-                            ? state.worldAvailable() ? text("world_identity", state.worldName()) : text("world_identity_error")
-                            : old("storage_error"), text("current_world_scope"), Items.COMPASS.getDefaultInstance(), "", "", null, Component.empty()));
-                    if (ready && state.canTestPoints()) {
-                        var product = ShopCatalog.TEST;
-                        cards.add(new Card(text("test_product_title"), text("test_product_description"),
-                                text("world_product_badge", product.spCost(), tierName(product.requiredTier())), Items.PAPER.getDefaultInstance(),
-                                "", product.id(), null, text("purchase")));
-                    }
-                } else {
-                    cards.add(new Card(text("sub.tier_progress"), text("tiers_pending"),
-                            ready ? text("current_tier", tierName(state.shopTier())) : old("unavailable"), Items.COMPASS.getDefaultInstance(), "", "", null, Component.empty()));
-                    cards.add(infoCard("tier_foundations", "tier_foundations_description", Items.COBBLESTONE.getDefaultInstance()));
-                    cards.add(infoCard("tier_conqueror", "tier_conqueror_description", Items.DRAGON_HEAD.getDefaultInstance()));
-                    cards.add(infoCard("tier_engineer", "tier_engineer_description", Items.REDSTONE.getDefaultInstance()));
-                    cards.add(infoCard("tier_mastery", "tier_mastery_description", Items.DIAMOND.getDefaultInstance()));
-                    cards.add(infoCard("tier_ascended", "tier_ascended_description", ForeverSkyblock.FOREVER_CORE.get().getDefaultInstance()));
-                }
-            }
-            case RESEARCH -> { for (var skill : SkillCatalog.SKILLS) if (skill.jetpack()) cards.add(skillCard(skill)); }
-            case PERKS -> {
-                cards.add(new Card(old("perk_info_title"), old("perk_info_description"), old("core_conversion"),
-                        ForeverSkyblock.FOREVER_CORE.get().getDefaultInstance(), "", "", null, Component.empty()));
-                for (var skill : SkillCatalog.SKILLS) if (skill.perkCost() > 0) cards.add(skillCard(skill));
-            }
-            case PROFILE -> {
-                cards.add(new Card(text("profile_summary"), ready
-                        ? text("profile_values", state.points(), state.perkPoints(), state.skills().size(), state.milestones().size()) : old("storage_error"),
-                        ready ? old(state.local() ? "local_scope" : "server_scope") : Component.empty(), Items.PLAYER_HEAD.getDefaultInstance(), "", "", null, Component.empty()));
-                if (ready) {
-                    var a = state.accounting();
-                    cards.add(new Card(text("history_title"), text("accounting_values", a.spEarned(), a.ppEarned(), a.spSpent(), a.ppSpent(), a.spRefunded(), a.ppRefunded(), a.spAdmin()),
-                            text(a.legacyHistoryUnknown() ? "history_legacy" : "history_tracked"), Items.BOOK.getDefaultInstance(), "", "", null, Component.empty()));
-                    cards.add(new Card(text("current_world_claims"), state.worldAvailable()
-                            ? text("world_profile_values", state.worldName(), state.worldClaims().size()) : text("world_identity_error"),
-                            text("current_world_scope"), Items.COMPASS.getDefaultInstance(), "", "", null, Component.empty()));
-                }
-                cards.add(new Card(old("reset_title"), text("reset_scope"), text("permanent_scope"), Items.GRINDSTONE.getDefaultInstance(),
-                        "", "", this::confirmReset, old("reset")));
-                if (ready && state.canTestPoints()) cards.add(new Card(text("development"), old("test_points_hint"), text("admin_only"), Items.COMMAND_BLOCK.getDefaultInstance(),
-                        "", "", () -> { ClientSkills.testPoints(); refresh(); }, old("test_points")));
-            }
-        }
-        return cards;
-    }
-
-    private Card linkCard(Component title, Component description, ItemStack icon, Page target, int subsection) {
-        return new Card(title, description, Component.empty(), icon, "", "", () -> navigate(target, subsection), text("open"));
-    }
-
-    private Card infoCard(String title, String description, ItemStack icon) {
-        return new Card(text(title), text(description), Component.empty(), icon, "", "", null, Component.empty());
-    }
-
-    private Card skillCard(SkillCatalog.Skill skill) {
-        ItemStack icon = skill.icon().getDefaultInstance();
-        var description = Component.translatable(skill.descriptionKey());
-        if (skill.jetpack()) {
-            if (JetpackGate.installed()) {
-                var variants = IronJetpacksBridge.variants(JetpackResearch.IDS.indexOf(skill.id()) + 1);
-                if (!variants.isEmpty()) icon = variants.getFirst();
-                description.append("\n").append(old("jetpack_variants",
-                        variants.stream().map(v -> v.getHoverName().getString()).collect(java.util.stream.Collectors.joining(", "))));
-            } else description.append("\n").append(old("missing_jetpacks"));
-            if (!skill.prerequisite().isEmpty()) description.append("\n").append(old("requires_skill",
-                    Component.translatable(SkillCatalog.find(skill.prerequisite()).titleKey())));
-        }
-        Component price = skill.perkCost() > 0 ? old("dual_cost", skill.cost(), skill.perkCost()) : old("cost", skill.cost());
-        return new Card(Component.translatable(skill.titleKey()), description,
-                text("permanent_scope").copy().append(" · ").append(price), icon, skill.id(), "", null, Component.empty());
-    }
-
-    private static Component tierName(int tier) { return text("tier." + tier); }
-
-    private Component skillStatus(String id) {
-        var state = ClientSkills.snapshot();
-        var skill = SkillCatalog.find(id);
-        if (state == null || !state.available()) return old("unavailable");
-        if (state.rank(id) >= skill.maxRank()) return old("unlocked");
-        if (!skill.available()) return old("missing_jetpacks");
-        if (!skill.prerequisite().isEmpty() && state.rank(skill.prerequisite()) == 0) return old("requires_previous");
-        if (ClientSkills.pending()) return old("waiting");
-        if (state.perkPoints() < skill.perkCost()) return old("need_perks", skill.perkCost());
-        if (state.points() < skill.cost()) return old("need_points", skill.cost());
-        return old("unlock_short", skill.cost());
-    }
-
-    private boolean canBuySkill(String id) {
-        var state = ClientSkills.snapshot();
-        var skill = SkillCatalog.find(id);
-        return state != null && state.available() && !ClientSkills.pending() && skill.available()
-                && state.rank(id) < skill.maxRank()
-                && (skill.prerequisite().isEmpty() || state.rank(skill.prerequisite()) > 0)
-                && state.points() >= skill.cost() && state.perkPoints() >= skill.perkCost();
-    }
-
-    private boolean canBuyProduct(String id) {
-        var state = ClientSkills.snapshot();
-        var product = ShopCatalog.find(id);
-        return state != null && state.available() && state.worldAvailable() && !ClientSkills.pending() && product != null
-                && state.canTestPoints() && !state.worldClaims().contains(id)
-                && state.shopTier() >= product.requiredTier() && state.points() >= product.spCost();
-    }
-
-    private Component productStatus(String id) {
-        var state = ClientSkills.snapshot();
-        var product = ShopCatalog.find(id);
-        if (state == null || !state.available()) return old("unavailable");
-        if (!state.worldAvailable()) return text("world_unavailable");
-        if (state.worldClaims().contains(id)) return text("world_already_claimed");
-        if (state.shopTier() < product.requiredTier()) return text("world_requires_tier", tierName(product.requiredTier()));
-        if (state.points() < product.spCost()) return old("need_points", product.spCost());
-        return text("world_purchase_available");
-    }
-
-    private void confirmReset() {
-        var state = ClientSkills.snapshot();
-        if (state == null || !state.available() || ClientSkills.pending()) return;
-        int sp = SkillCatalog.SKILLS.stream().mapToInt(s -> state.rank(s.id()) * s.cost()).sum();
-        int pp = SkillCatalog.SKILLS.stream().mapToInt(s -> state.rank(s.id()) * s.perkCost()).sum();
-        minecraft.setScreen(new ConfirmScreen(yes -> {
-            minecraft.setScreen(this);
-            if (yes) ClientSkills.reset();
-        }, old("reset_title"), old("reset_description", sp, pp), old("reset_confirm"), Component.translatable("gui.cancel")));
-    }
-
-    private void confirmProduct(String id) {
-        var state = ClientSkills.snapshot();
-        var product = ShopCatalog.find(id);
-        if (product == null || !canBuyProduct(id)) return;
-        minecraft.setScreen(new ConfirmScreen(yes -> {
-            minecraft.setScreen(this);
-            if (yes) ClientSkills.buyProduct(id);
-        }, text("purchase_confirm_title"), text("purchase_confirm_description", product.spCost(), state.worldName()),
-                text("purchase_confirm"), Component.translatable("gui.cancel")));
-    }
-
+    private void remember() { if (body != null) positions.put(location(), body.motion.target()); if (rail != null) positions.put("rail",rail.motion.target()); }
+    private void navigate(Page target) { remember(); page=target; entered=System.nanoTime(); rebuildWidgets(); }
     public void refresh() {
-        if (lastSnapshot != ClientSkills.snapshot()) {
-            rememberScroll();
-            lastSnapshot = ClientSkills.snapshot();
-            if (page == Page.CHALLENGES && detail == null) replaceChallengePanel();
-            else replaceGenericPanel();
+        // Stats refreshes do not reset search focus, animation, graph selection or scroll position.
+        var next=state();
+        if (next != lastSnapshot && page == Page.CHALLENGES && !"contracts".equals(CATEGORIES.get(category))
+                && (lastSnapshot == null || next == null || !next.milestones().equals(lastSnapshot.milestones()) || !next.progress().equals(lastSnapshot.progress()))) {
+            remember(); rebuildBody();
         }
-        if (genericPanel != null) genericPanel.refreshActions();
+        if(next!=lastSnapshot && page==Page.CHALLENGES && category==7 && filter!=0
+                && (lastSnapshot==null || next==null || !next.contracts().equals(lastSnapshot.contracts()))) {
+            remember(); rebuildBody();
+        }
+        lastSnapshot=next;
     }
-
-    @Override public void tick() { refresh(); }
+    @Override public void tick() { refresh(); if (++ticks % 100 == 0) ClientSkills.refreshMenu(); }
     @Override public boolean isPauseScreen() { return false; }
-
-    @Override
-    public boolean keyPressed(int key, int scan, int modifiers) {
+    @Override public boolean keyPressed(int key,int scan,int modifiers) {
         if (search != null && search.isFocused()) {
-            if (key == GLFW.GLFW_KEY_ESCAPE) {
-                search.setFocused(false);
-                setFocused(null);
-                return true;
-            }
-            if (super.keyPressed(key, scan, modifiers)) return true;
-            return false;
+            if (key == GLFW.GLFW_KEY_ESCAPE) { search.setFocused(false); setFocused(null); return true; }
+            return super.keyPressed(key,scan,modifiers);
         }
-        if (key == GLFW.GLFW_KEY_ESCAPE && detail != null) {
-            detail = null;
-            rebuildWidgets();
-            return true;
-        }
-        if (ClientSkills.OPEN.matches(key, scan)) { onClose(); return true; }
-        return super.keyPressed(key, scan, modifiers);
+        if (ClientSkills.OPEN.matches(key,scan)) { onClose(); return true; }
+        return super.keyPressed(key,scan,modifiers);
     }
-
-    @Override
-    public boolean mouseClicked(double mx, double my, int button) {
+    @Override public boolean mouseClicked(double mx,double my,int button) {
         if (search != null) {
-            if (button == 1 && search.isMouseOver(mx, my)) { search.setValue(""); return true; }
-            if (!search.isMouseOver(mx, my)) search.setFocused(false);
+            if (button == 1 && search.isMouseOver(mx,my)) { search.setValue(""); return true; }
+            if (!search.isMouseOver(mx,my)) search.setFocused(false);
         }
-        return super.mouseClicked(mx, my, button);
+        return super.mouseClicked(mx,my,button);
     }
-
-    @Override
-    public void renderBackground(GuiGraphics g, int mx, int my, float tick) {
-        // Keep the world visible through the UI like the approved mockup instead of placing a nearly opaque slab over it.
-        g.fill(0, 0, width, height, 0x70030A12);
-        drawShell(g);
-        if (page == Page.CHALLENGES && detail == null) drawChallengeChrome(g);
-        else drawGeneralChrome(g);
-    }
-
-    private void drawShell(GuiGraphics g) {
-        shadowPanel(g, x, y, layout.width(), layout.height(), 0xC8081420, 0xFF29465B);
-        int left = x + layout.padding();
-        int right = x + layout.width() - layout.padding();
-        int top = y + layout.padding();
-        int headerBottom = y + layout.navTop() - 5;
-
-        // Brand area, deliberately much closer to the visual weight of the mockup.
-        int brandW = layout.compact() ? Math.min(137, layout.width() / 4) : 205;
-        g.fill(left, top, left + brandW, headerBottom, 0x69101E2B);
-        g.renderItem(Items.GRASS_BLOCK.getDefaultInstance(), left + 8, top + (headerBottom - top - 16) / 2);
-        drawScaled(g, Component.literal("FOREVER").withStyle(ChatFormatting.BOLD), left + 29, top + 7, WHITE, layout.compact() ? 0.82F : 1.0F, brandW - 35);
-        drawScaled(g, Component.literal("SKYBLOCK").withStyle(ChatFormatting.BOLD), left + 29, top + (layout.compact() ? 21 : 25), CYAN, layout.compact() ? 0.82F : 1.0F, brandW - 35);
-        if (!layout.compact()) drawScaled(g, Component.literal("SKILLS · CHALLENGES · PROGRESS"), left + 8, top + 43, DIM, 0.64F, brandW - 14);
-
-        var state = ClientSkills.snapshot();
-        boolean ready = state != null && state.available();
-        int closeSpace = 22;
-        int statLeft = left + brandW + 5;
-        int statRight = right - closeSpace;
-        int gap = 4;
-        int tierWeight = layout.compact() ? 2 : 3;
-        int unit = Math.max(30, (statRight - statLeft - gap * 2) / (2 + tierWeight));
-        int spW = unit;
-        int ppW = unit;
-        int tierW = statRight - statLeft - spW - ppW - gap * 2;
-        drawStat(g, statLeft, top, spW, headerBottom - top,
-                Items.DIAMOND.getDefaultInstance(), "SKILL POINTS", ready ? Integer.toString(state.points()) : "—", CYAN);
-        drawStat(g, statLeft + spW + gap, top, ppW, headerBottom - top,
-                Items.NETHER_STAR.getDefaultInstance(), "PERK POINTS", ready ? Integer.toString(state.perkPoints()) : "—", GOLD);
-        drawTierStat(g, statLeft + spW + ppW + gap * 2, top, tierW, headerBottom - top, state);
-
-        int navLeft = x + layout.padding();
-        g.fill(navLeft, y + layout.navTop(), right, y + layout.navTop() + layout.navHeight(), 0xB80A1621);
-        outline(g, navLeft, y + layout.navTop(), right - navLeft, layout.navHeight(), BORDER);
-    }
-
-    private void drawStat(GuiGraphics g, int sx, int sy, int sw, int sh, ItemStack icon, String label, String value, int color) {
-        softPanel(g, sx, sy, sw, sh, 0xB9102030, 0xFF213D53);
-        if (sw >= 58) g.renderItem(icon, sx + 6, sy + (sh - 16) / 2);
-        int tx = sx + (sw >= 58 ? 27 : 6);
-        drawScaled(g, Component.literal(label), tx, sy + 5, MUTED, sh < 48 ? 0.55F : 0.66F, sw - (tx - sx) - 5);
-        drawScaled(g, Component.literal(value).withStyle(ChatFormatting.BOLD), tx, sy + (sh < 48 ? 17 : 20), color, sh < 48 ? 0.74F : 0.9F, sw - (tx - sx) - 5);
-    }
-
-    private void drawTierStat(GuiGraphics g, int sx, int sy, int sw, int sh, SkillNetwork.Snapshot state) {
-        softPanel(g, sx, sy, sw, sh, 0xB9102030, 0xFF213D53);
-        boolean ready = state != null && state.available();
-        g.renderItem(Items.AMETHYST_SHARD.getDefaultInstance(), sx + 6, sy + (sh - 16) / 2);
-        int tx = sx + 27;
-        drawScaled(g, Component.literal("TIER STATUS"), tx, sy + 4, MUTED, sh < 48 ? 0.55F : 0.66F, sw - 32);
-        String tier = ready ? stripPrefix(tierName(state.shopTier()).getString()) : "—";
-        drawScaled(g, Component.literal(tier).withStyle(ChatFormatting.BOLD), tx, sy + (sh < 48 ? 15 : 18), WHITE, sh < 48 ? 0.72F : 0.83F, sw - 32);
-        if (ready && sh >= 42) {
-            int done = (int) MilestoneCatalog.MILESTONES.stream().filter(m -> state.milestones().contains(m.id())).count();
-            int total = Math.max(1, MilestoneCatalog.MILESTONES.size());
-            int barX = tx;
-            int barY = sy + sh - 10;
-            int barW = Math.max(20, sw - (tx - sx) - 8);
-            progressBar(g, barX, barY, barW, 4, done / (double) total, GOLD);
-            drawScaled(g, Component.literal(done + " / " + total), barX + barW - 31, barY - 7, MUTED, 0.53F, 31);
+    @Override public void renderBackground(GuiGraphics g,int mx,int my,float tick) {
+        g.fill(0,0,width,height,0x94040C14);
+        panel(g,x,y,layout.width(),layout.height(),0xEC08151F,BORDER);
+        drawHeader(g);
+        int l=x+layout.padding(), t=y+layout.contentTop(), w=layout.width()-2*layout.padding();
+        panel(g,l,t,w,layout.contentBottom()-layout.contentTop(),0xBC091822,0xFF203D4D);
+        int titleLeft=page==Page.CHALLENGES?x+layout.challengeMainX():l;
+        int titleW=page==Page.CHALLENGES?layout.challengeMainWidth()-(layout.tiny()?0:112):w;
+        centered(g,page==Page.CHALLENGES&&category==7?categoryName("contracts"):pageName(page),titleLeft+5,t+3,titleW-10,20,WHITE,.86F);
+        if(page==Page.CHALLENGES&&layout.challengeSidebarWidth()>0) {
+            int sx=l+6, sw=layout.challengeSidebarWidth()-12;
+            panel(g,sx,bodyTop(),sw,20,0xFF0D2331,BORDER);
         }
+        int reveal=(int)((w-16)*MenuMotion.reveal(entered,System.nanoTime()));
+        g.fill(l+8,t+24,l+8+reveal,t+25,0xFF326675);
     }
-
-    private void drawChallengeChrome(GuiGraphics g) {
-        int contentTop = y + layout.contentTop();
-        int bottom = y + layout.contentBottom();
-        int sidebarW = layout.challengeSidebarWidth();
-        if (sidebarW > 0) {
-            int sx = x + layout.padding();
-            softPanel(g, sx, contentTop, sidebarW, bottom - contentTop, 0xC40B1925, 0xFF203D51);
-            drawScaled(g, Component.literal("FILTERS").withStyle(ChatFormatting.BOLD), sx + 7, contentTop + 7, LIGHT, 0.72F, sidebarW - 14);
-            int searchY = contentTop + 28;
-            softPanel(g, sx + 6, searchY, sidebarW - 12, 20, 0xA9071520, 0xFF31536B);
+    private void drawHeader(GuiGraphics g) {
+        int l=x+layout.padding(), top=y+layout.padding(), h=layout.headerHeight()-5;
+        int available=layout.width()-2*layout.padding()-23;
+        int brand=layout.tiny()? 0 : layout.compact()? 104:154;
+        if (brand>0) {
+            centered(g,literal("FOREVER").copy().withStyle(ChatFormatting.BOLD),l,top+5,brand-6,17,WHITE,.95F);
+            centered(g,literal("SKYBLOCK"),l,top+22,brand-6,14,CYAN,.85F);
+            if(h>55) centered(g,t("progression"),l,top+40,brand-6,10,MUTED,.65F);
         }
-
-        int mx = x + layout.challengeMainX();
-        int mw = layout.challengeMainWidth();
-        softPanel(g, mx, contentTop, mw, bottom - contentTop, 0xB807141F, 0xFF203D51);
-        if (!layout.tiny()) {
-            g.renderItem(Items.WRITABLE_BOOK.getDefaultInstance(), mx + 8, contentTop + 7);
-            drawScaled(g, pageName(Page.CHALLENGES).copy().withStyle(ChatFormatting.BOLD), mx + 28, contentTop + 6, WHITE, 0.88F, mw - 150);
-            drawScaled(g, old("tasks_hint"), mx + 28, contentTop + 18, MUTED, 0.61F, mw - 155);
+        int rem=available-brand, gap=4, sp=(int)(rem*.18), pp=sp, stats=(int)(rem*.25), tier=rem-sp-pp-stats-gap*3;
+        int sx=l+brand;
+        drawCurrency(g,sx,top,sp,h,0,t("sp"),ready()?literal(state().points()):literal("—"),CYAN); sx+=sp+gap;
+        drawCurrency(g,sx,top,pp,h,1,t("pp"),ready()?literal(state().perkPoints()):literal("—"),GOLD); sx+=pp+gap;
+        panel(g,sx,top,tier,h,0xB9102532,BORDER);
+        if(tier>85) mark(g,sx+8,top+(h-16)/2,2,GOLD);
+        int tx=sx+(tier>85?29:4), tw=tier-(tier>85?33:8);
+        centered(g,t("tier"),tx,top+3,tw,12,MUTED,.62F);
+        centered(g,ready()?text("tier."+state().shopTier()):literal("—"),tx,top+15,tw,15,WHITE,.78F);
+        if(h>=44) {
+            int count=ready()?completed():0; bar(g,tx,top+h-9,tw,count/(double)MilestoneCatalog.MILESTONES.size(),GOLD);
+            if(h>55) centered(g,literal(count+" / "+MilestoneCatalog.MILESTONES.size()),tx,top+34,tw,10,MUTED,.6F);
         }
-
-        if ("contracts".equals(sections().get(sub()))) {
-            int cy = contentTop + 48;
-            softPanel(g, mx + 8, cy, mw - 16, 78, 0xB5112230, 0xFF5A4C2A);
-            g.renderItem(Items.WRITABLE_BOOK.getDefaultInstance(), mx + 17, cy + 11);
-            drawScaled(g, text("sub.contracts").copy().withStyle(ChatFormatting.BOLD), mx + 40, cy + 10, GOLD, 0.82F, mw - 55);
-            drawWrappedScaled(g, text("contracts_pending"), mx + 16, cy + 31, mw - 32, MUTED, 0.62F, 5);
-        }
+        sx+=tier+gap;
+        panel(g,sx,top,stats,h,0xB9102532,BORDER);
+        int rowH=h/2; var st=state()==null?SkillNetwork.MenuStatistics.UNKNOWN:state().statistics();
+        statLine(g,sx,top,stats,rowH,3,t("playtime"),playtime(st.playTicks()),CYAN);
+        statLine(g,sx,top+rowH,stats,h-rowH,4,t("island"),st.islandLevel()<0?literal("—"):literal(st.islandLevel()+" / "+ChallengeRules.ALL.size()),GREEN);
     }
-
-    private void drawGeneralChrome(GuiGraphics g) {
-        int left = x + layout.padding();
-        int top = y + layout.contentTop();
-        int w = layout.width() - layout.padding() * 2;
-        int h = layout.contentBottom() - layout.contentTop();
-        softPanel(g, left, top, w, h, 0xB807141F, 0xFF203D51);
-        drawScaled(g, pageName(page).copy().withStyle(ChatFormatting.BOLD), left + 9, top + 7, WHITE, 0.9F, w - 110);
+    private void drawCurrency(GuiGraphics g,int x,int y,int w,int h,int kind,Component title,Component value,int color) {
+        panel(g,x,y,w,h,0xB9102532,BORDER);
+        boolean icon=w>=57; int lane=icon?22:2;
+        if(icon) mark(g,x+5,y+(h-16)/2,kind,color);
+        centered(g,title,x+lane,y+4,w-lane-3,12,MUTED,.62F);
+        centered(g,value.copy().withStyle(ChatFormatting.BOLD),x+lane,y+18,w-lane-3,h-24,color,h<45?.95F:1.1F);
     }
-
-    private ItemStack pageIcon(Page page) {
-        return switch (page) {
-            case OVERVIEW -> Items.COMPASS.getDefaultInstance();
-            case CHALLENGES -> Items.IRON_SWORD.getDefaultInstance();
-            case SHOP -> Items.CHEST.getDefaultInstance();
-            case RESEARCH -> Items.BOOK.getDefaultInstance();
-            case PERKS -> Items.NETHER_STAR.getDefaultInstance();
-            case PROFILE -> Items.PLAYER_HEAD.getDefaultInstance();
+    private void statLine(GuiGraphics g,int x,int y,int w,int h,int kind,Component title,Component value,int color) {
+        boolean icon=w>68; int dx=icon?25:4; if(icon) mark(g,x+5,y+(h-16)/2,kind,color);
+        centered(g,title,x+dx,y+1,w-dx-4,10,MUTED,.53F);
+        centered(g,value,x+dx,y+11,w-dx-4,Math.max(9,h-12),WHITE,.7F);
+    }
+    private static Component playtime(long ticks) {
+        if(ticks<0) return literal("—"); long minutes=ticks/1200;
+        return literal(minutes/60+"h "+String.format(Locale.ROOT,"%02d",minutes%60)+"m");
+    }
+    private int completed() { return (int)MilestoneCatalog.MILESTONES.stream().filter(m->state().milestones().contains(m.id())).count(); }
+    private int bodyTop() { return y+layout.contentTop()+31; }
+    private MenuPanel newBody(int left,int top,int w) {
+        return addRenderableWidget(new MenuPanel(left,top,w,Math.max(25,y+layout.contentBottom()-top-5),location()));
+    }
+    private void rebuildBody() {
+        if(body!=null) removeWidget(body);
+        if(page==Page.CHALLENGES) buildChallengeBody();
+    }
+    private void initChallenges() {
+        int side=layout.challengeSidebarWidth();
+        if(side>0) {
+            int sx=x+layout.padding()+6, w=side-12, sy=bodyTop();
+            search=new EditBox(font,sx+5,sy+4,w-10,14,t("search")) {
+                @Override public void renderWidget(GuiGraphics g,int mx,int my,float dt) {
+                    if(getValue().isEmpty()&&!isFocused())centered(g,t("search"),getX(),getY(),getWidth(),14,MUTED,.75F);
+                    else super.renderWidget(g,mx,my,dt);
+                }
+            };
+            search.setBordered(false); search.setMaxLength(80); search.setValue(query); search.setHint(t("search"));
+            search.setTextColor(WHITE);
+            search.setResponder(v->{query=v; positions.put(location(),0D); rebuildBody();});
+            addRenderableWidget(search);
+            for(int f=0;f<3;f++) {
+                final int chosen=f; int bw=(w-4)/3;
+                addRenderableWidget(new MenuButton(sx+f*(bw+2),sy+23,bw,17,()->t("filter."+chosen),()->true,
+                        ()->{remember(); filter=chosen; positions.put(location(),0D); rebuildWidgets();},f==filter,null));
+            }
+            rail=addRenderableWidget(new MenuPanel(sx,sy+48,w,Math.max(25,y+layout.contentBottom()-sy-53),"rail"));
+            for(int i=0;i<CATEGORIES.size();i++) {
+                final int chosen=i; String id=CATEGORIES.get(i); int count="contracts".equals(id)?ContractCatalog.CONTRACTS.size():"all".equals(id)?MilestoneCatalog.MILESTONES.size():(int)MilestoneCatalog.MILESTONES.stream().filter(m->id.equals(m.category())).count();
+                rail.add(new MenuButton(0,i*27,w-5,24,()->categoryName(id),()->true,
+                        ()->{remember();category=chosen;entered=System.nanoTime();rebuildWidgets();},i==category,null) {
+                    @Override protected void renderWidget(GuiGraphics g,int mx,int my,float dt) {
+                        panel(g,getX(),getY(),width,height,selected?0xFF173846:isHoveredOrFocused()?0xFF122D3D:0xAA10212C,selected?accent(id):0xFF203B4C);
+                        ItemStack icon=PremiumIconResolver.categoryIcon(id);
+                        if(!"contracts".equals(id)) g.renderItem(icon,getX()+3,getY()+4);
+                        else mark(g,getX()+3,getY()+4,2,GOLD);
+                        wrapped(g,getMessage(),getX()+24,getY()+4,width-45,selected?WHITE:MUTED,.62F,2);
+                        centered(g,literal(count),getX()+width-20,getY(),17,height,accent(id),.66F);
+                    }
+                });
+            }
+            rail.contentHeight=CATEGORIES.size()*27; rail.restore();
+        } else {
+            addRenderableWidget(new MenuButton(x+layout.padding()+6,bodyTop(),110,18,()->categoryName(CATEGORIES.get(category)),()->true,
+                    ()->{remember();category=(category+1)%CATEGORIES.size();rebuildWidgets();},true,null));
+            addRenderableWidget(new MenuButton(x+layout.padding()+120,bodyTop(),65,18,()->t("filter."+filter),()->true,
+                    ()->{filter=(filter+1)%3;positions.put(location(),0D);rebuildWidgets();},false,null));
+        }
+        if(!layout.tiny()) {
+            int right=x+layout.width()-layout.padding()-7, top=y+layout.contentTop()+5;
+            addRenderableWidget(new MenuButton(right-100,top,66,18,()->t("sort."+sort.name().toLowerCase(Locale.ROOT)),()->true,
+                    ()->{sort=Sort.values()[(sort.ordinal()+1)%3];positions.put(location(),0D);rebuildBody();},false,null));
+            addRenderableWidget(new MenuButton(right-30,top,30,18,()->t(grid?"list":"grid"),()->true,
+                    ()->{remember();grid=!grid;positions.put(location(),0D);rebuildWidgets();},false,null));
+        }
+        buildChallengeBody();
+    }
+    private double ratio(MilestoneCatalog.Milestone m) { return !ready()?0:state().milestones().contains(m.id())?1:Math.clamp(state().progress().getOrDefault(m.id(),0)/(double)m.target(),0,1); }
+    private Component challengeProgress(MilestoneCatalog.Milestone m) { return literal((ratio(m)==1?m.target():ready()?Math.max(0,state().progress().getOrDefault(m.id(),0)):0)+" / "+m.target()); }
+    private void buildChallengeBody() {
+        int top=bodyTop()+(layout.tiny()?22:0), left=x+layout.challengeMainX()+5, w=layout.challengeMainWidth()-10;
+        body=newBody(left,top,w);
+        if("contracts".equals(CATEGORIES.get(category))) { buildContracts(); return; }
+        var entries=new ArrayList<MilestoneCatalog.Milestone>();
+        for(var m:MilestoneCatalog.MILESTONES) {
+            boolean complete=ready()&&state().milestones().contains(m.id());
+            if(category>0&&!CATEGORIES.get(category).equals(m.category())) continue;
+            if(filter==1&&complete||filter==2&&!complete)continue;
+            if(!(Component.translatable(m.titleKey()).getString()+" "+Component.translatable(m.descriptionKey()).getString()).toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)))continue;
+            entries.add(m);
+        }
+        Comparator<MilestoneCatalog.Milestone> order=switch(sort) {
+            case NAME -> Comparator.comparing(m->Component.translatable(m.titleKey()).getString(),String.CASE_INSENSITIVE_ORDER);
+            case REWARD -> Comparator.comparingInt(MilestoneCatalog.Milestone::reward).reversed();
+            case PROGRESS -> Comparator.comparing((MilestoneCatalog.Milestone m)->ratio(m)==1).thenComparingDouble(m->-ratio(m));
+        }; entries.sort(order);
+        List<Entry> cards=new ArrayList<>();
+        for(var m:entries) cards.add(new Entry(Component.translatable(m.titleKey()),Component.translatable(m.descriptionKey()),PremiumIconResolver.challengeIcon(m),m.category(),
+                ()->literal("+"+m.reward()+" SP"),()->ratio(m),()->challengeProgress(m),()->openChallenge(m)));
+        buildCards(cards,grid?layout.challengeColumns():1, false);
+    }
+    private boolean german() { return minecraft.getLanguageManager().getSelected().startsWith("de_"); }
+    private Component contractTitle(ContractCatalog.Contract c) { return literal(german()?c.titleDe():c.titleEn()); }
+    private Component contractDescription(ContractCatalog.Contract c) { return literal(german()?c.descriptionDe():c.descriptionEn()); }
+    private SkillNetwork.ContractState contractState(ContractCatalog.Contract c) { return state()==null?null:state().contracts().get(c.id()); }
+    private Component contractStatus(ContractCatalog.Contract c) {
+        var s=contractState(c); if(!ready())return old("unavailable");
+        if(s==null||!s.available()) return state().shopTier()<c.requiredTier()?text("world_requires_tier",text("tier."+c.requiredTier())):t("integration_missing");
+        return t(c.resource()?"inventory_progress":"action_progress",s.progress(),c.target());
+    }
+    private void buildContracts() {
+        var cards=new ArrayList<Entry>();
+        for(var c:ContractCatalog.CONTRACTS) {
+            if(!(contractTitle(c).getString()+" "+contractDescription(c).getString()).toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)))continue;
+            var cs=contractState(c); if(filter==1&&cs!=null&&cs.completions()>0||filter==2&&(cs==null||cs.completions()==0))continue;
+            cards.add(new Entry(contractTitle(c),contractDescription(c),item(c.iconId()),"contracts",()->literal("+"+c.rewardSp()+" SP"),
+                    ()->contractState(c)==null?0:contractState(c).progress()/(double)c.target(),()->contractStatus(c),()->openContract(c)));
+        }
+        buildCards(cards,body.widthValue()>=300?2:1,true);
+    }
+    private void buildCards(List<Entry> entries,int columns,boolean contract) {
+        int gap=6,cw=(body.widthValue()-5-gap*(columns-1))/columns;
+        int ch=contract?100:Math.max(84,layout.challengeCardHeight()+15);
+        if(entries.isEmpty()) { body.paint=(g,l,t,w,mx,my)->centered(g,text("no_results"),l,t+12,w,30,MUTED,.8F);body.restore();return; }
+        for(int i=0;i<entries.size();i++) {
+            var entry=entries.get(i); int dx=(i%columns)*(cw+gap),dy=(i/columns)*(ch+gap);
+            body.add(new MenuButton(dx,dy,cw,ch,()->entry.title(),()->true,entry.open(),false,null) {
+                @Override protected void renderWidget(GuiGraphics g,int mx,int my,float dt) {
+                    int c=entry.progress().get()>=1?GREEN:accent(entry.category());
+                    panel(g,getX(),getY(),width,height,isHoveredOrFocused()?0xFF142E3E:0xF00D202D,isHoveredOrFocused()?c:BORDER);
+                    g.fill(getX()+1,getY()+1,getX()+3,getY()+height-1,c);
+                    g.renderItem(entry.icon(),getX()+8,getY()+9);
+                    wrapped(g,entry.title().copy().withStyle(ChatFormatting.BOLD),getX()+30,getY()+8,width-38,WHITE,.72F,2);
+                    wrapped(g,entry.description(),getX()+8,getY()+31,width-16,MUTED,.65F,2);
+                    int footer=getY()+height-26,badgeW=Math.min(width/2,Math.max(38,Math.round(font.width(entry.badge().get())*.68F)+12));
+                    label(g,entry.status().get(),getX()+8,footer,width-badgeW-23,c,.62F);
+                    bar(g,getX()+8,footer+12,width-badgeW-24,entry.progress().get(),c);
+                    panel(g,getX()+width-badgeW-7,footer-1,badgeW,18,0xFF14384D,0xFF376578);
+                    centered(g,entry.badge().get(),getX()+width-badgeW-7,footer-1,badgeW,18,WHITE,.69F);
+                }
+            });
+        }
+        body.contentHeight=((entries.size()+columns-1)/columns)*(ch+gap);body.restore();
+    }
+    private void openChallenge(MilestoneCatalog.Milestone m) {
+        open(new Detail(Component.translatable(m.titleKey()),PremiumIconResolver.challengeIcon(m),accent(m.category()),
+                ()->categoryName(m.category()).copy().append("  ·  +"+m.reward()+" SP"),
+                ()->{
+                    var description=Component.translatable(m.descriptionKey()).copy().append("\n\n").append(t("challenge_rules"));
+                    var d=ChallengeRules.find(m.id());
+                    if(d!=null&&d.target()>1&&!d.objectives().isEmpty()) {
+                        description.append("\n\n").append(t("objectives"));
+                        d.objectives().stream().sorted().forEach(id->description.append("\n• ").append(item(id).getHoverName()));
+                    }
+                    return description;
+                },()->challengeProgress(m),()->ratio(m),()->t("close"),()->true,()->minecraft.setScreen(this)));
+    }
+    private void openContract(ContractCatalog.Contract c) {
+        open(new Detail(contractTitle(c),item(c.iconId()),GOLD,()->literal("+"+c.rewardSp()+" SP  ·  ").copy().append(text("tier."+c.requiredTier())),
+                ()->contractDescription(c).copy().append("\n\n").append(t(c.resource()?"contract_consumes":"contract_auto"))
+                        .append("\n\n").append(t("completions",contractState(c)==null?0:contractState(c).completions())),
+                ()->contractStatus(c),()->contractState(c)==null?0:contractState(c).progress()/(double)c.target(),
+                ()->ClientSkills.pending()?old("waiting"):t(c.resource()?"submit":"automatic"),
+                ()->c.resource()&&ready()&&!ClientSkills.pending()&&contractState(c)!=null&&contractState(c).canSubmit(),
+                ()->ClientSkills.submitContract(c.id())));
+    }
+    private void initShop() {
+        body=newBody(x+layout.padding()+7,bodyTop(),layout.width()-2*layout.padding()-14);
+        int w=body.widthValue()-5, center=w*5/8;
+        body.paint=(g,l,t,w0,mx,my)->{
+            // Lines represent actual tier prerequisites. Products are siblings, never a false purchase chain.
+            int a=ready()&&state().shopTier()>=0?0xFF4B8A8B:BORDER;
+            int b=ready()&&state().shopTier()>=1?0xFF4B8A8B:BORDER;
+            line(g,l+center+18,t+22,l+w-7,t+22,b);
+            line(g,l+w-7,t+22,l+w-7,t+245,b);
+            line(g,l+w-7,t+245,l+center,t+245,b);
+            line(g,l+w/8,t+40,l+w/8,t+90,0xFF3B6576);
+            int fork=t+62; line(g,l+center,t+35,l+center,fork,a);
+            line(g,l+w*3/8,fork,l+w*7/8,fork,a);
+            for(int i=1;i<4;i++) line(g,l+w*(2*i+1)/8,fork,l+w*(2*i+1)/8,t+108,a);
+            line(g,l+center,t+245,l+center,t+326,b);
+            centered(g,t("tree_hint"),l+5,t+383,w-10,15,MUTED,.66F);
+        };
+        addNode(w/8,22,()->t("permanent_root"),()->t("sp_only"),Items.NETHER_STAR.getDefaultInstance(),
+                ()->ready(),CYAN,()->navigate(Page.PROFILE),w/4-9);
+        addNode(center,22,()->text("tier.0"),()->Component.translatable("milestone.forever_skyblock.first_foundations"),Items.COBBLESTONE.getDefaultInstance(),
+                ()->ready()&&state().shopTier()>=0,GOLD,()->openTier(0),Math.min(190,w-10));
+        var reach=SkillCatalog.find(SkillCatalog.EXTENDED_REACH);
+        addNode(w/8,108,()->Component.translatable(reach.titleKey()),()->old("cost",reach.cost()),reach.icon().getDefaultInstance(),
+                ()->ready()&&state().rank(reach.id())>0,CYAN,()->openSkill(reach),w/4-9);
+        var products=List.of(ShopCatalog.NO_PHANTOMS,ShopCatalog.NO_RAIN,ShopCatalog.PERMANENT_DAY);
+        for(int i=0;i<products.size();i++) {
+            var p=products.get(i);
+            addNode(w*(2*(i+1)+1)/8,108,()->productTitle(p),()->literal(p.spCost()+" SP"),productIcon(p),
+                    ()->productStage(p)>=3,GREEN,()->openProduct(p),w/4-9);
+        }
+        addNode(center,245,()->text("tier.1"),()->Component.translatable("milestone.forever_skyblock.dragon_slayer"),Items.DRAGON_HEAD.getDefaultInstance(),
+                ()->ready()&&state().shopTier()>=1,GOLD,()->openTier(1),Math.min(190,w-10));
+        var p=ShopCatalog.ADVANCED_AE2_STARTER;
+        addNode(center,326,()->productTitle(p),()->literal(p.spCost()+" SP"),productIcon(p),
+                ()->productStage(p)>0,0xFFBD9AF2,()->openProduct(p),Math.min(205,w-10));
+        // The operator transaction probe remains accessible without polluting the player-facing tree.
+        if(ready()&&state().canTestPoints()) body.add(new MenuButton(5,409,Math.min(215,w-10),20,()->t("development_product"),()->true,()->openProduct(ShopCatalog.TEST),false,null));
+        body.contentHeight=ready()&&state().canTestPoints()?439:405;body.restore();
+    }
+    private void addNode(int cx,int cy,Supplier<Component> title,Supplier<Component> subtitle,ItemStack icon,BooleanSupplier owned,int color,Runnable action,int labelWidth) {
+        int radius=18;
+        body.add(new MenuButton(cx-radius,cy-radius,radius*2+1,88,title,()->true,action,false,null) {
+            @Override public boolean isMouseOver(double mx,double my) { return visible&&MenuMotion.insideNode(mx,my,getX()+radius,getY()+radius,radius); }
+            @Override protected boolean clicked(double mx,double my) { return active&&isMouseOver(mx,my); }
+            @Override protected void renderWidget(GuiGraphics g,int mx,int my,float dt) {
+                int nx=getX()+radius,ny=getY()+radius,c=owned.getAsBoolean()?GREEN:color;
+                boolean hover=isMouseOver(mx,my)||isFocused();
+                if(hover)circle(g,nx,ny,radius+3,0x443EC4D0);
+                circle(g,nx,ny,radius,hover||owned.getAsBoolean()?c:BORDER);
+                circle(g,nx,ny,radius-2,owned.getAsBoolean()?0xFF143C35:0xFF122B39);
+                g.renderItem(icon,nx-8,ny-8);
+                if(owned.getAsBoolean()) { circle(g,nx+13,ny-12,4,GREEN); }
+                // Up to three centered lines; the next node row is deliberately more than 80 px away.
+                int yy=ny+25;
+                for(var line:font.split(title.get(),Math.max(1,(int)(labelWidth/.72F)))) {
+                    if(yy>ny+34)break;
+                    int fw=Math.round(font.width(line)*.72F);
+                    g.fill(nx-fw/2-2,yy-1,nx+fw/2+3,yy+8,0xFF091822);
+                    g.pose().pushPose();g.pose().translate(nx-fw/2,yy,0);g.pose().scale(.72F,.72F,1);g.drawString(font,line,0,0,WHITE,false);g.pose().popPose();yy+=8;
+                }
+                int sw=Math.min(labelWidth,Math.round(font.width(subtitle.get().getString())*.62F));
+                g.fill(nx-sw/2-2,ny+43,nx+sw/2+3,ny+54,0xFF091822);
+                centered(g,subtitle.get(),nx-labelWidth/2,ny+43,labelWidth,10,owned.getAsBoolean()?GREEN:MUTED,.62F);
+            }
+        });
+    }
+    private void openTier(int tier) {
+        var milestone=tier==0?MilestoneCatalog.MILESTONES.stream().filter(m->m.id().equals(ChallengeRules.FOUNDATIONS.id())).findFirst().orElseThrow():
+                MilestoneCatalog.MILESTONES.stream().filter(m->m.id().equals(ChallengeRules.DRAGON.id())).findFirst().orElseThrow();
+        open(new Detail(text("tier."+tier),tier==0?Items.COBBLESTONE.getDefaultInstance():Items.DRAGON_HEAD.getDefaultInstance(),GOLD,
+                ()->text("permanent_scope"),()->text(tier==0?"tier_foundations_description":"tier_conqueror_description").copy().append("\n\n").append(t("tier_rules")),
+                ()->t(ready()&&state().shopTier()>=tier?"tier_unlocked":"tier_requirement",Component.translatable(milestone.titleKey())),
+                ()->ready()&&state().shopTier()>=tier?1D:ratio(milestone),()->text("page.challenges"),()->true,()->{minecraft.setScreen(this);navigate(Page.CHALLENGES);}));
+    }
+    private Component productTitle(ShopCatalog.Product p) {return literal(german()?p.titleDe():p.titleEn());}
+    private int productStage(ShopCatalog.Product p) {var s=state()==null?null:state().products().get(p.id());return s==null?0:s.stage();}
+    private ItemStack productIcon(ShopCatalog.Product p) {
+        if(p==ShopCatalog.NO_PHANTOMS)return Items.PHANTOM_MEMBRANE.getDefaultInstance();
+        if(p==ShopCatalog.NO_RAIN)return Items.WATER_BUCKET.getDefaultInstance();
+        if(p==ShopCatalog.PERMANENT_DAY)return Items.SUNFLOWER.getDefaultInstance();
+        return p.developmentOnly()?Items.PAPER.getDefaultInstance():ForeverSkyblock.WORLD_SUPPLY_CACHE.get().getDefaultInstance();
+    }
+    private boolean canBuyProduct(String id) {
+        var p=ShopCatalog.find(id); if(!ready()||p==null||!state().worldAvailable()||ClientSkills.pending())return false;
+        var ps=state().products().get(id);
+        if(ps==null||!ps.available()||p.developmentOnly()&&!state().canTestPoints())return false;
+        if(p.deliverable()&&ps.stage()==1)return true;
+        return ps.stage()==0&&state().shopTier()>=p.requiredTier()&&state().points()>=p.spCost()&&state().perkPoints()>=p.ppCost();
+    }
+    private Component productStatus(String id) {
+        var p=ShopCatalog.find(id);if(!ready()||p==null)return old("unavailable");
+        if(ClientSkills.pending())return old("waiting");
+        if(!state().worldAvailable())return text("world_unavailable");
+        var ps=state().products().get(id);if(ps==null||!ps.available())return t("integration_missing");
+        return switch(ps.stage()) {
+            case 1 -> t("claim_package"); case 2,4 -> t("recovering"); case 3 -> t("package_delivered");case 5 -> t("package_opened");
+            case 6 -> t(p.worldUpgrade()?"active":"claimed");
+            default -> state().shopTier()<p.requiredTier()?text("world_requires_tier",text("tier."+p.requiredTier())):
+                    state().perkPoints()<p.ppCost()?old("need_perks",p.ppCost()):state().points()<p.spCost()?old("need_points",p.spCost()):text("purchase");
         };
     }
-
-    private void drawScaled(GuiGraphics g, Component component, int dx, int dy, int color, float scale, int maxWidth) {
-        String value = component.getString();
-        int logicalWidth = Math.max(1, (int) (maxWidth / scale));
-        value = font.plainSubstrByWidth(value, logicalWidth);
-        g.pose().pushPose();
-        g.pose().scale(scale, scale, 1F);
-        g.drawString(font, value, Math.round(dx / scale), Math.round(dy / scale), color, false);
-        g.pose().popPose();
+    private void openProduct(ShopCatalog.Product p) {
+        open(new Detail(productTitle(p),productIcon(p),p.worldUpgrade()?GREEN:0xFFBD9AF2,
+                ()->literal(p.spCost()+" SP  ·  ").copy().append(text("tier."+p.requiredTier())).append("  ·  ").append(text("current_world_scope")),
+                ()->{
+                    var desc=literal(german()?p.descriptionDe():p.descriptionEn()).copy().append("\n\n").append(t(p.developmentOnly()?"development_rules":p.worldUpgrade()?"world_upgrade_rules":"world_package_rules"));
+                    if(!p.contents().isEmpty()) {desc.append("\n\n").append(t("contents"));for(var e:p.contents())desc.append("\n"+e.count()+" × ").append(item(e.itemId()).getHoverName());}
+                    return desc;
+                },()->productStatus(p.id()),()->productStage(p)>0?1D:0D,()->productStatus(p.id()),()->canBuyProduct(p.id()),()->confirmProduct(p.id())));
     }
-
-    private int drawWrappedScaled(GuiGraphics g, Component component, int dx, int dy, int maxWidth, int color, float scale, int maxLines) {
-        int logicalWidth = Math.max(1, (int) (maxWidth / scale));
-        int shown = 0;
-        for (var line : font.split(component, logicalWidth)) {
-            if (shown++ >= maxLines) break;
-            g.pose().pushPose();
-            g.pose().scale(scale, scale, 1F);
-            g.drawString(font, line, Math.round(dx / scale), Math.round(dy / scale), color, false);
-            g.pose().popPose();
-            dy += Math.max(7, Math.round(10 * scale));
+    private void confirmProduct(String id) {
+        var p=ShopCatalog.find(id);if(p==null||!canBuyProduct(id))return;
+        if(p.deliverable()&&productStage(p)==1) {ClientSkills.claimProduct(id);return;}
+        Screen returnTo=minecraft.screen;
+        minecraft.setScreen(new ConfirmScreen(yes->{minecraft.setScreen(returnTo);if(yes)ClientSkills.buyProduct(id);},
+                t("purchase_title"),t(p.worldUpgrade()?"confirm_upgrade":"confirm_package",productTitle(p),p.spCost(),state().worldName()),text("purchase_confirm"),Component.translatable("gui.cancel")));
+    }
+    private boolean canBuySkill(String id) {
+        var s=SkillCatalog.find(id);
+        return ready()&&s!=null&&!ClientSkills.pending()&&s.available()&&state().rank(id)<s.maxRank()
+                &&(s.prerequisite().isEmpty()||state().rank(s.prerequisite())>0)&&state().points()>=s.cost()&&state().perkPoints()>=s.perkCost();
+    }
+    private Component skillStatus(String id) {
+        var s=SkillCatalog.find(id);if(!ready())return old("unavailable");
+        if(state().rank(id)>=s.maxRank())return old("unlocked");if(!s.available())return old("missing_jetpacks");
+        if(ClientSkills.pending())return old("waiting");if(!s.prerequisite().isEmpty()&&state().rank(s.prerequisite())==0)return old("requires_previous");
+        if(state().perkPoints()<s.perkCost())return old("need_perks",s.perkCost());if(state().points()<s.cost())return old("need_points",s.cost());return old("unlock_short",s.cost());
+    }
+    private ItemStack skillIcon(SkillCatalog.Skill s) {
+        if(s.jetpack()&&JetpackGate.installed()) {var variants=IronJetpacksBridge.variants(JetpackResearch.IDS.indexOf(s.id())+1);if(!variants.isEmpty())return variants.getFirst();}
+        return s.icon().getDefaultInstance();
+    }
+    private void openSkill(SkillCatalog.Skill s) {
+        open(new Detail(Component.translatable(s.titleKey()),skillIcon(s),CYAN,
+                ()->text("permanent_scope").copy().append("  ·  ").append(s.perkCost()>0?old("dual_cost",s.cost(),s.perkCost()):old("cost",s.cost())),
+                ()->{var d=Component.translatable(s.descriptionKey()).copy();
+                    if(!s.prerequisite().isEmpty())d.append("\n\n").append(old("requires_skill",Component.translatable(SkillCatalog.find(s.prerequisite()).titleKey())));
+                    if(s.jetpack()) {
+                        if(!JetpackGate.installed())d.append("\n\n").append(old("missing_jetpacks"));
+                        else d.append("\n\n").append(old("jetpack_variants",IronJetpacksBridge.variants(JetpackResearch.IDS.indexOf(s.id())+1).stream().map(v->v.getHoverName().getString()).collect(java.util.stream.Collectors.joining(", "))));
+                    }return d;},()->skillStatus(s.id()),()->ready()&&state().rank(s.id())>0?1D:0D,
+                ()->skillStatus(s.id()),()->canBuySkill(s.id()),()->ClientSkills.buy(s.id())));
+    }
+    private void initResearch() {
+        body=newBody(x+layout.padding()+7,bodyTop(),layout.width()-2*layout.padding()-14);
+        var entries=new ArrayList<Entry>();
+        if(page==Page.PERKS) {
+            entries.add(new Entry(old("perk_info_title"),old("perk_info_description"),ForeverSkyblock.FOREVER_CORE.get().getDefaultInstance(),"all",
+                    ()->literal("PP"),()->0D,()->old("core_conversion"),()->open(new Detail(old("perk_info_title"),ForeverSkyblock.FOREVER_CORE.get().getDefaultInstance(),GOLD,
+                        ()->old("core_conversion"),()->old("perk_info_description"),()->old("core_conversion"),()->0D,()->t("close"),()->true,()->minecraft.setScreen(this)))));
         }
-        return dy;
+        for(var s:SkillCatalog.SKILLS)if(page==Page.RESEARCH?s.jetpack():s.perkCost()>0)entries.add(new Entry(Component.translatable(s.titleKey()),Component.translatable(s.descriptionKey()),skillIcon(s),"all",
+                ()->s.perkCost()>0?old("dual_cost",s.cost(),s.perkCost()):old("cost",s.cost()),()->ready()&&state().rank(s.id())>0?1D:0D,()->skillStatus(s.id()),()->openSkill(s)));
+        buildCards(entries,body.widthValue()>440?2:1,false);
     }
-
-    private static void outline(GuiGraphics g, int ox, int oy, int ow, int oh, int color) {
-        g.fill(ox, oy, ox + ow, oy + 1, color);
-        g.fill(ox, oy + oh - 1, ox + ow, oy + oh, color);
-        g.fill(ox, oy, ox + 1, oy + oh, color);
-        g.fill(ox + ow - 1, oy, ox + ow, oy + oh, color);
+    private void initProfile() {
+        body=newBody(x+layout.padding()+7,bodyTop(),layout.width()-2*layout.padding()-14);
+        int w=body.widthValue()-5;
+        int cols=w>=460?3:2, gap=6, cw=(w-gap*(cols-1))/cols;
+        body.paint=(g,l,t,w0,mx,my)->drawProfile(g,l,t,w);
+        int metricsTop=56, cellH=38, rows=(9+cols-1)/cols, footer=metricsTop+rows*(cellH+gap)+119;
+        body.add(new MenuButton(5,footer,w-10,22,()->old("reset"),()->ready()&&!ClientSkills.pending(),this::confirmReset,false,null));
+        if(ready()&&state().canTestPoints())body.add(new MenuButton(5,footer+29,w-10,20,()->old("test_points"),()->!ClientSkills.pending(),ClientSkills::testPoints,false,null));
+        body.contentHeight=footer+(ready()&&state().canTestPoints()?56:29);body.restore();
     }
-
-    private static void softPanel(GuiGraphics g, int px, int py, int pw, int ph, int fill, int border) {
-        if (pw <= 1 || ph <= 1) return;
-        g.fill(px + 1, py, px + pw - 1, py + ph, fill);
-        g.fill(px, py + 1, px + pw, py + ph - 1, fill);
-        outline(g, px + 1, py, pw - 2, ph, border);
-        g.fill(px, py + 1, px + 1, py + ph - 1, border);
-        g.fill(px + pw - 1, py + 1, px + pw, py + ph - 1, border);
-    }
-
-    private static void shadowPanel(GuiGraphics g, int px, int py, int pw, int ph, int fill, int border) {
-        g.fill(px - 2, py + 2, px + pw + 2, py + ph + 3, 0x66000000);
-        softPanel(g, px, py, pw, ph, fill, border);
-    }
-
-    private static void glowOutline(GuiGraphics g, int px, int py, int pw, int ph, int color) {
-        g.fill(px - 2, py, px - 1, py + ph, (color & 0x00FFFFFF) | 0x44000000);
-        g.fill(px + pw + 1, py, px + pw + 2, py + ph, (color & 0x00FFFFFF) | 0x44000000);
-        g.fill(px, py - 2, px + pw, py - 1, (color & 0x00FFFFFF) | 0x44000000);
-        g.fill(px, py + ph + 1, px + pw, py + ph + 2, (color & 0x00FFFFFF) | 0x44000000);
-        outline(g, px, py, pw, ph, color);
-    }
-
-    private static void progressBar(GuiGraphics g, int px, int py, int pw, int ph, double ratio, int color) {
-        g.fill(px, py, px + pw, py + ph, 0xD0030B12);
-        outline(g, px, py, pw, ph, 0xFF42637B);
-        int inner = Math.max(0, pw - 2);
-        int fill = (int) Math.round(inner * Math.clamp(ratio, 0D, 1D));
-        if (fill > 0) g.fill(px + 1, py + 1, px + 1 + fill, py + ph - 1, color);
-    }
-
-    private final class NavButton extends Button {
-        private final Page target;
-        NavButton(int bx, int by, int bw, int bh, Page target) {
-            super(bx, by, bw, bh, pageName(target), b -> navigate(target, subsections.getOrDefault(target, 0)), DEFAULT_NARRATION);
-            this.target = target;
+    private void drawProfile(GuiGraphics g,int l,int top,int w) {
+        face(g,l+10,top+9,32);
+        label(g,minecraft.player==null?t("player"):minecraft.player.getDisplayName(),l+54,top+9,w-65,WHITE,1F);
+        label(g,ready()?old(state().local()?"local_scope":"server_scope"):old("storage_error"),l+54,top+25,w-65,MUTED,.67F);
+        label(g,ready()?t("world_name",state().worldName()):text("world_identity_error"),l+10,top+43,w-20,GREEN,.7F);
+        int cols=w>=460?3:2,gap=6,cw=(w-gap*(cols-1))/cols;
+        var st=state()==null?SkillNetwork.MenuStatistics.UNKNOWN:state().statistics();
+        List<Component> names=List.of(t("sp"),t("pp"),t("challenges"),t("playtime"),t("island"),t("unlocks"),t("deaths"),t("mob_kills"),text("current_world_claims"));
+        List<Component> values=List.of(ready()?literal(state().points()):literal("—"),ready()?literal(state().perkPoints()):literal("—"),
+                ready()?literal(completed()+" / "+MilestoneCatalog.MILESTONES.size()):literal("—"),playtime(st.playTicks()),st.islandLevel()<0?literal("—"):literal(st.islandLevel()),
+                ready()?literal(state().skills().size()):literal("—"),literal(st.deaths()<0?"—":st.deaths()),literal(st.mobKills()<0?"—":st.mobKills()),ready()?literal(state().worldClaims().size()):literal("—"));
+        for(int i=0;i<names.size();i++) {
+            int dx=l+(i%cols)*(cw+gap),dy=top+56+(i/cols)*44;
+            panel(g,dx,dy,cw,38,0xD1102734,BORDER);
+            centered(g,names.get(i),dx+4,dy+5,cw-8,12,MUTED,.67F);
+            centered(g,values.get(i),dx+4,dy+18,cw-8,17,i%3==1?GOLD:CYAN,.95F);
         }
-        @Override protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-            boolean selected = target == page;
-            int bg = selected ? 0xD3193A52 : isHoveredOrFocused() ? 0xCE142A3A : 0xA90B1722;
-            softPanel(g, getX(), getY(), width, height, bg, selected ? 0xFF39C9FF : 0xFF29465B);
-            if (selected) {
-                g.fill(getX() + 1, getY(), getX() + width - 1, getY() + 2, CYAN);
-                glowOutline(g, getX(), getY(), width, height, 0xFF2EBFF4);
-            }
-            String label = getMessage().getString();
-            float scale = layout.compact() ? 0.68F : 0.8F;
-            int labelW = Math.round(font.width(label) * scale);
-            boolean showIcon = width > labelW + 28;
-            int total = labelW + (showIcon ? 20 : 0);
-            int start = getX() + (width - total) / 2;
-            if (showIcon) {
-                g.renderItem(pageIcon(target), start, getY() + (height - 16) / 2);
-                start += 20;
-            }
-            drawScaled(g, getMessage().copy().withStyle(selected ? ChatFormatting.BOLD : ChatFormatting.RESET), start,
-                    getY() + (height - Math.round(8 * scale)) / 2, selected ? WHITE : LIGHT, scale, width - (start - getX()) - 4);
-        }
-    }
-
-    private final class ChromeButton extends Button {
-        private final boolean selected;
-        ChromeButton(int bx, int by, int bw, int bh, Component message, boolean selected, OnPress action) {
-            super(bx, by, bw, bh, message, action, DEFAULT_NARRATION);
-            this.selected = selected;
-        }
-        @Override protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-            int border = selected ? CYAN : isHoveredOrFocused() ? 0xFF4C7C99 : 0xFF294B60;
-            int bg = selected ? 0xD1195272 : isHoveredOrFocused() ? 0xCF153044 : 0xB70D1D2A;
-            softPanel(g, getX(), getY(), width, height, bg, border);
-            if (selected) glowOutline(g, getX(), getY(), width, height, 0xFF2BBEF2);
-            drawScaled(g, getMessage(), getX() + 5, getY() + (height - 7) / 2,
-                    active ? (selected ? WHITE : LIGHT) : DIM, layout.compact() ? 0.62F : 0.72F, width - 10);
+        int fy=top+56+((9+cols-1)/cols)*44+6;
+        label(g,t("statistics_scope"),l+6,fy,w-12,MUTED,.65F);
+        label(g,t("island_rules"),l+6,fy+12,w-12,GREEN,.65F);
+        if(ready()) {
+            var a=state().accounting();
+            label(g,text("history_title"),l+6,fy+30,w-12,WHITE,.75F);
+            label(g,t("earned",a.spEarned(),a.ppEarned()),l+6,fy+45,w-12,MUTED,.7F);
+            label(g,t("spent",a.spSpent(),a.ppSpent()),l+6,fy+57,w-12,MUTED,.7F);
+            label(g,t("refunded",a.spRefunded(),a.ppRefunded(),a.spAdmin()),l+6,fy+69,w-12,MUTED,.7F);
+            label(g,text(a.legacyHistoryUnknown()?"history_legacy":"history_tracked"),l+6,fy+83,w-12,DIM,.63F);
         }
     }
-
-    private final class CategoryButton extends Button {
-        private final String category;
-        private final ItemStack icon;
-        private final int count;
-        private final boolean selected;
-        CategoryButton(int bx, int by, int bw, int bh, String category, Component message, ItemStack icon, int count,
-                       boolean selected, OnPress action) {
-            super(bx, by, bw, bh, message, action, DEFAULT_NARRATION);
-            this.category = category;
-            this.icon = icon;
-            this.count = count;
-            this.selected = selected;
+    private void confirmReset() {
+        if(!ready()||ClientSkills.pending())return;
+        int sp=SkillCatalog.SKILLS.stream().mapToInt(s->state().rank(s.id())*s.cost()).sum(),pp=SkillCatalog.SKILLS.stream().mapToInt(s->state().rank(s.id())*s.perkCost()).sum();
+        minecraft.setScreen(new ConfirmScreen(yes->{minecraft.setScreen(this);if(yes)ClientSkills.reset();},old("reset_title"),old("reset_description",sp,pp),old("reset_confirm"),Component.translatable("gui.cancel")));
+    }
+    private static ItemStack item(String id) {return BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(id)).orElse(Items.BARRIER).getDefaultInstance();}
+    private void face(GuiGraphics g,int x,int y,int size) {
+        if(minecraft.player!=null)PlayerFaceRenderer.draw(g,minecraft.player.getSkin(),x,y,size);
+        else {panel(g,x,y,size,size,0xFF1F3B49,CYAN);centered(g,literal("?"),x,y,size,size,CYAN,1F);}
+    }
+    private void pageIcon(GuiGraphics g,Page p,int x,int y) {
+        if(p==Page.PROFILE){face(g,x,y,14);return;}
+        ItemStack icon=switch(p){case OVERVIEW->Items.COMPASS.getDefaultInstance();case CHALLENGES->Items.IRON_SWORD.getDefaultInstance();
+            case SHOP->Items.CHEST.getDefaultInstance();case RESEARCH->Items.BOOK.getDefaultInstance();default->ForeverSkyblock.FOREVER_CORE.get().getDefaultInstance();};
+        g.renderItem(icon,x,y);
+    }
+    private class MenuButton extends Button {
+        final Supplier<Component> title; final BooleanSupplier enabled; final boolean selected; final Page tab;
+        MenuButton(int x,int y,int w,int h,Supplier<Component> title,BooleanSupplier enabled,Runnable action,boolean selected,Page tab) {
+            super(x,y,w,h,title.get(),b->action.run(),DEFAULT_NARRATION);this.title=title;this.enabled=enabled;this.selected=selected;this.tab=tab;
         }
-        @Override protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-            int accent = categoryColor(category);
-            int bg = selected ? 0xCB143349 : isHoveredOrFocused() ? 0xBF122838 : 0x86101D28;
-            softPanel(g, getX(), getY(), width, height, bg, selected ? accent : 0x442B4658);
-            if (selected) {
-                g.fill(getX(), getY() + 2, getX() + 2, getY() + height - 2, accent);
-                glowOutline(g, getX(), getY(), width, height, accent);
-            }
-            if (height >= 18) g.renderItem(icon, getX() + 4, getY() + (height - 16) / 2);
-            int tx = getX() + (height >= 18 ? 24 : 5);
-            drawScaled(g, getMessage(), tx, getY() + (height - 7) / 2, selected ? WHITE : LIGHT,
-                    layout.compact() ? 0.59F : 0.7F, width - (tx - getX()) - 22);
-            String number = Integer.toString(count);
-            drawScaled(g, Component.literal(number), getX() + width - 18, getY() + (height - 7) / 2, DIM,
-                    layout.compact() ? 0.56F : 0.66F, 14);
+        @Override public void onPress() {if(enabled.getAsBoolean())super.onPress();}
+        @Override protected void renderWidget(GuiGraphics g,int mx,int my,float dt) {
+            active=enabled.getAsBoolean();setMessage(title.get());
+            panel(g,getX(),getY(),width,height,selected?0xFF163A4B:isHoveredOrFocused()?0xFF173141:0xD00D202B,selected?CYAN:BORDER);
+            if(selected)g.fill(getX()+1,getY()+height-2,getX()+width-1,getY()+height-1,CYAN);
+            boolean icon=tab!=null&&width>68; if(icon)pageIcon(g,tab,getX()+7,getY()+(height-16)/2);
+            centered(g,title.get(),getX()+(icon?25:4),getY(),width-(icon?29:8),height,active?selected?WHITE:MUTED:DIM,.74F);
         }
     }
-
-    private final class ViewButton extends Button {
-        private final boolean grid;
-        private final boolean selected;
-        ViewButton(int bx, int by, int bw, int bh, boolean grid, boolean selected, OnPress action) {
-            super(bx, by, bw, bh, Component.empty(), action, DEFAULT_NARRATION);
-            this.grid = grid;
-            this.selected = selected;
+    /** Children, narration, clipping and hit testing share exactly the same animated coordinates. */
+    private final class MenuPanel extends ScrollPanel {
+        private final List<MenuButton> buttons=new ArrayList<>();
+        private final List<int[]> offsets=new ArrayList<>();
+        final MenuMotion motion=new MenuMotion();
+        private final String key;
+        private final long born=System.nanoTime();
+        private int entryOffset(){return (int)Math.round(5*(1-MenuMotion.reveal(born,System.nanoTime())));}
+        int contentHeight; Painter paint;
+        MenuPanel(int x,int y,int w,int h,String key) {
+            super(PremiumSkillScreen.this.minecraft,w,h,y,x,0,3,0x00000000,CYAN,0xFF91E9FF);this.key=key;contentHeight=h;
         }
-        @Override protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-            softPanel(g, getX(), getY(), width, height, selected ? 0xD1195272 : 0xB70D1D2A,
-                    selected ? CYAN : 0xFF294B60);
-            int cx = getX() + width / 2;
-            int cy = getY() + height / 2;
-            int c = selected ? WHITE : MUTED;
-            if (grid) {
-                for (int yy = -4; yy <= 2; yy += 6) for (int xx = -4; xx <= 2; xx += 6)
-                    g.fill(cx + xx, cy + yy, cx + xx + 3, cy + yy + 3, c);
-            } else {
-                for (int yy = -4; yy <= 4; yy += 4) g.fill(cx - 5, cy + yy, cx + 5, cy + yy + 1, c);
+        int widthValue(){return width;}
+        void add(MenuButton b){offsets.add(new int[]{b.getX(),b.getY()});buttons.add(b);}
+        void restore(){motion.snap(Math.clamp(positions.getOrDefault(key,0D),0,Math.max(0,contentHeight-height)));position();}
+        private void position(){
+            for(int i=0;i<buttons.size();i++) {
+                var b=buttons.get(i);b.setX(left+offsets.get(i)[0]);b.setY(top+offsets.get(i)[1]-(int)motion.value()+entryOffset());
+                b.visible=b.getY()+b.getHeight()>top&&b.getY()<bottom;
+                b.active=b.enabled.getAsBoolean();b.setMessage(b.title.get());
             }
         }
-    }
-
-    private final class ChallengePanel extends ScrollPanel {
-        private final List<MilestoneCatalog.Milestone> entries;
-        private final List<Button> cards = new ArrayList<>();
-        private final int columns;
-        private final int cardWidth;
-        private final int cardHeight;
-        private final int gap;
-        private int contentHeight;
-
-        ChallengePanel(List<MilestoneCatalog.Milestone> entries) {
-            super(PremiumSkillScreen.this.minecraft, layout.challengeMainWidth(), layout.challengeGridHeight(),
-                    y + layout.challengeGridTop(), x + layout.challengeMainX(), 0, 3,
-                    0x00000000, CYAN, 0xFF91E9FF);
-            this.entries = List.copyOf(entries);
-            this.columns = gridView ? layout.challengeColumns() : 1;
-            this.gap = layout.challengeCardGap();
-            this.cardWidth = Math.max(104, (width - 5 - gap * (columns - 1)) / columns);
-            this.cardHeight = gridView ? layout.challengeCardHeight() : Math.max(54, layout.challengeCardHeight() - 4);
-            for (int i = 0; i < entries.size(); i++) {
-                int row = i / columns;
-                int col = i % columns;
-                int px = left + col * (cardWidth + gap);
-                int py = top + row * (cardHeight + gap);
-                var milestone = entries.get(i);
-                cards.add(new ChallengeCardButton(px, py, cardWidth, cardHeight, milestone, b -> {
-                    rememberScroll();
-                    detail = milestone;
-                    rebuildWidgets();
-                }));
-            }
-            int rows = (entries.size() + columns - 1) / columns;
-            contentHeight = Math.max(height, rows * (cardHeight + gap));
-            positionCards();
-        }
-
-        float position() { return scrollDistance; }
-        void restore(float value) {
-            scrollDistance = Math.clamp(value, 0, Math.max(0, contentHeight - height));
-            positionCards();
-        }
-        private void positionCards() {
-            for (int i = 0; i < cards.size(); i++) {
-                int row = i / columns;
-                var b = cards.get(i);
-                b.setY(top - (int) scrollDistance + row * (cardHeight + gap));
-                b.visible = b.getY() + cardHeight > top && b.getY() < bottom;
-            }
-        }
-        @Override protected int getContentHeight() { return contentHeight; }
-        @Override protected void drawBackground(GuiGraphics g, Tesselator tess, float tick) { }
-        @Override protected void drawPanel(GuiGraphics g, int entryRight, int baseY, Tesselator tess, int mx, int my) {
-            positionCards();
-            if (entries.isEmpty()) {
-                drawScaled(g, text("no_results").copy().withStyle(ChatFormatting.BOLD), left + 9, top + 10, LIGHT, 0.72F, width - 25);
-                drawWrappedScaled(g, text("no_results_help"), left + 9, top + 25, width - 25, MUTED, 0.6F, 4);
-            } else for (Button button : cards) if (button.visible) button.render(g, mx, my, 0);
+        @Override protected int getContentHeight(){return Math.max(height,contentHeight);}
+        @Override protected void drawBackground(GuiGraphics g,Tesselator tess,float tick){}
+        @Override protected void drawPanel(GuiGraphics g,int entryRight,int baseY,Tesselator tess,int mx,int my){
+            scrollDistance=(float)motion.advance(System.nanoTime());position();
+            if(paint!=null)paint.draw(g,left,top-(int)motion.value()+entryOffset(),width,mx,my);
+            for(var b:buttons)if(b.visible)b.render(g,mx,my,0);
             g.flush();
         }
-        @Override public boolean mouseClicked(double mx, double my, int button) {
-            positionCards();
-            return isMouseOver(mx, my) && super.mouseClicked(mx, my, button);
+        @Override public boolean mouseScrolled(double mx,double my,double horizontal,double vertical){
+            if(!isMouseOver(mx,my))return false;motion.scroll(-vertical*29,contentHeight-height);return true;
         }
-        @Override public boolean mouseScrolled(double mx, double my, double horizontal, double vertical) {
-            if (!isMouseOver(mx, my)) return false;
-            boolean result = super.mouseScrolled(mx, my, horizontal, vertical);
-            positionCards();
-            return result;
+        @Override public boolean mouseClicked(double mx,double my,int button){position();return isMouseOver(mx,my)&&super.mouseClicked(mx,my,button);}
+        @Override public boolean mouseDragged(double mx,double my,int button,double dx,double dy){
+            boolean result=super.mouseDragged(mx,my,button,dx,dy);if(result)motion.snap(Math.clamp(scrollDistance,0,Math.max(0,contentHeight-height)));return result;
         }
-        @Override public List<? extends GuiEventListener> children() { return cards; }
-        @Override public NarratableEntry.NarrationPriority narrationPriority() {
-            return getFocused() == null ? NarratableEntry.NarrationPriority.NONE : NarratableEntry.NarrationPriority.FOCUSED;
-        }
-        @Override public void updateNarration(NarrationElementOutput output) {
-            output.add(NarratedElementType.TITLE, pageName(Page.CHALLENGES));
-        }
+        @Override public List<? extends GuiEventListener> children(){return buttons;}
+        @Override public NarratableEntry.NarrationPriority narrationPriority(){return getFocused()==null?NarratableEntry.NarrationPriority.NONE:NarratableEntry.NarrationPriority.FOCUSED;}
+        @Override public void updateNarration(NarrationElementOutput o){o.add(NarratedElementType.TITLE,pageName(page));}
     }
-
-    private final class ChallengeCardButton extends Button {
-        private final MilestoneCatalog.Milestone milestone;
-        ChallengeCardButton(int bx, int by, int bw, int bh, MilestoneCatalog.Milestone milestone, OnPress action) {
-            super(bx, by, bw, bh, Component.translatable(milestone.titleKey()), action, DEFAULT_NARRATION);
-            this.milestone = milestone;
+    private void open(Detail detail){remember();minecraft.setScreen(new DetailScreen(detail));}
+    private final class DetailScreen extends Screen {
+        final Detail detail; private long start=System.nanoTime();private int dx,dy,dw,dh;private MenuPanel prose;
+        DetailScreen(Detail detail){super(detail.title());this.detail=detail;}
+        @Override protected void init(){
+            if(PremiumSkillScreen.this.width!=width || PremiumSkillScreen.this.height!=height)
+                PremiumSkillScreen.this.resize(minecraft,width,height);
+            dw=Math.min(width-22,430);dh=Math.min(height-22,300);dx=(width-dw)/2;dy=(height-dh)/2;
+            prose=addRenderableWidget(new MenuPanel(dx+13,dy+69,dw-26,dh-112,"detail"));
+            prose.paint=(g,l,t,w,mx,my)->wrapped(g,detail.description().get(),l,t,w-7,MUTED,.83F,Integer.MAX_VALUE);
+            prose.contentHeight=wrappedHeight(detail.description().get(),dw-33,.83F)+8;
+            addRenderableWidget(new MenuButton(dx+12,dy+dh-30,70,20,()->t("back"),()->true,this::onClose,false,null));
+            addRenderableWidget(new MenuButton(dx+90,dy+dh-30,dw-102,20,detail.actionLabel(),detail.enabled(),detail.action(),false,null));
         }
-        @Override protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-            var state = ClientSkills.snapshot();
-            boolean ready = state != null && state.available();
-            boolean complete = ready && state.milestones().contains(milestone.id());
-            int current = ready ? Math.max(0, state.progress().getOrDefault(milestone.id(), 0)) : 0;
-            int target = Math.max(1, milestone.target());
-            if (complete) current = target;
-
-            int accent = complete ? GREEN : categoryColor(milestone.category());
-            int bg = complete ? 0xC50A312A : isHoveredOrFocused() ? 0xDA182D3E : CARD;
-            softPanel(g, getX(), getY(), width, height, bg, isHoveredOrFocused() || complete ? accent : 0xFF29495E);
-            if (isHoveredOrFocused() || complete) glowOutline(g, getX(), getY(), width, height, accent);
-            g.fill(getX(), getY() + 2, getX() + 2, getY() + height - 2, accent);
-
-            int iconBox = Math.min(24, height - 24);
-            int iconX = getX() + 6;
-            int iconY = getY() + 6;
-            softPanel(g, iconX, iconY, iconBox, iconBox, 0xB81A3141, 0x442E526A);
-            g.renderItem(milestone.icon().getDefaultInstance(), iconX + (iconBox - 16) / 2, iconY + (iconBox - 16) / 2);
-
-            float titleScale = layout.compact() ? 0.63F : 0.72F;
-            float smallScale = layout.compact() ? 0.53F : 0.62F;
-            int textX = iconX + iconBox + 6;
-            int rightReserve = complete ? 15 : 3;
-            drawScaled(g, getMessage().copy().withStyle(ChatFormatting.BOLD), textX, getY() + 6, WHITE, titleScale,
-                    width - (textX - getX()) - rightReserve);
-            drawScaled(g, categoryLabel(milestone.category()), textX, getY() + 17, categoryColor(milestone.category()), smallScale,
-                    width - (textX - getX()) - 5);
-            if (complete) drawScaled(g, Component.literal("✔"), getX() + width - 14, getY() + 5, GREEN, 0.74F, 12);
-
-            int descY = getY() + (layout.compact() ? 30 : 33);
-            int rewardW = Math.max(31, Math.round((font.width("+" + milestone.reward() + " SP") + 7) * smallScale));
-            int descW = width - 12;
-            if (height >= 64) drawWrappedScaled(g, Component.translatable(milestone.descriptionKey()), getX() + 6, descY,
-                    descW, MUTED, smallScale, layout.compact() ? 1 : 2);
-
-            int barY = getY() + height - 9;
-            int barX = getX() + 6;
-            int barW = Math.max(22, width - rewardW - 18);
-            progressBar(g, barX, barY, barW, 4, current / (double) target, complete ? GREEN : CYAN);
-            String progress = complete ? "1 / 1" : current + " / " + target;
-            drawScaled(g, Component.literal(progress), barX + Math.max(0, barW - 28), barY - 8,
-                    complete ? GREEN : MUTED, smallScale, 28);
-
-            int rewardX = getX() + width - rewardW - 6;
-            softPanel(g, rewardX, barY - 9, rewardW, 13, 0xD0143A64, 0xFF3679B7);
-            drawScaled(g, Component.literal("+" + milestone.reward() + " SP").withStyle(ChatFormatting.BOLD), rewardX + 4,
-                    barY - 6, WHITE, smallScale, rewardW - 7);
-        }
-    }
-
-    private final class GenericPanel extends ScrollPanel {
-        private final List<Card> cards;
-        private final List<Button> actions = new ArrayList<>();
-        private final List<Integer> offsets = new ArrayList<>();
-        private final List<Integer> heights = new ArrayList<>();
-        private int contentHeight;
-        GenericPanel(List<Card> cards, int panelLeft, int panelTop, int panelWidth, int panelHeight) {
-            super(PremiumSkillScreen.this.minecraft, panelWidth, panelHeight, panelTop, panelLeft, 0, 3,
-                    0x00000000, CYAN, CYAN_LIGHT);
-            this.cards = List.copyOf(cards);
-            for (Card card : cards) {
-                offsets.add(contentHeight);
-                int h = layout.compact() ? 67 : 82;
-                boolean actionable = !card.skill().isEmpty() || !card.product().isEmpty() || card.action() != null;
-                heights.add(h);
-                contentHeight += h + 6;
-                Button action = new ChromeButton(left + 8, top, Math.max(70, panelWidth / 3), 18,
-                        actionable ? card.actionText() : Component.empty(), false, b -> execute(card));
-                action.visible = actionable;
-                actions.add(action);
-            }
-            contentHeight = Math.max(height, contentHeight);
-            positionButtons();
-            refreshActions();
-        }
-        private void execute(Card card) {
-            if (!card.skill().isEmpty()) { ClientSkills.buy(card.skill()); refreshActions(); }
-            else if (!card.product().isEmpty()) confirmProduct(card.product());
-            else if (card.action() != null) card.action().run();
-        }
-        float position() { return scrollDistance; }
-        void restore(float value) { scrollDistance = Math.clamp(value, 0, Math.max(0, contentHeight - height)); positionButtons(); }
-        private void positionButtons() {
-            for (int i = 0; i < actions.size(); i++) {
-                var action = actions.get(i);
-                int cy = top - (int) scrollDistance + offsets.get(i);
-                action.setX(left + width - action.getWidth() - 8);
-                action.setY(cy + heights.get(i) - 23);
-                action.visible = (!cards.get(i).skill().isEmpty() || !cards.get(i).product().isEmpty() || cards.get(i).action() != null)
-                        && action.getY() + 18 > top && action.getY() < bottom;
-            }
-        }
-        void refreshActions() {
-            for (int i = 0; i < cards.size(); i++) {
-                var card = cards.get(i);
-                var action = actions.get(i);
-                if (!card.skill().isEmpty()) {
-                    action.setMessage(skillStatus(card.skill()));
-                    action.active = canBuySkill(card.skill());
-                } else if (!card.product().isEmpty()) {
-                    action.setMessage(productStatus(card.product()));
-                    action.active = canBuyProduct(card.product());
-                } else action.active = true;
-            }
-        }
-        @Override protected int getContentHeight() { return contentHeight; }
-        @Override protected void drawBackground(GuiGraphics g, Tesselator tess, float tick) { }
-        @Override protected void drawPanel(GuiGraphics g, int entryRight, int baseY, Tesselator tess, int mx, int my) {
-            positionButtons();
-            for (int i = 0; i < cards.size(); i++) {
-                var card = cards.get(i);
-                int cy = baseY + offsets.get(i);
-                int h = heights.get(i);
-                if (cy >= bottom || cy + h <= top) continue;
-                softPanel(g, left, cy, width - 5, h, 0xCB122432, 0xFF29495E);
-                g.fill(left, cy + 2, left + 2, cy + h - 2, CYAN);
-                g.renderItem(card.icon(), left + 9, cy + 9);
-                drawScaled(g, card.title().copy().withStyle(ChatFormatting.BOLD), left + 32, cy + 8, WHITE,
-                        layout.compact() ? 0.66F : 0.76F, width - 44);
-                drawWrappedScaled(g, card.description(), left + 9, cy + 27, width - 22, MUTED,
-                        layout.compact() ? 0.56F : 0.64F, layout.compact() ? 2 : 3);
-                drawScaled(g, card.badge(), left + 9, cy + h - 18, CYAN,
-                        layout.compact() ? 0.52F : 0.61F, width / 2);
-                actions.get(i).render(g, mx, my, 0);
-            }
+        @Override public void tick(){if(++ticks%100==0)ClientSkills.refreshMenu();}
+        @Override public boolean isPauseScreen(){return false;}
+        @Override public void onClose(){minecraft.setScreen(PremiumSkillScreen.this);}
+        @Override public boolean keyPressed(int key,int scan,int modifiers){if(ClientSkills.OPEN.matches(key,scan)){minecraft.setScreen(null);return true;}return super.keyPressed(key,scan,modifiers);}
+        @Override public void render(GuiGraphics g,int mx,int my,float tick){
+            PremiumSkillScreen.this.render(g,-100,-100,tick);
             g.flush();
+            g.pose().pushPose();g.pose().translate(0,0,400);
+            super.render(g,mx,my,tick);
+            g.flush();g.pose().popPose();
         }
-        @Override public boolean mouseClicked(double mx, double my, int button) {
-            positionButtons(); return isMouseOver(mx, my) && super.mouseClicked(mx, my, button);
+        @Override public void renderBackground(GuiGraphics g,int mx,int my,float tick){
+            double reveal=MenuMotion.reveal(start,System.nanoTime());
+            g.fill(0,0,width,height,((int)(178*reveal)<<24)|0x020911);
+            panel(g,dx-2,dy-2,dw+4,dh+4,0xFF081822,detail.accent());
+            g.fill(dx,dy,dx+(int)(dw*reveal),dy+2,detail.accent());
+            circle(g,dx+28,dy+29,19,0xFF183542);g.renderItem(detail.icon(),dx+20,dy+21);
+            wrapped(g,detail.title().copy().withStyle(ChatFormatting.BOLD),dx+55,dy+13,dw-69,WHITE,.95F,2);
+            label(g,detail.summary().get(),dx+55,dy+39,dw-69,detail.accent(),.7F);
+            bar(g,dx+13,dy+59,dw-26,detail.ratio().get(),detail.accent());
+            label(g,detail.progress().get(),dx+14,dy+dh-42,dw-28,detail.accent(),.67F);
         }
-        @Override public boolean mouseScrolled(double mx, double my, double horizontal, double vertical) {
-            if (!isMouseOver(mx, my)) return false;
-            boolean result = super.mouseScrolled(mx, my, horizontal, vertical); positionButtons(); return result;
-        }
-        @Override public List<? extends GuiEventListener> children() { return actions; }
-        @Override public NarratableEntry.NarrationPriority narrationPriority() {
-            return getFocused() == null ? NarratableEntry.NarrationPriority.NONE : NarratableEntry.NarrationPriority.FOCUSED;
-        }
-        @Override public void updateNarration(NarrationElementOutput output) { output.add(NarratedElementType.TITLE, pageName(page)); }
     }
 }
