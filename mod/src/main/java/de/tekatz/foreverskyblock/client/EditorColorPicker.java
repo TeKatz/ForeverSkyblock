@@ -8,7 +8,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/** Small native ARGB picker used by K-menu Studio instead of requiring hand-written color codes. */
+/** Native ARGB picker with palette, exact entry and clipboard support. */
 public final class EditorColorPicker extends Screen {
     private static final int[] PALETTE={
             0xFFFFFFFF,0xFFF2F8FD,0xFF9DB4C5,0xFF638399,0xFF07111B,0xFF0B1C2A,
@@ -20,29 +20,38 @@ public final class EditorColorPicker extends Screen {
     private int alpha=255,red=255,green=255,blue=255,dragChannel=-1;
     private EditBox hex;
     private boolean syncing;
+    private String status="";
 
     public EditorColorPicker(Screen parent,String current,Consumer<String> save){
         super(Component.literal(EditorClient.german()?"Farbe auswählen":"Choose color"));this.parent=parent;this.save=save;parse(current);
     }
 
     @Override protected void init(){
-        int boxW=Math.min(360,width-36),left=(width-boxW)/2;
-        hex=addRenderableWidget(new EditBox(font,left+88,50,boxW-88,20,Component.literal("AARRGGBB")));
+        int boxW=Math.min(390,width-36),left=(width-boxW)/2;
+        hex=addRenderableWidget(new EditBox(font,left+88,50,boxW-200,20,Component.literal("AARRGGBB")));
         hex.setMaxLength(9);hex.setValue(value());hex.setResponder(this::fromHex);
+        addRenderableWidget(Button.builder(Component.literal(EditorClient.german()?"Kopieren":"Copy"),b->copy()).bounds(left+boxW-106,50,50,20).build());
+        addRenderableWidget(Button.builder(Component.literal(EditorClient.german()?"Einfügen":"Paste"),b->paste()).bounds(left+boxW-52,50,52,20).build());
         addRenderableWidget(Button.builder(Component.literal(EditorClient.german()?"Übernehmen":"Apply"),b->{save.accept(value());minecraft.setScreen(parent);}).bounds(left+boxW-212,height-34,66,20).build());
         addRenderableWidget(Button.builder(Component.literal(EditorClient.german()?"Standard":"Default"),b->{save.accept("");minecraft.setScreen(parent);}).bounds(left+boxW-140,height-34,66,20).build());
         addRenderableWidget(Button.builder(Component.literal(EditorClient.german()?"Abbrechen":"Cancel"),b->onClose()).bounds(left+boxW-68,height-34,66,20).build());
     }
 
     private void parse(String value){
-        if(value==null||value.isBlank())return;String s=value.replace("#","");if(s.length()!=8)return;
+        if(value==null||value.isBlank())return;String s=value.trim().replace("#","");if(s.length()==6)s="FF"+s;if(s.length()!=8)return;
         try{long n=Long.parseLong(s,16);alpha=(int)(n>>24)&255;red=(int)(n>>16)&255;green=(int)(n>>8)&255;blue=(int)n&255;}catch(NumberFormatException ignored){}
     }
     private String value(){return String.format(Locale.ROOT,"%02X%02X%02X%02X",alpha,red,green,blue);}
-    private void fromHex(String text){if(syncing)return;String s=text.replace("#","");if(s.length()!=8)return;try{parse(s);}catch(RuntimeException ignored){}}
+    private void fromHex(String text){if(syncing)return;String s=text.trim().replace("#","");if(s.length()==6)s="FF"+s;if(s.length()!=8||!s.matches("[0-9a-fA-F]{8}"))return;parse(s);status="";}
     private void syncHex(){if(hex==null)return;syncing=true;hex.setValue(value());syncing=false;}
-    private int left(){return (width-Math.min(360,width-36))/2;}
-    private int boxW(){return Math.min(360,width-36);}
+    private void copy(){minecraft.keyboardHandler.setClipboard("#"+value());status=EditorClient.german()?"Farbcode kopiert":"Color code copied";}
+    private void paste(){
+        String clip=minecraft.keyboardHandler.getClipboard();if(clip==null)clip="";String s=clip.trim().replace("#","");if(s.length()==6)s="FF"+s;
+        if(!s.matches("[0-9a-fA-F]{8}")){status=EditorClient.german()?"Zwischenablage enthält keinen gültigen Farbcode":"Clipboard does not contain a valid color code";return;}
+        parse(s);syncHex();status=EditorClient.german()?"Farbcode eingefügt":"Color code pasted";
+    }
+    private int left(){return (width-Math.min(390,width-36))/2;}
+    private int boxW(){return Math.min(390,width-36);}
     private int barsLeft(){return left()+88;}
     private int barsWidth(){return boxW()-88;}
     private int barY(int channel){return 86+channel*29;}
@@ -63,8 +72,9 @@ public final class EditorColorPicker extends Screen {
         }
         int py=212,sw=28,gap=5;g.drawString(font,EditorClient.german()?"Schnellfarben":"Palette",left,py-14,MenuArt.MUTED);
         for(int i=0;i<PALETTE.length;i++){int col=i%9,row=i/9,x=left+col*(sw+gap),y=py+row*(sw+gap);g.fill(x,y,x+sw,y+sw,PALETTE[i]);g.fill(x,y,x+sw,y+1,0xFFFFFFFF);g.fill(x,y,x+1,y+sw,0xFFFFFFFF);}
-        int previewY=Math.min(height-72,py+2*(sw+gap)+9);g.drawString(font,EditorClient.german()?"Vorschau":"Preview",left,previewY,MenuArt.MUTED);
+        int previewY=Math.min(height-88,py+2*(sw+gap)+9);g.drawString(font,EditorClient.german()?"Vorschau":"Preview",left,previewY,MenuArt.MUTED);
         g.fill(left+70,previewY-5,left+box,previewY+17,0xFF23313B);g.fill(left+72,previewY-3,left+box-2,previewY+15,(alpha<<24)|(red<<16)|(green<<8)|blue);
+        if(!status.isEmpty())g.drawString(font,status,left,Math.min(height-53,previewY+24),MenuArt.CYAN);
         super.render(g,mx,my,dt);
     }
 
