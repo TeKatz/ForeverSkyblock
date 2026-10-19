@@ -37,69 +37,33 @@ public final class KMenuHeaderArt {
     }
 
     public static void render(GuiGraphics graphics, int screenX, int screenY, PremiumMenuLayout layout) {
-        int left = screenX + layout.padding();
-        int top = screenY + layout.padding();
-        int height = layout.headerHeight() - 5;
-        int available = layout.width() - 2 * layout.padding() - 23;
-        int brandWidth = layout.tiny() ? 0 : layout.compact() ? 104 : 154;
-
-        if (brandWidth > 0) {
-            drawImage(graphics, BRAND, left, top, Math.max(1, brandWidth - 4), height,
-                    BRAND_SOURCE_WIDTH, BRAND_SOURCE_HEIGHT);
-        }
-
-        int remaining = available - brandWidth;
-        int gap = 4;
-        int skillWidth = (int) (remaining * .18);
-        int perkWidth = skillWidth;
-        int statsWidth = (int) (remaining * .25);
-        int tierWidth = remaining - skillWidth - perkWidth - statsWidth - gap * 3;
-        int sectionX = left + brandWidth;
-
-        SkillNetwork.Snapshot state = ClientSkills.snapshot();
-        boolean ready = state != null && state.available();
-
-        drawCurrency(graphics, sectionX, top, skillWidth, height, SKILL_POINTS,
-                t("sp"), ready ? literal(state.points()) : literal("—"), CYAN);
-        sectionX += skillWidth + gap;
-
-        drawCurrency(graphics, sectionX, top, perkWidth, height, PERK_POINTS,
-                t("pp"), ready ? literal(state.perkPoints()) : literal("—"), GOLD);
-        sectionX += perkWidth + gap;
-
-        panel(graphics, sectionX, top, tierWidth, height, 0xB9102532, BORDER);
-        boolean tierIcon = tierWidth > 85;
-        int tierIconSize = iconSize(height);
-        if (tierIcon) {
-            drawImage(graphics, SHOP_TIER, sectionX + 5, top + (height - tierIconSize) / 2,
-                    tierIconSize, tierIconSize, ICON_SOURCE_SIZE, ICON_SOURCE_SIZE);
-        }
-        int tierTextX = sectionX + (tierIcon ? tierIconSize + 10 : 4);
-        int tierTextWidth = tierWidth - (tierIcon ? tierIconSize + 14 : 8);
-        centered(graphics, t("tier"), tierTextX, top + 3, tierTextWidth, 12, MUTED, .62F);
-        centered(graphics, ready ? meta("tier." + state.shopTier()) : literal("—"),
-                tierTextX, top + 15, tierTextWidth, 15, WHITE, .78F);
-        if (height >= 44) {
-            int completed = ready ? completed(state) : 0;
-            bar(graphics, tierTextX, top + height - 9, tierTextWidth,
-                    completed / (double) MilestoneCatalog.MILESTONES.size(), GOLD);
-            if (height > 55) {
-                centered(graphics, literal(completed + " / " + MilestoneCatalog.MILESTONES.size()),
-                        tierTextX, top + 34, tierTextWidth, 10, MUTED, .6F);
-            }
-        }
-        sectionX += tierWidth + gap;
-
-        panel(graphics, sectionX, top, statsWidth, height, 0xB9102532, BORDER);
-        int rowHeight = height / 2;
-        SkillNetwork.MenuStatistics statistics = state == null
-                ? SkillNetwork.MenuStatistics.UNKNOWN : state.statistics();
-        drawStat(graphics, sectionX, top, statsWidth, rowHeight, PLAYTIME,
-                t("playtime"), playtime(statistics.playTicks()), CYAN);
-        drawStat(graphics, sectionX, top + rowHeight, statsWidth, height - rowHeight, ISLAND_LEVEL,
-                t("island"), statistics.islandLevel() < 0
-                        ? literal("—")
-                        : literal(statistics.islandLevel() + " / " + ChallengeRules.ALL.size()), GREEN);
+        int left=screenX+layout.padding(),top=screenY+layout.padding(),height=layout.headerHeight()-5;
+        int available=layout.width()-2*layout.padding()-23;
+        int brandWidth=layout.tiny()?0:layout.compact()?104:154;
+        if(brandWidth>0)EditorClient.group(graphics,"header.brand",left,top,brandWidth-4,height,
+                ()->drawImage(graphics,BRAND,left,top,brandWidth-4,height,BRAND_SOURCE_WIDTH,BRAND_SOURCE_HEIGHT));
+        int remaining=available-brandWidth,gap=4,skillWidth=(int)(remaining*.18),perkWidth=skillWidth,statsWidth=(int)(remaining*.25);
+        int tierWidth=remaining-skillWidth-perkWidth-statsWidth-gap*3;
+        int spX=left+brandWidth,ppX=spX+skillWidth+gap,tierX=ppX+perkWidth+gap,statsX=tierX+tierWidth+gap;
+        var state=ClientSkills.snapshot();boolean ready=state!=null&&state.available();
+        EditorClient.group(graphics,"header.sp",spX,top,skillWidth,height,()->drawCurrency(graphics,spX,top,skillWidth,height,SKILL_POINTS,t("sp"),ready?literal(state.points()):literal("—"),CYAN));
+        EditorClient.group(graphics,"header.pp",ppX,top,perkWidth,height,()->drawCurrency(graphics,ppX,top,perkWidth,height,PERK_POINTS,t("pp"),ready?literal(state.perkPoints()):literal("—"),GOLD));
+        EditorClient.group(graphics,"header.tier",tierX,top,tierWidth,height,()->drawTier(graphics,tierX,top,tierWidth,height,state,ready));
+        EditorClient.group(graphics,"header.stats",statsX,top,statsWidth,height,()->{
+            panel(graphics,statsX,top,statsWidth,height,0xB9102532,BORDER);
+            var stats=state==null?SkillNetwork.MenuStatistics.UNKNOWN:state.statistics();int row=height/2;
+            drawStat(graphics,statsX,top,statsWidth,row,PLAYTIME,t("playtime"),playtime(stats.playTicks()),CYAN);
+            drawStat(graphics,statsX,top+row,statsWidth,height-row,ISLAND_LEVEL,t("island"),stats.islandLevel()<0?literal("—"):literal(stats.islandLevel()+" / "+ChallengeRules.ALL.size()),GREEN);
+        });
+    }
+    private static void drawTier(GuiGraphics graphics,int x,int top,int width,int height,SkillNetwork.Snapshot state,boolean ready){
+        panel(graphics,x,top,width,height,0xB9102532,BORDER);boolean icon=width>85;int size=iconSize(height);
+        if(icon)drawImage(graphics,SHOP_TIER,x+5,top+(height-size)/2,size,size,ICON_SOURCE_SIZE,ICON_SOURCE_SIZE);
+        int tx=x+(icon?size+10:4),tw=width-(icon?size+14:8);
+        centered(graphics,t("tier"),tx,top+3,tw,12,MUTED,.62F);
+        centered(graphics,ready?meta("tier."+state.shopTier()):literal("—"),tx,top+15,tw,15,WHITE,.78F);
+        if(height>=44){int count=ready?completed(state):0;bar(graphics,tx,top+height-9,tw,count/(double)MilestoneCatalog.MILESTONES.size(),GOLD);
+            if(height>55)centered(graphics,literal(count+" / "+MilestoneCatalog.MILESTONES.size()),tx,top+34,tw,10,MUTED,.6F);}
     }
 
     private static void drawCurrency(GuiGraphics graphics, int x, int y, int width, int height,

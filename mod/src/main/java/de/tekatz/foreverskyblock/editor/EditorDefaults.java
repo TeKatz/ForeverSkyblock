@@ -28,7 +28,7 @@ public final class EditorDefaults {
         }
         var products=new ArrayList<Product>();for(var p:ShopCatalog.PRODUCTS)products.add(new Product(p.id(),true,new Text(p.titleEn(),p.titleDe()),
                 new Text(p.descriptionEn(),p.descriptionDe()),"minecraft:"+(p==ShopCatalog.NO_PHANTOMS?"phantom_membrane":p==ShopCatalog.NO_RAIN?"water_bucket":p==ShopCatalog.PERMANENT_DAY?"sunflower":"chest"),
-                p.requiredTier(),p.spCost(),p.ppCost(),List.of(),p.contents().stream().map(s->new Stack(s.itemId(),s.count())).toList()));
+                p.requiredTier(),p.spCost(),p.ppCost(),List.of(),p.contents().stream().map(s->new EditorDocument.Stack(s.itemId(),s.count())).toList()));
         var contracts=new ArrayList<Contract>();for(var c:ContractCatalog.CONTRACTS)contracts.add(new Contract(c.id(),true,new Text(c.titleEn(),c.titleDe()),
                 new Text(c.descriptionEn(),c.descriptionDe()),c.iconId(),ContractType.valueOf(c.trigger().name()),c.itemId()==null?"":c.itemId(),c.target(),c.rewardSp(),c.requiredTier()));
         var layout=new LinkedHashMap<String,Style>();for(String id:ELEMENTS)layout.put(id,Style.defaults());

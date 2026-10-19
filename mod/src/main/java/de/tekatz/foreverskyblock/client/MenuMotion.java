@@ -16,7 +16,10 @@ public final class MenuMotion {
         return value;
     }
     public static double reveal(long start, long now) {
-        double t = Math.clamp((now - start) / 200_000_000D, 0, 1);
+        return reveal(start,now,200);
+    }
+    public static double reveal(long start,long now,int milliseconds) {
+        double t = milliseconds<=0?1:Math.clamp((now - start) / (milliseconds*1_000_000D), 0, 1);
         return 1 - Math.pow(1 - t, 3);
     }
     public static boolean insideNode(double mx, double my, double cx, double cy, double radius) {

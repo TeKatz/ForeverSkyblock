@@ -6,17 +6,24 @@ import net.minecraft.network.chat.Component;
 
 /** Code-drawn menu marks stay crisp at every GUI scale and require no item-model placeholders. */
 final class MenuArt {
+    private static de.tekatz.foreverskyblock.editor.EditorDocument.Style scope=de.tekatz.foreverskyblock.editor.EditorDocument.Style.defaults();
+    static de.tekatz.foreverskyblock.editor.EditorDocument.Style pushStyle(de.tekatz.foreverskyblock.editor.EditorDocument.Style next){var prior=scope;scope=next;return prior;}
     static final int WHITE = 0xFFF2F8FD, MUTED = 0xFF9DB4C5, DIM = 0xFF638399,
             CYAN = 0xFF51D7ED, GOLD = 0xFFFFCB75, GREEN = 0xFF69DDA7, BORDER = 0xFF294759;
     private MenuArt() { }
     static Component t(String key, Object... args) { return Component.translatable("gui.forever_skyblock.overhaul." + key, args); }
     static void panel(GuiGraphics g, int x, int y, int w, int h, int color, int border) {
+        color=de.tekatz.foreverskyblock.editor.EditorCodec.color(scope.fill(),color);border=de.tekatz.foreverskyblock.editor.EditorCodec.color(scope.border(),border);
         if (w < 2 || h < 2) return;
         g.fill(x, y, x + w, y + h, color);
         g.fill(x, y, x + w, y + 1, border); g.fill(x, y + h - 1, x + w, y + h, border);
         g.fill(x, y, x + 1, y + h, border); g.fill(x + w - 1, y, x + w, y + h, border);
     }
     static void label(GuiGraphics g, Component text, int x, int y, int w, int color, float scale) {
+        scale*=scope.fontScale();color=de.tekatz.foreverskyblock.editor.EditorCodec.color(scope.text(),color);
+        labelRaw(g,text,x,y,w,color,scale);
+    }
+    private static void labelRaw(GuiGraphics g, Component text, int x, int y, int w, int color, float scale) {
         if (w <= 0) return;
         var font = Minecraft.getInstance().font;
         int available = Math.max(1, (int) (w / scale));
@@ -26,15 +33,17 @@ final class MenuArt {
         g.drawString(font, value, 0, 0, color, false); g.pose().popPose();
     }
     static void centered(GuiGraphics g, Component text, int x, int y, int w, int h, int color, float scale) {
+        scale*=scope.fontScale();color=de.tekatz.foreverskyblock.editor.EditorCodec.color(scope.text(),color);
         var font = Minecraft.getInstance().font;
         float fit = Math.min(scale, w / (float) Math.max(1, font.width(text.getString())));
-        label(g, text, x + Math.max(0, Math.round((w - font.width(text.getString()) * fit) / 2)),
+        labelRaw(g, text, x + Math.max(0, Math.round((w - font.width(text.getString()) * fit) / 2)),
                 y + Math.round((h - 8 * fit) / 2), w, color, fit);
     }
     static int wrappedHeight(Component text, int width, float scale) {
         return Minecraft.getInstance().font.split(text, Math.max(1, (int) (width / scale))).size() * Math.round(11 * scale);
     }
     static int wrapped(GuiGraphics g, Component text, int x, int y, int width, int color, float scale, int maxLines) {
+        scale*=scope.fontScale();color=de.tekatz.foreverskyblock.editor.EditorCodec.color(scope.text(),color);
         int n = 0;
         for (var line : Minecraft.getInstance().font.split(text, Math.max(1, (int) (width / scale)))) {
             if (n++ >= maxLines) break;

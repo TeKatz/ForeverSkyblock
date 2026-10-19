@@ -19,6 +19,7 @@ public final class ClientEvents {
     @SubscribeEvent public static void setup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             SkillNetwork.setClientReceiver(ClientSkills::accept);
+            de.tekatz.foreverskyblock.network.EditorNetwork.receiver(EditorClient::accept);
             de.tekatz.foreverskyblock.progression.JetpackGate.setClientStage(ClientSkills::jetpackStage);
         });
     }

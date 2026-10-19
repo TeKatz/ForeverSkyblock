@@ -77,7 +77,7 @@ public final class SkillNetwork {
                 if (delivery != null) stage = delivery.getValue().stage().ordinal() + 1;
                 else if (profile.meta().claimed(world.identity(), product.id())) stage = 6;
             }
-            products.put(product.id(), new ProductState(stage, productAvailable));
+            products.put(product.id(), new ProductState(stage, productAvailable || stage > 0 && ProgressionService.productAvailable(product)));
         }
         PacketDistributor.sendToPlayer(player, new Snapshot(profile.points(), profile.perkPoints(), skills, milestones, local, open,
                 available, message, ProgressionService.canTestPoints(player), profile.meta().shopTier(), progress,

@@ -61,7 +61,7 @@ public final class EditorService {
                 if(!loadError.isEmpty())throw new IOException("Fix or restore the invalid config before publishing");
                 var next=store.load();EditorCodec.validateUpdate(document,next);activate(next.withRevision(Math.addExact(document.revision(),1)));reply(p,2,"","Reloaded",false);
             }else if(request.action()==3){
-                var backup=store.restoreBackup();EditorCodec.validateUpdate(document,backup);activate(backup.withRevision(Math.addExact(document.revision(),1)));reply(p,2,"","Backup restored",false);
+                var backup=store.readBackup();EditorCodec.validateUpdate(document,backup);activate(backup.withRevision(Math.addExact(document.revision(),1)));reply(p,2,"","Backup restored",false);
             }
         }catch(IOException|RuntimeException e){uploads.remove(p.getUUID());reply(p,2,"",e.getMessage()==null?"Editor operation failed":e.getMessage().substring(0,Math.min(950,e.getMessage().length())),false);}
     }

@@ -26,7 +26,7 @@ public final class EditorStore {
         if(Files.exists(file))atomic(file.resolveSibling(file.getFileName()+".bak"),Files.readString(file));
         atomic(file,data);
     }
-    public EditorDocument restoreBackup() throws IOException {var old=read(file.resolveSibling(file.getFileName()+".bak"));atomic(file,EditorCodec.encode(old));return old;}
+    public EditorDocument readBackup() throws IOException {return read(file.resolveSibling(file.getFileName()+".bak"));}
     public static void atomic(Path file,String data) throws IOException {
         Path absolute=file.toAbsolutePath();Files.createDirectories(absolute.getParent());Path temp=Files.createTempFile(absolute.getParent(),"kmenu-",".tmp");
         try {

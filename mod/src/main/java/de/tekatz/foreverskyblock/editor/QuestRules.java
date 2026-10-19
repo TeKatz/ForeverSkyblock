@@ -34,7 +34,7 @@ public final class QuestRules {
             String seen=event.identity().isEmpty()?"":"seen/"+event.identity();
             if(old!=null&&!seen.isEmpty()&&old.evidence().contains(seen))continue;
             boolean changed=false;
-            for(var task:q.tasks())if(task.type()==event.type()&&(task.target().equals(event.target())||task.type()==TaskType.KILL&&task.target().equals("minecraft:any_hostile")&&event.target().startsWith("hostile/"))) {
+            for(var task:q.tasks())if(task.type()==event.type()&&(task.target().equals(event.target())||task.type()==TaskType.KILL&&task.target().equals("minecraft:any_hostile")&&event.identity().startsWith("h/"))) {
                 int next=(int)Math.min(task.count(),(long)counts.get(task.id())+event.count());
                 if(next!=counts.get(task.id())){counts.put(task.id(),next);changed=true;}
             }
