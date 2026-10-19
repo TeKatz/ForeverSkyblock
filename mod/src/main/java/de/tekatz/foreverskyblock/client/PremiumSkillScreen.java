@@ -204,7 +204,7 @@ public final class PremiumSkillScreen extends Screen {
             }
             rail=addRenderableWidget(new MenuPanel(sx,sy+48,w,Math.max(25,y+layout.contentBottom()-sy-53),"rail"));
             for(int i=0;i<CATEGORIES.size();i++) {
-                final int chosen=i; String id=CATEGORIES.get(i); int count="contracts".equals(id)?ContractCatalog.CONTRACTS.size():"all".equals(id)?MilestoneCatalog.MILESTONES.size():(int)MilestoneCatalog.MILESTONES.stream().filter(m->id.equals(m.category())).count();
+                final int chosen=i; String id=CATEGORIES.get(i); int count="contracts".equals(id)?ContractCatalog.all().size():"all".equals(id)?MilestoneCatalog.MILESTONES.size():(int)MilestoneCatalog.MILESTONES.stream().filter(m->id.equals(m.category())).count();
                 rail.add(new MenuButton(0,i*27,w-5,24,()->categoryName(id),()->true,
                         ()->{remember();category=chosen;entered=System.nanoTime();rebuildWidgets();},i==category,null) {
                     @Override protected void renderWidget(GuiGraphics g,int mx,int my,float dt) {
@@ -268,7 +268,7 @@ public final class PremiumSkillScreen extends Screen {
     }
     private void buildContracts() {
         var cards=new ArrayList<Entry>();
-        for(var c:ContractCatalog.CONTRACTS) {
+        for(var c:ContractCatalog.all()) {
             if(!(contractTitle(c).getString()+" "+contractDescription(c).getString()).toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)))continue;
             var cs=contractState(c); if(filter==1&&cs!=null&&cs.completions()>0||filter==2&&(cs==null||cs.completions()==0))continue;
             cards.add(new Entry(contractTitle(c),contractDescription(c),item(c.iconId()),"contracts",()->literal("+"+c.rewardSp()+" SP"),

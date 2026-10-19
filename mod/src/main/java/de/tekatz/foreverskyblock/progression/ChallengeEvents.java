@@ -63,6 +63,11 @@ public final class ChallengeEvents {
     /** Boss credit and repeatable contracts are reduced in one atomic profile update to avoid first-kill double payment. */
     public static void killed(ServerPlayer player, Entity victim) {
         if (!realPlayer(player) || victim.level().isClientSide() || victim == player) return;
+        de.tekatz.foreverskyblock.editor.EditorEvents.emit(player,de.tekatz.foreverskyblock.editor.EditorDocument.TaskType.KILL,
+                BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType()).toString(),1,victim.getUUID().toString());
+        if (victim.getType().getCategory() == MobCategory.MONSTER)
+            de.tekatz.foreverskyblock.editor.EditorEvents.emit(player,de.tekatz.foreverskyblock.editor.EditorDocument.TaskType.KILL,
+                    "hostile/"+BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType()),1,victim.getUUID().toString());
         ProgressionService.get(player.server).killEvidence(player,
                 victim.getType() == EntityType.WITHER, victim.getType() == EntityType.ENDER_DRAGON,
                 victim.getType().getCategory() == MobCategory.MONSTER, victim.getUUID());

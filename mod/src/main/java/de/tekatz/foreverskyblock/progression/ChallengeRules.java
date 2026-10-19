@@ -63,12 +63,16 @@ public final class ChallengeRules {
             try { if (!java.util.UUID.fromString(evidence).toString().equals(evidence)) return profile; }
             catch (IllegalArgumentException e) { return profile; }
         }
+        var override = de.tekatz.foreverskyblock.editor.EditorRuntime.quest(id);
+        if (override != null && !de.tekatz.foreverskyblock.editor.QuestRules.unlocked(override, profile)) return profile;
         var previous = profile.meta().progress().getOrDefault(id, MetaProgress.Progress.empty());
         if (previous.revision() != 1 || previous.evidence().contains(evidence)) return profile;
         var tokens = new java.util.LinkedHashSet<>(previous.evidence()); tokens.add(evidence);
         var progress = new java.util.LinkedHashMap<>(profile.meta().progress());
         progress.put(id, new MetaProgress.Progress(1, tokens));
         var next = profile.withMeta(profile.meta().withProgress(progress));
-        return tokens.size() >= definition.target() ? next.award(id, definition.reward()) : next;
+        int target = override == null ? definition.target() : override.tasks().getFirst().count();
+        return tokens.size() >= target ? override == null ? next.award(id, definition.reward())
+                : de.tekatz.foreverskyblock.editor.QuestRules.award(next,id,override.rewardSp(),override.rewardPp()) : next;
     }
 }

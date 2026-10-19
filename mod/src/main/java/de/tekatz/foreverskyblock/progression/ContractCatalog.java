@@ -54,8 +54,10 @@ public final class ContractCatalog {
         return new Contract("forever_skyblock:contract/" + path, Trigger.RESOURCE, tier, target, reward, item, item,
                 en, de, descriptionEn, descriptionDe);
     }
+    public static List<Contract> all() { return de.tekatz.foreverskyblock.editor.EditorRuntime.contracts(); }
+
     public static Contract find(String id) {
-        for (var contract : CONTRACTS) if (contract.id().equals(id)) return contract;
+        for (var contract : all()) if (contract.id().equals(id)) return contract;
         return null;
     }
 }

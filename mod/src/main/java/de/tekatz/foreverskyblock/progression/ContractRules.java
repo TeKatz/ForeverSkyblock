@@ -12,6 +12,8 @@ public final class ContractRules {
 
     public static ProgressionProfile recordBoss(ProgressionProfile profile, ChallengeRules.Definition unique,
                                                 ContractCatalog.Contract contract, String evidence) {
+        contract = ContractCatalog.find(contract.id());
+        if (contract == null || !de.tekatz.foreverskyblock.editor.EditorRuntime.contractEnabled(contract.id())) return ChallengeRules.record(profile, unique.id(), "completed");
         boolean uniqueAlreadyCompleted = profile.milestones().contains(unique.id());
         ProgressionProfile next = ChallengeRules.record(profile, unique.id(), "completed");
         if (!uniqueAlreadyCompleted || next.meta().shopTier() < contract.requiredTier()) return next;
@@ -19,7 +21,7 @@ public final class ContractRules {
     }
 
     public static ProgressionProfile recordAction(ProgressionProfile profile, ContractCatalog.Contract contract, String evidence) {
-        if (contract.resource() || profile.meta().shopTier() < contract.requiredTier()
+        if (!de.tekatz.foreverskyblock.editor.EditorRuntime.contractEnabled(contract.id()) || contract.resource() || profile.meta().shopTier() < contract.requiredTier()
                 || evidence == null || evidence.isBlank() || evidence.length() > 128) return profile;
         var previous = profile.meta().contracts().getOrDefault(contract.id(), MetaProgress.ContractState.empty());
         if (previous.revision() != 1 || previous.recentEvidence().contains(evidence)) return profile;
@@ -36,7 +38,7 @@ public final class ContractRules {
 
     public static ProgressionProfile beginTurnIn(ProgressionProfile profile, ContractCatalog.Contract contract,
                                                   UUID request, int beforeCount) {
-        if (!contract.resource() || request == null || profile.meta().shopTier() < contract.requiredTier()
+        if (!de.tekatz.foreverskyblock.editor.EditorRuntime.contractEnabled(contract.id()) || !contract.resource() || request == null || profile.meta().shopTier() < contract.requiredTier()
                 || beforeCount < contract.target() || !profile.meta().pendingContracts().isEmpty()) return profile;
         var state = profile.meta().contracts().getOrDefault(contract.id(), MetaProgress.ContractState.empty());
         if (state.revision() != 1 || state.recentRequests().contains(request)) return profile;

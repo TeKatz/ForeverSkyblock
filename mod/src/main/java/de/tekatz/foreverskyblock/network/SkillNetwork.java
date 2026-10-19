@@ -59,18 +59,18 @@ public final class SkillNetwork {
                     : state == null ? 0 : state.revision() != 1 ? -1 : Math.min(milestone.target(), state.evidence().size()));
         }
         var contracts = new LinkedHashMap<String, ContractState>();
-        for (var contract : ContractCatalog.CONTRACTS) {
+        for (var contract : ContractCatalog.all()) {
             var state = profile.meta().contracts().getOrDefault(contract.id(), MetaProgress.ContractState.empty());
             boolean pending = profile.meta().pendingContracts().values().stream().anyMatch(value -> value.contractId().equals(contract.id()));
             boolean itemAvailable = !contract.resource() || ProgressionService.contractItemAvailable(contract.itemId());
-            boolean unlocked = profile.meta().shopTier() >= contract.requiredTier() && itemAvailable;
+            boolean unlocked = de.tekatz.foreverskyblock.editor.EditorRuntime.contractEnabled(contract.id()) && profile.meta().shopTier() >= contract.requiredTier() && itemAvailable;
             int current = contract.resource() ? Math.min(contract.target(), ProgressionService.inventoryCount(player, contract.itemId())) : state.progress();
             contracts.put(contract.id(), new ContractState(current, state.completions(), unlocked,
                     contract.resource() && unlocked && !pending && current >= contract.target(), pending));
         }
         var products = new LinkedHashMap<String, ProductState>();
-        for (var product : ShopCatalog.PRODUCTS) {
-            boolean productAvailable = (!product.developmentOnly() || ProgressionService.canTestPoints(player)) && ProgressionService.productAvailable(product);
+        for (var product : ShopCatalog.all()) {
+            boolean productAvailable = de.tekatz.foreverskyblock.editor.EditorRuntime.productUnlocked(product.id(),profile) && (!product.developmentOnly() || ProgressionService.canTestPoints(player)) && ProgressionService.productAvailable(product);
             int stage = 0;
             if (world.available() && world.identity() != null) {
                 var delivery = profile.meta().delivery(world.identity(), product.id());
