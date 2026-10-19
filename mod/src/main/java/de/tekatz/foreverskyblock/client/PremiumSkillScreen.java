@@ -707,7 +707,11 @@ public final class PremiumSkillScreen extends Screen {
         /** GuiGraphics clipping/bar drawing follows the preview pose and preserves enclosing scissor state. */
         @Override public void render(GuiGraphics g,int mx,int my,float partialTick){
             if(width<=0||height<=0)return;
-            g.enableScissor(left,top,right,bottom);
+            // 1.21.1 GuiGraphics scissors use screen coordinates rather than the current pose.
+            var matrix=g.pose().last().pose();
+            var clipStart=new org.joml.Vector3f(left,top,0).mulPosition(matrix);
+            var clipEnd=new org.joml.Vector3f(right,bottom,0).mulPosition(matrix);
+            g.enableScissor((int)Math.floor(clipStart.x()),(int)Math.floor(clipStart.y()),(int)Math.ceil(clipEnd.x()),(int)Math.ceil(clipEnd.y()));
             try{
                 var tess=Tesselator.getInstance();drawBackground(g,tess,partialTick);drawPanel(g,right,top-(int)scrollDistance,tess,mx,my);
                 int maximum=Math.max(0,getContentHeight()-height);
