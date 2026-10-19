@@ -215,7 +215,7 @@ public final class KMenuEditorScreen extends Screen {
             MenuArt.circle(g,x,y,r+2,color);MenuArt.circle(g,x,y,r,0xFF123044);
             String icon=graphIcon(id);var item=BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(icon)).orElse(Items.BARRIER);
             g.pose().pushPose();g.pose().translate(x-8*zoom,y-8*zoom,0);g.pose().scale(zoom,zoom,1);g.renderItem(item.getDefaultInstance(),0,0);g.pose().popPose();
-            String name=graphName(id);MenuArt.centered(g,Component.literal(name),x-61,y+r+7,122,22,MenuArt.WHITE,.7F);
+            String name=graphName(id);MenuArt.centered(g,Component.literal(name),x-(int)(61*zoom),y+r+(int)(7*zoom),Math.max(1,(int)(122*zoom)),Math.max(1,(int)(22*zoom)),MenuArt.WHITE,.7F*zoom);
         }
     }
     private void graphEdge(GuiGraphics g,String source,String destination,int color){var a=GraphGeometry.point(session.current(),source,true);var b=GraphGeometry.point(session.current(),destination,true);MenuArt.arrow(g,gx(a.x()),gy(a.y()),gx(b.x()),gy(b.y()),(int)(b.radius()*zoom),color);}
