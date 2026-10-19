@@ -97,9 +97,19 @@ public final class MenuClientPreview {
     private static void linkNodes()throws Exception{var button=editor.children().stream().filter(w->w instanceof net.minecraft.client.gui.components.Button b&&b.getMessage().getString().equals("Link")).map(w->(net.minecraft.client.gui.components.Button)w).findFirst().orElseThrow();button.onPress();Field f=KMenuEditorScreen.class.getDeclaredField("canvasLeft");f.setAccessible(true);double left=f.getInt(editor)+editorFloat("panX"),top=134+editorFloat("panY");float zoom=editorFloat("zoom");editor.mouseClicked(left+70*zoom,top+30*zoom,0);editor.mouseClicked(left+680*zoom,top+85*zoom,0);if(!editorSession().current().quest(newQuest).requires().contains(ChallengeRules.FOUNDATIONS.id()))throw new IllegalStateException("Native graph linking did not create its prerequisite");System.out.println("MENU_EDITOR_INPUT_PASSED link-quest-prerequisite");}
     private static float editorFloat(String name)throws Exception{Field f=KMenuEditorScreen.class.getDeclaredField(name);f.setAccessible(true);return f.getFloat(editor);}
     private static void dragHeader()throws Exception{
-        var rect=EditorClient.bounds().get("header.sp");if(rect==null)throw new IllegalStateException("Native header geometry missing");float scale=editorFloat("previewScale"),x=editorFloat("previewX"),y=editorFloat("previewY");double mx=x+(rect.x()+rect.width()/2F)*scale,my=y+(rect.y()+rect.height()/2F)*scale;
+        var parent=EditorClient.bounds().get("header.sp"),label=EditorClient.bounds().get("header.sp.label");
+        if(parent==null||label==null)throw new IllegalStateException("Native editable header geometry missing");
+        float scale=editorFloat("previewScale"),x=editorFloat("previewX"),y=editorFloat("previewY");
+        double lx=x+(label.x()+label.width()/2F)*scale,ly=y+(label.y()+label.height()/2F)*scale;
+        editor.mouseClicked(lx,ly,0);
+        Field selected=KMenuEditorScreen.class.getDeclaredField("selected");selected.setAccessible(true);
+        if(!"header.sp.label".equals(selected.get(editor)))throw new IllegalStateException("Header label was not individually selectable");
+        System.out.println("MENU_EDITOR_INPUT_PASSED select-header-label");
+        // The bottom-right margin belongs to the SP group rather than its label/value/icon leaves, so it remains the
+        // direct manipulation handle for moving the whole header panel from the preview.
+        double mx=x+(parent.x()+parent.width()-3)*scale,my=y+(parent.y()+parent.height()-2)*scale;
         editor.mouseClicked(mx,my,0);editor.mouseDragged(mx+12*scale,my+8*scale,0,12*scale,8*scale);editor.mouseReleased(mx+12*scale,my+8*scale,0);
-        Field f=KMenuEditorScreen.class.getDeclaredField("session");f.setAccessible(true);var session=(EditorSession)f.get(editor);
+        var session=editorSession();
         if(session.current().layout().get("header.sp").x()!=12||session.current().layout().get("header.sp").y()!=8)throw new IllegalStateException("Native drag did not update the selected layout element");
         session.undo();if(session.current().layout().get("header.sp").x()!=0)throw new IllegalStateException("Native drag undo failed");session.redo();
         System.out.println("MENU_EDITOR_INPUT_PASSED drag-header undo redo");
