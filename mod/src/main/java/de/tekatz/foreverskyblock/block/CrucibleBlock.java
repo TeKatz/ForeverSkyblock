@@ -4,6 +4,7 @@ import com.mojang.serialization.MapCodec;
 import de.tekatz.foreverskyblock.ForeverSkyblock;
 import de.tekatz.foreverskyblock.blockentity.CrucibleBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -29,6 +30,7 @@ public final class CrucibleBlock extends BaseEntityBlock {
     }
 
     @Override protected MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
+    @Override public Component getName() { return Component.literal("Crucible"); }
     @Override protected RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) { builder.add(FILL); }
     @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) { return new CrucibleBlockEntity(pos, state); }
