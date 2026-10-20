@@ -58,9 +58,10 @@ public final class WashingScreen extends MachineScreen<WashingMenu> {
 
         MachineSkin.panel(g, x + 18, y + 58, 212, 74, 0xFF54616D);
         MachineSkin.centered(g, font, text("input"), x + WashingMenu.INPUT_X + 8, y + 64, 54, MachineSkin.MUTED, .73F);
-        MachineSkin.centered(g, font, text("output"), x + WashingMenu.OUTPUT_X + 8, y + 64, 54, MachineSkin.MUTED, .73F);
+        MachineSkin.centered(g, font, text("output"), x + 195, y + 64, 70, MachineSkin.MUTED, .73F);
         skin.slot(g, x + WashingMenu.INPUT_X, y + WashingMenu.MACHINE_Y, true);
         skin.slot(g, x + WashingMenu.OUTPUT_X, y + WashingMenu.MACHINE_Y, true);
+        skin.slot(g, x + WashingMenu.SECONDARY_OUTPUT_X, y + WashingMenu.MACHINE_Y, true);
 
         int barX = x + 83, barW = 82;
         MachineSkin.panel(g, barX, y + 82, barW, 8, 0xFF637888);
@@ -74,10 +75,17 @@ public final class WashingScreen extends MachineScreen<WashingMenu> {
         if (minecraft.level != null) {
             ItemStack input = menu.getSlot(WashingBasinBlockEntity.INPUT).getItem();
             var recipe = minecraft.level.getRecipeManager().getRecipeFor(ForeverSkyblock.WASHING.get(), new WashingInput(input), minecraft.level);
-            if (recipe.isPresent()) summary = Component.literal(recipe.get().value().ingredientCount() + " × "
-                    + input.getHoverName().getString() + " → " + recipe.get().value().result().getHoverName().getString());
+            if (recipe.isPresent()) {
+                var washing = recipe.get().value();
+                StringBuilder result = new StringBuilder(washing.result().getHoverName().getString());
+                if (washing.hasSecondaryResult()) result.append(" + ").append(washing.secondaryResult().getCount()).append("× ")
+                        .append(washing.secondaryResult().getHoverName().getString());
+                if (washing.hasBonusResult()) result.append(" + ").append(washing.bonusChancePercent()).append("% ")
+                        .append(washing.bonusResult().getHoverName().getString());
+                summary = Component.literal(washing.ingredientCount() + " × " + input.getHoverName().getString() + " → " + result);
+            }
         }
-        MachineSkin.centered(g, font, summary, x + 124, y + 118, 196, MachineSkin.LIGHT, .78F);
+        MachineSkin.centered(g, font, summary, x + 124, y + 118, 196, MachineSkin.LIGHT, .68F);
 
         MachineSkin.panel(g, x + 18, y + 138, 138, 34, 0xFF465A68);
         MachineSkin.text(g, font, text("washing_hint_source"), x + 25, y + 145, 124, MachineSkin.MUTED, .72F);

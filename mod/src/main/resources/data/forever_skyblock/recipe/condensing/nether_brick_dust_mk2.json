@@ -1,0 +1,8 @@
+{
+  "type": "forever_skyblock:condensing",
+  "ingredient": { "tag": "forever_skyblock:nether_brick_materials" },
+  "ingredient_count": 1,
+  "result": { "id": "forever_skyblock:nether_brick_dust", "count": 1 },
+  "processing_time": 160,
+  "minimum_tier": 2
+}

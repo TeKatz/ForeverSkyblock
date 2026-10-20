@@ -1,0 +1,21 @@
+{
+  "neoforge:conditions": [
+    { "type": "neoforge:mod_loaded", "modid": "mekanism" }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "II",
+    " N",
+    " Q"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "N": { "item": "forever_skyblock:nether_concentrate" },
+    "Q": { "item": "minecraft:quartz" }
+  },
+  "result": {
+    "id": "mekanism:configurator",
+    "count": 1
+  }
+}

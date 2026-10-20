@@ -1,0 +1,10 @@
+{
+  "type": "forever_skyblock:washing",
+  "ingredient": { "item": "forever_skyblock:nether_brick_dust" },
+  "ingredient_count": 1,
+  "result": { "id": "forever_skyblock:nether_concentrate", "count": 1 },
+  "secondary_result": { "id": "minecraft:quartz", "count": 2 },
+  "bonus_result": { "id": "minecraft:gold_nugget", "count": 1 },
+  "bonus_chance": 20,
+  "processing_time": 160
+}

@@ -15,7 +15,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 public final class WashingMenu extends AbstractContainerMenu {
-    public static final int INPUT_X = 42, OUTPUT_X = 188, MACHINE_Y = 78;
+    public static final int INPUT_X = 42, OUTPUT_X = 174, SECONDARY_OUTPUT_X = 202, MACHINE_Y = 78;
     public static final int MACHINE_SLOT_COUNT = WashingBasinBlockEntity.MACHINE_SLOTS;
 
     private final ContainerData data;
@@ -45,6 +45,9 @@ public final class WashingMenu extends AbstractContainerMenu {
             }
         });
         addSlot(new SlotItemHandler(inventory, WashingBasinBlockEntity.OUTPUT, OUTPUT_X, MACHINE_Y) {
+            @Override public boolean mayPlace(ItemStack stack) { return false; }
+        });
+        addSlot(new SlotItemHandler(inventory, WashingBasinBlockEntity.SECONDARY_OUTPUT, SECONDARY_OUTPUT_X, MACHINE_Y) {
             @Override public boolean mayPlace(ItemStack stack) { return false; }
         });
         for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++)
