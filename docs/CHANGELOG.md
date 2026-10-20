@@ -1,6 +1,31 @@
 # Changelog
 
-## 0.25.2 — K-menu Studio usability pass (development branch, not merged)
+## 0.26.4 — Crucible and Condenser MK II automation integrated
+
+- Integrate the Crucible Lava/Obsidian progression through PR #21 and the configurable Condenser Mark II automation layer through PR #22.
+- Crucible: 4,000 mB internal Lava buffer, visible fill progression, Torch/Campfire/Lava/Superheating heat tiers, adjacent Fluid Tank / Freezing Chamber detection, Lava-vs-Obsidian routing, timed freezing, JEI, Jade and hopper/cable support.
+- Current Crucible material rates are **8 Cobblestone** or **40 Stone Fragments** per **1,000 mB Lava**.
+- Keep the Mekanism Basic Fluid Tank recipe redstone-free so Redstone can be introduced later as an independent progression step.
+- Add 3-point Condenser Mark II upgrade capacity with Processing Speed, Garden Accelerator, Buffer Expansion and Batch Processing cards.
+- Add independent Mark II output policies: **Block / Void Excess / Void All**, including separate Garden primary/secondary policies.
+- Give all four upgrade cards individual textures and keep effective upgraded timing synchronized with GUI/world animation timing.
+- Polish Crucible GUI naming/layout and anchor melt/freeze animation to the central Lava meter and progress bars; replace the fast single-pixel sweep with smoother interpolated progress/highlight motion.
+- Final pre-merge head `87f66cd7b3a41ff97bd9053b5392760bc61acc5e` passed Java build, client smoke, visual fixtures, dedicated-server regression tests and full NeoForge 21.1.259 pack-runtime integration.
+
+## 0.25.3 — K-menu Studio integrated
+
+- Integrate the K-menu Studio/editor stack into `main` through PR #19.
+- Preserve native layout/quest/node authoring, server-validated publication, drafts, conflict reconciliation, backups and repository/ZIP export.
+- Retain the 0.25.x usability work: compact command chrome, collapsible inspector sections, Focus preview, stable Select-mode previews, independent header sub-elements, searchable icon replacement and visual ARGB editing.
+- The former `feature/kmenu-admin-editor` and `feature/kmenu-editor-polish` branches are historical development origins, not outstanding integrations.
+
+## CI — Actions usage optimization
+
+- Integrate PR #23: feature branches validate through pull requests rather than duplicate push + PR runs.
+- Cancel stale runs, skip the heavyweight workflow for documentation-only changes, cap job runtime and reduce artifact retention.
+- Keep the same validation chain: Java build, client smoke, K-menu visual fixtures, dedicated-server regression suite and full NeoForge 21.1.259 pack-runtime integration.
+
+## 0.25.2 — K-menu Studio usability pass (historical development stage)
 
 - Narrow the Studio element rail and inspector so the live K-menu preview remains the dominant workspace; retain one-click Focus mode.
 - Shorten state/control labels, clamp overflowing button text and replace opaque layout IDs with friendly names.
@@ -11,14 +36,14 @@
 - Extend the native client fixture to prove a header label can be selected independently before parent-group drag and undo/redo.
 - Validated source `f6ad7233f04ea80e8d8d2b6873fdf2a829725dcc` in Actions run `39209084530`; build, client smoke, native visual/input fixture and both server suites passed. Production JAR: `ForeverSkyblock-1.21.1-NeoForge-0.25.2.jar`, SHA-256 `df750cea1e972817749bf5b889a97eef9a333b8d076fb02791c1200be919d1f0`.
 
-## 0.25.1 — K-menu Studio usability polish (development branch, not merged)
+## 0.25.1 — K-menu Studio usability polish (historical development stage)
 
 - Reduce the Studio's permanently visible command chrome with Files/More/Help workflows and visibly mark the active workspace.
 - Add grouped/collapsible inspector sections, contextual footer guidance and a full-width Focus preview mode.
 - Stabilize Select-mode native previews so normal editor rebuilds do not restart preview reveal animation; retain real animation/input in Try mode.
 - Refresh the viewport control together with the preview when switching logical preview sizes.
 
-## 0.25.0 — K-menu Studio (development branch, not merged)
+## 0.25.0 — K-menu Studio (historical development stage)
 
 - Add native admin layout, quest/chapter, node, Shop-package and Contract authoring for the K-menu.
 - Add private draft history, live native previews, safe publication/revision leases, conflict reconciliation and backup restoration.
@@ -26,9 +51,9 @@
 - Reuse existing world-bound package delivery/resource-contract recovery; preserve published IDs and package contents.
 - Export one validated ZIP or a local repository configuration; bundle repository exports as defaults.
 - Keep existing recipes, machines, world identity, profile schemas, Tier rules and fixed island unchanged.
-- Validation and remaining acceptance: [K_MENU_EDITOR.md](K_MENU_EDITOR.md).
+- Validation and editor behavior: [K_MENU_EDITOR.md](K_MENU_EDITOR.md).
 
-The complete 0.21–0.24 stack is integrated into `main` through [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16), authorized October 19, 2026. Version entries and branch names below record development origins. This integration publishes no release and leaves the fixed starter-island NBT unchanged.
+The complete 0.21–0.24 stack was integrated into `main` through PR #16 and the 0.24.1 artwork through PR #17. Entries below retain their development-origin detail.
 
 ## 0.24.0 — K-menu overhaul
 
