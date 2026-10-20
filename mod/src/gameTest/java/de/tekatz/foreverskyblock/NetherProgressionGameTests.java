@@ -89,4 +89,25 @@ public final class NetherProgressionGameTests {
                 "Secondary Washing output must extract from below");
         h.succeed();
     }
+
+    @GameTest(template = "empty", timeoutTicks = 20)
+    public static void legacyTwoSlotWashingInventoryMigratesWithoutDataLoss(GameTestHelper h) {
+        h.setBlock(POS, ForeverSkyblock.WASHING_BASIN.get());
+        var basin = (WashingBasinBlockEntity) h.getBlockEntity(POS);
+        // ItemStackHandler.deserializeNBT restores the old serialized size. Recreate that legacy state directly.
+        basin.inventory().setSize(2);
+        basin.inventory().setStackInSlot(WashingBasinBlockEntity.INPUT, new ItemStack(ForeverSkyblock.STONE_MEAL.get(), 4));
+        basin.inventory().setStackInSlot(WashingBasinBlockEntity.OUTPUT, new ItemStack(Items.RAW_IRON));
+        h.runAfterDelay(2, () -> {
+            check(h, basin.inventory().getSlots() == 4, "Legacy two-slot Washing Basin must expand to the new internal layout");
+            check(h, basin.inventory().getStackInSlot(WashingBasinBlockEntity.INPUT).is(ForeverSkyblock.STONE_MEAL.get())
+                            && basin.inventory().getStackInSlot(WashingBasinBlockEntity.INPUT).getCount() == 4,
+                    "Legacy Washing input must survive slot migration");
+            check(h, basin.inventory().getStackInSlot(WashingBasinBlockEntity.OUTPUT).is(Items.RAW_IRON),
+                    "Legacy Washing output must survive slot migration");
+            check(h, basin.inventory().getStackInSlot(WashingBasinBlockEntity.SECONDARY_OUTPUT).isEmpty(),
+                    "New secondary output must start empty after migration");
+            h.succeed();
+        });
+    }
 }
