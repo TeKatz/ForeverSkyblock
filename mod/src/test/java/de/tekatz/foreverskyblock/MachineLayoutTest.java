@@ -18,6 +18,17 @@ final class MachineLayoutTest {
             }
         }
     }
+    @Test void fittingMachineLayoutsStayAtNativePixelScale() {
+        for(var layout:new MachineLayout[]{MachineLayout.CONDENSER,MachineLayout.WASHING,MachineLayout.ASCENSION}) {
+            int width=layout.width()+4,height=layout.height()+4;
+            int left=(width-layout.width())/2,top=(height-layout.height())/2;
+            var viewport=layout.viewport(width,height,left,top);
+            assertEquals(1.0,viewport.scale(),.00001,
+                    "A layout that already fits must not be downscaled just to create an artificial safety margin");
+            assertEquals(left,viewport.x(),.00001);
+            assertEquals(top,viewport.y(),.00001);
+        }
+    }
     @Test void condenserFullLayoutKeepsProcessUpgradeAndInventorySectionsSeparated() {
         assertEquals(352, MachineLayout.CONDENSER.height());
         assertTrue(CondenserMenu.FREEZING_Y - CondenserMenu.MAIN_Y >= 60,

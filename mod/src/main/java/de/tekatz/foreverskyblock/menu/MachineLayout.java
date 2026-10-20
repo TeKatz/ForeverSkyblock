@@ -10,8 +10,15 @@ public record MachineLayout(int width, int height, int inventoryY, int hotbarY) 
     public int inventoryX(int column) { return 24 + column*22; }
     public int inventoryRowY(int row) { return inventoryY + row*20; }
     public Viewport viewport(int windowWidth,int windowHeight,int logicalLeft,int logicalTop) {
-        double scale=Math.min(1,Math.min((windowWidth-12.0)/width,(windowHeight-12.0)/height));
-        scale=Math.max(.1,scale);
+        int availableWidth=Math.max(1,windowWidth),availableHeight=Math.max(1,windowHeight);
+        // Preserve the native pixel scale whenever the complete logical GUI already fits. The safety margin is
+        // only needed when we genuinely have to shrink a machine screen; applying it unconditionally made the
+        // 352 px Condenser/Garden layout render slightly below 100% at GUI scale 3.
+        double scale=1.0;
+        if(availableWidth<width||availableHeight<height) {
+            scale=Math.min((availableWidth-12.0)/width,(availableHeight-12.0)/height);
+        }
+        scale=Math.max(.1,Math.min(1.0,scale));
         return new Viewport(scale,(windowWidth-width*scale)/2,(windowHeight-height*scale)/2,logicalLeft,logicalTop);
     }
     public record Viewport(double scale,double x,double y,int logicalLeft,int logicalTop) {

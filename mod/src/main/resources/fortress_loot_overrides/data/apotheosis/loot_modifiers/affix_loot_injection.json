@@ -1,0 +1,34 @@
+{
+  "type": "apotheosis:affix_loot",
+  "conditions": [
+    {
+      "condition": "minecraft:inverted",
+      "term": {
+        "condition": "neoforge:loot_table_id",
+        "loot_table_id": "minecraft:chests/nether_bridge"
+      }
+    }
+  ],
+  "entries": [
+    {
+      "chance": 0.35,
+      "pattern": {
+        "domain": "minecraft",
+        "path_regex": "chests.*"
+      }
+    },
+    {
+      "chance": 0.3,
+      "pattern": {
+        "path_regex": "chests.*"
+      }
+    },
+    {
+      "chance": 0.3,
+      "pattern": {
+        "domain": "twilightforest",
+        "path_regex": "structures.*"
+      }
+    }
+  ]
+}

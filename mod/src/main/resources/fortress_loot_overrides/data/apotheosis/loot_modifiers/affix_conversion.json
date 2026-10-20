@@ -1,0 +1,26 @@
+{
+  "type": "apotheosis:affix_conversion",
+  "conditions": [
+    {
+      "condition": "minecraft:inverted",
+      "term": {
+        "condition": "neoforge:loot_table_id",
+        "loot_table_id": "minecraft:chests/nether_bridge"
+      }
+    }
+  ],
+  "entries": [
+    {
+      "chance": 0.0,
+      "pattern": {
+        "path_regex": ".*blocks.*"
+      }
+    },
+    {
+      "chance": 0.35,
+      "pattern": {
+        "path_regex": ".*"
+      }
+    }
+  ]
+}
