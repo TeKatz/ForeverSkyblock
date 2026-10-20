@@ -1,14 +1,14 @@
-# K-menu Studio — 0.25.2 development polish
+# K-menu Studio — integrated editor
 
-The K-menu Studio was introduced on `feature/kmenu-admin-editor` as the 0.25.0 development build. `feature/kmenu-editor-polish` now carries the 0.25.2 usability pass based on real-player editor feedback. This remains a development branch and is not merged into `main`.
+The K-menu Studio was introduced through the 0.25.x development series and is now **integrated into `main`**. The original implementation lived on `feature/kmenu-admin-editor`; the subsequent player-feedback polish lived on `feature/kmenu-editor-polish` and was integrated through PR #19. Version numbers and branch names below are retained as development history, not as an indication that the editor is still unmerged.
 
-The editor data model, publication safety, server-owned progression rules, machines, recipes and fixed starter island remain unchanged except for the additive style fields used for editable header labels/icons.
+The editor data model, publication safety and server-owned progression rules described below remain the live behavior. Later 0.26.x Crucible and Condenser automation work does not change these editor guarantees.
 
 ## Open and work
 
 Open the K-menu and use the pencil button beside Close, or run `/forevereditor`. The server checks permission level 2 or integrated-server ownership for every authoritative editor operation.
 
-The workspace still uses a content rail, native Minecraft preview/graph canvas and property inspector, but 0.25.2 deliberately makes the preview the dominant surface:
+The workspace still uses a content rail, native Minecraft preview/graph canvas and property inspector, but the 0.25.x usability work deliberately makes the preview the dominant surface:
 
 - the element rail is capped at 108/118 logical pixels instead of occupying the old wide column;
 - the inspector is capped at 184/196 logical pixels instead of expanding to roughly one third of the whole screen;
@@ -148,8 +148,8 @@ The editor does not commit, push, merge or store GitHub credentials.
 - NeoForge development baseline 21.1.249; pack integration target 21.1.259.
 - Existing `skills-9` payloads, player schemas 4/5/6 and world-progress schema 2 are retained.
 - The additional mandatory `kmenu-editor-1` network channel requires matching editor-capable client/server builds.
-- No new challenge, package or balance content is introduced by this editor usability pass.
-- The fixed `forever_me_start.nbt` is not part of this branch.
+- The editor does not bypass gameplay-side machine, recipe or progression rules introduced after 0.25.x.
+- The fixed `forever_me_start.nbt` is not modified by the editor integration.
 
 ## Validation history
 
@@ -157,4 +157,4 @@ The original 0.25.0 implementation source `910f902ff853b0051e5ecfb96a60bb773f901
 
 The 0.25.2 usability source `f6ad7233f04ea80e8d8d2b6873fdf2a829725dcc` passed Actions run `39209084530`: Java 21 build/compileGameTestJava, client startup/model/mixin smoke, the native K-menu render/input fixture, the dedicated regression GameTests and the full NeoForge 21.1.259 pack-runtime integration suite. The native fixture explicitly checks that `header.sp.label` can be selected independently before the parent SP group is dragged and undo/redo is exercised.
 
-The validated production artifact is `ForeverSkyblock-1.21.1-NeoForge-0.25.2.jar`, SHA-256 `df750cea1e972817749bf5b889a97eef9a333b8d076fb02791c1200be919d1f0`. Automated validation does not replace TeKatz's real-player usability acceptance.
+The 0.25.x editor stack was subsequently integrated into `main` through PR #19, including the later usability/regression fixes. Automated validation does not replace TeKatz's real-player usability acceptance.
