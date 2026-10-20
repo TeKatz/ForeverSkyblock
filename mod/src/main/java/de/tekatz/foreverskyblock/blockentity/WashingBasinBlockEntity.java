@@ -98,6 +98,20 @@ public final class WashingBasinBlockEntity extends BlockEntity implements MenuPr
 
     public static void tick(Level level, BlockPos pos, BlockState state, WashingBasinBlockEntity basin) { basin.process(); }
 
+    /**
+     * ItemStackHandler restores the serialized slot count from NBT. Basins saved before the second output and bonus
+     * buffer therefore deserialize as the old two-slot layout. Expand those inventories in-place while preserving
+     * every slot that existed in the save. The same guard also makes ticking resilient to any undersized legacy data.
+     */
+    private void ensureInventorySize() {
+        if (inventory.getSlots() == INVENTORY_SLOTS) return;
+        int preservedSlots = Math.min(inventory.getSlots(), INVENTORY_SLOTS);
+        ItemStack[] preserved = new ItemStack[preservedSlots];
+        for (int slot = 0; slot < preservedSlots; slot++) preserved[slot] = inventory.getStackInSlot(slot).copy();
+        inventory.setSize(INVENTORY_SLOTS);
+        for (int slot = 0; slot < preservedSlots; slot++) inventory.setStackInSlot(slot, preserved[slot]);
+    }
+
     private boolean fits(int slot, ItemStack result) {
         if (result.isEmpty()) return true;
         ItemStack output = inventory.getStackInSlot(slot);
@@ -130,6 +144,7 @@ public final class WashingBasinBlockEntity extends BlockEntity implements MenuPr
     }
 
     private void process() {
+        ensureInventorySize();
         flushBonusBuffer();
         RecipeHolder<WashingRecipe> holder = findRecipe();
         if (holder == null) {
@@ -174,6 +189,7 @@ public final class WashingBasinBlockEntity extends BlockEntity implements MenuPr
     @Override protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         inventory.deserializeNBT(registries, tag.getCompound("Inventory"));
+        ensureInventorySize();
         progress = Math.max(0, Math.min(32766, tag.getInt("Progress")));
         progressRecipe = ResourceLocation.tryParse(tag.getString("ProgressRecipe"));
     }
