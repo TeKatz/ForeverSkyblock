@@ -21,7 +21,11 @@ public final class CondenserMenu extends AbstractContainerMenu {
     public static final int MAIN_INPUT_X = 30, MIXING_INPUT_X = 80, MAIN_OUTPUT_X = 202, MAIN_Y = 61;
     public static final int FREEZING_INPUT_X = 30, FREEZING_OUTPUT_X = 202, FREEZING_Y = 128;
     public static final int GARDEN_SPECIMEN_X = 30, GARDEN_PRIMARY_X = 174, GARDEN_SECONDARY_X = 202, GARDEN_Y = 151;
+    public static final int UPGRADE_1_X = 30, UPGRADE_2_X = 58, UPGRADE_3_X = 86, UPGRADE_Y = 224;
     public static final int MACHINE_SLOT_COUNT = CondenserBlockEntity.MACHINE_SLOTS;
+    public static final int BUTTON_FILTERS = 0;
+    public static final int BUTTON_POLICY_MAIN = 10, BUTTON_POLICY_FREEZING = 11,
+            BUTTON_POLICY_GARDEN_PRIMARY = 12, BUTTON_POLICY_GARDEN_SECONDARY = 13;
 
     private final ContainerData data;
     private final ContainerLevelAccess access;
@@ -50,6 +54,9 @@ public final class CondenserMenu extends AbstractContainerMenu {
         addSlot(gardenSpecimenSlot(inventory));
         addSlot(gardenOutputSlot(inventory, CondenserBlockEntity.GARDEN_OUTPUT_PRIMARY, GARDEN_PRIMARY_X));
         addSlot(gardenOutputSlot(inventory, CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY, GARDEN_SECONDARY_X));
+        addSlot(upgradeSlot(inventory, CondenserBlockEntity.UPGRADE_1, UPGRADE_1_X));
+        addSlot(upgradeSlot(inventory, CondenserBlockEntity.UPGRADE_2, UPGRADE_2_X));
+        addSlot(upgradeSlot(inventory, CondenserBlockEntity.UPGRADE_3, UPGRADE_3_X));
         for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++)
             addSlot(new Slot(playerInventory, col + row * 9 + 9, MachineLayout.CONDENSER.inventoryX(col), MachineLayout.CONDENSER.inventoryRowY(row)));
         for (int col = 0; col < 9; col++)
@@ -95,6 +102,16 @@ public final class CondenserMenu extends AbstractContainerMenu {
             @Override public boolean mayPickup(Player player) { return isActive() && super.mayPickup(player); }
         };
     }
+    private Slot upgradeSlot(ItemStackHandler inventory, int index, int x) {
+        return new SlotItemHandler(inventory, index, x, UPGRADE_Y) {
+            @Override public boolean isActive() { return machineTier() >= 2; }
+            @Override public boolean mayPlace(ItemStack stack) {
+                return isActive() && CondenserBlockEntity.isUpgradeCard(stack)
+                        && (machine == null || inventory.isItemValid(index, stack));
+            }
+            @Override public int getMaxStackSize() { return 1; }
+        };
+    }
     private boolean inputActive(int index) {
         if (hasGardenChamber()) return false;
         return switch (index) {
@@ -118,8 +135,23 @@ public final class CondenserMenu extends AbstractContainerMenu {
     public int gardenProgress() { return data.get(15); }
     public int gardenDuration() { return Math.max(1, data.get(16)); }
     public int gardenStatus() { return data.get(17); }
+    public int speedUpgrades() { return data.get(18); }
+    public int gardenUpgrades() { return data.get(19); }
+    public int bufferUpgrades() { return data.get(20); }
+    public int batchUpgrades() { return data.get(21); }
+    public int upgradeCapacityUsed() { return data.get(22); }
     public boolean editing() { return editMode.get() != 0; }
     public int moduleState() { return (hasMixingChamber() ? 1 : 0) | (hasFreezingChamber() ? 2 : 0); }
+
+    public int outputPolicy(int slot) {
+        return switch (slot) {
+            case CondenserBlockEntity.OUTPUT -> data.get(23);
+            case CondenserBlockEntity.FREEZING_OUTPUT -> data.get(24);
+            case CondenserBlockEntity.GARDEN_OUTPUT_PRIMARY -> data.get(25);
+            case CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY -> data.get(26);
+            default -> CondenserBlockEntity.POLICY_BLOCK;
+        };
+    }
 
     public ItemStack filter(int slot) {
         if (!CondenserBlockEntity.isInput(slot)) return ItemStack.EMPTY;
@@ -144,8 +176,23 @@ public final class CondenserMenu extends AbstractContainerMenu {
     }
 
     @Override public boolean clickMenuButton(Player player, int button) {
-        if (button != 0 || !stillValid(player) || hasGardenChamber()) return false;
-        editMode.set(editing() ? 0 : 1);
+        if (!stillValid(player)) return false;
+        if (button == BUTTON_FILTERS) {
+            if (hasGardenChamber()) return false;
+            editMode.set(editing() ? 0 : 1);
+            broadcastChanges();
+            return true;
+        }
+        if (machine == null || machineTier() < 2) return false;
+        int slot = switch (button) {
+            case BUTTON_POLICY_MAIN -> CondenserBlockEntity.OUTPUT;
+            case BUTTON_POLICY_FREEZING -> CondenserBlockEntity.FREEZING_OUTPUT;
+            case BUTTON_POLICY_GARDEN_PRIMARY -> CondenserBlockEntity.GARDEN_OUTPUT_PRIMARY;
+            case BUTTON_POLICY_GARDEN_SECONDARY -> CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY;
+            default -> -1;
+        };
+        if (slot < 0 || !machine.outputActive(slot)) return false;
+        machine.cycleOutputPolicy(slot);
         broadcastChanges();
         return true;
     }
@@ -161,7 +208,6 @@ public final class CondenserMenu extends AbstractContainerMenu {
         if (holder == null || !(holder.value() instanceof de.tekatz.foreverskyblock.recipe.CondenserRecipe recipe)) return false;
         CondenserTransfer.Plan plan = CondenserTransfer.plan(this, recipe, maximum);
         if (!plan.success()) { broadcastChanges(); return false; }
-        // Condensing transfers never touch the parallel Freezing or Garden storage.
         for (int i = 0; i < 36; i++) getSlot(i + MACHINE_SLOT_COUNT).set(plan.inventory().get(i));
         machine.inventory().setStackInSlot(CondenserBlockEntity.INPUT, plan.inputs().get(0));
         if (recipe.requiresModule()) machine.inventory().setStackInSlot(CondenserBlockEntity.SECOND_INPUT, plan.inputs().get(1));
@@ -198,6 +244,9 @@ public final class CondenserMenu extends AbstractContainerMenu {
         ItemStack original = stack.copy();
         if (index < MACHINE_SLOT_COUNT) {
             if (!moveItemStackTo(stack, MACHINE_SLOT_COUNT, slots.size(), true)) return ItemStack.EMPTY;
+        } else if (machineTier() >= 2 && CondenserBlockEntity.isUpgradeCard(stack)
+                && moveItemStackTo(stack, CondenserBlockEntity.UPGRADE_1, CondenserBlockEntity.UPGRADE_3 + 1, false)) {
+            // Upgrade installed.
         } else if (hasGardenChamber()) {
             if (!slots.get(CondenserBlockEntity.GARDEN_SPECIMEN).mayPlace(stack)
                     || !moveItemStackTo(stack, CondenserBlockEntity.GARDEN_SPECIMEN, CondenserBlockEntity.GARDEN_SPECIMEN + 1, false)) {
@@ -207,7 +256,6 @@ public final class CondenserMenu extends AbstractContainerMenu {
                 } else if (!moveItemStackTo(stack, MACHINE_SLOT_COUNT, hotbarStart, false)) return ItemStack.EMPTY;
             }
         } else {
-            // The Freezing input accepts every item, so it is deliberately never a generic shift-click sink.
             boolean moved = false;
             if (slots.get(CondenserBlockEntity.INPUT).mayPlace(stack))
                 moved = moveItemStackTo(stack, CondenserBlockEntity.INPUT, CondenserBlockEntity.INPUT + 1, false);

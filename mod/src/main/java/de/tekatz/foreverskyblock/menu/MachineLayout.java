@@ -2,7 +2,9 @@ package de.tekatz.foreverskyblock.menu;
 
 /** Common logical coordinates keep rendered slots, server menus and pointer transforms aligned. */
 public record MachineLayout(int width, int height, int inventoryY, int hotbarY) {
-    public static final MachineLayout CONDENSER = new MachineLayout(248,296,204,268);
+    // MK II uses the extra vertical room for its automation/upgrade panel. Keeping the same layout for MK I
+    // avoids a second menu protocol and leaves a compact "MK II only" explanation instead of dead controls.
+    public static final MachineLayout CONDENSER = new MachineLayout(248,352,260,324);
     public static final MachineLayout WASHING = new MachineLayout(248,286,190,254);
     public static final MachineLayout ASCENSION = new MachineLayout(248,270,176,240);
     public int inventoryX(int column) { return 24 + column*22; }

@@ -48,6 +48,7 @@ public final class CondenserBlock extends BaseEntityBlock {
             for (int slot = 0; slot < condenser.inventory().getSlots(); slot++) {
                 Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), condenser.inventory().getStackInSlot(slot));
             }
+            condenser.dropBufferedItems(stack -> Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), stack));
         }
         super.onRemove(state, level, pos, newState, moving);
     }

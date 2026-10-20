@@ -18,11 +18,16 @@ final class MachineLayoutTest {
             }
         }
     }
-    @Test void condenserFullLayoutKeepsProcessSectionsSeparatedFromInventory() {
-        assertEquals(296, MachineLayout.CONDENSER.height());
-        assertTrue(CondenserMenu.FREEZING_Y - CondenserMenu.MAIN_Y >= 60, "Freezing row must not crowd timed condensing");
-        assertTrue(MachineLayout.CONDENSER.inventoryY() - (CondenserMenu.FREEZING_Y + 24) >= 50,
-                "Machine controls need breathing room before the player inventory");
+    @Test void condenserFullLayoutKeepsProcessUpgradeAndInventorySectionsSeparated() {
+        assertEquals(352, MachineLayout.CONDENSER.height());
+        assertTrue(CondenserMenu.FREEZING_Y - CondenserMenu.MAIN_Y >= 60,
+                "Freezing row must not crowd timed condensing");
+        assertTrue(CondenserMenu.UPGRADE_Y > CondenserMenu.FREEZING_Y + 70,
+                "MK II upgrade row must stay below process and module controls");
+        assertTrue(MachineLayout.CONDENSER.inventoryY() - (CondenserMenu.UPGRADE_Y + 24) >= 12,
+                "Upgrade slots and automation controls need breathing room before the player inventory");
+        assertTrue(CondenserMenu.UPGRADE_1_X >= 20 && CondenserMenu.UPGRADE_3_X + 24 < MachineLayout.CONDENSER.width() / 2,
+                "All three upgrade slots must remain inside the left half of the automation panel");
         assertTrue(MachineLayout.CONDENSER.hotbarY() - MachineLayout.CONDENSER.inventoryY() >= 60);
     }
     @Test void washingLayoutKeepsLabelsControlsAndInventorySeparated() {

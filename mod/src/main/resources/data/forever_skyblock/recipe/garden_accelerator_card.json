@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["IWI", "WBW", "IWI"],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "W": { "item": "minecraft:wheat" },
+    "B": { "item": "minecraft:bone_meal" }
+  },
+  "result": { "id": "forever_skyblock:garden_accelerator_card", "count": 1 }
+}

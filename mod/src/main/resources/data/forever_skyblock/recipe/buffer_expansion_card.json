@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["IMI", "MCM", "IMI"],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "M": { "item": "minecraft:mud_bricks" },
+    "C": { "item": "minecraft:chest" }
+  },
+  "result": { "id": "forever_skyblock:buffer_expansion_card", "count": 1 }
+}

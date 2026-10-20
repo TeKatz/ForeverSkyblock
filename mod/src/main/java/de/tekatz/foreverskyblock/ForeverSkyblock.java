@@ -10,6 +10,7 @@ import de.tekatz.foreverskyblock.blockentity.CrucibleBlockEntity;
 import de.tekatz.foreverskyblock.blockentity.GardenChamberBlockEntity;
 import de.tekatz.foreverskyblock.blockentity.WashingBasinBlockEntity;
 import de.tekatz.foreverskyblock.item.MortarItem;
+import de.tekatz.foreverskyblock.item.CondenserUpgradeCardItem;
 import de.tekatz.foreverskyblock.item.SupplyCacheItem;
 import de.tekatz.foreverskyblock.menu.CondenserMenu;
 import de.tekatz.foreverskyblock.menu.CrucibleMenu;
@@ -99,6 +100,14 @@ public final class ForeverSkyblock {
     public static final DeferredItem<Item> STONE_MEAL = ITEMS.registerSimpleItem("stone_meal");
     public static final DeferredItem<MortarItem> MORTAR = ITEMS.register("mortar", () -> new MortarItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> STONE_FRAGMENT = ITEMS.registerSimpleItem("stone_fragment");
+    public static final DeferredItem<CondenserUpgradeCardItem> PROCESSING_SPEED_CARD = ITEMS.register("processing_speed_card",
+            () -> new CondenserUpgradeCardItem(CondenserUpgradeCardItem.Kind.SPEED, new Item.Properties()));
+    public static final DeferredItem<CondenserUpgradeCardItem> GARDEN_ACCELERATOR_CARD = ITEMS.register("garden_accelerator_card",
+            () -> new CondenserUpgradeCardItem(CondenserUpgradeCardItem.Kind.GARDEN, new Item.Properties()));
+    public static final DeferredItem<CondenserUpgradeCardItem> BUFFER_EXPANSION_CARD = ITEMS.register("buffer_expansion_card",
+            () -> new CondenserUpgradeCardItem(CondenserUpgradeCardItem.Kind.BUFFER, new Item.Properties()));
+    public static final DeferredItem<CondenserUpgradeCardItem> BATCH_PROCESSING_CARD = ITEMS.register("batch_processing_card",
+            () -> new CondenserUpgradeCardItem(CondenserUpgradeCardItem.Kind.BATCH, new Item.Properties()));
     /** Delivery carrier is intentionally absent from creative tabs; only a committed shop receipt can issue one. */
     public static final DeferredItem<SupplyCacheItem> WORLD_SUPPLY_CACHE = ITEMS.register("world_supply_cache",
             () -> new SupplyCacheItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
@@ -155,7 +164,8 @@ public final class ForeverSkyblock {
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ASCENSION_ENTITY.get(), de.tekatz.foreverskyblock.blockentity.AscensionChamberBlockEntity::automation);
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, CONDENSER_ENTITY.get(), CondenserBlockEntity::automation);
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, CONDENSER_ENTITY.get(),
+                (machine, side) -> de.tekatz.foreverskyblock.blockentity.CondenserAutomationHandler.create(machine, side));
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, GARDEN_CHAMBER_ENTITY.get(), GardenChamberBlockEntity::automation);
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, WASHING_BASIN_ENTITY.get(), WashingBasinBlockEntity::automation);
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, CRUCIBLE_ENTITY.get(), CrucibleBlockEntity::automation);
@@ -179,6 +189,10 @@ public final class ForeverSkyblock {
             event.accept(STONE_MEAL.get());
             event.accept(MORTAR.get());
             event.accept(REINFORCED_NETHERITE_INGOT.get());
+            event.accept(PROCESSING_SPEED_CARD.get());
+            event.accept(GARDEN_ACCELERATOR_CARD.get());
+            event.accept(BUFFER_EXPANSION_CARD.get());
+            event.accept(BATCH_PROCESSING_CARD.get());
         }
     }
 }

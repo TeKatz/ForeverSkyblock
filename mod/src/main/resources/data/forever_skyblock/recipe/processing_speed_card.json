@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["ICI", "CFC", "ICI"],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "C": { "item": "forever_skyblock:stone_fragment" },
+    "F": { "item": "minecraft:furnace" }
+  },
+  "result": { "id": "forever_skyblock:processing_speed_card", "count": 1 }
+}
