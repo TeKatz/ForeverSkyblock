@@ -1,0 +1,15 @@
+{
+  "neoforge:conditions": [
+    { "type": "neoforge:mod_loaded", "modid": "mekanism" }
+  ],
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "minecraft:quartz" },
+    { "item": "forever_skyblock:nether_concentrate" }
+  ],
+  "result": {
+    "id": "mekanism:crafting_formula",
+    "count": 1
+  }
+}
