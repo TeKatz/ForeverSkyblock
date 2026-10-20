@@ -42,6 +42,25 @@ public final class CrucibleScreen extends MachineScreen<CrucibleMenu> {
         return (minecraft.level == null ? 0 : minecraft.level.getGameTime()) + framePartial;
     }
 
+    private static float progressRatio(int progress, int duration, float partial, boolean running) {
+        if (duration <= 0) return 0F;
+        return Math.min(1F, Math.max(0F, (progress + (running ? partial : 0F)) / duration));
+    }
+
+    private static void drawSoftSweep(GuiGraphics g, int x, int y, int width, float time, int outer, int middle, int core) {
+        if (width <= 0) return;
+        float phase = (time % 48F) / 48F;
+        int center = x - 7 + Math.round(phase * (width + 14));
+        int left = x;
+        int right = x + width;
+        int a0 = Math.max(left, center - 7), a1 = Math.min(right, center + 8);
+        if (a1 > a0) g.fill(a0, y, a1, y + 4, outer);
+        int b0 = Math.max(left, center - 4), b1 = Math.min(right, center + 5);
+        if (b1 > b0) g.fill(b0, y, b1, y + 4, middle);
+        int c0 = Math.max(left, center - 1), c1 = Math.min(right, center + 2);
+        if (c1 > c0) g.fill(c0, y, c1, y + 4, core);
+    }
+
     @Override protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         framePartial = minecraft.isPaused() ? 0 : partialTick;
         int x = leftPos, y = topPos;
@@ -67,7 +86,8 @@ public final class CrucibleScreen extends MachineScreen<CrucibleMenu> {
             default -> "IDLE";
         };
         if (melting || freezing) {
-            int glow = ((int)(time * 4) & 1) == 0 ? 0x554DEBFF : 0x3356CBE4;
+            int pulse = 0x22 + Math.round((.5F + .5F * (float)Math.sin(time * .18F)) * 0x33);
+            int glow = (pulse << 24) | 0x004DEBFF;
             g.fill(x + 175, y + 10, x + 183, y + 18, glow);
         }
         g.fill(x + 177, y + 12, x + 181, y + 16, statusColor);
@@ -96,15 +116,39 @@ public final class CrucibleScreen extends MachineScreen<CrucibleMenu> {
         if (lavaHeight > 0) {
             int lavaTop = meterY + meterH - 2 - lavaHeight;
             g.fill(meterX + 2, lavaTop, meterX + meterW - 2, meterY + meterH - 2, 0xFFFF6A20);
-            int wave = ((int)(time * 3) & 1);
-            g.fill(meterX + 3 + wave, lavaTop, meterX + meterW - 4, lavaTop + 1, 0xFFFFB34D);
+            int drift = Math.floorMod((int)(time / 5F), 3);
+            g.fill(meterX + 3 + drift, lavaTop, meterX + meterW - 4, lavaTop + 1, 0xFFFFB34D);
             if (melting) {
                 for (int i = 0; i < 3; i++) {
                     int bubbleX = meterX + 5 + i * 6;
-                    int travel = Math.floorMod((int)(time * 5) + i * 7, Math.max(2, lavaHeight));
+                    int travel = Math.floorMod((int)(time * 1.6F) + i * 9, Math.max(2, lavaHeight + 5));
                     int bubbleY = meterY + meterH - 4 - travel;
-                    if (bubbleY >= lavaTop + 1) g.fill(bubbleX, bubbleY, bubbleX + 1, bubbleY + 1, 0xFFFFD28A);
+                    if (bubbleY >= lavaTop + 1 && bubbleY < meterY + meterH - 3)
+                        g.fill(bubbleX, bubbleY, bubbleX + 1, bubbleY + 1, i == 1 ? 0xFFFFE1A8 : 0xFFFFC26A);
                 }
+            }
+            if (freezing) {
+                int frost = 0x99DFF9FF;
+                g.fill(meterX + 2, lavaTop, meterX + 5, lavaTop + 1, frost);
+                g.fill(meterX + meterW - 5, lavaTop + 1, meterX + meterW - 2, lavaTop + 2, frost);
+            }
+        }
+
+        if (melting) {
+            int heatBaseY = meterY - 2;
+            for (int i = 0; i < 3; i++) {
+                int hx = meterX + 5 + i * 7;
+                int rise = Math.floorMod((int)(time * 1.2F) + i * 4, 6);
+                int hy = heatBaseY - rise;
+                g.fill(hx, hy, hx + 1, hy + 2, i == 1 ? 0x66FFB04A : 0x44FF7A2A);
+            }
+        }
+        if (freezing) {
+            for (int i = 0; i < 4; i++) {
+                int px = meterX - 2 + Math.floorMod((int)(time * .8F) + i * 8, meterW + 4);
+                int py = meterY + 3 + Math.floorMod((int)(time * .6F) + i * 5, meterH - 7);
+                if (px < meterX + 2 || px >= meterX + meterW - 2)
+                    g.fill(px, py, px + 1, py + 1, i % 2 == 0 ? 0xFFE1F7FF : MachineSkin.CYAN);
             }
         }
         MachineSkin.centered(g, font, Component.literal(menu.lavaMb() + " mB"), x + 124, y + 129, 72, MachineSkin.LIGHT, .64F);
@@ -114,38 +158,18 @@ public final class CrucibleScreen extends MachineScreen<CrucibleMenu> {
         MachineSkin.centered(g, font, Component.literal("FREEZE"), x + 170, y + 133, 52,
                 menu.mode() == CrucibleBlockEntity.MODE_OBSIDIAN && menu.hasFreezer() ? MachineSkin.CYAN : MachineSkin.MUTED, .56F);
         g.fill(meltBarX, barY, meltBarX + barW, barY + 4, 0xFF637888);
-        int meltFilled = Math.min(barW, barW * menu.progress() / menu.duration());
+        float meltRatio = progressRatio(menu.progress(), menu.duration(), framePartial, melting);
+        int meltFilled = Math.round(barW * meltRatio);
         if (meltFilled > 0) {
             g.fill(meltBarX, barY, meltBarX + meltFilled, barY + 4, 0xFFFF6A20);
-            if (melting) {
-                int shine = Math.min(meltFilled - 1, Math.floorMod((int)(time * 9), Math.max(1, meltFilled)));
-                g.fill(meltBarX + shine, barY, meltBarX + Math.min(meltFilled, shine + 3), barY + 1, 0xFFFFD08A);
-            }
+            if (melting) drawSoftSweep(g, meltBarX, barY, meltFilled, time, 0x33FFD29A, 0x66FFD08A, 0xFFFFE0AE);
         }
         g.fill(freezeBarX, barY, freezeBarX + barW, barY + 4, 0xFF637888);
-        int freezeFilled = Math.min(barW, barW * menu.freezeProgress() / menu.freezeDuration());
+        float freezeRatio = progressRatio(menu.freezeProgress(), menu.freezeDuration(), framePartial, freezing);
+        int freezeFilled = Math.round(barW * freezeRatio);
         if (freezeFilled > 0) {
             g.fill(freezeBarX, barY, freezeBarX + freezeFilled, barY + 4, MachineSkin.CYAN);
-            if (freezing) {
-                int shine = Math.min(freezeFilled - 1, Math.floorMod((int)(time * 8), Math.max(1, freezeFilled)));
-                g.fill(freezeBarX + shine, barY, freezeBarX + Math.min(freezeFilled, shine + 3), barY + 1, 0xFFE1F7FF);
-            }
-        }
-
-        if (melting) {
-            for (int i = 0; i < 3; i++) {
-                int shimmerX = x + 105 + i * 10;
-                int rise = Math.floorMod((int)(time * 4) + i * 5, 10);
-                int shimmerY = y + 91 - rise;
-                g.fill(shimmerX, shimmerY, shimmerX + 1, shimmerY + 3, i == 1 ? 0x66FFB04A : 0x44FF7A2A);
-            }
-        }
-        if (freezing) {
-            for (int i = 0; i < 4; i++) {
-                int sparkX = x + 166 + Math.floorMod((int)(time * 3) + i * 11, 37);
-                int sparkY = y + 94 + Math.floorMod((int)(time * 2) + i * 7, 25);
-                g.fill(sparkX, sparkY, sparkX + 1, sparkY + 1, i % 2 == 0 ? 0xFFE1F7FF : MachineSkin.CYAN);
-            }
+            if (freezing) drawSoftSweep(g, freezeBarX, barY, freezeFilled, time + 12F, 0x334DEBFF, 0x668DEEFF, 0xFFE1F7FF);
         }
 
         if (!menu.canToggleMode()) {
