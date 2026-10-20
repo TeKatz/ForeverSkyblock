@@ -2,8 +2,22 @@ name: Build Forever Skyblock Mod
 
 on:
   push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
   pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
   workflow_dispatch:
+
+# A feature branch with an open PR should have exactly one active CI run. New
+# commits cancel stale work instead of burning runner time on obsolete builds.
+concurrency:
+  group: forever-skyblock-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -11,6 +25,7 @@ permissions:
 jobs:
   build-mod:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: mod
@@ -61,6 +76,7 @@ jobs:
             mod/**/screenshots/menu-*.png
             mod/menu-visual.log
           if-no-files-found: warn
+          retention-days: 14
       - name: Test dedicated-server regression suite
         run: ./gradlew runGameTestServer -PcondenserTests --no-daemon
       - name: Test full pack-runtime integrations on NeoForge 21.1.259
@@ -70,3 +86,4 @@ jobs:
           name: ForeverSkyblock-Mod
           path: mod/build/libs/*.jar
           if-no-files-found: error
+          retention-days: 14
