@@ -4,7 +4,7 @@ license="MIT"
 
 [[mods]]
 modId="forever_skyblock"
-version="0.25.2"
+version="0.26.1"
 displayName="Forever Skyblock"
 authors="TeKatz"
 description='''The foundation for Forever Skyblock. Condensers, material processing and persistent cross-world progression.'''
@@ -29,6 +29,20 @@ type="optional"
 versionRange="[19.64.0.454,20)"
 ordering="AFTER"
 side="CLIENT"
+
+[[dependencies.forever_skyblock]]
+modId="jade"
+type="optional"
+versionRange="[15.10,16)"
+ordering="AFTER"
+side="CLIENT"
+
+[[dependencies.forever_skyblock]]
+modId="mekanism"
+type="optional"
+versionRange="[10.7.19,11)"
+ordering="AFTER"
+side="BOTH"
 
 [[dependencies.forever_skyblock]]
 modId="ironjetpacks"
