@@ -1,7 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "minecraft:item/paper",
-    "layer1": "minecraft:item/iron_ingot"
+    "layer0": "forever_skyblock:item/batch_processing_card"
   }
 }

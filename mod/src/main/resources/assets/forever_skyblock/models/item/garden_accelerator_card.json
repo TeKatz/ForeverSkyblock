@@ -1,7 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "minecraft:item/paper",
-    "layer1": "minecraft:item/wheat"
+    "layer0": "forever_skyblock:item/garden_accelerator_card"
   }
 }

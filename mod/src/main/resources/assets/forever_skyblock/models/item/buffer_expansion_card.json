@@ -1,7 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "minecraft:item/paper",
-    "layer1": "minecraft:item/bucket"
+    "layer0": "forever_skyblock:item/buffer_expansion_card"
   }
 }
