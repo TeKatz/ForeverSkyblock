@@ -27,7 +27,10 @@ import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
 
 public final class WashingBasinBlockEntity extends BlockEntity implements MenuProvider {
-    public static final int INPUT = 0, OUTPUT = 1, MACHINE_SLOTS = 2, DATA_COUNT = 4;
+    public static final int INPUT = 0, OUTPUT = 1, SECONDARY_OUTPUT = 2;
+    public static final int MACHINE_SLOTS = 3;
+    private static final int BONUS_BUFFER = 3, INVENTORY_SLOTS = 4;
+    public static final int DATA_COUNT = 4;
     public static final int IDLE = 0, RUNNING = 1, BLOCKED = 2, NO_WATER = 3;
 
     private int progress;
@@ -36,7 +39,7 @@ public final class WashingBasinBlockEntity extends BlockEntity implements MenuPr
     private ResourceLocation progressRecipe;
     private final RecipeManager.CachedCheck<WashingInput, WashingRecipe> recipeCheck = RecipeManager.createCheck(ForeverSkyblock.WASHING.get());
 
-    private final ItemStackHandler inventory = new ItemStackHandler(MACHINE_SLOTS) {
+    private final ItemStackHandler inventory = new ItemStackHandler(INVENTORY_SLOTS) {
         @Override public boolean isItemValid(int slot, ItemStack stack) {
             return slot == INPUT && level != null && acceptsInput(level, stack);
         }
@@ -95,7 +98,39 @@ public final class WashingBasinBlockEntity extends BlockEntity implements MenuPr
 
     public static void tick(Level level, BlockPos pos, BlockState state, WashingBasinBlockEntity basin) { basin.process(); }
 
+    private boolean fits(int slot, ItemStack result) {
+        if (result.isEmpty()) return true;
+        ItemStack output = inventory.getStackInSlot(slot);
+        return output.isEmpty() || ItemStack.isSameItemSameComponents(output, result)
+                && output.getCount() + result.getCount() <= Math.min(64, output.getMaxStackSize());
+    }
+
+    private void insertOutput(int slot, ItemStack result) {
+        if (result.isEmpty()) return;
+        ItemStack existing = inventory.getStackInSlot(slot);
+        inventory.setStackInSlot(slot, result.copyWithCount(existing.getCount() + result.getCount()));
+    }
+
+    private boolean bonusBufferCanAccept(ItemStack result) {
+        if (result.isEmpty()) return true;
+        ItemStack queued = inventory.getStackInSlot(BONUS_BUFFER);
+        return queued.isEmpty() || ItemStack.isSameItemSameComponents(queued, result)
+                && queued.getCount() + result.getCount() <= Math.min(64, queued.getMaxStackSize());
+    }
+
+    /**
+     * The basin deliberately exposes only two output slots. Guaranteed secondary output uses the second slot first;
+     * chance-based byproducts wait here and are moved into that same output channel as soon as it becomes available.
+     */
+    private void flushBonusBuffer() {
+        ItemStack queued = inventory.getStackInSlot(BONUS_BUFFER);
+        if (queued.isEmpty() || !fits(SECONDARY_OUTPUT, queued)) return;
+        insertOutput(SECONDARY_OUTPUT, queued);
+        inventory.setStackInSlot(BONUS_BUFFER, ItemStack.EMPTY);
+    }
+
     private void process() {
+        flushBonusBuffer();
         RecipeHolder<WashingRecipe> holder = findRecipe();
         if (holder == null) {
             if (progress != 0 || progressRecipe != null) { progress = 0; progressRecipe = null; setChanged(); }
@@ -107,19 +142,25 @@ public final class WashingBasinBlockEntity extends BlockEntity implements MenuPr
         duration = recipe.processingTime();
         if (!hasWaterSource()) { status = NO_WATER; return; }
 
-        ItemStack result = recipe.result();
-        ItemStack output = inventory.getStackInSlot(OUTPUT);
-        boolean fits = output.isEmpty() || ItemStack.isSameItemSameComponents(output, result)
-                && output.getCount() + result.getCount() <= Math.min(64, output.getMaxStackSize());
-        if (!fits) { status = BLOCKED; return; }
+        ItemStack primary = recipe.result();
+        ItemStack secondary = recipe.secondaryResult();
+        if (!fits(OUTPUT, primary) || !fits(SECONDARY_OUTPUT, secondary)
+                || recipe.hasBonusResult() && !bonusBufferCanAccept(recipe.bonusResult())) {
+            status = BLOCKED;
+            return;
+        }
 
         status = RUNNING;
         progress++;
         setChanged();
         if (progress >= duration) {
             inventory.extractItem(INPUT, recipe.ingredientCount(), false);
-            inventory.setStackInSlot(OUTPUT, result.copyWithCount(output.getCount() + result.getCount()));
+            insertOutput(OUTPUT, primary);
+            insertOutput(SECONDARY_OUTPUT, secondary);
+            if (recipe.hasBonusResult() && level != null && level.random.nextInt(100) < recipe.bonusChancePercent())
+                insertOutput(BONUS_BUFFER, recipe.bonusResult());
             progress = 0;
+            flushBonusBuffer();
         }
     }
 
@@ -149,7 +190,7 @@ public final class WashingBasinBlockEntity extends BlockEntity implements MenuPr
             return insert && slot == INPUT ? inventory.insertItem(slot, stack, simulate) : stack;
         }
         @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return extract && slot == OUTPUT ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
+            return extract && (slot == OUTPUT || slot == SECONDARY_OUTPUT) ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
         }
         @Override public int getSlotLimit(int slot) { return slot >= 0 && slot < MACHINE_SLOTS ? inventory.getSlotLimit(slot) : 0; }
         @Override public boolean isItemValid(int slot, ItemStack stack) { return insert && slot == INPUT && inventory.isItemValid(slot, stack); }
