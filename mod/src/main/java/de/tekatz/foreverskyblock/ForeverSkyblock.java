@@ -100,6 +100,8 @@ public final class ForeverSkyblock {
     public static final DeferredItem<Item> STONE_MEAL = ITEMS.registerSimpleItem("stone_meal");
     public static final DeferredItem<MortarItem> MORTAR = ITEMS.register("mortar", () -> new MortarItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> STONE_FRAGMENT = ITEMS.registerSimpleItem("stone_fragment");
+    public static final DeferredItem<Item> NETHER_BRICK_DUST = ITEMS.registerSimpleItem("nether_brick_dust");
+    public static final DeferredItem<Item> NETHER_CONCENTRATE = ITEMS.registerSimpleItem("nether_concentrate");
     public static final DeferredItem<CondenserUpgradeCardItem> PROCESSING_SPEED_CARD = ITEMS.register("processing_speed_card",
             () -> new CondenserUpgradeCardItem(CondenserUpgradeCardItem.Kind.SPEED, new Item.Properties()));
     public static final DeferredItem<CondenserUpgradeCardItem> GARDEN_ACCELERATOR_CARD = ITEMS.register("garden_accelerator_card",
@@ -187,6 +189,8 @@ public final class ForeverSkyblock {
             event.accept(de.tekatz.foreverskyblock.item.ForeverCore.create());
             event.accept(STONE_FRAGMENT.get());
             event.accept(STONE_MEAL.get());
+            event.accept(NETHER_BRICK_DUST.get());
+            event.accept(NETHER_CONCENTRATE.get());
             event.accept(MORTAR.get());
             event.accept(REINFORCED_NETHERITE_INGOT.get());
             event.accept(PROCESSING_SPEED_CARD.get());
