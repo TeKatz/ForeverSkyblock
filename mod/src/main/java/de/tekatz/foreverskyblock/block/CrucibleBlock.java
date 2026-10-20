@@ -32,6 +32,9 @@ public final class CrucibleBlock extends BaseEntityBlock {
 
     @Override protected MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
     @Override public MutableComponent getName() { return Component.literal("Crucible"); }
+    // BlockItem delegates its description id to the block. Returning the player-facing name here
+    // keeps JEI/inventory tooltips correct even when no language entry has been generated yet.
+    @Override public String getDescriptionId() { return "Crucible"; }
     @Override protected RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) { builder.add(FILL); }
     @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) { return new CrucibleBlockEntity(pos, state); }

@@ -25,7 +25,7 @@ public final class GardenChamberBlockEntity extends BlockEntity {
         @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
             var controller = harvestController(slot);
             return controller == null || amount <= 0 ? ItemStack.EMPTY
-                    : controller.inventory().extractItem(CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY, amount, simulate);
+                    : controller.extractAutomationOutput(CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY, amount, simulate);
         }
     };
 

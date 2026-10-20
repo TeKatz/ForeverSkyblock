@@ -19,10 +19,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class CondenserScreen extends MachineScreen<CondenserMenu> {
     private MachineButton filters, recipes;
+    private MachineButton policyMain, policyFreezing, policyGardenPrimary, policyGardenSecondary;
     private CondenserJob shownJob = CondenserJob.IDLE;
     private ItemStack resultPreview = ItemStack.EMPTY;
     private Component recipeSummary;
     private float framePartial;
+
     private float processPhase() {
         return MachineAnimation.phase(menu.progress() + (menu.status() == CondenserBlockEntity.RUNNING ? framePartial : 0), menu.duration());
     }
@@ -58,10 +60,20 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
     @Override protected void init() {
         super.init();
         filters = addRenderableWidget(new MachineButton(leftPos + 20, topPos + 162, 120, 20, text("edit_locks"), skin, true,
-                b -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId, 0)));
+                b -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId, CondenserMenu.BUTTON_FILTERS)));
         filters.setTooltip(Tooltip.create(Component.translatable("gui.forever_skyblock.filter_help")));
         recipes = addRenderableWidget(new MachineButton(leftPos + 168, topPos + 162, 60, 20, text("recipes"), skin, false,
                 b -> { if (menu.hasGardenChamber()) ClientMachineRecipes.garden(); else ClientMachineRecipes.condenser(); }));
+
+        policyMain = policyButton(126, CondenserMenu.BUTTON_POLICY_MAIN);
+        policyFreezing = policyButton(179, CondenserMenu.BUTTON_POLICY_FREEZING);
+        policyGardenPrimary = policyButton(126, CondenserMenu.BUTTON_POLICY_GARDEN_PRIMARY);
+        policyGardenSecondary = policyButton(179, CondenserMenu.BUTTON_POLICY_GARDEN_SECONDARY);
+    }
+
+    private MachineButton policyButton(int x, int id) {
+        return addRenderableWidget(new MachineButton(leftPos + x, topPos + 224, 49, 18, Component.literal("Block"), skin, false,
+                b -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId, id)));
     }
 
     @Override protected void containerTick() {
@@ -73,6 +85,26 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         recipes.setX(leftPos + (garden ? 94 : 168));
         recipes.setY(topPos + (garden ? 151 : 162));
         recipes.active = ClientMachineRecipes.available();
+
+        boolean mk2 = menu.machineTier() >= 2;
+        configurePolicy(policyMain, mk2 && !garden, CondenserBlockEntity.OUTPUT);
+        configurePolicy(policyFreezing, mk2 && !garden && menu.hasFreezingChamber(), CondenserBlockEntity.FREEZING_OUTPUT);
+        configurePolicy(policyGardenPrimary, mk2 && garden, CondenserBlockEntity.GARDEN_OUTPUT_PRIMARY);
+        configurePolicy(policyGardenSecondary, mk2 && garden, CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY);
+    }
+
+    private void configurePolicy(MachineButton button, boolean visible, int slot) {
+        button.visible = visible;
+        button.active = visible;
+        if (!visible) return;
+        int policy = menu.outputPolicy(slot);
+        button.setMessage(Component.literal(policy == CondenserBlockEntity.POLICY_VOID_EXCESS ? "Void Excess"
+                : policy == CondenserBlockEntity.POLICY_VOID_ALL ? "Void All" : "Block"));
+        button.setTooltip(Tooltip.create(Component.literal(policy == CondenserBlockEntity.POLICY_VOID_EXCESS
+                ? "Keep everything that fits; destroy only excess production."
+                : policy == CondenserBlockEntity.POLICY_VOID_ALL
+                ? "Destroy all production for this output."
+                : "Stop the machine when this output and its buffer are full.")));
     }
 
     public Rect2i inputArea(int slot) {
@@ -129,6 +161,7 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
             MachineSkin.panel(g, x + 18, y + 183, 212, 16, 0xFF466252);
             MachineSkin.centered(g, font, text("garden_routes_title"), x + 124, y + 185, 204, 0xFFD0E7D4, .60F);
             MachineSkin.centered(g, font, text("garden_routes_hint"), x + 124, y + 192, 204, 0xFFB4D1BC, .60F);
+            renderAutomationPanel(g, x, y);
             inventory(g);
             return;
         }
@@ -152,14 +185,39 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         renderLocks(g, x, y);
         MachineSkin.panel(g, x + 18, y + 187, 212, 12, 0xFF5D6875);
         MachineSkin.centered(g, font, text(moduleHintKey()), x + 124, y + 190, 204, MachineSkin.MUTED, .67F);
+        renderAutomationPanel(g, x, y);
         inventory(g);
+    }
+
+    private void renderAutomationPanel(GuiGraphics g, int x, int y) {
+        MachineSkin.panel(g, x + 18, y + 203, 212, 51, menu.machineTier() >= 2 ? 0xFF4B5E6E : 0xFF3E454C);
+        if (menu.machineTier() < 2) {
+            MachineSkin.centered(g, font, Component.literal("MK II automation upgrades unavailable"), x + 124, y + 222, 194, MachineSkin.MUTED, .72F);
+            return;
+        }
+        MachineSkin.centered(g, font, Component.literal("UPGRADES " + menu.upgradeCapacityUsed() + " / " + CondenserBlockEntity.UPGRADE_CAPACITY),
+                x + 70, y + 207, 96, MachineSkin.LIGHT, .70F);
+        MachineSkin.centered(g, font, Component.literal("OUTPUT POLICIES"), x + 177, y + 207, 98, MachineSkin.LIGHT, .70F);
+        skin.slot(g, x + CondenserMenu.UPGRADE_1_X, y + CondenserMenu.UPGRADE_Y, true);
+        skin.slot(g, x + CondenserMenu.UPGRADE_2_X, y + CondenserMenu.UPGRADE_Y, true);
+        skin.slot(g, x + CondenserMenu.UPGRADE_3_X, y + CondenserMenu.UPGRADE_Y, true);
+
+        if (menu.hasGardenChamber()) {
+            MachineSkin.centered(g, font, Component.literal("Primary"), x + 150, y + 216, 49, MachineSkin.MUTED, .58F);
+            MachineSkin.centered(g, font, Component.literal("Secondary"), x + 203, y + 216, 49, MachineSkin.MUTED, .58F);
+        } else {
+            MachineSkin.centered(g, font, Component.literal("Main"), x + 150, y + 216, 49, MachineSkin.MUTED, .58F);
+            if (menu.hasFreezingChamber())
+                MachineSkin.centered(g, font, Component.literal("Freezing"), x + 203, y + 216, 49, MachineSkin.MUTED, .58F);
+        }
+        String summary = "S" + menu.speedUpgrades() + "  G" + menu.gardenUpgrades() + "  B" + menu.bufferUpgrades()
+                + (menu.batchUpgrades() > 0 ? "  ×2" : "");
+        MachineSkin.centered(g, font, Component.literal(summary), x + 70, y + 247, 96, 0xFFB7C8D4, .62F);
     }
 
     private void renderGarden(GuiGraphics g, int x, int y) {
         MachineSkin.panel(g, x + 14, y + 44, 220, 138, 0xFF335544);
-
         int left = x + 20, right = x + 228, top = y + 50, ground = y + 112;
-        // Layered sky and distant landscape; deliberately pixel-art rather than flat rectangles.
         g.fill(left, top, right, y + 68, 0xFF274B56);
         g.fill(left, y + 68, right, y + 88, 0xFF35636A);
         g.fill(left, y + 88, right, y + 100, 0xFF487263);
@@ -169,15 +227,12 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         g.fill(left, y + 103, right, ground, 0xFF47763D);
         g.fill(left, ground, right, y + 117, 0xFF624830);
         g.fill(left, y + 103, right, y + 106, 0xFF6B9A4D);
-
-        // Sun with a soft blocky halo.
         g.fill(x + 199, y + 56, x + 215, y + 72, 0x556F9B72);
         g.fill(x + 202, y + 59, x + 212, y + 69, 0xFFE8CF72);
         g.fill(x + 204, y + 61, x + 210, y + 67, 0xFFFFE29A);
 
         boolean running = menu.gardenStatus() == CondenserBlockEntity.RUNNING;
         float phase = gardenPhase();
-        // Fixed greenhouse frame, rail and soil match the rebuilt block. Motion follows this job only.
         g.fill(left, top, right, top + 3, 0xFF899F9B);
         g.fill(left, top, left + 3, ground, 0xFF617A73);
         g.fill(right - 3, top, right, ground, 0xFF617A73);
@@ -221,19 +276,15 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
         skin.slot(g, x + CondenserMenu.GARDEN_SPECIMEN_X, y + CondenserMenu.GARDEN_Y, true);
         skin.slot(g, x + CondenserMenu.GARDEN_PRIMARY_X, y + CondenserMenu.GARDEN_Y, true);
         skin.slot(g, x + CondenserMenu.GARDEN_SECONDARY_X, y + CondenserMenu.GARDEN_Y, true);
-        harvestRoute(g, x + CondenserMenu.GARDEN_PRIMARY_X + 8, y + 172, 1,
-                new ItemStack(ForeverSkyblock.CONDENSER_MARK_II.get()));
-        harvestRoute(g, x + CondenserMenu.GARDEN_SECONDARY_X + 8, y + 172, 2,
-                new ItemStack(ForeverSkyblock.GARDEN_CHAMBER_MARK_I.get()));
+        harvestRoute(g, x + CondenserMenu.GARDEN_PRIMARY_X + 8, y + 172, 1, new ItemStack(ForeverSkyblock.CONDENSER_MARK_II.get()));
+        harvestRoute(g, x + CondenserMenu.GARDEN_SECONDARY_X + 8, y + 172, 2, new ItemStack(ForeverSkyblock.GARDEN_CHAMBER_MARK_I.get()));
     }
 
     private void harvestRoute(GuiGraphics g, int centerX, int y, int number, ItemStack block) {
-        // The badge, its content and its hit area share the real output slot's centre.
         g.fill(centerX - 12, y - 1, centerX + 12, y + 9, 0xFF294535);
         g.pose().pushPose(); g.pose().translate(centerX - 11, y, 0); g.pose().scale(.5F, .5F, 1);
         g.renderItem(block, 0, 0); g.pose().popPose();
         MachineSkin.centered(g, font, Component.literal(Integer.toString(number)), centerX, y + 1, 5, 0xFFD0E7D4, .65F);
-        // Draw the arrow as geometry so its appearance does not depend on the language font.
         int arrowX = centerX + 7;
         g.fill(arrowX, y + 1, arrowX + 1, y + 6, 0xFF8FE59B);
         g.fill(arrowX - 2, y + 4, arrowX + 3, y + 5, 0xFF8FE59B);
@@ -242,13 +293,16 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
     }
 
     @Override protected void renderMachineTooltip(GuiGraphics g, int mouseX, int mouseY) {
-        if (!menu.hasGardenChamber()) return;
-        String key = isHovering(CondenserMenu.GARDEN_PRIMARY_X - 4, 171, 24, 10, mouseX, mouseY)
-                ? "garden_route_primary"
-                : isHovering(CondenserMenu.GARDEN_SECONDARY_X - 4, 171, 24, 10, mouseX, mouseY)
-                ? "garden_route_secondary"
-                : isHovering(18, 183, 212, 16, mouseX, mouseY) ? "garden_route_help" : null;
-        if (key != null) g.renderTooltip(font, font.split(text(key), 210), mouseX, mouseY);
+        if (menu.hasGardenChamber()) {
+            String key = isHovering(CondenserMenu.GARDEN_PRIMARY_X - 4, 171, 24, 10, mouseX, mouseY)
+                    ? "garden_route_primary"
+                    : isHovering(CondenserMenu.GARDEN_SECONDARY_X - 4, 171, 24, 10, mouseX, mouseY)
+                    ? "garden_route_secondary"
+                    : isHovering(18, 183, 212, 16, mouseX, mouseY) ? "garden_route_help" : null;
+            if (key != null) g.renderTooltip(font, font.split(text(key), 210), mouseX, mouseY);
+        }
+        if (menu.machineTier() >= 2 && isHovering(18, 203, 96, 51, mouseX, mouseY))
+            g.renderTooltip(font, font.split(Component.literal("MK II upgrade cards share 3 capacity. Speed costs 1 (max 3), Garden 1 (max 2), Buffer 1 (max 2), Batch 2 (max 1)."), 210), mouseX, mouseY);
     }
 
     private void renderGardenTree(GuiGraphics g, int x, int y, float ratio, boolean running) {

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'de.tekatz.foreverskyblock'
-version = '0.26.1'
+version = '0.26.4'
 base.archivesName = 'ForeverSkyblock-1.21.1-NeoForge'
 
 repositories {

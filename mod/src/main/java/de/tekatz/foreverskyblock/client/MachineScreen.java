@@ -35,7 +35,11 @@ public abstract class MachineScreen<M extends AbstractContainerMenu> extends Abs
         var v=viewport();int mx=logicalMouseX(mouseX),my=logicalMouseY(mouseY);
         g.pose().pushPose();g.pose().translate(v.x()-leftPos*v.scale(),v.y()-topPos*v.scale(),0);
         g.pose().scale((float)v.scale(),(float)v.scale(),1);
-        super.render(g,mx,my,partialTick);renderTooltip(g,mx,my);renderMachineTooltip(g,mx,my);g.flush();g.pose().popPose();
+        super.render(g,mx,my,partialTick);
+        renderTooltip(g,mx,my);
+        // Do not stack a machine-region help tooltip on top of an item's normal tooltip.
+        if (hoveredSlot == null || !hoveredSlot.hasItem()) renderMachineTooltip(g,mx,my);
+        g.flush();g.pose().popPose();
     }
     protected void renderMachineTooltip(GuiGraphics g,int x,int y) { }
     @Override protected boolean isHovering(int x,int y,int w,int h,double mx,double my) {
