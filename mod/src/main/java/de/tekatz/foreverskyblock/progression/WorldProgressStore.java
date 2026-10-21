@@ -104,7 +104,7 @@ public final class WorldProgressStore {
     public synchronized State advanceApotheosis(Path root, UUID world, ApotheosisStage requested) throws IOException {
         State current = loadOrCreate(root, world);
         ApotheosisStage present = current.apotheosisStage();
-        if (requested.ordinal() <= present.ordinal()) return current;
+        if (!requested.directlyFollows(present)) return current;
         State next = new State(world, current.wanderingTraderUnlocked(), current.upgrades(), current.islandEvidence(), requested.id());
         persist(root, next); cached = next; return next;
     }
