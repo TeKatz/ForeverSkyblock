@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["CCC", "CMC", "CCC"],
+  "key": {
+    "C": { "item": "minecraft:charcoal" },
+    "M": { "item": "forever_skyblock:mineral_blend" }
+  },
+  "result": { "id": "forever_skyblock:carbon_matrix", "count": 1 }
+}

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "minecraft:block/deepslate_tiles",
+    "up": "minecraft:block/smithing_table_top",
+    "north": "minecraft:block/blast_furnace_front",
+    "south": "minecraft:block/blast_furnace_side",
+    "west": "minecraft:block/blast_furnace_side",
+    "east": "minecraft:block/blast_furnace_side",
+    "particle": "minecraft:block/blast_furnace_side"
+  }
+}

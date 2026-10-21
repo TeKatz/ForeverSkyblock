@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["IRI", "OFO", "IRI"],
+  "key": {
+    "I": { "item": "minecraft:iron_block" },
+    "R": { "item": "minecraft:redstone" },
+    "O": { "item": "minecraft:obsidian" },
+    "F": { "item": "minecraft:blast_furnace" }
+  },
+  "result": { "id": "forever_skyblock:refining_chamber", "count": 1 }
+}
