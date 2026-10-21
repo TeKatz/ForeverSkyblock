@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          timeout --signal=TERM --kill-after=10s 90s xvfb-run -a ./gradlew runClient --no-daemon > client-smoke.log 2>&1
+          timeout --signal=TERM --kill-after=10s 90s xvfb-run -a ./gradlew runClient -PapotheosisTests --no-daemon > client-smoke.log 2>&1
           status=$?
           set -e
           cat client-smoke.log
