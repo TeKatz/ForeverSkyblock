@@ -29,13 +29,14 @@ public final class ApotheosisProgressionService {
         try {
             if (!WorldQoLService.advanceApotheosis(server, requested)) return false;
             for (ServerPlayer player : server.getPlayerList().getPlayers()) sync(player);
-            Component message = Component.translatable("message.forever_skyblock.apotheosis_unlocked",
-                    Component.translatable("apotheosis.forever_stage." + requested.id()));
-            server.getPlayerList().broadcastSystemMessage(message, false);
+            Component tierName = Component.translatable("text.apotheosis.world_tier." + requested.id());
+            server.getPlayerList().broadcastSystemMessage(
+                    Component.literal("[Forever Skyblock] Apotheosis → ").append(tierName), false);
             return true;
         } catch (IOException | RuntimeException e) {
             LOGGER.error("Could not advance Apotheosis world progression to {}", requested, e);
-            if (source != null) source.sendSystemMessage(Component.translatable("message.forever_skyblock.apotheosis_unlock_failed"));
+            if (source != null) source.sendSystemMessage(
+                    Component.literal("[Forever Skyblock] Apotheosis progression could not be saved."));
             return false;
         }
     }
