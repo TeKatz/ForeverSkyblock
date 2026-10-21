@@ -7,7 +7,9 @@
     "ApotheosisConfigMixin",
     "ApotheosisTierAugmentGateMixin",
     "ApotheosisMobGateMixin",
-    "ApotheosisLootGateMixin",
+    "ApotheosisLootGateMixin"
+  ],
+  "client": [
     "ApotheosisWorldTierScreenMixin"
   ],
   "injectors": {
