@@ -15,7 +15,7 @@ Updated October 21, 2026. `main` is **0.26.4** after the integration of the K-me
 | Player profile schema | **dynamic 4 / 5 / 6** |
 | World-progress schema | **2** |
 | Progression protocol | **skills-9** plus integrated K-menu editor channel |
-| Current main merge | `fccb38b76cbfd6519ce39a6f380f0639eec02162` |
+| Current gameplay baseline merge | `fccb38b76cbfd6519ce39a6f380f0639eec02162` |
 | Release | Active development; repository integration is not a public pack release |
 
 TeKatz reported testing the current listed modpack state on **NeoForge 21.1.262** with **no errors observed**. This is user-reported pack acceptance. No fresh runtime log accompanied the list, so the repository does not infer a new loaded-mod-ID count from that test.
