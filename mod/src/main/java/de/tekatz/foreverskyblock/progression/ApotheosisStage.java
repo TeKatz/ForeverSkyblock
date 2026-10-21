@@ -13,6 +13,9 @@ public enum ApotheosisStage {
 
     public String id() { return name().toLowerCase(Locale.ROOT); }
     public boolean awakened() { return this != DORMANT; }
+    public boolean directlyFollows(ApotheosisStage previous) {
+        return previous != null && ordinal() == previous.ordinal() + 1;
+    }
 
     public static ApotheosisStage parse(String value) {
         if (value == null || value.isBlank()) return DORMANT;
