@@ -80,7 +80,7 @@ jobs:
       - name: Test dedicated-server regression suite
         run: ./gradlew runGameTestServer -PcondenserTests --no-daemon
       - name: Test full pack-runtime integrations on NeoForge 21.1.259
-        run: ./gradlew runGameTestServer -PcondenserTests -PjetpackTests -PtoolIntegrationTests -PascensionTests -PtechChallengeTests -PpackRuntime=21.1.259 --no-daemon
+        run: ./gradlew runGameTestServer -PcondenserTests -PjetpackTests -PtoolIntegrationTests -PascensionTests -PtechChallengeTests -PapotheosisTests -PpackRuntime=21.1.259 --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: ForeverSkyblock-Mod
