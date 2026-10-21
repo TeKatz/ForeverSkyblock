@@ -7,7 +7,9 @@ The repository already contains:
 - the actual Skyblock Builder configuration folder and fixed `forever_me_start.nbt` island template;
 - the actual `config/defaultworldtype/client-config.toml`;
 - the supplied runtime/list evidence and provisional mod inventory;
-- the confirmed pack runtime NeoForge 21.1.259;
+- the current supplied October 21, 2026 mod-list snapshot with **87 enabled artifact labels**;
+- the confirmed current pack runtime **NeoForge 21.1.262**;
+- TeKatz's report that the current October 21 modpack state was tested on NeoForge 21.1.262 with **no errors observed**;
 - the approved permanent-tool recipe/removal baseline in the Recipe Editor generated pack.
 
 The island is final unless TeKatz explicitly requests a revision. The mod selection remains experimental and may be refreshed from newly supplied lists, logs or files.
@@ -21,12 +23,14 @@ The island is final unless TeKatz explicitly requests a revision. The mod select
 | KubeJS scripts/assets/data, if customized | Corresponding paths under `pack/kubejs/` | Only when actual custom files exist |
 | Other intentional configuration overrides | Corresponding `pack/config/` / `pack/defaultconfigs/` paths | When required for a reproducible instance |
 | Launcher/export manifest and download identifiers | Chosen pack export format | Before distributing a complete installable pack |
-| Updated runtime mod snapshot | `pack/mods.inventory.json` plus snapshot docs | When TeKatz supplies a new authoritative list/log/export |
+| Fresh runtime log / loaded-mod-ID export | `pack/mods.inventory.json` plus runtime snapshot | When a new machine-derived loaded-ID count is needed |
 
 ## Snapshot caveat
 
-Neither the current launcher text list nor the older log-derived snapshot is a launcher manifest or a final mod selection. The supplied 80-entry list records an older Forever Skyblock artifact (`0.6.1`); the repository's current integrated mod version is **0.13.4**. Do not downgrade the repository version to match the snapshot.
+The current `Modliste(5).txt` snapshot contains **87 enabled artifact labels** and includes the supplied `ForeverSkyblock-0.26.4-Mekanism-Automation-Test` artifact. It is now the authoritative text-list snapshot for documentation purposes. The corresponding exact text is stored at `pack/snapshots/2026-10-21_modlist.txt`.
 
-Missing future recipes, quests or scripts are planned inputs rather than defects in the fixed island. Raw logs, Creative test worlds and generated registry dumps do not belong in the repository.
+TeKatz's successful test on NeoForge 21.1.262 is stronger compatibility evidence than a list alone, but it is still distinct from a fresh runtime log. The repository therefore does not invent a new loaded-mod-ID count or embedded-module inventory. The October 15 runtime JSON remains the last machine-derived runtime-ID snapshot and is historical evidence for NeoForge 21.1.259.
+
+Missing future recipes, quests or scripts are planned inputs rather than defects in the fixed island. Raw logs, Creative test worlds and generated registry dumps do not belong in the repository unless a deliberate sanitized snapshot is requested.
 
 Before publishing, verify a fresh instance created from the actual export: fixed island, spawn, ME contents, power, world-type restriction, production, recipes, progression and quests.
