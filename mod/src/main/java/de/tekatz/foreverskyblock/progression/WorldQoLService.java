@@ -59,9 +59,9 @@ public final class WorldQoLService {
         Context context = context(server);
         UUID world = context.identities().loadOrCreate(context.root());
         ApotheosisStage before = context.progress().loadOrCreate(context.root(), world).apotheosisStage();
-        if (stage.ordinal() <= before.ordinal()) return false;
-        context.progress().advanceApotheosis(context.root(), world, stage);
-        return true;
+        if (!stage.directlyFollows(before)) return false;
+        WorldProgressStore.State next = context.progress().advanceApotheosis(context.root(), world, stage);
+        return next.apotheosisStage() == stage;
     }
 
     public static ApotheosisStage apotheosisStage(MinecraftServer server) {
