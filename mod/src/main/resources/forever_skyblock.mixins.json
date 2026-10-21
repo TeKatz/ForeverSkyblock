@@ -29,6 +29,7 @@
     "PremiumSkillScreenPanelMotionMixin",
     "PremiumSkillScreenOverviewMixin",
     "PremiumSkillScreenButtonStyleMixin",
+    "PremiumSkillScreenApotheosisMixin",
     "KMenuEditorShopNodeMixin",
     "KMenuEditorDeletedGraphMixin",
     "KMenuEditorUxMixin"
