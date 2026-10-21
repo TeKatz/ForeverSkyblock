@@ -26,14 +26,21 @@ public final class CondenserJeiPlugin implements IModPlugin {
     public static final RecipeType<RecipeHolder<GardenRecipe>> GARDEN_TYPE = RecipeType.createRecipeHolderType(
             ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "garden"));
     @Override public ResourceLocation getPluginUid() { return ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "jei"); }
-    @Override public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime runtime) { JetpackJeiVisibility.available(runtime);
+    @Override public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime runtime) {
+        JetpackJeiVisibility.available(runtime);
+        ApotheosisJeiVisibility.available(runtime);
         de.tekatz.foreverskyblock.client.ClientMachineRecipes.install(
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(TYPE, FreezingCategory.TYPE, CrucibleCategory.TYPE)),
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(WASHING_TYPE)),
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(GARDEN_TYPE)),
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(AscensionCategory.TYPE)));
     }
-    @Override public void onRuntimeUnavailable() { de.tekatz.foreverskyblock.client.ClientMachineRecipes.clear(); JetpackJeiVisibility.unavailable(); if (transfers != null) transfers.clearPending(); }
+    @Override public void onRuntimeUnavailable() {
+        de.tekatz.foreverskyblock.client.ClientMachineRecipes.clear();
+        JetpackJeiVisibility.unavailable();
+        ApotheosisJeiVisibility.unavailable();
+        if (transfers != null) transfers.clearPending();
+    }
     @Override public void registerCategories(IRecipeCategoryRegistration registration) {
         registration.addRecipeCategories(new AscensionCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CondensingCategory(registration.getJeiHelpers().getGuiHelper()));
