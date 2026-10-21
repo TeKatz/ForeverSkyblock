@@ -59,6 +59,7 @@ public final class CondenserJeiPlugin implements IModPlugin {
         registration.addRecipes(CrucibleCategory.TYPE, java.util.List.of(
                 CrucibleCategory.Process.COBBLE_LAVA,
                 CrucibleCategory.Process.FRAGMENTS_LAVA,
+                CrucibleCategory.Process.NETHERRACK,
                 CrucibleCategory.Process.OBSIDIAN));
         var level = Minecraft.getInstance().level;
         if (level != null) {
