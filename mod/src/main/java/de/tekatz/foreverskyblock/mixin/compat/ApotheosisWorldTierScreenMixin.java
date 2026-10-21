@@ -7,8 +7,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -22,8 +20,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /** Makes Apotheosis' CTRL+T screen describe Forever's authoritative world progression. */
 @Mixin(targets = "dev.shadowsoffire.apotheosis.client.WorldTierSelectScreen", remap = false)
 public abstract class ApotheosisWorldTierScreenMixin {
-    private static final int GUI_WIDTH = 480;
-    private static final int GUI_HEIGHT = 270;
 
     @Inject(method = "tierLocked", at = @At("HEAD"), cancellable = true, remap = false)
     private static void forever$replaceUnlockCriteria(@Coerce Object tier,
@@ -45,42 +41,35 @@ public abstract class ApotheosisWorldTierScreenMixin {
             Object button = field.get(this);
             if (!(button instanceof AbstractWidget widget)) return;
 
+            ApotheosisStage stage = ApotheosisClientState.stage();
             widget.active = false;
             widget.setMessage(Component.literal("Managed by Forever").withStyle(ChatFormatting.GOLD));
 
             Method setText = button.getClass().getMethod("setButtonText", Component.class);
             setText.invoke(button, Component.literal("FOREVER").withStyle(ChatFormatting.GOLD));
-            Method setInactive = button.getClass().getMethod("setInactiveMessage", Component.class);
-            setInactive.invoke(button, Component.literal(
-                    "World Tiers advance automatically through Forever Skyblock progression.")
-                    .withStyle(ChatFormatting.GRAY));
+
+            List<Component> tooltip = new ArrayList<>();
+            tooltip.add(Component.literal("Current: ").withStyle(ChatFormatting.GRAY)
+                    .append(Component.literal(displayName(stage)).withStyle(ChatFormatting.WHITE)));
+            if (stage != ApotheosisStage.PINNACLE) {
+                ApotheosisStage next = nextStage(stage);
+                tooltip.add(Component.literal("Next: ").withStyle(ChatFormatting.GRAY)
+                        .append(Component.literal(displayName(next)).withStyle(ChatFormatting.WHITE)));
+                tooltip.add(Component.literal(requirement(next.name())).withStyle(ChatFormatting.DARK_GRAY));
+            }
+            else {
+                tooltip.add(Component.literal("Full Apotheosis progression unlocked.")
+                        .withStyle(ChatFormatting.GRAY));
+            }
+            tooltip.add(Component.literal("World Tiers advance automatically through Forever Skyblock progression.")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+
+            Method setInactive = button.getClass().getMethod("setInactiveMessage", List.class);
+            setInactive.invoke(button, tooltip);
         }
         catch (ReflectiveOperationException ignored) {
             // The pinned Apotheosis API is guarded by the integration GameTest. Fail soft on other versions.
         }
-    }
-
-    @Inject(method = "renderBackground", at = @At("TAIL"), remap = false)
-    private void forever$renderWorldProgress(GuiGraphics gfx, int mouseX, int mouseY, float partialTick,
-            CallbackInfo ci) {
-        Minecraft minecraft = Minecraft.getInstance();
-        int left = Math.max(0, (minecraft.getWindow().getGuiScaledWidth() - GUI_WIDTH) / 2);
-        int top = Math.max(0, (minecraft.getWindow().getGuiScaledHeight() - GUI_HEIGHT) / 2);
-        ApotheosisStage stage = ApotheosisClientState.stage();
-
-        Component status = Component.literal("Forever: ").withStyle(ChatFormatting.GOLD)
-                .append(Component.literal(displayName(stage)).withStyle(ChatFormatting.WHITE));
-        if (stage != ApotheosisStage.PINNACLE) {
-            status = status.copy().append(Component.literal("  •  Next: ").withStyle(ChatFormatting.DARK_GRAY))
-                    .append(Component.literal(displayName(nextStage(stage))).withStyle(ChatFormatting.GRAY));
-        }
-        else {
-            status = status.copy().append(Component.literal("  •  Complete").withStyle(ChatFormatting.GRAY));
-        }
-
-        // Keep this deliberately compact. The detailed unlock requirement lives on the locked tier tooltip.
-        // Y=64 sits below Apotheosis' own description while keeping clear of the difficulty row at Y=80.
-        gfx.drawString(minecraft.font, status, left + 15, top + 64, 0xFFFFFF, true);
     }
 
     private static ApotheosisStage nextStage(ApotheosisStage stage) {
