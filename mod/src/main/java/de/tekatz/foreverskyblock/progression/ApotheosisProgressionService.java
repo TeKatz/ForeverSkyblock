@@ -5,6 +5,7 @@ import de.tekatz.foreverskyblock.network.ApotheosisNetwork;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.fml.ModList;
@@ -44,8 +45,23 @@ public final class ApotheosisProgressionService {
     public static void sync(ServerPlayer player) {
         ApotheosisStage stage = stage(player.server);
         ApotheosisNetwork.send(player, stage);
-        if (!stage.awakened() || !ModList.get().isLoaded(APOTHEOSIS)) return;
-        syncNativeTier(player, stage);
+        if (!ModList.get().isLoaded(APOTHEOSIS)) return;
+        syncNativeAdvancements(player, stage);
+        if (stage.awakened()) syncNativeTier(player, stage);
+    }
+
+    private static void syncNativeAdvancements(ServerPlayer player, ApotheosisStage stage) {
+        for (ApotheosisStage candidate : ApotheosisStage.values()) {
+            if (!candidate.awakened()) continue;
+            var advancement = player.server.getAdvancements().get(
+                    ResourceLocation.fromNamespaceAndPath(APOTHEOSIS, "progression/" + candidate.id()));
+            if (advancement == null) continue;
+            boolean shouldBeUnlocked = candidate.ordinal() <= stage.ordinal();
+            for (String criterion : advancement.value().criteria().keySet()) {
+                if (shouldBeUnlocked) player.getAdvancements().award(advancement, criterion);
+                else player.getAdvancements().revoke(advancement, criterion);
+            }
+        }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
