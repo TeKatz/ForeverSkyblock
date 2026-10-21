@@ -34,5 +34,6 @@ public final class ClientEvents {
         event.register(ForeverSkyblock.CONDENSER_MENU.get(), CondenserScreen::new);
         event.register(ForeverSkyblock.WASHING_BASIN_MENU.get(), WashingScreen::new);
         event.register(ForeverSkyblock.CRUCIBLE_MENU.get(), CrucibleScreen::new);
+        event.register(ForeverSkyblock.REFINING_CHAMBER_MENU.get(), RefiningScreen::new);
     }
 }
