@@ -1,8 +1,10 @@
 package de.tekatz.foreverskyblock;
 
 import java.util.Arrays;
+import java.util.Set;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -38,6 +40,14 @@ public final class ApotheosisIntegrationGameTests {
         Class<?> events = Class.forName("dev.shadowsoffire.apotheosis.AdventureEvents");
         h.assertTrue(Arrays.stream(events.getDeclaredMethods()).anyMatch(m -> m.getName().equals("applyMissedTierAugments")),
                 "Pinned Apotheosis exposes the tier-augment boundary used by the Dormant gate");
+
+        for (String stage : new String[]{"haven", "frontier", "ascent", "summit", "pinnacle"}) {
+            var advancement = h.getLevel().getServer().getAdvancements().get(
+                    ResourceLocation.fromNamespaceAndPath("apotheosis", "progression/" + stage));
+            h.assertTrue(advancement != null, "Forever override keeps Apotheosis " + stage + " advancement available");
+            h.assertTrue(advancement.value().criteria().keySet().equals(Set.of("forever_gate")),
+                    "Apotheosis " + stage + " advancement is controlled only by Forever's impossible gate");
+        }
 
         h.succeed();
     }
