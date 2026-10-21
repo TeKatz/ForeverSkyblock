@@ -14,7 +14,7 @@
 - `docs/DESIGN.md` contains agreed requirements. `docs/PROGRESSION.md` identifies unconfirmed proposals. Implement proposals only after approval, unless the user has already requested that specific implementation.
 - Before working on the mod, inspect `mod/README.md`, registrations, resources and dependencies.
 - The supplied `pack/config/skyblockbuilder/templates/islands/forever_me_start.nbt` is the final starting island. Preserve its exact bytes, layout, spawn and ME contents unless TeKatz explicitly requests a revision. It supersedes the earlier `forever.nbt` placeholder name.
-- The pack runtime is NeoForge 21.1.259 until TeKatz reports a version change. The mod project's default build dependency is tracked separately.
+- The current pack runtime is NeoForge **21.1.262** as reported and successfully tested by TeKatz on October 21, 2026. Historical CI/runtime evidence may still name 21.1.259; do not rewrite those run-specific claims. The mod project's default build dependency is tracked separately.
 - `pack/mods.inventory.json` is an experimental runtime snapshot, not a final selection or launcher lockfile. Refresh it from actual supplied logs/files when requested; do not freeze the mod selection or silently substitute versions.
 - Do not infer installed versions from screenshots or unrelated Forever instances. Track remaining files in `docs/FILES_TO_IMPORT.md`.
 

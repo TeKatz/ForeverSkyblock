@@ -1,12 +1,12 @@
-# Forever Skyblock mod — 0.25.1 K-menu Studio polish development
+# Forever Skyblock mod — 0.26.4 integrated baseline
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz.
 
-`feature/kmenu-editor-polish` builds 0.25.1 on top of the unmerged 0.25.0 K-menu Studio branch and the integrated 0.24.1 header-art baseline. It keeps the native admin layout/quest/node editor, server-owned publication and portable/repository export, while polishing navigation, help, inspector grouping and preview behavior after the first real-player test. Matching client/server builds are required for the `kmenu-editor-1` channel. See [K_MENU_EDITOR.md](../docs/K_MENU_EDITOR.md). Main integration and publication are separate steps. Java package and Gradle group: `de.tekatz.foreverskyblock`.
+The integrated `main` baseline is **0.26.4**. It includes the 0.21–0.24 machine animation/balancing/K-menu stack, the integrated K-menu Studio, Crucible Lava/Obsidian progression, Condenser Mark II upgrade/overflow automation and the current Nether Fortress material-processing work present on `main`. See [CURRENT_STATE.md](../docs/CURRENT_STATE.md) for the authoritative integrated-state summary.
 
-The integrated `main` baseline is **0.24.1** through [PR #17](https://github.com/TeKatz/ForeverSkyblock/pull/17), on top of [PR #16](https://github.com/TeKatz/ForeverSkyblock/pull/16), including all 0.21–0.23 animation, crop, harvest-routing and balancing updates. The K-menu has round Shop nodes, improved Challenge/Contract browsing and details, a compact profile with actual skin face, custom status icons and subtle motion. Server-supplied playtime/deaths/kills and shared world-milestone Island Level use protocol **skills-9**; matching client/server versions are required. Player profile schema remains 4/5/6; the backed-up world-progress file migrates to schema 2. See [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md). No release is published by this integration.
+The current installed pack runtime is **NeoForge 21.1.262**. TeKatz reported testing the October 21, 2026 pack state with the current supplied 87-artifact mod list on that loader and finding **no errors observed**. The standalone mod project's default development NeoForge dependency remains **21.1.249** unless changed deliberately. Historical automated validation entries below that name NeoForge 21.1.259 remain tied to those earlier runs.
 
-The final 0.24.0 source passed 78 unit tests, native-client render/input checks and both 90-test server suites, including NeoForge 21.1.259. The fresh JAR was checked against all 158 source resources and excludes the visual fixture/GameTests. Exact source, run and artifact hash are recorded in [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md#validation-and-acceptance).
+The current supplied pack list uses JEI **19.69.0.457**, Mekanism **10.7.19.85** and Mekanism Generators **10.7.19.85**. Exact pack artifact versions are tracked in [MODLIST_SNAPSHOT.md](../docs/MODLIST_SNAPSHOT.md) and [MODS.md](../docs/MODS.md).
 
 ## Early material progression
 
@@ -20,7 +20,7 @@ Condenser + Mixing Chamber:
 - 160 ticks / 8 seconds;
 - no power.
 
-Both Condenser tiers with Mixing Chamber now automate **1 Wheat + 1 Mud -> 1 Packed Mud / 8 seconds**. Vanilla crafting remains available; Packed Mud -> Mud Bricks continues the route.
+Both Condenser tiers with Mixing Chamber automate **1 Wheat + 1 Mud -> 1 Packed Mud / 8 seconds**. Vanilla crafting remains available; Packed Mud -> Mud Bricks continues the route.
 
 ### Washing Basin
 
@@ -60,11 +60,22 @@ It retains Mark-I recipes, locks, automation and Mixing/Freezing compatibility, 
 
 Oak is currently the only supported tree because the opening progression does not yet provide first-acquisition paths for other tree species. Wheat is also available as a Garden crop.
 
-A single Bone Meal use on a normal placed Vanilla Sapling now attempts full tree growth immediately, removing the random early-game wait while keeping normal space/tree-generation constraints.
+A single Bone Meal use on a normal placed Vanilla Sapling attempts full tree growth immediately, removing the random early-game wait while keeping normal space/tree-generation constraints.
+
+### Mark II upgrade system
+
+Mark II has **3 upgrade capacity** and three physical upgrade slots. Current cards are:
+
+- Processing Speed Card;
+- Garden Accelerator Card;
+- Buffer Expansion Card;
+- Batch Processing Card.
+
+Each output has an independent **Block / Void Excess / Void All** policy. Garden primary and secondary outputs can be configured separately. See [CURRENT_STATE.md](../docs/CURRENT_STATE.md) for the authoritative integrated behavior.
 
 ## Garden Chamber
 
-The player-facing block is named **Garden Chamber**. Its internal registry ID remains `forever_skyblock:garden_chamber_mark_i` for compatibility with the tested development worlds created before the visible rename.
+The player-facing block is named **Garden Chamber**. Its internal registry ID remains `forever_skyblock:garden_chamber_mark_i` for compatibility with development worlds created before the visible rename.
 
 Crafting uses:
 
@@ -84,21 +95,25 @@ Garden recipes:
 
 Wheat uses a retained **1 Wheat Seeds** specimen and produces **4 Wheat + 2 Wheat Seeds** every **320 ticks / 16 seconds**. Wheat receives synchronized green-to-gold crop animations in the GUI, controller and greenhouse. Both harvest outputs must have room. The existing Oak GUI tree is preserved.
 
-With Wooden Hopper installed, its recipe now uses **2 Iron Ingots** in the top corners, **3 Planks** in the remaining positions and **1 wooden Chest**. The cheaper original is removed at recipe reload; without that optional mod the replacement is not loaded. Before the first real-player Emerald pickup, the entire Vanilla Trader caravan attempt and fresh untamed Trader llamas are blocked. Saved/tamed Trader llamas and ordinary llamas remain intact.
+With Wooden Hopper installed, its recipe uses **2 Iron Ingots** in the top corners, **3 Planks** in the remaining positions and **1 wooden Chest**. Before the first real-player Emerald pickup, the entire Vanilla Trader caravan attempt and fresh untamed Trader llamas are blocked. Saved/tamed Trader llamas and ordinary llamas remain intact.
 
 Garden mode exposes a one-item specimen slot and two automation-accessible harvest outputs. A hopper below Condenser Mark II extracts only the primary harvest; a hopper below the Garden Chamber extracts only the secondary harvest. Place the blocks side by side for two accessible bottom ports. The Chamber delegates to the controller's existing secondary slot and has no standalone inventory or GUI. Both outputs remain manually accessible in the Condenser GUI, with block icons, numbered downward arrows, a persistent routing legend and localized tooltips.
 
+## Crucible
+
+The integrated Crucible owns a **4,000 mB** internal Lava buffer and accepts either **8 Cobblestone** or **40 Stone Fragments** for **1,000 mB Lava**. Heat progression is Torch → Campfire → Lava → Mekanism Superheating Element.
+
+An adjacent Fluid Tank enables Lava routing. An adjacent Freezing Chamber enables Obsidian production. If both are present, the GUI exposes route selection. The Basic Fluid Tank recipe is intentionally redstone-free so Redstone can enter progression later as a separate step.
+
 ## JEI, GUI and presentation
 
-JEI includes dedicated Washing and Garden categories, catalysts, duration/output information and Mark-II requirements. The Garden category is intentionally compact and static; the decorative tree-growth animation is confined to the live Condenser GUI.
-
-Garden mode replaces the normal Condenser process cards with a larger green landscape and staged tree-growth presentation. The Garden Chamber block is modeled as a small greenhouse with an animated interior while the connected Condenser is actively growing. The Condenser exterior also switches to a Garden-specific green/scanner animation while that mode is active.
+JEI includes dedicated Washing, Garden and Crucible processing presentation as appropriate to the integrated systems. Garden mode replaces the normal Condenser process cards with a larger green landscape and staged growth presentation. The Garden Chamber block is modeled as a small greenhouse with an animated interior while the connected Condenser is actively growing. The Condenser exterior also switches to a Garden-specific green/scanner animation while that mode is active.
 
 The 0.19.1 cleanup remains included: Washing Basin spacing, Condensing/Washing JEI spacing, detailed Condenser Mark II exterior and the Freezing Chamber top-rim seam fix.
 
 ## Automation boundary
 
-The early primitive chain is now automatable after the player reaches the Iron / Mark-II tier:
+The early primitive chain is automatable after the player reaches the Iron / Mark-II tier:
 
 - Garden Chamber -> Oak Logs + Oak Leaves;
 - Logs -> Stone Fragments;
@@ -111,11 +126,11 @@ This intentionally removes permanent manual tree chopping from the mature early-
 
 ## Compatibility and fixed pack state
 
-The machine changes required no profile/protocol change. The subsequent 0.24.0 K-menu statistics use `skills-9` while preserving player profile schema 4/5/6. The fixed starter-island NBT is unchanged.
+The machine changes required no profile/protocol change. The 0.24.0 K-menu statistics use `skills-9` while preserving player profile schema 4/5/6. The fixed starter-island NBT is unchanged.
 
-Default development baseline: NeoForge 21.1.249. Pack-runtime integration target: NeoForge 21.1.259.
+Default development baseline: NeoForge **21.1.249**. Current installed pack runtime: NeoForge **21.1.262**.
 
-Historical 0.20.1 pre-merge head `aec270d7bc0caea5952af034ed8505ce0fd3d68f` passed GitHub Actions run #259. Historical 0.24.0 validation is recorded above and in [K_MENU_DESIGN2.md](../docs/K_MENU_DESIGN2.md#validation-and-acceptance).
+Historical automated runs used the then-current pack runtime NeoForge 21.1.259 and remain valid run-specific evidence. The October 21 pack state was separately user-tested by TeKatz on 21.1.262 with no errors observed.
 
 See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the full behavior and validation boundary.
 
@@ -125,24 +140,20 @@ See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the ful
 ./gradlew build
 ```
 
-Output on this branch: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.25.1.jar`.
+Current integrated output version: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.26.4.jar`.
 
-The validated 0.25.1 editor-polish code/metadata source `56246f2a57672d0fdf966cf865b596eeeaee0019` passed Actions run `39204247635`, including Java build, client smoke, native K-menu visual fixtures and both server regression runtimes. The production JAR SHA-256 is `e530f8ae16c1131893073a7ba529b87521528005a78559a9a45bf9dbfdcb8b6c`; real-player usability acceptance is still separate.
+## Historical validation notes
 
-The 0.22.0 source passed 73 unit tests, client startup/model checks and both 81-test GameTest suites, including the real Wooden Hopper on NeoForge 21.1.259. Exact source/artifact evidence and the client visual test boundary are recorded in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0220-validation-and-test-artifact).
+The complete 0.21–0.24 stack was validated with Java builds, client startup/model checks, native K-menu visual/input fixtures and dedicated-server GameTests. Historical pack-loader suites used NeoForge 21.1.259. Exact source/artifact evidence remains recorded in the detailed feature documents and [VALIDATION.md](../docs/VALIDATION.md).
 
-The 0.22.1 source passed 73 unit tests, client startup/model checks and both 85-test server suites. Real Vanilla hoppers separated Oak harvest; the actual pack Wooden Hoppers separated Wheat harvest. Exact artifact evidence and remaining client checks are in [MACHINE_ANIMATIONS.md](../docs/MACHINE_ANIMATIONS.md#0221-validation-and-test-artifact).
+The 0.23.0 balancing work established:
 
-## Integrated 0.23.0 balancing
+- Both Condenser tiers: **1 Log -> 4 Stone Fragments / 120 ticks (6 seconds)**.
+- Both tiers with Mixing Chamber: **1 Mud + 1 Wheat -> 1 Packed Mud / 160 ticks (8 seconds)**.
+- Normal Hopper: **2 Iron Blocks + 3 Iron Ingots + 1 Chest**.
+- Iron Pickaxe/Axe/Shovel/Hoe: **one Iron Block** plus **4/3/2/2 Ingots**, respectively, the matching Stone tool and one Chain.
+- Garden output badges and tooltip hit areas centered on the actual output slot centres.
 
-- Both Condenser tiers: **1 Log -> 4 Stone Fragments / 120 ticks (6 seconds)**; Planks, Leaves and other existing cycles retain their timing.
-- Both tiers with Mixing Chamber: **1 Mud + 1 Wheat -> 1 Packed Mud / 160 ticks (8 seconds)**, swappable inputs, no power and the existing Condensing JEI category. The Vanilla crafting alternative is retained.
-- Normal Hopper: **2 Iron Blocks + 3 Iron Ingots + 1 Chest**; the old Vanilla/NeoForge recipe and competing static-output recipes are removed. Wooden Hopper pricing is unchanged.
-- Iron Pickaxe/Axe/Shovel/Hoe: **one Iron Block** plus **4/3/2/2 Ingots**, respectively, the matching Stone tool and one Chain. Prior tool/durability behavior is unchanged. Matching Recipe Editor snapshots are included in the repository.
-- Garden output badges and tooltip hit areas are centered on the actual output slot centres.
+One Garden produces 15 Logs/minute while one six-second Condenser consumes 10/minute, before pauses. This requested trial reduces backlog growth but does not make that single-processor line balanced.
 
-One Garden still produces 15 Logs/minute while one six-second Condenser consumes 10/minute, before pauses. This requested trial reduces backlog growth but does not make that single-processor line balanced.
-
-Existing Recipe Editor installations should also apply `ForeverSkyblock-0.23.0-RecipeEditor-Update.zip` at the instance root. Its nine data files refresh the matching overrides under `config/forever_recipe_editor/generated_pack/data/`; an old local Iron-tool override would otherwise keep the old cost and fail the new challenge ingredient proof.
-
-The 0.23.0 source passed 74 unit tests, client startup/model checks and both 89-test server suites. The strict Iron Tools challenge proof was updated with the recipe costs and its existing rewards remain covered. Exact source/artifact evidence is in [MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md#0230-validation-and-artifacts).
+Existing Recipe Editor installations should keep the repository's matching generated-pack overrides synchronized with the installed Recipe Editor version and the current JEI baseline.

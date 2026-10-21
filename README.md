@@ -2,7 +2,21 @@
 
 **Forever Skyblock** is an Expert Skyblock modpack for **Minecraft 1.21.1 / NeoForge** built around deliberate progression, meaningful resource loops and long-term automation.
 
-The current integrated `main` baseline is **0.26.4**. It includes the rebuilt K-menu and K-menu Studio, the early Lava/Obsidian progression through the Crucible, and the first configurable Condenser Mark II automation upgrades. The current implementation boundary is documented in [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md).
+The current integrated `main` baseline is **0.26.4**. It includes the rebuilt K-menu and K-menu Studio, the early Lava/Obsidian progression through the Crucible, configurable Condenser Mark II automation upgrades and the current Nether Fortress material-processing work. The current implementation boundary is documented in [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md).
+
+## Current pack baseline
+
+- **Minecraft:** `1.21.1`
+- **Current pack runtime:** **NeoForge `21.1.262`**
+- **Java:** `21`
+- **Current supplied mod-list snapshot:** **87 enabled artifact labels**
+- **Forever Skyblock artifact in the supplied list:** `ForeverSkyblock-0.26.4-Mekanism-Automation-Test`
+- **JEI:** `19.69.0.457`
+- **Mekanism / Mekanism Generators:** `10.7.19.85`
+
+On October 21, 2026, TeKatz reported testing the modpack on this current listed state with **NeoForge 21.1.262** and finding **no errors**. This is user-reported pack validation. Historical automated CI/runtime evidence that names NeoForge 21.1.259 remains valid for those earlier runs and is not rewritten retroactively.
+
+See [docs/MODLIST_SNAPSHOT.md](docs/MODLIST_SNAPSHOT.md) for the exact current artifact list and version changes.
 
 ## Project direction
 
@@ -16,7 +30,7 @@ The broad direction is:
 
 ## Current early-game progression
 
-The implemented material route now reaches renewable wood/crops, deterministic Iron and the first Lava/Obsidian loop:
+The implemented material route reaches renewable wood/crops, deterministic Iron and the first Lava/Obsidian loop:
 
 `Wood → Stone Fragments → Stone Meal / Dirt → Ice / Water → Farm → Mud / Packed Mud → Washing Basin → Raw Iron → Iron → Condenser Mark II + Garden Chamber → Crucible → Lava / Obsidian`
 
@@ -47,7 +61,7 @@ An adjacent Fluid Tank enables Lava routing. An adjacent Freezing Chamber enable
 
 ## Condenser Mark II automation
 
-Mark II is now the first configurable production machine rather than only a faster Mark I.
+Mark II is the first configurable production machine rather than only a faster Mark I.
 
 It has **3 upgrade capacity** and three physical upgrade slots. The currently integrated cards are:
 
@@ -98,23 +112,24 @@ Farming, resource processing, technology, exploration, combat and meta progressi
 - **Minecraft:** `1.21.1`
 - **Java:** `21`
 - **Default development NeoForge:** `21.1.249`
-- **Full pack-runtime validation:** `NeoForge 21.1.259`
+- **Current installed pack runtime:** **NeoForge `21.1.262`**
+- **Current pack acceptance:** TeKatz reported the October 21 mod-list state tested with no errors observed
 - **Progression protocol:** `skills-9` plus the integrated K-menu editor channel
 - **Persistence:** existing player schema 4/5/6 and world-progress schema 2 remain compatible
 - **Repository:** public, active development
 - **Release status:** repository integration does not by itself imply a published pack release
 
-The 0.26.4 gameplay head was validated with the Java build, client smoke test, K-menu visual fixtures, dedicated-server regression suite and the full NeoForge 21.1.259 pack-runtime integration suite before merge.
-
 ## CI behavior
 
-GitHub Actions uses the full validation chain for `main` and pull requests:
+Historical integrated 0.26.4 automated validation used the configured full pack-runtime integration on NeoForge **21.1.259**. The current installed pack runtime has since moved to **21.1.262** and has been user-tested successfully. The workflow configuration should only be changed when that CI runtime migration is explicitly requested.
+
+GitHub Actions otherwise retains the established validation chain:
 
 1. Java build and tests
 2. headless NeoForge client smoke test
 3. K-menu visual fixtures
 4. dedicated-server regression GameTests
-5. full pack-runtime integration on NeoForge 21.1.259
+5. full pack-runtime integration
 
 Feature branches are validated through pull requests rather than duplicate push + PR runs. Stale runs are cancelled, documentation-only changes skip the heavyweight mod workflow, jobs have a timeout and CI artifacts use reduced retention.
 
@@ -152,6 +167,8 @@ The production JAR is written to `mod/build/libs/`.
 Start with:
 
 - [Current integrated state](docs/CURRENT_STATE.md)
+- [Current mod list](docs/MODLIST_SNAPSHOT.md)
+- [Mods and versions](docs/MODS.md)
 - [Documentation map](docs/README.md)
 - [K-menu Studio](docs/K_MENU_EDITOR.md)
 - [Material processing and automation](docs/MATERIAL_PROCESSING.md)

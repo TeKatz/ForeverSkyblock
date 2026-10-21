@@ -1,5 +1,15 @@
 # Changelog
 
+## Pack runtime snapshot — October 21, 2026
+
+- Refresh the authoritative supplied mod-list snapshot to `Modliste(5).txt` with **87 enabled artifact labels**.
+- Change the current installed pack runtime from **NeoForge 21.1.259** to **NeoForge 21.1.262**.
+- Record TeKatz's successful modpack test on this October 21 state: **no errors observed**.
+- Add `MekanismGenerators-1.21.1-10.7.19.85` to the supplied list.
+- Update listed artifacts for Forever Recipe Editor, Forever Skyblock, FTB XMod Compat, JEI, Sophisticated Backpacks and Sophisticated Core. JEI is now **19.69.0.457**.
+- Preserve older NeoForge 21.1.259 CI/runtime entries as historical run-specific evidence; this documentation update does not claim those automated runs used 21.1.262.
+- No gameplay/code version bump is implied by this pack snapshot documentation update.
+
 ## 0.26.4 — Crucible and Condenser MK II automation integrated
 
 - Integrate the Crucible Lava/Obsidian progression through PR #21 and the configurable Condenser Mark II automation layer through PR #22.
