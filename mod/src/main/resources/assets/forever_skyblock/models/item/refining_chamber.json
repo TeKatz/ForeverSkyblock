@@ -1,1 +1,4 @@
-{ "parent": "forever_skyblock:block/refining_chamber" }
+{
+  "parent": "minecraft:item/generated",
+  "textures": { "layer0": "forever_skyblock:item/refining_condenser" }
+}

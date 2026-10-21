@@ -25,7 +25,7 @@ public final class RefiningCategory implements IRecipeCategory<RecipeHolder<Refi
         slot = helper.getSlotDrawable();
     }
     @Override public mezz.jei.api.recipe.RecipeType<RecipeHolder<RefiningRecipe>> getRecipeType() { return CondenserJeiPlugin.REFINING_TYPE; }
-    @Override public Component getTitle() { return Component.translatable("jei.forever_skyblock.refining"); }
+    @Override public Component getTitle() { return Component.literal("Refining Condenser"); }
     @Override public IDrawable getIcon() { return icon; }
     @Override public int getWidth() { return 176; }
     @Override public int getHeight() { return 82; }
