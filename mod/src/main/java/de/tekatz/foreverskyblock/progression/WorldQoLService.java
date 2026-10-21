@@ -55,6 +55,23 @@ public final class WorldQoLService {
         return true;
     }
 
+    public static boolean advanceApotheosis(MinecraftServer server, ApotheosisStage stage) throws IOException {
+        Context context = context(server);
+        UUID world = context.identities().loadOrCreate(context.root());
+        ApotheosisStage before = context.progress().loadOrCreate(context.root(), world).apotheosisStage();
+        if (stage.ordinal() <= before.ordinal()) return false;
+        context.progress().advanceApotheosis(context.root(), world, stage);
+        return true;
+    }
+
+    public static ApotheosisStage apotheosisStage(MinecraftServer server) {
+        try { return state(server).apotheosisStage(); }
+        catch (IOException | RuntimeException e) {
+            LOGGER.error("Could not read Apotheosis world gate", e);
+            return ApotheosisStage.DORMANT;
+        }
+    }
+
     public static boolean wanderingTraderAllowed(MinecraftServer server) {
         try { return state(server).wanderingTraderUnlocked(); }
         catch (IOException | RuntimeException e) {
