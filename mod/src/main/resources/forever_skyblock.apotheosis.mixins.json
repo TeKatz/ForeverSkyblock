@@ -4,6 +4,7 @@
   "package": "de.tekatz.foreverskyblock.mixin.compat",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "ApotheosisConfigMixin",
     "ApotheosisMobGateMixin",
     "ApotheosisLootGateMixin"
   ],
