@@ -24,14 +24,28 @@ public abstract class PremiumSkillScreenApotheosisMixin extends Screen {
     @Inject(method = "drawHeader", at = @At("TAIL"))
     private void forever$drawApotheosisStatus(GuiGraphics graphics, CallbackInfo ci) {
         ApotheosisStage stage = ApotheosisClientState.stage();
-        Component tier = Component.translatable("apotheosis.forever_stage." + stage.id());
-        Component next = Component.translatable("gui.forever_skyblock.apotheosis.next." + stage.id());
-        Component line = Component.translatable("gui.forever_skyblock.apotheosis.status", tier, next);
+        Component tier = stage == ApotheosisStage.DORMANT
+                ? Component.translatable("gui.forever_skyblock.meta.tier.-1")
+                : Component.translatable("text.apotheosis.world_tier." + stage.id());
+        Component line = Component.literal("Apotheosis · ").append(tier);
+        if (stage == ApotheosisStage.PINNACLE) line = line.copy().append("  ✓");
+        else line = line.copy().append("  →  ").append(forever$nextRequirement(stage));
         int left = x + layout.padding() + 2;
         int top = y + layout.headerHeight() - 9;
         int maxWidth = Math.max(40, layout.width() - layout.padding() * 2 - 4);
         String text = line.getString();
         if (font.width(text) > maxWidth) text = font.plainSubstrByWidth(text, maxWidth - font.width("…")) + "…";
         graphics.drawString(font, text, left, top, 0xFF9BC8D8, false);
+    }
+
+    private static Component forever$nextRequirement(ApotheosisStage stage) {
+        return switch (stage) {
+            case DORMANT -> Component.translatable("milestone.forever_skyblock.into_nether");
+            case HAVEN -> Component.literal("🔥 ").append(Component.translatable("item.minecraft.diamond"));
+            case FRONTIER -> Component.translatable("milestone.forever_skyblock.withered_away");
+            case ASCENT -> Component.translatable("milestone.forever_skyblock.dragon_slayer");
+            case SUMMIT -> Component.translatable("gui.forever_skyblock.machine.forever_core");
+            case PINNACLE -> Component.literal("✓");
+        };
     }
 }
