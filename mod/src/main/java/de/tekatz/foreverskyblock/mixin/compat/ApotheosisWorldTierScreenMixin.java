@@ -72,30 +72,31 @@ public abstract class ApotheosisWorldTierScreenMixin {
                 .append(Component.literal(displayName(stage)).withStyle(ChatFormatting.WHITE));
         if (stage != ApotheosisStage.PINNACLE) {
             status = status.copy().append(Component.literal("  •  Next: ").withStyle(ChatFormatting.DARK_GRAY))
-                    .append(Component.literal(nextRequirement(stage)).withStyle(ChatFormatting.GRAY));
+                    .append(Component.literal(displayName(nextStage(stage))).withStyle(ChatFormatting.GRAY));
         }
         else {
-            status = status.copy().append(Component.literal("  •  Full Apotheosis progression unlocked")
-                    .withStyle(ChatFormatting.GRAY));
+            status = status.copy().append(Component.literal("  •  Complete").withStyle(ChatFormatting.GRAY));
         }
-        gfx.drawString(minecraft.font, status, left + 15, top + 62, 0xFFFFFF, true);
+
+        // Keep this deliberately compact. The detailed unlock requirement lives on the locked tier tooltip.
+        // Y=64 sits below Apotheosis' own description while keeping clear of the difficulty row at Y=80.
+        gfx.drawString(minecraft.font, status, left + 15, top + 64, 0xFFFFFF, true);
+    }
+
+    private static ApotheosisStage nextStage(ApotheosisStage stage) {
+        return switch (stage) {
+            case DORMANT -> ApotheosisStage.HAVEN;
+            case HAVEN -> ApotheosisStage.FRONTIER;
+            case FRONTIER -> ApotheosisStage.ASCENT;
+            case ASCENT -> ApotheosisStage.SUMMIT;
+            case SUMMIT, PINNACLE -> ApotheosisStage.PINNACLE;
+        };
     }
 
     private static String displayName(ApotheosisStage stage) {
         if (stage == ApotheosisStage.DORMANT) return "Dormant";
         String id = stage.id();
         return Character.toUpperCase(id.charAt(0)) + id.substring(1);
-    }
-
-    private static String nextRequirement(ApotheosisStage stage) {
-        return switch (stage) {
-            case DORMANT -> "Enter the Nether to awaken Apotheosis";
-            case HAVEN -> "Sacrifice a player-thrown Diamond to fire";
-            case FRONTIER -> "Defeat the Wither";
-            case ASCENT -> "Defeat the Ender Dragon";
-            case SUMMIT -> "Craft the Forever Core";
-            case PINNACLE -> "Complete";
-        };
     }
 
     private static String requirement(String tier) {
