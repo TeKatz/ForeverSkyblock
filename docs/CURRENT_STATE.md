@@ -1,6 +1,6 @@
 # Current integrated state
 
-Updated October 20, 2026. `main` is now **0.26.4** after the integration of the K-menu Studio stack, the Crucible Lava/Obsidian system, Condenser Mark II automation upgrades and the GitHub Actions usage cleanup.
+Updated October 21, 2026. `main` is **0.26.4** after the integration of the K-menu Studio stack, the Crucible Lava/Obsidian system, Condenser Mark II automation upgrades, GitHub Actions usage cleanup and the Nether Fortress material-processing work now present on `main`.
 
 ## Baseline
 
@@ -9,13 +9,16 @@ Updated October 20, 2026. `main` is now **0.26.4** after the integration of the 
 | Mod version | **0.26.4** |
 | Minecraft | **1.21.1** |
 | Java | **21** |
-| Pack runtime validation | **NeoForge 21.1.259** |
+| Current pack runtime | **NeoForge 21.1.262** |
 | Default development NeoForge | **21.1.249** |
+| Current supplied mod-list snapshot | **87 enabled artifact labels** (`Modliste(5).txt`, October 21, 2026) |
 | Player profile schema | **dynamic 4 / 5 / 6** |
 | World-progress schema | **2** |
 | Progression protocol | **skills-9** plus integrated K-menu editor channel |
-| Current main merge | `ca49a20864ea08bad1e8972fb77248a52b25bb9e` |
+| Current main merge | `fccb38b76cbfd6519ce39a6f380f0639eec02162` |
 | Release | Active development; repository integration is not a public pack release |
+
+TeKatz reported testing the current listed modpack state on **NeoForge 21.1.262** with **no errors observed**. This is user-reported pack acceptance. No fresh runtime log accompanied the list, so the repository does not infer a new loaded-mod-ID count from that test.
 
 The fixed starter island remains protected and unchanged by the 0.25/0.26 integrations.
 
@@ -35,7 +38,7 @@ See [K_MENU_EDITOR.md](K_MENU_EDITOR.md) for the editor workflow and compatibili
 
 ### 0.26.x — Crucible Lava/Obsidian progression
 
-The **Crucible** is now integrated.
+The **Crucible** is integrated.
 
 - Internal Lava capacity: **4,000 mB** with visible fill progression.
 - Input rates: **8 Cobblestone** or **40 Stone Fragments** produce **1,000 mB Lava**.
@@ -54,7 +57,7 @@ The Crucible GUI includes animated Lava level/surface, heat/melt activity and fr
 
 ### 0.26.x — Condenser Mark II automation upgrades
 
-Condenser Mark II now has **3 upgrade capacity** and three physical upgrade slots.
+Condenser Mark II has **3 upgrade capacity** and three physical upgrade slots.
 
 | Upgrade | Effect | Limit |
 | --- | --- | --- |
@@ -86,6 +89,20 @@ Current key behavior:
 - **Garden Chamber:** retained Oak Sapling → Logs + Leaves; retained Wheat Seeds → Wheat + Seeds. Garden remains Mark-II-only.
 - **Mark II overflow:** full outputs no longer have to halt a long-running setup when the player explicitly selects Void Excess or Void All.
 
+## Current modpack snapshot
+
+The authoritative current artifact-label snapshot is [MODLIST_SNAPSHOT.md](MODLIST_SNAPSHOT.md). Important current values include:
+
+- **JEI 19.69.0.457**;
+- **Mekanism 10.7.19.85** plus **Mekanism Generators 10.7.19.85**;
+- **Forever Production Monitor 5.0.1**;
+- supplied **Forever Recipe Editor 1.4.2 (2)** artifact;
+- supplied **Forever Skyblock 0.26.4-Mekanism-Automation-Test** artifact;
+- **FTB XMod Compat 21.1.13**;
+- **Sophisticated Backpacks 3.26.14.2222** and **Sophisticated Core 1.5.16.2422**.
+
+The list is a launcher artifact-label snapshot, not a final distribution manifest.
+
 ## Meta progression boundary
 
 The existing challenge/shop/research/perk/world-purchase rules remain in place. The editor can author supported content but does not turn arbitrary scripts or unsupported machine attribution into safe server-owned objectives.
@@ -94,20 +111,8 @@ Tier II–IV, final late-game balance, additional packages/contracts, deeper tec
 
 ## CI and validation
 
-PR #23 optimized GitHub Actions without reducing the validation chain:
+The historical automated validation chain for the integrated 0.26.4 work used the repository's configured runtimes, including full pack-runtime integration on **NeoForge 21.1.259**. Those historical CI claims remain tied to the runs that produced them and are not rewritten retroactively.
 
-- feature branches are validated through pull requests instead of duplicate push + PR workflows;
-- stale runs are cancelled when a newer revision is pushed;
-- documentation-only changes skip the heavyweight mod workflow;
-- jobs have an explicit timeout;
-- CI artifacts use reduced retention.
-
-The integrated 0.26.4 head was validated before merge with:
-
-1. Java build/tests
-2. headless NeoForge client smoke test
-3. K-menu visual fixtures
-4. dedicated-server regression GameTests
-5. full pack-runtime integration on **NeoForge 21.1.259**
+The current installed pack baseline is now **NeoForge 21.1.262**. On October 21, 2026, TeKatz reported testing the modpack on the current 87-label mod set with that loader and finding **no errors**.
 
 The fixed island `pack/config/skyblockbuilder/templates/islands/forever_me_start.nbt` remains protected pack state.
