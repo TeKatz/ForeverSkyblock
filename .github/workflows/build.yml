@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          timeout --signal=TERM --kill-after=10s 90s xvfb-run -a ./gradlew runClient --no-daemon > client-smoke.log 2>&1
+          timeout --signal=TERM --kill-after=10s 90s xvfb-run -a ./gradlew runClient -PapotheosisTests --no-daemon > client-smoke.log 2>&1
           status=$?
           set -e
           cat client-smoke.log
@@ -80,7 +80,7 @@ jobs:
       - name: Test dedicated-server regression suite
         run: ./gradlew runGameTestServer -PcondenserTests --no-daemon
       - name: Test full pack-runtime integrations on NeoForge 21.1.259
-        run: ./gradlew runGameTestServer -PcondenserTests -PjetpackTests -PtoolIntegrationTests -PascensionTests -PtechChallengeTests -PpackRuntime=21.1.259 --no-daemon
+        run: ./gradlew runGameTestServer -PcondenserTests -PjetpackTests -PtoolIntegrationTests -PascensionTests -PtechChallengeTests -PapotheosisTests -PpackRuntime=21.1.259 --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: ForeverSkyblock-Mod

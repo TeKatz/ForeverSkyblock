@@ -25,7 +25,8 @@ public final class WorldProgressStore {
     private static final long MAX_SIZE = 131_072;
     private State cached;
 
-    public record State(UUID worldId, boolean wanderingTraderUnlocked, Set<String> upgrades, Map<String, Set<String>> islandEvidence) {
+    public record State(UUID worldId, boolean wanderingTraderUnlocked, Set<String> upgrades,
+                        Map<String, Set<String>> islandEvidence, String apotheosisTier) {
         public State {
             if (worldId == null || upgrades == null || upgrades.size() > 64) throw new IllegalArgumentException("Invalid world progression");
             upgrades = Set.copyOf(upgrades);
@@ -39,10 +40,17 @@ public final class WorldProgressStore {
             });
             islandEvidence = Map.copyOf(checked);
             for (String id : upgrades) ProgressionProfile.validateId(id);
+            apotheosisTier = ApotheosisStage.parse(apotheosisTier).id();
         }
-        public State(UUID worldId, boolean trader, Set<String> upgrades) { this(worldId, trader, upgrades, Map.of()); }
+        public State(UUID worldId, boolean trader, Set<String> upgrades) {
+            this(worldId, trader, upgrades, Map.of(), ApotheosisStage.DORMANT.id());
+        }
+        public State(UUID worldId, boolean trader, Set<String> upgrades, Map<String, Set<String>> evidence) {
+            this(worldId, trader, upgrades, evidence, ApotheosisStage.DORMANT.id());
+        }
         public int islandLevel() { return IslandMilestones.level(islandEvidence); }
         public boolean active(String id) { return upgrades.contains(id); }
+        public ApotheosisStage apotheosisStage() { return ApotheosisStage.parse(apotheosisTier); }
     }
 
     public synchronized State loadOrCreate(Path worldRoot, UUID expectedWorld) throws IOException {
@@ -72,7 +80,7 @@ public final class WorldProgressStore {
     public synchronized State unlockTrader(Path worldRoot, UUID expectedWorld) throws IOException {
         State current = loadOrCreate(worldRoot, expectedWorld);
         if (current.wanderingTraderUnlocked()) return current;
-        State next = new State(expectedWorld, true, current.upgrades(), current.islandEvidence());
+        State next = new State(expectedWorld, true, current.upgrades(), current.islandEvidence(), current.apotheosisTier());
         persist(worldRoot, next); cached = next; return next;
     }
 
@@ -81,7 +89,7 @@ public final class WorldProgressStore {
         State current = loadOrCreate(worldRoot, expectedWorld);
         if (current.active(id)) return current;
         var upgrades = new LinkedHashSet<>(current.upgrades()); upgrades.add(id);
-        State next = new State(expectedWorld, current.wanderingTraderUnlocked(), upgrades, current.islandEvidence());
+        State next = new State(expectedWorld, current.wanderingTraderUnlocked(), upgrades, current.islandEvidence(), current.apotheosisTier());
         persist(worldRoot, next); cached = next; return next;
     }
 
@@ -89,7 +97,15 @@ public final class WorldProgressStore {
         State current = loadOrCreate(root, world);
         var evidence = IslandMilestones.record(current.islandEvidence(), id, token);
         if (evidence == current.islandEvidence()) return current;
-        State next = new State(world, current.wanderingTraderUnlocked(), current.upgrades(), evidence);
+        State next = new State(world, current.wanderingTraderUnlocked(), current.upgrades(), evidence, current.apotheosisTier());
+        persist(root, next); cached = next; return next;
+    }
+
+    public synchronized State advanceApotheosis(Path root, UUID world, ApotheosisStage requested) throws IOException {
+        State current = loadOrCreate(root, world);
+        ApotheosisStage present = current.apotheosisStage();
+        if (!requested.directlyFollows(present)) return current;
+        State next = new State(world, current.wanderingTraderUnlocked(), current.upgrades(), current.islandEvidence(), requested.id());
         persist(root, next); cached = next; return next;
     }
 
@@ -102,29 +118,32 @@ public final class WorldProgressStore {
             if (Files.size(file) > MAX_SIZE) return null;
             JsonObject json = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
             int schema = json.get("schema_version").getAsInt();
-            if (schema != 1 && schema != 2) return null;
+            if (schema < 1 || schema > 3) return null;
             UUID world = UUID.fromString(json.get("world_uuid").getAsString());
             if (!expectedWorld.equals(world)) return null;
             boolean trader = json.get("wandering_trader_unlocked").getAsBoolean();
             var upgrades = new LinkedHashSet<String>();
             for (var value : json.getAsJsonArray("world_upgrades")) if (!upgrades.add(value.getAsString())) return null;
             var evidence = new LinkedHashMap<String, Set<String>>();
-            if (schema == 2) for (var entry : json.getAsJsonObject("island_evidence").entrySet()) {
+            if (schema >= 2) for (var entry : json.getAsJsonObject("island_evidence").entrySet()) {
                 var tokens = new LinkedHashSet<String>();
                 for (var value : entry.getValue().getAsJsonArray()) if (!tokens.add(value.getAsString())) return null;
                 evidence.put(entry.getKey(), tokens);
             }
-            return new State(world, trader, upgrades, evidence);
+            String apotheosis = schema >= 3 && json.has("apotheosis_tier")
+                    ? json.get("apotheosis_tier").getAsString() : ApotheosisStage.DORMANT.id();
+            return new State(world, trader, upgrades, evidence, apotheosis);
         } catch (IOException | RuntimeException ignored) { return null; }
     }
 
     private static byte[] encode(State state) {
         JsonObject json = new JsonObject();
-        json.addProperty("schema_version", 2);
+        json.addProperty("schema_version", 3);
         json.addProperty("world_uuid", state.worldId().toString());
         json.addProperty("wandering_trader_unlocked", state.wanderingTraderUnlocked());
         json.add("world_upgrades", GSON.toJsonTree(state.upgrades().stream().sorted().toList()));
         json.add("island_evidence", GSON.toJsonTree(state.islandEvidence()));
+        json.addProperty("apotheosis_tier", state.apotheosisStage().id());
         return (GSON.toJson(json) + "\n").getBytes(StandardCharsets.UTF_8);
     }
 

@@ -1,0 +1,16 @@
+{
+  "parent": "apotheosis:progression/haven",
+  "criteria": {
+    "forever_gate": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "background": "apotheosis:textures/advancements/bg/apoth.png",
+    "description": { "translate": "advancements.apotheosis.progression.frontier.desc" },
+    "icon": { "count": 1, "id": "minecraft:iron_sword" },
+    "title": { "translate": "advancements.apotheosis.progression.frontier.title" }
+  },
+  "requirements": [["forever_gate"]],
+  "sends_telemetry_event": true
+}

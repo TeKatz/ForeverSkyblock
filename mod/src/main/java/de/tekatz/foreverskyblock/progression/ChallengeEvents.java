@@ -26,6 +26,10 @@ public final class ChallengeEvents {
         var evidence = new ArrayList<Evidence>(TechChallengeEvents.crafted(player, recipe));
         evidence.addAll(craftEvidence(player, recipe, ingredients));
         if (!evidence.isEmpty()) ProgressionService.get(player.server).evidence(player, evidence);
+        var holder = player.serverLevel().getRecipeManager().byKey(recipe).orElse(null);
+        if (holder != null && BuiltInRegistries.ITEM.getKey(holder.value().getResultItem(player.registryAccess()).getItem())
+                .equals(ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "forever_core")))
+            ApotheosisProgressionService.advance(player.server, ApotheosisStage.PINNACLE, player);
     }
     /** Require the authoritative recipe ID, registered output and its actual consumed ingredient slots. */
     public static List<Evidence> craftEvidence(ServerPlayer player, ResourceLocation recipe, List<ItemStack> ingredients) {
@@ -66,8 +70,11 @@ public final class ChallengeEvents {
         de.tekatz.foreverskyblock.editor.EditorEvents.emit(player,de.tekatz.foreverskyblock.editor.EditorDocument.TaskType.KILL,
                 BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType()).toString(),1,
                 (victim.getType().getCategory() == MobCategory.MONSTER ? "h/" : "")+victim.getUUID());
-        ProgressionService.get(player.server).killEvidence(player,
-                victim.getType() == EntityType.WITHER, victim.getType() == EntityType.ENDER_DRAGON,
+        boolean wither = victim.getType() == EntityType.WITHER;
+        boolean dragon = victim.getType() == EntityType.ENDER_DRAGON;
+        ProgressionService.get(player.server).killEvidence(player, wither, dragon,
                 victim.getType().getCategory() == MobCategory.MONSTER, victim.getUUID());
+        if (wither) ApotheosisProgressionService.advance(player.server, ApotheosisStage.ASCENT, player);
+        if (dragon) ApotheosisProgressionService.advance(player.server, ApotheosisStage.SUMMIT, player);
     }
 }

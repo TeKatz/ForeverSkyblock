@@ -48,12 +48,37 @@ class WorldProgressStoreTest {
         Files.writeString(file, "{\"schema_version\":1,\"world_uuid\":\""+world+"\",\"wandering_trader_unlocked\":true,\"world_upgrades\":[]}");
         var store = new WorldProgressStore();
         assertEquals(0,store.loadOrCreate(root,world).islandLevel());
+        assertEquals(ApotheosisStage.DORMANT, store.loadOrCreate(root, world).apotheosisStage());
         store.recordMilestone(root,world,ChallengeRules.FOUNDATIONS.id(),"completed");
         store.enableUpgrade(root,world,ShopCatalog.NO_RAIN.id());
         var saved = new WorldProgressStore().loadOrCreate(root,world);
         assertTrue(saved.wanderingTraderUnlocked()); assertTrue(saved.active(ShopCatalog.NO_RAIN.id()));
         assertEquals(1,saved.islandLevel());
+        assertEquals(ApotheosisStage.DORMANT, saved.apotheosisStage());
         Files.delete(file);
         assertEquals(1,new WorldProgressStore().loadOrCreate(root,world).islandLevel());
+    }
+
+    @Test void apotheosisWorldTierCannotSkipMilestones() throws Exception {
+        UUID world = UUID.randomUUID();
+        var store = new WorldProgressStore();
+        assertEquals(ApotheosisStage.DORMANT, store.loadOrCreate(root, world).apotheosisStage());
+
+        assertEquals(ApotheosisStage.DORMANT,
+                store.advanceApotheosis(root, world, ApotheosisStage.ASCENT).apotheosisStage());
+        assertEquals(ApotheosisStage.HAVEN,
+                store.advanceApotheosis(root, world, ApotheosisStage.HAVEN).apotheosisStage());
+        assertEquals(ApotheosisStage.HAVEN,
+                store.advanceApotheosis(root, world, ApotheosisStage.SUMMIT).apotheosisStage());
+        assertEquals(ApotheosisStage.FRONTIER,
+                store.advanceApotheosis(root, world, ApotheosisStage.FRONTIER).apotheosisStage());
+        assertEquals(ApotheosisStage.ASCENT,
+                store.advanceApotheosis(root, world, ApotheosisStage.ASCENT).apotheosisStage());
+        assertEquals(ApotheosisStage.SUMMIT,
+                store.advanceApotheosis(root, world, ApotheosisStage.SUMMIT).apotheosisStage());
+        assertEquals(ApotheosisStage.PINNACLE,
+                store.advanceApotheosis(root, world, ApotheosisStage.PINNACLE).apotheosisStage());
+        assertEquals(ApotheosisStage.PINNACLE,
+                new WorldProgressStore().loadOrCreate(root, world).apotheosisStage());
     }
 }

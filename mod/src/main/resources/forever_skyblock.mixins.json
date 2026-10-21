@@ -20,6 +20,7 @@
     "ToolRepairRecipeMixin",
     "PersonalCraftMixin",
     "PersonalKillMixin",
+    "DiamondSacrificeMixin",
     "ProgressionServiceWorldMixin",
     "ProgressionServiceAdminMixin"
   ],
@@ -28,6 +29,7 @@
     "PremiumSkillScreenPanelMotionMixin",
     "PremiumSkillScreenOverviewMixin",
     "PremiumSkillScreenButtonStyleMixin",
+    "PremiumSkillScreenApotheosisMixin",
     "KMenuEditorShopNodeMixin",
     "KMenuEditorDeletedGraphMixin",
     "KMenuEditorUxMixin"

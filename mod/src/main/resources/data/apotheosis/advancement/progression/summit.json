@@ -1,0 +1,17 @@
+{
+  "parent": "apotheosis:progression/ascent",
+  "criteria": {
+    "forever_gate": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "background": "apotheosis:textures/advancements/bg/apoth.png",
+    "description": { "translate": "advancements.apotheosis.progression.summit.desc" },
+    "frame": "goal",
+    "icon": { "count": 1, "id": "minecraft:netherite_sword" },
+    "title": { "translate": "advancements.apotheosis.progression.summit.title" }
+  },
+  "requirements": [["forever_gate"]],
+  "sends_telemetry_event": true
+}

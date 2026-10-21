@@ -48,6 +48,7 @@ neoForge {
             systemProperty 'forever_skyblock.expectJetpacks', project.hasProperty('jetpackTests').toString()
             systemProperty 'forever_skyblock.expectToolIntegrations', project.hasProperty('toolIntegrationTests').toString()
             systemProperty 'forever_skyblock.expectTechChallenges', project.hasProperty('techChallengeTests').toString()
+            systemProperty 'forever_skyblock.expectApotheosis', project.hasProperty('apotheosisTests').toString()
             gameDirectory = project.file('runs/gametest')
         }
     }
@@ -83,6 +84,12 @@ dependencies {
         runtimeOnly('dev.ftb.mods:ftb-ultimine-neoforge:2101.1.15') { transitive = false }
         runtimeOnly('dev.ftb.mods:ftb-library-neoforge:2101.1.37') { transitive = false }
         runtimeOnly('dev.architectury:architectury-neoforge:13.0.11') { transitive = false }
+    }
+    if (project.hasProperty('apotheosisTests')) {
+        // Pin the exact Apotheosis stack used by the pack so optional Forever mixins are actually applied in CI.
+        runtimeOnly('curse.maven:apotheosis-313970:8993983') { transitive = false }
+        runtimeOnly('curse.maven:placebo-283644:9153039') { transitive = false }
+        runtimeOnly('curse.maven:apothic-attributes-898963:9006294') { transitive = false }
     }
     clientAdditionalRuntimeClasspath 'curse.maven:iron-jetpacks-284497:7105279'
     clientAdditionalRuntimeClasspath 'curse.maven:cucumber-272335:8035802'
