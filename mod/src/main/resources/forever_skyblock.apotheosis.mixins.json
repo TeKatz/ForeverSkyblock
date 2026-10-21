@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "de.tekatz.foreverskyblock.mixin.compat",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "ApotheosisMobGateMixin",
+    "ApotheosisLootGateMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
