@@ -62,6 +62,21 @@ jobs:
             echo 'Client smoke test never reached ModLauncher.' >&2
             exit 1
           fi
+      - name: Render machine GUI and block fixtures
+        shell: bash
+        run: |
+          timeout --signal=TERM --kill-after=10s 240s xvfb-run -a -s '-screen 0 1920x1080x24' ./gradlew runClient -PcondenserTests -PmachineVisualTests --no-daemon > machine-visual.log 2>&1 || { cat machine-visual.log; exit 1; }
+          cat machine-visual.log
+          grep -q 'MACHINE_VISUAL_COMPLETE' machine-visual.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Machine-Visual-QA
+          path: |
+            mod/**/screenshots/machine-*.png
+            mod/machine-visual.log
+          if-no-files-found: warn
+          retention-days: 14
       - name: Render K-menu visual fixtures
         shell: bash
         run: |

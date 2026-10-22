@@ -1,9 +1,9 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "particle": "minecraft:block/oak_planks",
-    "wood": "minecraft:block/oak_planks",
-    "stone": "minecraft:block/stone",
+    "particle": "forever_skyblock:block/mixing_wood",
+    "wood": "forever_skyblock:block/mixing_wood",
+    "stone": "forever_skyblock:block/washing_base",
     "meal": "forever_skyblock:block/mixing_basin"
   },
   "elements": [

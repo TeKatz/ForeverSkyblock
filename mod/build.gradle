@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'de.tekatz.foreverskyblock'
-version = '0.26.4'
+version = '0.27.0'
 base.archivesName = 'ForeverSkyblock-1.21.1-NeoForge'
 
 repositories {
@@ -36,6 +36,10 @@ neoForge {
         }
         client {
             client()
+            if (project.hasProperty('machineVisualTests')) {
+                systemProperty 'forever_skyblock.machineVisualTests', 'true'
+                programArguments.addAll '--width', '1920', '--height', '1080'
+            }
             if (project.hasProperty('menuVisualTests')) {
                 systemProperty 'forever_skyblock.menuVisualTests', 'true'
                 programArguments.addAll '--width', '1920', '--height', '1080'

@@ -20,7 +20,7 @@ final class GardenChamberModelTest {
     @Test void clearInsetGreenhouseMeshHasNoCoplanarOverlapsOrHiddenFaceCulling() throws Exception {
         var model = model("garden_chamber_mark_i");
         assertEquals("minecraft:cutout", model.get("render_type").getAsString());
-        assertEquals("minecraft:block/glass", model.getAsJsonObject("textures").get("glass").getAsString());
+        assertEquals("forever_skyblock:block/garden_glass", model.getAsJsonObject("textures").get("glass").getAsString());
         var faces = new ArrayList<Face>();
         int glassFaces = 0;
         for (var raw : model.getAsJsonArray("elements")) {

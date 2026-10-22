@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.27.0 — machine visual overhaul (development branch, not merged)
+
+- Redesign all nine custom machine surfaces and five machine container screens as a consistent graphite/copper/steel series with task-specific accents.
+- Add new 32px material/tool/upgrade sprites, clear greenhouse glazing and independent Mark-II/Ascension material atlases.
+- Give Refining a recessed 3D block/item model and synchronized reactor, Washing a real wash-surface renderer and sieve cutaway, and stored Lava slow convection.
+- Smooth outlet/mote transitions and use actual recipe progress for Ascension rings. Retain the approved Garden GUI tree.
+- Preserve recipe/processing/energy/automation/save behavior and native slot/JEI coordinates. Add transient display-only Washing/Refining snapshots and opt-in real-client machine fixtures.
+
+See [MACHINE_VISUAL_OVERHAUL.md](MACHINE_VISUAL_OVERHAUL.md) for scope and validation.
+
+
 ## 0.26.4 — Resource refining progression integrated — October 22, 2026
 
 - Merge PR #29 (`hotfix/pr28-14-fixes`) into PR #28's `feature/resource-refining-progression` branch, then merge PR #28 into `main`.

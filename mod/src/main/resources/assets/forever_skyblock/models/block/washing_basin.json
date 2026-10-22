@@ -2,10 +2,10 @@
   "parent": "minecraft:block/block",
   "ambientocclusion": true,
   "textures": {
-    "cobble": "minecraft:block/cobblestone",
-    "mud": "minecraft:block/mud_bricks",
-    "wood": "minecraft:block/oak_planks",
-    "particle": "minecraft:block/mud_bricks"
+    "cobble": "forever_skyblock:block/washing_base",
+    "mud": "forever_skyblock:block/washing_ceramic",
+    "wood": "forever_skyblock:block/washing_rim",
+    "particle": "forever_skyblock:block/washing_ceramic"
   },
   "elements": [
     {

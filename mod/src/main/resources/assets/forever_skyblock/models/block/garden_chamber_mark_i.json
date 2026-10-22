@@ -3,13 +3,13 @@
   "ambientocclusion": true,
   "render_type": "minecraft:cutout",
   "textures": {
-    "base": "minecraft:block/polished_deepslate",
-    "steel": "forever_skyblock:block/freezing_metal",
-    "copper": "minecraft:block/cut_copper",
-    "glass": "minecraft:block/glass",
-    "soil": "minecraft:block/rooted_dirt",
+    "base": "forever_skyblock:block/garden_base",
+    "steel": "forever_skyblock:block/garden_steel",
+    "copper": "forever_skyblock:block/garden_copper",
+    "glass": "forever_skyblock:block/garden_glass",
+    "soil": "forever_skyblock:block/garden_soil",
     "bolt": "forever_skyblock:block/freezing_bolt",
-    "particle": "minecraft:block/cut_copper"
+    "particle": "forever_skyblock:block/garden_copper"
   },
   "elements": [
     {"from":[0.15,0,0.15],"to":[0.15,2.6,15.85],"faces":{"west":{"texture":"#base","uv":[0,0.15000000000000036,2.6,15.85]}}},

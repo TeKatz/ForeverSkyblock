@@ -47,8 +47,9 @@ public final class GardenChamberRenderer implements BlockEntityRenderer<GardenCh
             for (int i = 0; i < 4; i++) {
                 float fall = (phase * 12 + i * .25F) % 1;
                 float x = i % 2 == 0 ? 3.5F : 12.2F, dz = i < 2 ? 3.5F : 12.2F;
+                float size = .12F * (float)Math.sin(Math.PI * fall);
                 MachineGeometry.box(p, b, 7, x, 12.7F - fall * 8.6F, dz,
-                        x + .12F, 13F - fall * 8.6F, dz + .12F, light, overlay);
+                        x + size, 12.7F + size * 2.5F - fall * 8.6F, dz + size, light, overlay);
             }
             float harvest = MachineAnimation.harvest(phase);
             if (harvest > 0) {

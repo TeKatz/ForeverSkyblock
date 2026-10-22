@@ -30,6 +30,7 @@ public final class RefiningScreen extends MachineScreen<RefiningMenu> {
 
     @Override protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
+        skin.accent(MachineSkin.VIOLET);
         skin.frame(g, x, y, imageWidth, imageHeight);
         g.renderItem(new ItemStack(ForeverSkyblock.REFINING_CHAMBER.get()), x + 18, y + 10);
         MachineSkin.text(g, font, Component.literal("REFINING CONDENSER"), x + 42, y + 12, 130, MachineSkin.LIGHT, 1.05F);
@@ -48,10 +49,9 @@ public final class RefiningScreen extends MachineScreen<RefiningMenu> {
         MachineSkin.text(g, font, statusText, x + 186, y + 12, 43, statusColor, .73F);
 
         MachineSkin.panel(g, x + 18, y + 35, 212, 20, 0xFF465A68);
-        int energyWidth = Math.min(202, 202 * menu.energy() / menu.energyCapacity());
         MachineSkin.centered(g, font, Component.literal(menu.energy() + " / " + menu.energyCapacity() + " FE"), x + 124, y + 38, 204, MachineSkin.LIGHT, .70F);
         g.fill(x + 23, y + 49, x + 225, y + 52, 0xFF2D3843);
-        if (energyWidth > 0) g.fill(x + 23, y + 49, x + 23 + energyWidth, y + 52, 0xFF8A6FE8);
+        MachineSkin.meter(g, x + 23, y + 49, 202, 3, menu.energy() / (float) menu.energyCapacity(), MachineSkin.VIOLET, 0, false);
 
         MachineSkin.panel(g, x + 18, y + 60, 212, 72, 0xFF54616D);
         MachineSkin.centered(g, font, Component.literal("MATERIAL"), x + RefiningMenu.PRIMARY_X + 8, y + 65, 54, MachineSkin.MUTED, .73F);
@@ -61,10 +61,13 @@ public final class RefiningScreen extends MachineScreen<RefiningMenu> {
         skin.slot(g, x + RefiningMenu.CATALYST_X, y + RefiningMenu.MACHINE_Y, true);
         skin.slot(g, x + RefiningMenu.OUTPUT_X, y + RefiningMenu.MACHINE_Y, true);
         int barX = x + 111, barW = 50;
-        MachineSkin.panel(g, barX, y + 84, barW, 8, 0xFF637888);
-        int filled = Math.min(barW - 4, (barW - 4) * menu.progress() / menu.duration());
-        g.fill(barX + 2, y + 86, barX + 2 + filled, y + 90, MachineSkin.CYAN);
-        MachineSkin.centered(g, font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f / %.1f s", menu.progress()/20F, menu.duration()/20F)), barX + barW/2, y + 102, 70, MachineSkin.MUTED, .7F);
+        boolean running = menu.status() == RefiningChamberBlockEntity.RUNNING;
+        float partial = minecraft.isPaused() ? 0 : partialTick;
+        float phase = MachineAnimation.phase(menu.progress() + (running ? partial : 0), menu.duration());
+        MachineProcessEffects.refining(g, barX, y + 75, barW, phase, running,
+                menu.status() == RefiningChamberBlockEntity.BLOCKED || menu.status() == RefiningChamberBlockEntity.NO_POWER);
+        MachineSkin.meter(g, barX, y + 115, barW, 3, phase, MachineSkin.VIOLET, phase * menu.duration(), running);
+        MachineSkin.centered(g, font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f / %.1f s", menu.progress()/20F, menu.duration()/20F)), barX + barW/2, y + 104, 60, MachineSkin.MUTED, .65F);
 
         MachineSkin.panel(g, x + 18, y + 138, 212, 34, 0xFF465A68);
         MachineSkin.text(g, font, Component.literal("Consumes FE continuously"), x + 25, y + 145, 132, MachineSkin.MUTED, .67F);

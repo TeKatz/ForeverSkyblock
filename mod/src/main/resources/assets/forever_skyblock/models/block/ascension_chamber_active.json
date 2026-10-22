@@ -2,10 +2,10 @@
   "parent": "minecraft:block/block",
   "ambientocclusion": true,
   "textures": {
-    "materials": "forever_skyblock:block/machine_materials",
+    "materials": "forever_skyblock:block/ascension_materials",
     "panels": "forever_skyblock:block/machine_panels",
     "lights": "forever_skyblock:block/machine_lights",
-    "particle": "forever_skyblock:block/condenser_mark_i_side"
+    "particle": "forever_skyblock:block/ascension_side"
   },
   "elements": [
     {

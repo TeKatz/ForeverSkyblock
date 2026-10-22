@@ -2,10 +2,10 @@
   "parent": "minecraft:block/block",
   "ambientocclusion": true,
   "textures": {
-    "body": "minecraft:block/polished_deepslate",
-    "rim": "minecraft:block/deepslate_tiles",
-    "metal": "minecraft:block/iron_block",
-    "particle": "minecraft:block/polished_deepslate"
+    "body": "forever_skyblock:block/crucible_body",
+    "rim": "forever_skyblock:block/crucible_rim",
+    "metal": "forever_skyblock:block/crucible_metal",
+    "particle": "forever_skyblock:block/crucible_body"
   },
   "elements": [
     {

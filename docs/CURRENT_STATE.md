@@ -1,5 +1,7 @@
 # Current integrated state
 
+Development branch note: this checkout adds the **0.27.0 machine visual overhaul** on `feature/machine-visual-overhaul`. The integrated `main` baseline described below remains **0.26.4** until an authorized merge. See [machine visual overhaul](MACHINE_VISUAL_OVERHAUL.md).
+
 Updated October 22, 2026. `main` remains **0.26.4** and now includes the renewable resource-refining stack from PR #28 together with its validated PR #29 hotfix set. PR #29 was merged into `feature/resource-refining-progression`; PR #28 was then merged into `main` as `d97e69781eabb8471ecc7388cc1a164b74eeb94a`.
 
 ## Baseline

@@ -76,6 +76,7 @@ public final class CondenserRenderer implements BlockEntityRenderer<CondenserBlo
         if (hasJob) {
             float product = job == CondenserJob.CULTIVATING ? MachineAnimation.smooth(.44F, .82F, phase) : MachineAnimation.product(phase);
             float exit = MachineAnimation.discharge(phase);
+            product *= 1F - MachineAnimation.smooth(.92F, 1F, phase);
             float startY = job == CondenserJob.CULTIVATING ? 7.4F + product * 1.2F : 5.8F;
             // The product travels into the recessed outlet, ending behind its opaque backplate.
             item(p, b, m.visualResult(), 8, startY + (1.85F - startY) * exit,

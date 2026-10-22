@@ -18,7 +18,7 @@ final class CondenserProcessScene {
     static void draw(GuiGraphics g, int x, int y, int width, int tier, CondenserJob job,
                      float phase, boolean running, boolean blocked, ItemStack input, ItemStack second, ItemStack result) {
         int cx = x + width / 2, tint = blocked ? 0xFFE9AF68 : color(job);
-        g.fill(x, y, x + width, y + 22, 0xFF17242D);
+        g.fill(x, y, x + width, y + 22, 0xFF10212D);
         g.fill(x + 1, y + 21, x + width - 1, y + 22, 0xFF576673);
         g.fill(x + 2, y + 2, x + 3, y + 19, 0xFF40515E);
         g.fill(x + width - 3, y + 2, x + width - 2, y + 19, 0xFF40515E);
@@ -36,8 +36,8 @@ final class CondenserProcessScene {
         } else {
             int stroke = Math.round((job == CondenserJob.IDLE ? 0 : MachineAnimation.press(phase)) * 6);
             g.fill(cx - 12, y + 18, cx + 13, y + 20, 0xFF778A98);
-            g.fill(cx - 1, y + 1, cx + 2, y + 6 + stroke, 0xFF879DAA);
-            g.fill(cx - 11, y + 5 + stroke, cx + 12, y + 8 + stroke, 0xFFC1CCD0);
+            g.fill(cx - 1, y + 1, cx + 2, y + 6 + stroke, 0xFF9FB2B9);
+            g.fill(cx - 11, y + 5 + stroke, cx + 12, y + 8 + stroke, 0xFFCED9D5);
             g.fill(cx - 10, y + 8 + stroke, cx + 11, y + 9 + stroke, tint);
         }
         // Each ingredient has one continuous path. Intake and outlet covers hide the route endpoints.
@@ -59,7 +59,7 @@ final class CondenserProcessScene {
             float exit = MachineAnimation.discharge(phase);
             float resultX = cx + (width + 8 - width / 2F) * exit;
             float resultY = y + (job == CondenserJob.CULTIVATING ? 7 + 6 * exit : 14);
-            smallItem(g, result, resultX, resultY, .46F * product);
+            smallItem(g, result, resultX, resultY, .46F * product * (1F - MachineAnimation.smooth(.94F, 1F, phase)));
         }
         if (running) for (int i = 0; i < 3; i++) {
             float dust = MachineAnimation.dust(phase, i);
@@ -78,7 +78,7 @@ final class CondenserProcessScene {
         if (blocked) { g.fill(x + width - 8, y + 3, x + width - 6, y + 10, tint); g.fill(x + width - 8, y + 12, x + width - 6, y + 14, tint); }
     }
     private static void clipScene(GuiGraphics g, int x0, int y0, int x1, int y1) {
-        // MachineScreen scales/translates the entire panel. Resolve that transform once, then
+        // Resolve the current drawing transform once, then
         // set the clip under an identity pose so both pose-aware and legacy scissor paths agree.
         var matrix = g.pose().last().pose();
         int left = (int) Math.floor(matrix.m00() * x0 + matrix.m10() * y0 + matrix.m30());
@@ -91,13 +91,14 @@ final class CondenserProcessScene {
         g.pose().popPose();
     }
     private static void gear(GuiGraphics g, int x, int y, float angle, int tint) {
-        g.fill(x - 4, y - 4, x + 5, y + 5, 0xFF8A9CA7);
-        for (int i = 0; i < 6; i++) {
-            double a = Math.toRadians(angle + i * 60);
-            int dx = (int) Math.round(Math.cos(a) * 5), dy = (int) Math.round(Math.sin(a) * 5);
-            g.fill(x + dx - 1, y + dy - 1, x + dx + 2, y + dy + 2, tint);
+        g.pose().pushPose();g.pose().translate(x,y,0);
+        g.pose().mulPose(com.mojang.math.Axis.ZP.rotationDegrees(angle));
+        for(int i=0;i<4;i++) {
+            g.pose().pushPose();g.pose().mulPose(com.mojang.math.Axis.ZP.rotationDegrees(i*45));
+            g.fill(-1,-6,2,6,0xFF99B0B7);g.pose().popPose();
         }
-        g.fill(x - 1, y - 1, x + 2, y + 2, 0xFF22343E);
+        g.fill(-4,-4,4,4,0xFF597787);g.fill(-3,-3,3,3,tint);g.fill(-1,-1,1,1,0xFF142734);
+        g.pose().popPose();
     }
     /** Coordinates identify the fixed item centre, including while its scale approaches zero. */
     static void smallItem(GuiGraphics g, ItemStack stack, float x, float y, float scale) {
