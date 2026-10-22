@@ -19,6 +19,7 @@ final class MachinePresentationAssetsTest {
         assertEquals(0,glass.getRGB(16,16)>>>24,"The rooted crop must remain visible through the enclosure");
         assertEquals(255,glass.getRGB(0,0)>>>24);
     }
+
     @Test void everyNewMachineMaterialBindingResolvesToAPackagedTexture() throws Exception {
         for(String name:new String[]{"condenser_mark_i","condenser_mark_ii","ascension_chamber","mixing_chamber_mark_i","freezing_chamber_mark_i","garden_chamber_mark_i","washing_basin","crucible","refining_chamber"}) {
             var path="/assets/forever_skyblock/models/block/"+name+".json";
@@ -30,6 +31,23 @@ final class MachinePresentationAssetsTest {
                     if(!location.startsWith("forever_skyblock:"))continue;
                     String texture="/assets/forever_skyblock/textures/"+location.split(":",2)[1]+".png";
                     try(var image=getClass().getResourceAsStream(texture)) { assertNotNull(image,texture);assertNotNull(ImageIO.read(image),texture); }
+                }
+            }
+        }
+    }
+
+    @Test void openBasinModelsNeverCullBoundaryFacesAgainstNeighborBlocks() throws Exception {
+        for(String name:new String[]{"mixing_chamber_mark_i","washing_basin"}) {
+            var path="/assets/forever_skyblock/models/block/"+name+".json";
+            try(var stream=getClass().getResourceAsStream(path)) {
+                assertNotNull(stream,path);
+                var model=JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
+                for(var element:model.getAsJsonArray("elements")) {
+                    var faces=element.getAsJsonObject().getAsJsonObject("faces");
+                    for(var face:faces.entrySet()) {
+                        assertFalse(face.getValue().getAsJsonObject().has("cullface"),
+                                name+" must render its open boundary faces even when neighboring blocks touch it");
+                    }
                 }
             }
         }
