@@ -1,5 +1,11 @@
 # Changelog
 
+## Item texture polish — October 22, 2026
+
+- Replace the Stone Meal, Nether Brick Dust, Nether Concentrate and Mineral Blend inventory textures with the approved pixel-art redesigns.
+- Add a subtle animated glow cycle to Nether Concentrate through a four-frame vertical texture strip and `nether_concentrate.png.mcmeta`.
+- Keep item IDs, recipes, progression and gameplay behavior unchanged.
+
 ## Pack runtime snapshot — October 22, 2026
 
 - Refresh the authoritative supplied launcher snapshot to `Modliste(6).txt` with **94 enabled artifact labels**, up from 87.
@@ -34,7 +40,7 @@ See [MACHINE_VISUAL_OVERHAUL.md](MACHINE_VISUAL_OVERHAUL.md) for scope and valid
 - Set final Diamond cost to **2 Carbon Matrix + 8 Mineral Blend**, 900 ticks and 240 FE/t.
 - Align Mekanism Basic Logistical Transporter and Iron Furnaces Iron Furnace recipes with progression.
 - Rework Refining/Crucible JEI presentation and synchronize buffered Condenser output counts.
-- Remove custom machine-GUI fit-to-window scaling/mouse remapping so Vanilla slot, ItemStack, click and JEI coordinates share one origin.
+- Remove custom machine-GUI fit-to-window scaling/mouse-remapping so Vanilla slot, ItemStack, click and JEI coordinates share one origin.
 - Final pre-integration source passed Actions run #563; that historical full-pack suite used NeoForge **21.1.259**.
 
 ## Pack runtime snapshot — October 21, 2026
