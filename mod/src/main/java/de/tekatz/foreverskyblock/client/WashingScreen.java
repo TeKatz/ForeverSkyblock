@@ -71,7 +71,7 @@ public final class WashingScreen extends MachineScreen<WashingMenu> {
         MachineProcessEffects.washing(g, barX, y + 74, barW, phase, running, menu.status() == WashingBasinBlockEntity.BLOCKED);
         MachineSkin.meter(g, barX, y + 109, barW, 3, phase, MachineSkin.ICE, phase * menu.duration(), running);
         MachineSkin.centered(g, font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f / %.1f s",
-                menu.progress() / 20F, menu.duration() / 20F)), barX + barW / 2, y + 101, barW + 8, MachineSkin.MUTED, .65F);
+                menu.progress() / 20F, menu.duration() / 20F)), barX + barW / 2, y + 97, barW + 8, MachineSkin.MUTED, .65F);
 
         Component summary = text("washing_recipe");
         if (minecraft.level != null) {
