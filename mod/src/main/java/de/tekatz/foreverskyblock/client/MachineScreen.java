@@ -17,6 +17,14 @@ public abstract class MachineScreen<M extends AbstractContainerMenu> extends Abs
         super(menu,inventory,title);this.layout=layout;this.skin=new MachineSkin(ascension);this.machineSlots=machineSlots;
         imageWidth=layout.width();imageHeight=layout.height();
     }
+    @Override protected void init() {
+        super.init();
+        // Machine screens render inside a custom viewport. Keep the logical menu origin fixed at 0/0 so
+        // vanilla slots, rendered items, widgets and pointer transforms all share the exact same coordinate
+        // system after a window resize or GUI-scale change. The viewport alone handles centering/scaling.
+        leftPos=0;
+        topPos=0;
+    }
     protected MachineLayout.Viewport viewport() { return layout.viewport(width,height,leftPos,topPos); }
     protected int logicalMouseX(double x) { return (int)Math.floor(viewport().logicalX(x)); }
     protected int logicalMouseY(double y) { return (int)Math.floor(viewport().logicalY(y)); }
