@@ -2,137 +2,128 @@
 
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz.
 
-The integrated `main` baseline is **0.26.4**. It includes the 0.21–0.24 machine animation/balancing/K-menu stack, the integrated K-menu Studio, Crucible Lava/Obsidian progression, Condenser Mark II upgrade/overflow automation and the current Nether Fortress material-processing work present on `main`. See [CURRENT_STATE.md](../docs/CURRENT_STATE.md) for the authoritative integrated-state summary.
+The current `main` baseline is **0.26.4**. On October 22, 2026, PR #29 was merged into the resource-refining branch and PR #28 was then merged into `main`. The mod now contains the renewable Nether/Redstone bridge and the FE-powered Refining Condenser in addition to the existing Condenser, Washing, Garden, Crucible and K-menu systems.
 
-The current installed pack runtime is **NeoForge 21.1.262**. TeKatz reported testing the October 21, 2026 pack state with the current supplied 87-artifact mod list on that loader and finding **no errors observed**. The standalone mod project's default development NeoForge dependency remains **21.1.249** unless changed deliberately. Historical automated validation entries below that name NeoForge 21.1.259 remain tied to those earlier runs.
+Authoritative summaries:
 
-The current supplied pack list uses JEI **19.69.0.457**, Mekanism **10.7.19.85** and Mekanism Generators **10.7.19.85**. Exact pack artifact versions are tracked in [MODLIST_SNAPSHOT.md](../docs/MODLIST_SNAPSHOT.md) and [MODS.md](../docs/MODS.md).
+- [Current integrated state](../docs/CURRENT_STATE.md)
+- [Current progression](../docs/PROGRESSION.md)
+- [Resource refining](../docs/RESOURCE_REFINING.md)
+
+The current installed pack runtime is **NeoForge 21.1.262**. The final pre-integration hotfix source was validated by Actions run #563 with the full automated pack-runtime suite on **NeoForge 21.1.259**. These are separate evidence boundaries.
 
 ## Early material progression
 
-The Condenser Mark I, Mixing Chamber and Freezing Chamber remain the primitive foundation. The 0.19.x-0.20.1 stack introduced the deterministic route from Water/Farming to Iron. Iron unlocks the higher automation tier that closes the wood loop.
+The primitive chain remains:
 
-### Mud
+`Wood -> Stone Fragments -> Stone Meal / Dirt -> Ice / Water -> Farm -> Mud / Packed Mud -> Washing Basin -> Raw Iron -> Iron -> Condenser Mark II + Garden`
 
-Condenser + Mixing Chamber:
+Key numbers:
 
-- **4 Dirt + 1 Ice -> 4 Mud**;
-- 160 ticks / 8 seconds;
-- no power.
+- **1 Log -> 4 Stone Fragments / 120 ticks (6 s)**;
+- **4 Stone Meal -> 1 Raw Iron / 160 ticks (8 s)** with adjacent source water;
+- Mark II automates Stone Meal and Oak Sapling production;
+- Garden Oak: retained Sapling -> **4 Logs + 8 Leaves / 320 ticks (16 s)**;
+- Garden Wheat: retained Wheat Seeds -> **4 Wheat + 2 Seeds / 320 ticks (16 s)**.
 
-Both Condenser tiers with Mixing Chamber automate **1 Wheat + 1 Mud -> 1 Packed Mud / 8 seconds**. Vanilla crafting remains available; Packed Mud -> Mud Bricks continues the route.
+## Condenser Mark II automation
 
-### Washing Basin
+Mark II has **3 upgrade capacity** and three physical upgrade slots. Current cards are Processing Speed, Garden Accelerator, Buffer Expansion and Batch Processing.
 
-The Washing Basin is crafted from 4 Mud Bricks, 2 Cobblestone and 2 Planks. It has one input/output pair and standard item-handler automation.
+Outputs support independent **Block / Void Excess / Void All** policies. Buffer Expansion synchronizes the displayed output amount with visible + hidden buffered storage.
 
-It only processes while a directly adjacent block on one of its six faces is a **source-water block**. The water is not consumed. Removing water pauses the operation without losing input or partial progress.
-
-Initial washing recipe:
-
-- **4 Stone Meal -> 1 Raw Iron**;
-- 160 ticks / 8 seconds;
-- no power.
-
-Raw Iron can then be smelted normally.
-
-## Condenser Mark I crafting
-
-The starter Condenser becomes reproducible before Iron after the player has established Water/Farming/Packed Mud:
-
-- 4 Mud Bricks;
-- 2 Cobblestone;
-- 2 Stone Meal;
-- 1 Furnace.
-
-## Condenser Mark II
-
-Mark II is the first Iron-gated automation tier. Crafting uses:
-
-- 1 Condenser Mark I;
-- 4 Iron Ingots;
-- 4 Mud Bricks.
-
-It retains Mark-I recipes, locks, automation and Mixing/Freezing compatibility, and adds:
-
-- **4 Stone Fragments -> 1 Stone Meal**;
-- **4 Wheat Seeds + 1 Bone Meal -> 2 Oak Saplings** with a Mixing Chamber.
-
-Oak is currently the only supported tree because the opening progression does not yet provide first-acquisition paths for other tree species. Wheat is also available as a Garden crop.
-
-A single Bone Meal use on a normal placed Vanilla Sapling attempts full tree growth immediately, removing the random early-game wait while keeping normal space/tree-generation constraints.
-
-### Mark II upgrade system
-
-Mark II has **3 upgrade capacity** and three physical upgrade slots. Current cards are:
-
-- Processing Speed Card;
-- Garden Accelerator Card;
-- Buffer Expansion Card;
-- Batch Processing Card.
-
-Each output has an independent **Block / Void Excess / Void All** policy. Garden primary and secondary outputs can be configured separately. See [CURRENT_STATE.md](../docs/CURRENT_STATE.md) for the authoritative integrated behavior.
-
-## Garden Chamber
-
-The player-facing block is named **Garden Chamber**. Its internal registry ID remains `forever_skyblock:garden_chamber_mark_i` for compatibility with development worlds created before the visible rename.
-
-Crafting uses:
-
-- 4 Mud Bricks;
-- 2 Iron Ingots;
-- 2 Planks;
-- 1 Oak Sapling.
-
-The block is a Mark-II-only exclusive upgrade. While directly adjacent to Condenser Mark II, Garden mode overrides normal Condensing, Mixing and Freezing, but preserves all hidden items, filters and partial progress for resume after detaching the chamber.
-
-Garden recipes:
-
-- retained specimen: **1 Oak Sapling**;
-- 320 ticks / **16 seconds**;
-- **4 Oak Logs + 8 Oak Leaves**;
-- the specimen is never consumed.
-
-Wheat uses a retained **1 Wheat Seeds** specimen and produces **4 Wheat + 2 Wheat Seeds** every **320 ticks / 16 seconds**. Wheat receives synchronized green-to-gold crop animations in the GUI, controller and greenhouse. Both harvest outputs must have room. The existing Oak GUI tree is preserved.
-
-With Wooden Hopper installed, its recipe uses **2 Iron Ingots** in the top corners, **3 Planks** in the remaining positions and **1 wooden Chest**. Before the first real-player Emerald pickup, the entire Vanilla Trader caravan attempt and fresh untamed Trader llamas are blocked. Saved/tamed Trader llamas and ordinary llamas remain intact.
-
-Garden mode exposes a one-item specimen slot and two automation-accessible harvest outputs. A hopper below Condenser Mark II extracts only the primary harvest; a hopper below the Garden Chamber extracts only the secondary harvest. Place the blocks side by side for two accessible bottom ports. The Chamber delegates to the controller's existing secondary slot and has no standalone inventory or GUI. Both outputs remain manually accessible in the Condenser GUI, with block icons, numbered downward arrows, a persistent routing legend and localized tooltips.
+The shared machine-container GUI now uses only native `AbstractContainerScreen` coordinates; the earlier custom fit-to-window scale/mouse remapping layer has been removed to prevent item/slot drift after resizing or changing GUI scale.
 
 ## Crucible
 
-The integrated Crucible owns a **4,000 mB** internal Lava buffer and accepts either **8 Cobblestone** or **40 Stone Fragments** for **1,000 mB Lava**. Heat progression is Torch → Campfire → Lava → Mekanism Superheating Element.
+The Crucible has a **4,000 mB** internal Lava buffer.
 
-An adjacent Fluid Tank enables Lava routing. An adjacent Freezing Chamber enables Obsidian production. If both are present, the GUI exposes route selection. The Basic Fluid Tank recipe is intentionally redstone-free so Redstone can enter progression later as a separate step.
+Current Lava production:
 
-## JEI, GUI and presentation
+- **8 Cobblestone -> 1,000 mB Lava**;
+- **40 Stone Fragments -> 100 mB Lava**.
 
-JEI includes dedicated Washing, Garden and Crucible processing presentation as appropriate to the integrated systems. Garden mode replaces the normal Condenser process cards with a larger green landscape and staged growth presentation. The Garden Chamber block is modeled as a small greenhouse with an animated interior while the connected Condenser is actively growing. The Condenser exterior also switches to a Garden-specific green/scanner animation while that mode is active.
+Heat tiers: **Torch -> Campfire -> Lava -> Mekanism Superheating Element**.
 
-The 0.19.1 cleanup remains included: Washing Basin spacing, Condensing/Washing JEI spacing, detailed Condenser Mark II exterior and the Freezing Chamber top-rim seam fix.
+An adjacent Fluid Tank enables Lava routing. An adjacent Freezing Chamber enables **1,000 mB Lava -> 1 Obsidian** through timed freezing.
 
-## Automation boundary
+New renewable-Netherrack route:
 
-The early primitive chain is automatable after the player reaches the Iron / Mark-II tier:
+- **1 Gravel + 250 mB stored Lava -> 1 Netherrack**;
+- **80 ticks / 4 seconds**.
 
-- Garden Chamber -> Oak Logs + Oak Leaves;
-- Logs -> Stone Fragments;
-- Mark II -> Stone Meal;
-- Leaves -> Bone Meal;
-- Mark II + Mixing -> Oak Saplings;
-- Stone Meal + Sapling -> Dirt.
+Produced Crucible output items can auto-push into adjacent item-handler inventories. JEI shows real fluid quantities rather than Lava Bucket placeholders.
 
-This intentionally removes permanent manual tree chopping from the mature early-game loop.
+## Granular and Nether processing
 
-## Compatibility and fixed pack state
+Both Condenser tiers:
 
-The machine changes required no profile/protocol change. The 0.24.0 K-menu statistics use `skills-9` while preserving player profile schema 4/5/6. The fixed starter-island NBT is unchanged.
+- **1 Cobblestone -> 1 Gravel / 120 ticks**;
+- **1 Gravel -> 1 Sand / 120 ticks**.
 
-Default development baseline: NeoForge **21.1.249**. Current installed pack runtime: NeoForge **21.1.262**.
+Condenser Mark II:
 
-Historical automated runs used the then-current pack runtime NeoForge 21.1.259 and remain valid run-specific evidence. The October 21 pack state was separately user-tested by TeKatz on 21.1.262 with no errors observed.
+- Nether Bricks / Nether Brick Stairs / Nether Brick Fences -> **1 Nether Brick Dust / 160 ticks**.
 
-See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the full behavior and validation boundary.
+Washing Basin:
+
+- **1 Nether Brick Dust -> 1 Nether Concentrate + 2 Quartz + 20% Gold Nugget / 160 ticks**.
+
+Mark II + Mixing:
+
+- **1 Nether Concentrate + 1 Stone Meal -> 2 Mineral Blend / 160 ticks**.
+
+Washing Basin:
+
+- **1 Mineral Blend -> 8 Redstone / 120 ticks**.
+
+## Refining Condenser
+
+Player-facing name: **Refining Condenser**. Stable internal registry ID: `forever_skyblock:refining_chamber`.
+
+Crafting:
+
+- 4 Iron Blocks;
+- 2 Redstone;
+- 2 Obsidian;
+- 1 Blast Furnace.
+
+Machine properties:
+
+- primary input, catalyst and output;
+- standard item capability automation;
+- output extraction from below;
+- **100,000 FE** storage;
+- maximum **4,000 FE/t** receive;
+- no energy export.
+
+Recipes:
+
+| Result | Inputs | Duration | FE/t |
+| --- | --- | ---: | ---: |
+| 6 Lapis Lazuli | 2 Mineral Blend + 1 Redstone | 160 ticks | 60 |
+| 4 Copper Ingots | 2 Mineral Blend + 1 Quartz | 200 ticks | 80 |
+| 2 Osmium Ingots | 3 Mineral Blend + 1 Charcoal | 240 ticks | 100 |
+| 1 Emerald | 4 Mineral Blend + 1 Gold Ingot | 300 ticks | 120 |
+| 1 Diamond | 2 Carbon Matrix + 8 Mineral Blend | 900 ticks | 240 |
+
+Osmium is conditional on Mekanism. Carbon Matrix is **8 Charcoal + 1 Mineral Blend -> 1 Carbon Matrix**.
+
+The Diamond recipe consumes **216,000 FE** over one full operation, so continuous external power is required despite the 100,000-FE internal buffer.
+
+JEI includes a dedicated Refining category/catalyst and Recipes button. The Refining Condenser and Mineral Blend use dedicated item textures.
+
+## Progression-aligned external recipes
+
+- Mekanism Basic Logistical Transporter: **2 Iron Ingots + 1 Redstone -> 8**.
+- Iron Furnaces Iron Furnace: **4 Iron Blocks + 4 Iron Ingots + 1 Furnace -> 1**.
+- Mekanism Basic Fluid Tank remains redstone-free to avoid a bootstrap loop before renewable Redstone.
+
+## Compatibility
+
+The resource-refining integration does not change the player profile schema, world-progress schema or `skills-9` progression protocol. The fixed starter-island NBT is unchanged.
+
+The internal Refining Condenser ID intentionally remains `refining_chamber` for compatibility with existing development/test worlds.
 
 ## Build
 
@@ -142,18 +133,14 @@ See [../docs/MATERIAL_PROCESSING.md](../docs/MATERIAL_PROCESSING.md) for the ful
 
 Current integrated output version: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.26.4.jar`.
 
-## Historical validation notes
+## Validation
 
-The complete 0.21–0.24 stack was validated with Java builds, client startup/model checks, native K-menu visual/input fixtures and dedicated-server GameTests. Historical pack-loader suites used NeoForge 21.1.259. Exact source/artifact evidence remains recorded in the detailed feature documents and [VALIDATION.md](../docs/VALIDATION.md).
+Final pre-integration source `38a730e77c066ada5ade7395568baa04c1c635ff` passed Actions run **#563**:
 
-The 0.23.0 balancing work established:
+- Java build + unit tests;
+- client smoke test;
+- visual fixtures;
+- dedicated-server GameTests;
+- full pack-runtime integration on NeoForge **21.1.259**.
 
-- Both Condenser tiers: **1 Log -> 4 Stone Fragments / 120 ticks (6 seconds)**.
-- Both tiers with Mixing Chamber: **1 Mud + 1 Wheat -> 1 Packed Mud / 160 ticks (8 seconds)**.
-- Normal Hopper: **2 Iron Blocks + 3 Iron Ingots + 1 Chest**.
-- Iron Pickaxe/Axe/Shovel/Hoe: **one Iron Block** plus **4/3/2/2 Ingots**, respectively, the matching Stone tool and one Chain.
-- Garden output badges and tooltip hit areas centered on the actual output slot centres.
-
-One Garden produces 15 Logs/minute while one six-second Condenser consumes 10/minute, before pauses. This requested trial reduces backlog growth but does not make that single-processor line balanced.
-
-Existing Recipe Editor installations should keep the repository's matching generated-pack overrides synchronized with the installed Recipe Editor version and the current JEI baseline.
+See [../docs/RESOURCE_REFINING.md](../docs/RESOURCE_REFINING.md) and [../docs/VALIDATION.md](../docs/VALIDATION.md) for documentation and validation boundaries.
