@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.26.4 — Resource refining progression integrated — October 22, 2026
+
+- Merge PR #29 (`hotfix/pr28-14-fixes`) into PR #28's `feature/resource-refining-progression` branch, then merge PR #28 into `main`.
+- Add **Cobblestone -> Gravel -> Sand** Condenser processing at 120 ticks / six seconds per step.
+- Correct the Crucible Stone-Fragment route to **40 Stone Fragments -> 100 mB Lava** while retaining **8 Cobblestone -> 1,000 mB Lava**.
+- Add **1 Gravel + 250 mB stored Lava -> 1 Netherrack / 80 ticks** and automatic Crucible item-output pushing into adjacent compatible inventories.
+- Extend the renewable Nether loop through Nether Brick Dust and Washing: **1 Dust -> 1 Nether Concentrate + 2 Quartz + 20% Gold Nugget**.
+- Add Mark-II Mixing **1 Nether Concentrate + 1 Stone Meal -> 2 Mineral Blend / 160 ticks**.
+- Add Washing **1 Mineral Blend -> 8 Redstone / 120 ticks** as the renewable Redstone bridge.
+- Add the FE-powered **Refining Condenser** (`forever_skyblock:refining_chamber`) with 100,000-FE internal capacity, 4,000 FE/t receive and item/energy automation.
+- Add Refining recipes for Lapis, Copper, Osmium, Emerald and Diamond. The final Diamond cost is **2 Carbon Matrix + 8 Mineral Blend**, 900 ticks and 240 FE/t.
+- Add renewable Carbon Matrix from **8 Charcoal + 1 Mineral Blend**.
+- Align the Mekanism Basic Logistical Transporter recipe to **2 Iron Ingots + 1 Redstone -> 8** and the Iron Furnaces Iron Furnace to **4 Iron Blocks + 4 Iron Ingots + 1 Furnace**.
+- Rework Refining JEI/presentation, add machine and Mineral Blend item textures, correct Crucible JEI to use real fluid amounts and add the filled/heated Crucible exterior state.
+- Synchronize Condenser buffered-output counts so the visible output amount includes hidden Buffer Expansion storage.
+- Remove the shared machine-GUI fit-to-window `PoseStack` scale/mouse-remapping layer. Machine screens now keep Vanilla `AbstractContainerScreen` coordinates for slots, ItemStacks, hit testing and JEI areas.
+- Final pre-integration source `38a730e77c066ada5ade7395568baa04c1c635ff` passed Actions run **#563**: build/unit tests, client smoke, visual fixtures, dedicated-server regression suite and full pack-runtime integration on NeoForge **21.1.259**.
+- Add/refresh the live documentation in `PROGRESSION.md`, `RESOURCE_REFINING.md`, `CURRENT_STATE.md`, `NETHER_PROGRESSION.md`, root/mod READMEs and the documentation index.
+
 ## Pack runtime snapshot — October 21, 2026
 
 - Refresh the authoritative supplied mod-list snapshot to `Modliste(5).txt` with **87 enabled artifact labels**.
@@ -14,7 +33,7 @@
 
 - Integrate the Crucible Lava/Obsidian progression through PR #21 and the configurable Condenser Mark II automation layer through PR #22.
 - Crucible: 4,000 mB internal Lava buffer, visible fill progression, Torch/Campfire/Lava/Superheating heat tiers, adjacent Fluid Tank / Freezing Chamber detection, Lava-vs-Obsidian routing, timed freezing, JEI, Jade and hopper/cable support.
-- Current Crucible material rates are **8 Cobblestone** or **40 Stone Fragments** per **1,000 mB Lava**.
+- Current Crucible material rates are **8 Cobblestone -> 1,000 mB Lava** or **40 Stone Fragments -> 100 mB Lava** after the October 22 balance correction.
 - Keep the Mekanism Basic Fluid Tank recipe redstone-free so Redstone can be introduced later as an independent progression step.
 - Add 3-point Condenser Mark II upgrade capacity with Processing Speed, Garden Accelerator, Buffer Expansion and Batch Processing cards.
 - Add independent Mark II output policies: **Block / Void Excess / Void All**, including separate Garden primary/secondary policies.
