@@ -35,8 +35,10 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
     public static final int INPUT = 0, OUTPUT = 1, MACHINE_SLOTS = 2;
     public static final int DATA_COUNT = 9;
     public static final int CAPACITY = 4000, BATCH_MB = 1000;
+    public static final int COBBLE_LAVA_MB = 1000, FRAGMENTS_LAVA_MB = 100;
     public static final int COBBLE_PER_BATCH = 8, FRAGMENTS_PER_BATCH = 40;
-    public static final int FREEZE_DURATION = 100; // 5 seconds per Obsidian.
+    public static final int NETHERRACK_LAVA_MB = 250, NETHERRACK_DURATION = 80;
+    public static final int FREEZE_DURATION = 100;
     public static final int MODE_LAVA = 0, MODE_OBSIDIAN = 1;
     public static final int IDLE = 0, HEATING = 1, NO_HEAT = 2, STORAGE_FULL = 3, OUTPUT_BLOCKED = 4, FREEZING = 5;
     public static final int HEAT_NONE = 0, HEAT_TORCH = 1, HEAT_CAMPFIRE = 2, HEAT_LAVA = 3, HEAT_SUPERHEATING = 4;
@@ -84,7 +86,6 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
     };
 
     public CrucibleBlockEntity(BlockPos pos, BlockState state) { super(ForeverSkyblock.CRUCIBLE_ENTITY.get(), pos, state); }
-
     public ItemStackHandler inventory() { return inventory; }
     public ContainerData menuData() { return data; }
     public int lavaMb() { return lavaMb; }
@@ -96,25 +97,28 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
     public int freezeProgress() { return freezeProgress; }
 
     public static boolean acceptsInput(ItemStack stack) {
-        return stack.is(Items.COBBLESTONE) || stack.is(ForeverSkyblock.STONE_FRAGMENT.get());
+        return stack.is(Items.COBBLESTONE) || stack.is(ForeverSkyblock.STONE_FRAGMENT.get()) || stack.is(Items.GRAVEL);
     }
-
     public static int requiredCount(ItemStack stack) {
         if (stack.is(Items.COBBLESTONE)) return COBBLE_PER_BATCH;
         if (stack.is(ForeverSkyblock.STONE_FRAGMENT.get())) return FRAGMENTS_PER_BATCH;
+        if (stack.is(Items.GRAVEL)) return 1;
         return 0;
     }
-
+    public static int lavaPerBatch(ItemStack stack) {
+        if (stack.is(Items.COBBLESTONE)) return COBBLE_LAVA_MB;
+        if (stack.is(ForeverSkyblock.STONE_FRAGMENT.get())) return FRAGMENTS_LAVA_MB;
+        return 0;
+    }
     public static int durationFor(int tier) {
         return switch (tier) {
-            case HEAT_TORCH -> 6000;       // 5 minutes per bucket: intentionally primitive.
-            case HEAT_CAMPFIRE -> 1600;    // 80 seconds.
-            case HEAT_LAVA -> 600;         // 30 seconds.
-            case HEAT_SUPERHEATING -> 160; // 8 seconds.
+            case HEAT_TORCH -> 6000;
+            case HEAT_CAMPFIRE -> 1600;
+            case HEAT_LAVA -> 600;
+            case HEAT_SUPERHEATING -> 160;
             default -> 1;
         };
     }
-
     public static String heatTierName(int tier) {
         return switch (tier) {
             case HEAT_TORCH -> "Torch";
@@ -125,11 +129,8 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
         };
     }
 
-    public IItemHandler automation(@Nullable Direction side) {
-        return side == null ? combinedAccess : side == Direction.DOWN ? outputAccess : inputAccess;
-    }
+    public IItemHandler automation(@Nullable Direction side) { return side == null ? combinedAccess : side == Direction.DOWN ? outputAccess : inputAccess; }
     public IFluidHandler fluidAutomation(@Nullable Direction side) { return fluidAccess; }
-
     public void toggleMode() {
         refreshNeighbors();
         if (!hasTank || !hasFreezer) return;
@@ -137,54 +138,66 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
         resetFreezing();
         setChanged();
     }
-
-    public static void tick(Level level, BlockPos pos, BlockState state, CrucibleBlockEntity crucible) { crucible.process(); }
+    public static void tick(Level level, BlockPos pos, BlockState state, CrucibleBlockEntity crucible) {
+        crucible.process();
+        crucible.pushOutputItems();
+    }
 
     private void process() {
         if (level == null) return;
         refreshNeighbors();
         heatTier = detectHeatTier();
-        duration = durationFor(heatTier);
         normalizeMode();
-
-        if (mode == MODE_LAVA && hasTank) pushLavaToTank();
-
-        boolean freezeReady = mode == MODE_OBSIDIAN && hasFreezer && lavaMb >= BATCH_MB;
-        boolean outputBlocked = freezeReady && !canAddObsidian();
-        boolean freezing = false;
-        if (freezeReady && !outputBlocked) {
-            freezing = advanceFreezing();
-        } else if (!freezeReady) {
-            resetFreezing();
-        }
-
         ItemStack input = inventory.getStackInSlot(INPUT);
-        int required = requiredCount(input);
+        boolean netherrackProcess = input.is(Items.GRAVEL);
+
+        if (mode == MODE_LAVA && hasTank && !netherrackProcess) pushLavaToTank();
+        boolean freezeReady = !netherrackProcess && mode == MODE_OBSIDIAN && hasFreezer && lavaMb >= BATCH_MB;
+        boolean outputBlocked = freezeReady && !canAdd(Items.OBSIDIAN);
+        boolean freezing = false;
+        if (freezeReady && !outputBlocked) freezing = advanceFreezing();
+        else if (!freezeReady) resetFreezing();
+
         ResourceLocation inputId = input.isEmpty() ? null : BuiltInRegistries.ITEM.getKey(input.getItem());
         if (inputId == null || !inputId.equals(progressInput)) {
             progress = 0;
             progressInput = inputId;
             setChanged();
         }
-        if (required == 0 || input.getCount() < required) {
-            status = outputBlocked ? OUTPUT_BLOCKED : freezing ? FREEZING : IDLE;
-            return;
-        }
-        if (heatTier == HEAT_NONE) {
-            status = freezing ? FREEZING : NO_HEAT;
-            return;
-        }
-        if (lavaMb + BATCH_MB > CAPACITY) {
-            status = outputBlocked ? OUTPUT_BLOCKED : freezing ? FREEZING : STORAGE_FULL;
+
+        if (netherrackProcess) {
+            duration = NETHERRACK_DURATION;
+            if (lavaMb < NETHERRACK_LAVA_MB) { status = NO_HEAT; return; }
+            if (!canAdd(Items.NETHERRACK)) { status = OUTPUT_BLOCKED; return; }
+            status = HEATING;
+            progress++;
+            setChanged();
+            if (progress >= duration) {
+                inventory.extractItem(INPUT, 1, false);
+                changeLava(-NETHERRACK_LAVA_MB);
+                addOutput(Items.NETHERRACK);
+                progress = 0;
+                progressInput = inventory.getStackInSlot(INPUT).isEmpty() ? null
+                        : BuiltInRegistries.ITEM.getKey(inventory.getStackInSlot(INPUT).getItem());
+            }
             return;
         }
 
+        duration = durationFor(heatTier);
+        int required = requiredCount(input);
+        int producedLava = lavaPerBatch(input);
+        if (required == 0 || input.getCount() < required || producedLava <= 0) {
+            status = outputBlocked ? OUTPUT_BLOCKED : freezing ? FREEZING : IDLE;
+            return;
+        }
+        if (heatTier == HEAT_NONE) { status = freezing ? FREEZING : NO_HEAT; return; }
+        if (lavaMb + producedLava > CAPACITY) { status = outputBlocked ? OUTPUT_BLOCKED : freezing ? FREEZING : STORAGE_FULL; return; }
         status = HEATING;
         progress++;
         setChanged();
         if (progress >= duration) {
             inventory.extractItem(INPUT, required, false);
-            changeLava(BATCH_MB);
+            changeLava(producedLava);
             progress = 0;
             progressInput = inventory.getStackInSlot(INPUT).isEmpty() ? null
                     : BuiltInRegistries.ITEM.getKey(inventory.getStackInSlot(INPUT).getItem());
@@ -195,19 +208,13 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
         freezeProgress++;
         setChanged();
         if (freezeProgress >= FREEZE_DURATION) {
-            addObsidian();
+            addOutput(Items.OBSIDIAN);
             changeLava(-BATCH_MB);
             freezeProgress = 0;
         }
         return true;
     }
-
-    private void resetFreezing() {
-        if (freezeProgress == 0) return;
-        freezeProgress = 0;
-        setChanged();
-    }
-
+    private void resetFreezing() { if (freezeProgress != 0) { freezeProgress = 0; setChanged(); } }
     private int detectHeatTier() {
         if (level == null) return HEAT_NONE;
         BlockState below = level.getBlockState(worldPosition.below());
@@ -218,11 +225,8 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
         if (below.is(Blocks.TORCH)) return HEAT_TORCH;
         return HEAT_NONE;
     }
-
     private void refreshNeighbors() {
-        hasTank = false;
-        hasFreezer = false;
-        tankDirection = null;
+        hasTank = false; hasFreezer = false; tankDirection = null;
         if (level == null) return;
         for (Direction direction : Direction.values()) {
             BlockPos adjacent = worldPosition.relative(direction);
@@ -232,25 +236,15 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
             ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
             if (!hasTank && "mekanism".equals(id.getNamespace()) && id.getPath().endsWith("fluid_tank")) {
                 IFluidHandler handler = level.getCapability(Capabilities.FluidHandler.BLOCK, adjacent, direction.getOpposite());
-                if (handler != null) {
-                    hasTank = true;
-                    tankDirection = direction;
-                }
+                if (handler != null) { hasTank = true; tankDirection = direction; }
             }
         }
     }
-
     private void normalizeMode() {
-        if (hasTank && !hasFreezer) {
-            if (mode != MODE_LAVA) resetFreezing();
-            mode = MODE_LAVA;
-        } else if (!hasTank && hasFreezer) {
-            mode = MODE_OBSIDIAN;
-        } else if (!hasFreezer) {
-            resetFreezing();
-        }
+        if (hasTank && !hasFreezer) { if (mode != MODE_LAVA) resetFreezing(); mode = MODE_LAVA; }
+        else if (!hasTank && hasFreezer) mode = MODE_OBSIDIAN;
+        else if (!hasFreezer) resetFreezing();
     }
-
     private void pushLavaToTank() {
         if (level == null || tankDirection == null || lavaMb <= 0) return;
         BlockPos targetPos = worldPosition.relative(tankDirection);
@@ -259,19 +253,35 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
         int sent = target.fill(new FluidStack(Fluids.LAVA, Math.min(lavaMb, BATCH_MB)), IFluidHandler.FluidAction.EXECUTE);
         if (sent > 0) changeLava(-sent);
     }
-
-    private boolean canAddObsidian() {
-        ItemStack out = inventory.getStackInSlot(OUTPUT);
-        return out.isEmpty() || out.is(Items.OBSIDIAN) && out.getCount() < out.getMaxStackSize();
+    private void pushOutputItems() {
+        if (level == null || level.isClientSide) return;
+        ItemStack available = inventory.getStackInSlot(OUTPUT);
+        if (available.isEmpty()) return;
+        for (Direction direction : Direction.values()) {
+            BlockPos targetPos = worldPosition.relative(direction);
+            if (!level.hasChunkAt(targetPos)) continue;
+            IItemHandler target = level.getCapability(Capabilities.ItemHandler.BLOCK, targetPos, direction.getOpposite());
+            if (target == null) continue;
+            ItemStack remainder = available.copy();
+            for (int slot = 0; slot < target.getSlots() && !remainder.isEmpty(); slot++)
+                remainder = target.insertItem(slot, remainder, false);
+            int moved = available.getCount() - remainder.getCount();
+            if (moved <= 0) continue;
+            inventory.extractItem(OUTPUT, moved, false);
+            setChanged();
+            available = inventory.getStackInSlot(OUTPUT);
+            if (available.isEmpty()) break;
+        }
     }
-
-    private void addObsidian() {
+    private boolean canAdd(net.minecraft.world.item.Item item) {
         ItemStack out = inventory.getStackInSlot(OUTPUT);
-        if (out.isEmpty()) inventory.setStackInSlot(OUTPUT, new ItemStack(Items.OBSIDIAN));
-        else out.grow(1);
+        return out.isEmpty() || out.is(item) && out.getCount() < out.getMaxStackSize();
+    }
+    private void addOutput(net.minecraft.world.item.Item item) {
+        ItemStack out = inventory.getStackInSlot(OUTPUT);
+        if (out.isEmpty()) inventory.setStackInSlot(OUTPUT, new ItemStack(item)); else out.grow(1);
         setChanged();
     }
-
     private void changeLava(int delta) {
         int next = Math.max(0, Math.min(CAPACITY, lavaMb + delta));
         if (next == lavaMb) return;
@@ -279,15 +289,12 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
         updateFillState();
         setChanged();
     }
-
     private void updateFillState() {
         if (level == null) return;
         BlockState state = getBlockState();
         if (!state.hasProperty(CrucibleBlock.FILL)) return;
         int fill = lavaMb <= 0 ? 0 : Math.max(1, Math.min(8, (lavaMb * 8 + CAPACITY - 1) / CAPACITY));
-        if (state.getValue(CrucibleBlock.FILL) != fill) {
-            level.setBlock(worldPosition, state.setValue(CrucibleBlock.FILL, fill), Block.UPDATE_CLIENTS);
-        }
+        if (state.getValue(CrucibleBlock.FILL) != fill) level.setBlock(worldPosition, state.setValue(CrucibleBlock.FILL, fill), Block.UPDATE_CLIENTS);
     }
 
     @Override protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
@@ -299,7 +306,6 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
         tag.putInt("Mode", mode);
         if (progressInput != null) tag.putString("ProgressInput", progressInput.toString());
     }
-
     @Override protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         inventory.deserializeNBT(registries, tag.getCompound("Inventory"));
@@ -309,7 +315,6 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
         mode = tag.getInt("Mode") == MODE_OBSIDIAN ? MODE_OBSIDIAN : MODE_LAVA;
         progressInput = ResourceLocation.tryParse(tag.getString("ProgressInput"));
     }
-
     @Override public Component getDisplayName() { return Component.literal("Crucible"); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) { return new CrucibleMenu(id, inventory, this); }
 
@@ -323,7 +328,6 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
         @Override public int getSlotLimit(int slot) { return slot >= 0 && slot < MACHINE_SLOTS ? inventory.getSlotLimit(slot) : 0; }
         @Override public boolean isItemValid(int slot, ItemStack stack) { return insert && slot == INPUT && inventory.isItemValid(slot, stack); }
     }
-
     private final class LavaHandler implements IFluidHandler {
         @Override public int getTanks() { return 1; }
         @Override public FluidStack getFluidInTank(int tank) { return tank == 0 && lavaMb > 0 ? new FluidStack(Fluids.LAVA, lavaMb) : FluidStack.EMPTY; }

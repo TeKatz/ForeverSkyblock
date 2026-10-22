@@ -1,0 +1,9 @@
+{
+  "type": "forever_skyblock:condensing",
+  "ingredient": { "item": "forever_skyblock:nether_concentrate" },
+  "ingredient_count": 1,
+  "secondary_ingredient": { "item": "forever_skyblock:stone_meal" },
+  "result": { "id": "forever_skyblock:mineral_blend", "count": 2 },
+  "processing_time": 160,
+  "minimum_tier": 2
+}

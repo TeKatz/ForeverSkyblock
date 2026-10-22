@@ -1,0 +1,9 @@
+{
+  "type": "forever_skyblock:refining",
+  "ingredient": { "item": "forever_skyblock:mineral_blend" },
+  "ingredient_count": 2,
+  "catalyst": { "item": "minecraft:redstone" },
+  "result": { "id": "minecraft:lapis_lazuli", "count": 6 },
+  "processing_time": 160,
+  "energy_per_tick": 60
+}

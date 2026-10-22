@@ -1,0 +1,7 @@
+{
+  "type": "forever_skyblock:condensing",
+  "ingredient": { "item": "minecraft:cobblestone" },
+  "result": { "id": "minecraft:gravel", "count": 1 },
+  "processing_time": 120,
+  "minimum_tier": 1
+}

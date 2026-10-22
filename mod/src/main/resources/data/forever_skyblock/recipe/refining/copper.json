@@ -1,0 +1,9 @@
+{
+  "type": "forever_skyblock:refining",
+  "ingredient": { "item": "forever_skyblock:mineral_blend" },
+  "ingredient_count": 2,
+  "catalyst": { "item": "minecraft:quartz" },
+  "result": { "id": "minecraft:copper_ingot", "count": 4 },
+  "processing_time": 200,
+  "energy_per_tick": 80
+}

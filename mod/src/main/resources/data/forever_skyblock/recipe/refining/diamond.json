@@ -1,0 +1,10 @@
+{
+  "type": "forever_skyblock:refining",
+  "ingredient": { "item": "forever_skyblock:carbon_matrix" },
+  "ingredient_count": 2,
+  "catalyst": { "item": "forever_skyblock:mineral_blend" },
+  "catalyst_count": 8,
+  "result": { "id": "minecraft:diamond", "count": 1 },
+  "processing_time": 900,
+  "energy_per_tick": 240
+}

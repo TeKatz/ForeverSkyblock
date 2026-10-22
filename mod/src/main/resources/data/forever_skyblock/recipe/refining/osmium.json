@@ -1,0 +1,10 @@
+{
+  "neoforge:conditions": [ { "type": "neoforge:mod_loaded", "modid": "mekanism" } ],
+  "type": "forever_skyblock:refining",
+  "ingredient": { "item": "forever_skyblock:mineral_blend" },
+  "ingredient_count": 3,
+  "catalyst": { "item": "minecraft:charcoal" },
+  "result": { "id": "mekanism:ingot_osmium", "count": 2 },
+  "processing_time": 240,
+  "energy_per_tick": 100
+}

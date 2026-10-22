@@ -1,0 +1,9 @@
+{
+  "type": "forever_skyblock:refining",
+  "ingredient": { "item": "forever_skyblock:mineral_blend" },
+  "ingredient_count": 4,
+  "catalyst": { "item": "minecraft:gold_ingot" },
+  "result": { "id": "minecraft:emerald", "count": 1 },
+  "processing_time": 300,
+  "energy_per_tick": 120
+}

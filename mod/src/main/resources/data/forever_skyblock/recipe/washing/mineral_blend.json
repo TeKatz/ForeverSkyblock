@@ -1,0 +1,7 @@
+{
+  "type": "forever_skyblock:washing",
+  "ingredient": { "item": "forever_skyblock:mineral_blend" },
+  "ingredient_count": 1,
+  "result": { "id": "minecraft:redstone", "count": 8 },
+  "processing_time": 120
+}

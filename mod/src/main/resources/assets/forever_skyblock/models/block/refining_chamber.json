@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "forever_skyblock:block/refining_condenser_side",
+    "up": "forever_skyblock:block/refining_condenser_top",
+    "north": "forever_skyblock:block/refining_condenser_front",
+    "south": "forever_skyblock:block/refining_condenser_front",
+    "west": "forever_skyblock:block/refining_condenser_side",
+    "east": "forever_skyblock:block/refining_condenser_side",
+    "particle": "forever_skyblock:block/refining_condenser_side"
+  }
+}
