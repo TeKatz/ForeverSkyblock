@@ -9,11 +9,14 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
 /**
- * Machine screens may visually shrink to fit a small window, but Vanilla remains the single source of truth
- * for the container origin and size. In particular, getGuiLeft/getGuiTop/getXSize/getYSize must keep their
- * AbstractContainerScreen values: slot/item rendering and mod hooks use those values during rendering.
- * Reporting viewport coordinates there while also applying a PoseStack transform makes ItemStacks drift away
- * from their slot backgrounds after a resize.
+ * Shared base for all custom machine container screens.
+ *
+ * IMPORTANT RENDERING CONTRACT:
+ * Machine GUIs intentionally stay in AbstractContainerScreen's native coordinate system.
+ * Do not apply a per-screen PoseStack scale/translation here and do not remap mouse coordinates.
+ * Vanilla owns leftPos/topPos, slot rendering, carried-item rendering, hover detection and clicks.
+ * Custom slot frames are drawn from the same leftPos/topPos origin, so frames and ItemStacks always
+ * use one coordinate space even after a window resize or Minecraft GUI-scale change.
  */
 public abstract class MachineScreen<M extends AbstractContainerMenu> extends AbstractContainerScreen<M> {
     protected final MachineLayout layout;
@@ -29,39 +32,17 @@ public abstract class MachineScreen<M extends AbstractContainerMenu> extends Abs
         imageHeight = layout.height();
     }
 
-    protected MachineLayout.Viewport viewport() { return layout.viewport(width, height, leftPos, topPos); }
-    protected int logicalMouseX(double x) { return (int)Math.floor(viewport().logicalX(x)); }
-    protected int logicalMouseY(double y) { return (int)Math.floor(viewport().logicalY(y)); }
-
-    /** Screen-space area for JEI/ghost targets. Container rendering itself stays on native Vanilla coordinates. */
+    /** Absolute screen-space rectangle for JEI/ghost targets, using the exact same origin as Vanilla slots. */
     public Rect2i screenArea(int relativeX, int relativeY, int w, int h) {
-        var v = viewport();
-        return new Rect2i(
-                (int)Math.floor(v.screenX(leftPos + relativeX)),
-                (int)Math.floor(v.screenY(topPos + relativeY)),
-                (int)Math.ceil(w * v.scale()),
-                (int)Math.ceil(h * v.scale()));
+        return new Rect2i(leftPos + relativeX, topPos + relativeY, w, h);
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) { }
-
-    @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        // The world backdrop is native screen-space. Only the container itself is transformed.
-        super.renderBackground(g, mouseX, mouseY, partialTick);
-        var v = viewport();
-        int mx = logicalMouseX(mouseX);
-        int my = logicalMouseY(mouseY);
-
-        g.pose().pushPose();
-        g.pose().translate(v.x() - leftPos * v.scale(), v.y() - topPos * v.scale(), 0);
-        g.pose().scale((float)v.scale(), (float)v.scale(), 1);
-        super.render(g, mx, my, partialTick);
-        renderTooltip(g, mx, my);
-        if (hoveredSlot == null || !hoveredSlot.hasItem()) renderMachineTooltip(g, mx, my);
-        g.flush();
-        g.pose().popPose();
+        renderBackground(g, mouseX, mouseY, partialTick);
+        super.render(g, mouseX, mouseY, partialTick);
+        renderTooltip(g, mouseX, mouseY);
+        if (hoveredSlot == null || !hoveredSlot.hasItem()) renderMachineTooltip(g, mouseX, mouseY);
     }
 
     protected void renderMachineTooltip(GuiGraphics g, int x, int y) { }
@@ -76,33 +57,6 @@ public abstract class MachineScreen<M extends AbstractContainerMenu> extends Abs
             }
         }
         return super.isHovering(x, y, w, h, mx, my);
-    }
-
-    @Override
-    public boolean mouseClicked(double x, double y, int button) {
-        return super.mouseClicked(viewport().logicalX(x), viewport().logicalY(y), button);
-    }
-
-    @Override
-    public boolean mouseReleased(double x, double y, int button) {
-        return super.mouseReleased(viewport().logicalX(x), viewport().logicalY(y), button);
-    }
-
-    @Override
-    public boolean mouseDragged(double x, double y, int button, double dx, double dy) {
-        return super.mouseDragged(
-                viewport().logicalX(x), viewport().logicalY(y), button,
-                dx / viewport().scale(), dy / viewport().scale());
-    }
-
-    @Override
-    public boolean mouseScrolled(double x, double y, double dx, double dy) {
-        return super.mouseScrolled(viewport().logicalX(x), viewport().logicalY(y), dx, dy);
-    }
-
-    @Override
-    public void mouseMoved(double x, double y) {
-        super.mouseMoved(viewport().logicalX(x), viewport().logicalY(y));
     }
 
     protected void inventory(GuiGraphics g) {
