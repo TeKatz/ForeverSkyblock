@@ -176,13 +176,23 @@ public final class ForeverSkyblock {
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ASCENSION_ENTITY.get(), de.tekatz.foreverskyblock.blockentity.AscensionChamberBlockEntity::automation);
+
+        // Modded item networks need a complete machine view from every connected face. The machine-owned handlers
+        // still enforce which slots accept input and which slots permit extraction; only the face restriction is removed.
+        // Vanilla hopper flow is unchanged: hoppers below still pull outputs from the machine's underside.
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, CONDENSER_ENTITY.get(),
-                (machine, side) -> de.tekatz.foreverskyblock.blockentity.CondenserAutomationHandler.create(machine, side));
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, GARDEN_CHAMBER_ENTITY.get(), GardenChamberBlockEntity::automation);
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, WASHING_BASIN_ENTITY.get(), WashingBasinBlockEntity::automation);
+                (machine, side) -> de.tekatz.foreverskyblock.blockentity.CondenserAutomationHandler.create(machine, null));
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, GARDEN_CHAMBER_ENTITY.get(),
+                (machine, side) -> machine.automation(null));
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, WASHING_BASIN_ENTITY.get(),
+                (machine, side) -> machine.automation(null));
+
+        // The Crucible intentionally keeps its existing sided item/fluid automation contract.
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, CRUCIBLE_ENTITY.get(), CrucibleBlockEntity::automation);
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, CRUCIBLE_ENTITY.get(), CrucibleBlockEntity::fluidAutomation);
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, REFINING_CHAMBER_ENTITY.get(), RefiningChamberBlockEntity::automation);
+
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, REFINING_CHAMBER_ENTITY.get(),
+                (machine, side) -> machine.automation(null));
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, REFINING_CHAMBER_ENTITY.get(), RefiningChamberBlockEntity::energyAutomation);
     }
 
