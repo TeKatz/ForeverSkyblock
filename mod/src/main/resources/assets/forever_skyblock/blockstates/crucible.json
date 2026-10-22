@@ -1,5 +1,13 @@
 {
   "multipart": [
-    { "apply": { "model": "forever_skyblock:block/crucible" } }
+    { "apply": { "model": "forever_skyblock:block/crucible" } },
+    { "when": { "fill": "1" }, "apply": { "model": "forever_skyblock:block/crucible_lava" } },
+    { "when": { "fill": "2" }, "apply": { "model": "forever_skyblock:block/crucible_lava" } },
+    { "when": { "fill": "3" }, "apply": { "model": "forever_skyblock:block/crucible_lava" } },
+    { "when": { "fill": "4" }, "apply": { "model": "forever_skyblock:block/crucible_lava" } },
+    { "when": { "fill": "5" }, "apply": { "model": "forever_skyblock:block/crucible_lava" } },
+    { "when": { "fill": "6" }, "apply": { "model": "forever_skyblock:block/crucible_lava" } },
+    { "when": { "fill": "7" }, "apply": { "model": "forever_skyblock:block/crucible_lava" } },
+    { "when": { "fill": "8" }, "apply": { "model": "forever_skyblock:block/crucible_lava" } }
   ]
 }
