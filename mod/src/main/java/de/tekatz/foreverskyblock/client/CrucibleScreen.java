@@ -10,7 +10,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 public final class CrucibleScreen extends MachineScreen<CrucibleMenu> {
-    private MachineButton modeButton;
+    private MachineButton modeButton, recipes;
     private float framePartial;
 
     public CrucibleScreen(CrucibleMenu menu, Inventory inventory, Component title) {
@@ -23,12 +23,15 @@ public final class CrucibleScreen extends MachineScreen<CrucibleMenu> {
                 Component.literal("Output: Lava"), skin, true, b -> {
                     if (minecraft.gameMode != null) minecraft.gameMode.handleInventoryButtonClick(menu.containerId, CrucibleMenu.BUTTON_TOGGLE_MODE);
                 }));
+        recipes = addRenderableWidget(new MachineButton(leftPos + 174, topPos + 151, 56, 22,
+                Component.literal("Recipes"), skin, false, b -> ClientMachineRecipes.crucible()));
         refreshModeButton();
     }
 
     @Override protected void containerTick() {
         super.containerTick();
         refreshModeButton();
+        if (recipes != null) recipes.active = ClientMachineRecipes.available();
     }
 
     private void refreshModeButton() {
@@ -176,7 +179,7 @@ public final class CrucibleScreen extends MachineScreen<CrucibleMenu> {
             String output = menu.mode() == CrucibleBlockEntity.MODE_OBSIDIAN ? "Route: Obsidian" : "Route: Lava";
             MachineSkin.centered(g, font, Component.literal(output), x + 124, y + 157, 160, MachineSkin.MUTED, .74F);
         }
-        MachineSkin.centered(g, font, Component.literal("8 Cobblestone or 40 Stone Fragments → 1000 mB"), x + 124, y + 178, 210, MachineSkin.MUTED, .60F);
+        MachineSkin.centered(g, font, Component.literal("8 Cobble → 1000 mB · 40 Fragments → 100 mB"), x + 124, y + 178, 210, MachineSkin.MUTED, .60F);
         inventory(g);
     }
 }
