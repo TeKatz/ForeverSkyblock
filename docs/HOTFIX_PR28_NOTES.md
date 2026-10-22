@@ -1,5 +1,5 @@
-Implementation branch: `hotfix/pr28-14-fixes`
+# PR #28 hotfix notes — archived
 
-Base: PR #28 branch `feature/resource-refining-progression` at `057583426ffb937cd881a0ca81d6d25561d98163`.
+The former `hotfix/pr28-14-fixes` implementation branch was integrated through PR #29 into PR #28 and then into `main` on October 22, 2026.
 
-This branch is intended for test-JAR validation before integration into PR #28.
+This file is retained only as a historical pointer. Current behavior belongs in [CURRENT_STATE.md](CURRENT_STATE.md), [PROGRESSION.md](PROGRESSION.md) and [RESOURCE_REFINING.md](RESOURCE_REFINING.md).
