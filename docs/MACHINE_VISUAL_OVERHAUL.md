@@ -37,6 +37,14 @@ Player feedback after the initial 0.27.0 visual build produced several final cor
 - Crucible filled-state heat overlays were moved off coplanar exterior faces to eliminate strong Z-fighting.
 - The final Crucible correction was committed directly to the branch so the merged source and test JAR use the same assets.
 
+## Post-merge open-model culling hotfix
+
+Player screenshots from the integrated 0.27.0 build exposed a remaining model-culling artifact on the **Mixing Chamber Mark I** and **Washing Basin**: blocks touching or visible through the open machine geometry could lose faces at the sides and above the machine. Both blocks are intentionally registered with `noOcclusion()`, so their open geometry must not additionally advertise model faces as safe full-neighbor culling boundaries.
+
+The bounded hotfix branch `hotfix/mixing-washing-neighbor-culling` removes all `cullface` hints from those two open block models while preserving every element, UV, texture binding, recipe and machine behavior. A regression test now rejects future `cullface` entries in either model so a later visual export cannot silently reintroduce the artifact.
+
+This hotfix is branch-local until explicitly merged into `main`; real-player verification remains separate from automated model/build validation.
+
 ## Validation history
 
 The original overhaul source `c34b0d1bb0f18ba4fb5df47f5055cf62b238c07e` passed Actions run #567 with Java 21 build/unit tests, client startup/model checks, real-client machine fixtures, K-menu fixtures and full GameTests. Its full optional integration suite used the then-current pack runtime **NeoForge 21.1.262**.
