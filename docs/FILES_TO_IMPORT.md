@@ -7,9 +7,9 @@ The repository already contains:
 - the actual Skyblock Builder configuration folder and fixed `forever_me_start.nbt` island template;
 - the actual `config/defaultworldtype/client-config.toml`;
 - the supplied runtime/list evidence and provisional mod inventory;
-- the current supplied October 21, 2026 mod-list snapshot with **87 enabled artifact labels**;
-- the confirmed current pack runtime **NeoForge 21.1.262**;
-- TeKatz's report that the current October 21 modpack state was tested on NeoForge 21.1.262 with **no errors observed**;
+- the current supplied October 22, 2026 mod-list snapshot with **94 enabled artifact labels**;
+- the current supplied pack runtime **NeoForge 21.1.264**;
+- the previous October 21 snapshot and older runtime evidence as historical records;
 - the approved permanent-tool recipe/removal baseline in the Recipe Editor generated pack.
 
 The island is final unless TeKatz explicitly requests a revision. The mod selection remains experimental and may be refreshed from newly supplied lists, logs or files.
@@ -27,9 +27,9 @@ The island is final unless TeKatz explicitly requests a revision. The mod select
 
 ## Snapshot caveat
 
-The current `Modliste(5).txt` snapshot contains **87 enabled artifact labels** and includes the supplied `ForeverSkyblock-0.26.4-Mekanism-Automation-Test` artifact. It is now the authoritative text-list snapshot for documentation purposes. The corresponding exact text is stored at `pack/snapshots/2026-10-21_modlist.txt`.
+The current `Modliste(6).txt` snapshot contains **94 enabled artifact labels** and reports Minecraft 1.21.1, LWJGL 3.3.3 and NeoForge **21.1.264**. It is the authoritative current text-list snapshot for documentation purposes. The exact text is stored at `pack/snapshots/2026-10-22_modlist.txt`.
 
-TeKatz's successful test on NeoForge 21.1.262 is stronger compatibility evidence than a list alone, but it is still distinct from a fresh runtime log. The repository therefore does not invent a new loaded-mod-ID count or embedded-module inventory. The October 15 runtime JSON remains the last machine-derived runtime-ID snapshot and is historical evidence for NeoForge 21.1.259.
+No fresh runtime log or explicit gameplay-validation statement accompanied this list. The repository therefore does not invent a new loaded-mod-ID count or embedded-module inventory. The October 15 runtime JSON remains the last machine-derived runtime-ID snapshot and is historical evidence for NeoForge 21.1.259; the October 21 `Modliste(5).txt` remains the previous launcher snapshot on NeoForge 21.1.262.
 
 Missing future recipes, quests or scripts are planned inputs rather than defects in the fixed island. Raw logs, Creative test worlds and generated registry dumps do not belong in the repository unless a deliberate sanitized snapshot is requested.
 

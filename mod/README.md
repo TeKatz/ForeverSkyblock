@@ -1,105 +1,63 @@
-# Forever Skyblock mod — 0.26.4 integrated baseline
+# Forever Skyblock mod — 0.27.0 integrated baseline
 
-Development branch note: this checkout adds the **0.27.0 machine visual overhaul** on `feature/machine-visual-overhaul`. The integrated `main` baseline described below remains **0.26.4** until an authorized merge. See [machine visual overhaul](../docs/MACHINE_VISUAL_OVERHAUL.md).
+Minecraft **1.21.1** / NeoForge **21.1.264 development target** / Java **21**. Maintained by TeKatz.
 
-Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz.
-
-The current `main` baseline is **0.26.4**. On October 22, 2026, PR #29 was merged into the resource-refining branch and PR #28 was then merged into `main`. The mod now contains the renewable Nether/Redstone bridge and the FE-powered Refining Condenser in addition to the existing Condenser, Washing, Garden, Crucible and K-menu systems.
+The current `main` mod baseline is **0.27.0**. It includes the renewable resource-refining stack and the integrated machine visual overhaul. The current supplied pack snapshot contains **94 enabled artifact labels** and reports NeoForge **21.1.264**.
 
 Authoritative summaries:
 
 - [Current integrated state](../docs/CURRENT_STATE.md)
 - [Current progression](../docs/PROGRESSION.md)
+- [Current mod list](../docs/MODLIST_SNAPSHOT.md)
 - [Resource refining](../docs/RESOURCE_REFINING.md)
-
-The current installed pack runtime is **NeoForge 21.1.262**. The final pre-integration hotfix source was validated by Actions run #563 with the full automated pack-runtime suite on **NeoForge 21.1.259**. These are separate evidence boundaries.
+- [Machine visual overhaul](../docs/MACHINE_VISUAL_OVERHAUL.md)
 
 ## Early material progression
-
-The primitive chain remains:
 
 `Wood -> Stone Fragments -> Stone Meal / Dirt -> Ice / Water -> Farm -> Mud / Packed Mud -> Washing Basin -> Raw Iron -> Iron -> Condenser Mark II + Garden`
 
 Key numbers:
 
-- **1 Log -> 4 Stone Fragments / 120 ticks (6 s)**;
-- **4 Stone Meal -> 1 Raw Iron / 160 ticks (8 s)** with adjacent source water;
-- Mark II automates Stone Meal and Oak Sapling production;
-- Garden Oak: retained Sapling -> **4 Logs + 8 Leaves / 320 ticks (16 s)**;
-- Garden Wheat: retained Wheat Seeds -> **4 Wheat + 2 Seeds / 320 ticks (16 s)**.
+- **1 Log -> 4 Stone Fragments / 120 ticks (6 s)**
+- **4 Stone Meal -> 1 Raw Iron / 160 ticks (8 s)** with adjacent source water
+- Garden Oak: retained Sapling -> **4 Logs + 8 Leaves / 320 ticks (16 s)**
+- Garden Wheat: retained Wheat Seeds -> **4 Wheat + 2 Seeds / 320 ticks (16 s)**
 
 ## Condenser Mark II automation
 
-Mark II has **3 upgrade capacity** and three physical upgrade slots. Current cards are Processing Speed, Garden Accelerator, Buffer Expansion and Batch Processing.
+Mark II has **3 upgrade capacity** and three physical upgrade slots. Current cards are Processing Speed, Garden Accelerator, Buffer Expansion and Batch Processing. Outputs support independent **Block / Void Excess / Void All** policies.
 
-Outputs support independent **Block / Void Excess / Void All** policies. Buffer Expansion synchronizes the displayed output amount with visible + hidden buffered storage.
-
-The shared machine-container GUI now uses only native `AbstractContainerScreen` coordinates; the earlier custom fit-to-window scale/mouse remapping layer has been removed to prevent item/slot drift after resizing or changing GUI scale.
+The shared machine-container GUI uses native `AbstractContainerScreen` coordinates. The earlier fit-to-window scaling/mouse-remapping layer is not used.
 
 ## Crucible
 
-The Crucible has a **4,000 mB** internal Lava buffer.
-
-Current Lava production:
-
-- **8 Cobblestone -> 1,000 mB Lava**;
-- **40 Stone Fragments -> 100 mB Lava**.
+- **4,000 mB** internal Lava buffer
+- **8 Cobblestone -> 1,000 mB Lava**
+- **40 Stone Fragments -> 100 mB Lava**
+- **1 Gravel + 250 mB stored Lava -> 1 Netherrack / 80 ticks**
+- adjacent Fluid Tank routing
+- adjacent Freezing Chamber Obsidian production
+- automatic item-output pushing
+- real Lava-fluid JEI quantities
 
 Heat tiers: **Torch -> Campfire -> Lava -> Mekanism Superheating Element**.
 
-An adjacent Fluid Tank enables Lava routing. An adjacent Freezing Chamber enables **1,000 mB Lava -> 1 Obsidian** through timed freezing.
+## Renewable Nether / Redstone chain
 
-New renewable-Netherrack route:
-
-- **1 Gravel + 250 mB stored Lava -> 1 Netherrack**;
-- **80 ticks / 4 seconds**.
-
-Produced Crucible output items can auto-push into adjacent item-handler inventories. JEI shows real fluid quantities rather than Lava Bucket placeholders.
-
-## Granular and Nether processing
-
-Both Condenser tiers:
-
-- **1 Cobblestone -> 1 Gravel / 120 ticks**;
-- **1 Gravel -> 1 Sand / 120 ticks**.
-
-Condenser Mark II:
-
-- Nether Bricks / Nether Brick Stairs / Nether Brick Fences -> **1 Nether Brick Dust / 160 ticks**.
-
-Washing Basin:
-
-- **1 Nether Brick Dust -> 1 Nether Concentrate + 2 Quartz + 20% Gold Nugget / 160 ticks**.
-
-Mark II + Mixing:
-
-- **1 Nether Concentrate + 1 Stone Meal -> 2 Mineral Blend / 160 ticks**.
-
-Washing Basin:
-
-- **1 Mineral Blend -> 8 Redstone / 120 ticks**.
+- Cobblestone -> Gravel -> Sand
+- Nether brick material -> Nether Brick Dust
+- Washing: Dust -> Nether Concentrate + 2 Quartz + 20% Gold Nugget
+- Mark II + Mixing: **Nether Concentrate + Stone Meal -> 2 Mineral Blend / 160 ticks**
+- Washing: **1 Mineral Blend -> 8 Redstone / 120 ticks**
 
 ## Refining Condenser
 
 Player-facing name: **Refining Condenser**. Stable internal registry ID: `forever_skyblock:refining_chamber`.
 
-Crafting:
-
-- 4 Iron Blocks;
-- 2 Redstone;
-- 2 Obsidian;
-- 1 Blast Furnace.
-
-Machine properties:
-
-- primary input, catalyst and output;
-- standard item capability automation;
-- output extraction from below;
-- **100,000 FE** storage;
-- maximum **4,000 FE/t** receive;
-- no energy export.
-
-Recipes:
+- **100,000 FE** storage
+- maximum **4,000 FE/t** receive
+- primary input, catalyst and output
+- standard item/energy capability automation
 
 | Result | Inputs | Duration | FE/t |
 | --- | --- | ---: | ---: |
@@ -109,23 +67,20 @@ Recipes:
 | 1 Emerald | 4 Mineral Blend + 1 Gold Ingot | 300 ticks | 120 |
 | 1 Diamond | 2 Carbon Matrix + 8 Mineral Blend | 900 ticks | 240 |
 
-Osmium is conditional on Mekanism. Carbon Matrix is **8 Charcoal + 1 Mineral Blend -> 1 Carbon Matrix**.
+Carbon Matrix is **8 Charcoal + 1 Mineral Blend -> 1 Carbon Matrix**.
 
-The Diamond recipe consumes **216,000 FE** over one full operation, so continuous external power is required despite the 100,000-FE internal buffer.
+## 0.27.0 machine visual overhaul
 
-JEI includes a dedicated Refining category/catalyst and Recipes button. The Refining Condenser and Mineral Blend use dedicated item textures.
+The visual overhaul is integrated, not an outstanding feature branch. It refreshes all nine custom machine exteriors and five machine GUIs while preserving production, recipe, energy, automation and save behavior. Final Washing Basin presentation fixes and the Crucible heat-overlay Z-fighting correction are part of the integrated source.
 
-## Progression-aligned external recipes
+## Current dependency/runtime alignment
 
-- Mekanism Basic Logistical Transporter: **2 Iron Ingots + 1 Redstone -> 8**.
-- Iron Furnaces Iron Furnace: **4 Iron Blocks + 4 Iron Ingots + 1 Furnace -> 1**.
-- Mekanism Basic Fluid Tank remains redstone-free to avoid a bootstrap loop before renewable Redstone.
+- Gradle default NeoForge runtime: **21.1.264**
+- Full pack-runtime CI target: **21.1.264**
+- JEI development/test dependency: **19.69.0.457**
+- NeoForge mod metadata range remains `[21.1.249,21.2)` as a compatibility range, not a current-runtime pin.
 
-## Compatibility
-
-The resource-refining integration does not change the player profile schema, world-progress schema or `skills-9` progression protocol. The fixed starter-island NBT is unchanged.
-
-The internal Refining Condenser ID intentionally remains `refining_chamber` for compatibility with existing development/test worlds.
+The current supplied launcher artifact label is `ForeverSkyblock-main-latest`; the repository mod version remains **0.27.0**.
 
 ## Build
 
@@ -133,16 +88,6 @@ The internal Refining Condenser ID intentionally remains `refining_chamber` for 
 ./gradlew build
 ```
 
-Current integrated output version: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.26.4.jar`.
+Current integrated output: `build/libs/ForeverSkyblock-1.21.1-NeoForge-0.27.0.jar`.
 
-## Validation
-
-Final pre-integration source `38a730e77c066ada5ade7395568baa04c1c635ff` passed Actions run **#563**:
-
-- Java build + unit tests;
-- client smoke test;
-- visual fixtures;
-- dedicated-server GameTests;
-- full pack-runtime integration on NeoForge **21.1.259**.
-
-See [../docs/RESOURCE_REFINING.md](../docs/RESOURCE_REFINING.md) and [../docs/VALIDATION.md](../docs/VALIDATION.md) for documentation and validation boundaries.
+Historical validation records retain the NeoForge version actually used by each run. See [../docs/VALIDATION.md](../docs/VALIDATION.md) for run-specific evidence.
