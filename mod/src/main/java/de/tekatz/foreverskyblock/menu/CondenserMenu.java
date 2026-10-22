@@ -91,6 +91,11 @@ public final class CondenserMenu extends AbstractContainerMenu {
             total += machine.outputBuffers().getStackInSlot(lane * 2 + segment).getCount();
         return total;
     }
+    private ItemStack displayBufferedCount(int slot, ItemStack stack) {
+        if (!ownerLevel.isClientSide || bufferUpgrades() <= 0 || stack.isEmpty()) return stack;
+        int total = storedOutputCount(slot);
+        return total > stack.getCount() ? stack.copyWithCount(total) : stack;
+    }
 
     private Slot inputSlot(ItemStackHandler inventory, int index, int x, int y) {
         return new SlotItemHandler(inventory, index, x, y) {
@@ -107,6 +112,7 @@ public final class CondenserMenu extends AbstractContainerMenu {
             @Override public boolean isActive() {
                 return !hasGardenChamber() && (index == CondenserBlockEntity.OUTPUT || hasFreezingChamber());
             }
+            @Override public ItemStack getItem() { return displayBufferedCount(index, super.getItem()); }
             @Override public boolean mayPlace(ItemStack stack) { return false; }
             @Override public boolean mayPickup(Player player) { return isActive() && super.mayPickup(player); }
         };
@@ -125,6 +131,7 @@ public final class CondenserMenu extends AbstractContainerMenu {
     private Slot gardenOutputSlot(ItemStackHandler inventory, int index, int x) {
         return new SlotItemHandler(inventory, index, x, GARDEN_Y) {
             @Override public boolean isActive() { return hasGardenChamber(); }
+            @Override public ItemStack getItem() { return displayBufferedCount(index, super.getItem()); }
             @Override public boolean mayPlace(ItemStack stack) { return false; }
             @Override public boolean mayPickup(Player player) { return isActive() && super.mayPickup(player); }
         };
