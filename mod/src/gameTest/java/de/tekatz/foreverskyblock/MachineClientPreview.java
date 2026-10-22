@@ -60,9 +60,10 @@ public final class MachineClientPreview {
             data(menu,0,60);data(menu,1,120);data(menu,2,1);
             // Remaining module/status fields are explicitly named below rather than relying on undocumented indices.
             setCondenserData(menu,stage);
-            menu.getSlot(0).set(new ItemStack(Items.OAK_LOG,32));
-            if(stage==2) {menu.getSlot(0).set(new ItemStack(ForeverSkyblock.STONE_MEAL.get(),32)); menu.getSlot(1).set(new ItemStack(Items.DIRT,16));}
-            menu.getSlot(2).set(new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(),48));
+            menu.getSlot(CondenserBlockEntity.INPUT).set(new ItemStack(Items.OAK_LOG,32));
+            if(stage==2) {menu.getSlot(CondenserBlockEntity.INPUT).set(new ItemStack(ForeverSkyblock.STONE_MEAL.get(),32)); menu.getSlot(CondenserBlockEntity.SECOND_INPUT).set(new ItemStack(Items.DIRT,16));}
+            menu.getSlot(CondenserBlockEntity.OUTPUT).set(new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(),48));
+            if(stage==2)menu.getSlot(CondenserBlockEntity.OUTPUT).set(new ItemStack(Items.MUD,16));
             menu.getSlot(CondenserBlockEntity.GARDEN_SPECIMEN).set(new ItemStack(stage==5?Items.WHEAT_SEEDS:Items.OAK_SAPLING));
             mc.player.containerMenu=menu;mc.setScreen(new CondenserScreen(menu,inventory,menuTitle("Condenser")));
         } else if(stage<=8) {
@@ -99,9 +100,9 @@ public final class MachineClientPreview {
             var blocks=java.util.List.of(ForeverSkyblock.CONDENSER_MARK_I.get(),ForeverSkyblock.CONDENSER_MARK_II.get(),ForeverSkyblock.ASCENSION_CHAMBER.get(),
                     ForeverSkyblock.MIXING_CHAMBER_MARK_I.get(),ForeverSkyblock.FREEZING_CHAMBER_MARK_I.get(),ForeverSkyblock.WASHING_BASIN.get(),
                     ForeverSkyblock.GARDEN_CHAMBER_MARK_I.get(),ForeverSkyblock.CRUCIBLE.get(),ForeverSkyblock.REFINING_CHAMBER.get());
-            for(int x=-3;x<=10;x++)for(int z=-10;z<=12;z++)level.setBlockAndUpdate(new net.minecraft.core.BlockPos(x,80,z),net.minecraft.world.level.block.Blocks.SMOOTH_STONE.defaultBlockState());
+            for(int x=-3;x<=10;x++)for(int z=-14;z<=10;z++)level.setBlockAndUpdate(new net.minecraft.core.BlockPos(x,80,z),net.minecraft.world.level.block.Blocks.SMOOTH_STONE.defaultBlockState());
             for(int i=0;i<blocks.size();i++) {
-                int x=(i%3)*3,y=81+(i/3)*2,z=-(i/3)*3;
+                int x=(i%3)*3,y=81+(i/3)*2,z=(i/3)*3;
                 for(int yy=81;yy<y;yy++)level.setBlockAndUpdate(new net.minecraft.core.BlockPos(x,yy,z),net.minecraft.world.level.block.Blocks.SMOOTH_STONE.defaultBlockState());
                 var pos=new net.minecraft.core.BlockPos(x,y,z);level.setBlockAndUpdate(pos,blocks.get(i).defaultBlockState());
                 if(level.getBlockEntity(pos) instanceof CondenserBlockEntity machine)machine.inventory().setStackInSlot(CondenserBlockEntity.INPUT,new ItemStack(Items.OAK_LOG,64));
@@ -110,12 +111,12 @@ public final class MachineClientPreview {
                     for(int j=0;j<25;j++)machine.energyAutomation(null).receiveEnergy(4000,false);
                 }
             }
-            var garden=new net.minecraft.core.BlockPos(1,85,-6);
+            var garden=new net.minecraft.core.BlockPos(1,85,6);
             level.setBlockAndUpdate(garden,ForeverSkyblock.CONDENSER_MARK_II.get().defaultBlockState());
             ((CondenserBlockEntity)level.getBlockEntity(garden)).inventory().setStackInSlot(CondenserBlockEntity.GARDEN_SPECIMEN,new ItemStack(Items.OAK_SAPLING));
             level.setDayTime(6000);
             var player=server.getPlayerList().getPlayer(mc.player.getUUID());
-            player.connection.teleport(3.5,85,12,180,18);
+            player.connection.teleport(3.5,85,-12,0,18);
         });
     }
 }

@@ -16,7 +16,7 @@ public final class AscensionRenderer implements BlockEntityRenderer<AscensionCha
         boolean active=machine.getBlockState().getValue(AscensionChamberBlock.ACTIVE);
         float phase=active?machine.visualProgress(partialTick)/AscensionChamberBlockEntity.DURATION:0;
         ring(p,buffers,4.5F,2.8F,active?phase*180:0,active,light,overlay);
-        ring(p,buffers,3.15F,1.6F,active?-phase*240:0,active,light,overlay);
+        ring(p,buffers,3.15F,1.6F,active?-phase*360:0,active,light,overlay);
         if(!machine.inventory().getStackInSlot(0).isEmpty()) {
             p.pushPose();p.translate(8,8+(active?Math.sin(phase*Math.PI*4)*.18:0),2.5);
             if(active)p.mulPose(Axis.ZP.rotationDegrees((float)Math.sin(phase*Math.PI*2)*9));

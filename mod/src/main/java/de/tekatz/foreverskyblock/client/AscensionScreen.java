@@ -33,7 +33,7 @@ public final class AscensionScreen extends MachineScreen<AscensionMenu> {
         for(int i=0;i<2;i++) {
             g.pose().pushPose();g.pose().translate(x+62,y+66,0);
             if(menu.busy())g.pose().mulPose(Axis.ZP.rotationDegrees((menu.progress() + (minecraft.isPaused() ? 0 : partialTick)) / AscensionChamberBlockEntity.DURATION * 360 * (i==0?1:-1)));
-            int r=24-i*5,color=i==0?0xFF6F7C8D:0xFF6E449A;
+            int r=18-i*5,color=i==0?0xFF6F7C8D:0xFF6E449A;
             g.fill(-r,-r,r,-r+2,color);g.fill(-r,r-2,r,r,color);g.fill(-r,-r+2,-r+2,r-2,color);g.fill(r-2,-r+2,r,r-2,color);
             g.pose().popPose();
         }
