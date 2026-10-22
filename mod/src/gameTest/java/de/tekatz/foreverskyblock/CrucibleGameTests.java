@@ -61,11 +61,11 @@ public final class CrucibleGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void fortyFragmentsMatchEightCobblestoneBatch(GameTestHelper h) {
+    public static void fortyFragmentsCreateOneHundredMb(GameTestHelper h) {
         CrucibleBlockEntity crucible = setup(h, Blocks.LAVA);
         crucible.inventory().setStackInSlot(CrucibleBlockEntity.INPUT, new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), 41));
         tick(h, crucible, 600);
-        check(h, crucible.lavaMb() == 1000, "Forty fragments create one bucket of lava");
+        check(h, crucible.lavaMb() == 100, "Forty fragments create 100 mB of lava");
         check(h, crucible.inventory().getStackInSlot(CrucibleBlockEntity.INPUT).getCount() == 1, "Exactly forty fragments are consumed");
         h.succeed();
     }
