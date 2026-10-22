@@ -32,4 +32,17 @@ The existing model/layout, unit, server and pack-integration regressions remain 
 
 `./gradlew runClient -PcondenserTests -PmachineVisualTests` creates a disposable integrated world, captures all five real GUI implementations in representative states and multiple GUI scales, and renders a nine-machine block gallery. The fixture is excluded from the distributable JAR. These are presentation fixtures, not substitutes for player-operated automation tests. Final shader/resource-pack appearance still requires a real-pack check.
 
-Validation results and exact artifact identity will be recorded after the completed checks.
+Final source `c34b0d1bb0f18ba4fb5df47f5055cf62b238c07e` passed [Actions run #567](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39758768145):
+
+- Java 21 build, **99 unit tests**, and all GameTest classes compiled;
+- client startup/mixin/model/texture smoke check;
+- **18 real-client machine screenshots**, covering all five screens and a nine-machine block gallery; reviewed after correcting Ascension label/ring clearance;
+- existing K-menu visual/input fixtures;
+- **120 required GameTests** on default NeoForge **21.1.249**;
+- **120 required GameTests** with full optional integrations on the current pack runtime, NeoForge **21.1.262**.
+
+The final JAR from CI artifact `12417432843` is **1,099,649 bytes**. Its SHA-256 is `e3cd724c4c08fe9eaec0d832218d48dcfabda1b2c1197dcd128c4fcfabfc7abe`. The artifact ZIP and JAR CRCs passed; metadata targets 0.27.0 / Minecraft 1.21.1 / NeoForge, new classes target Java 21, every packaged source resource matches the checkout and test fixtures are excluded. The independently built local JAR is byte-identical. The saved user download was materialized again and its exact size/hash verified.
+
+A final baseline comparison confirms unchanged production, automation, energy and persistence method bodies, unchanged menu/recipe/action-protocol files, and unchanged pack files. The protected island SHA-256 remains `1ae2e4b779b1c6b56320aede0af2a711d4bd247a976771c95f633e05c1beb0c1`. Regenerating all native SVG motifs produced byte-identical PNGs.
+
+The existing native Condenser layout is 248 × 352 logical pixels. At 1920 × 1080 it fits GUI scale 3; scale 4 preserves item/frame alignment but exceeds the available logical height, as documented by the fixture. No fit-to-window transform was reintroduced. Final player-operated appearance/automation and shader/resource-pack combinations still require TeKatz's real-pack check. This final documentation update changes none of the validated runtime source or resources.
