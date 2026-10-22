@@ -69,9 +69,9 @@ public final class WashingScreen extends MachineScreen<WashingMenu> {
         float partial = minecraft.isPaused() ? 0 : partialTick;
         float phase = MachineAnimation.phase(menu.progress() + (running ? partial : 0), menu.duration());
         MachineProcessEffects.washing(g, barX, y + 74, barW, phase, running, menu.status() == WashingBasinBlockEntity.BLOCKED);
-        MachineSkin.meter(g, barX, y + 109, barW, 3, phase, MachineSkin.ICE, phase * menu.duration(), running);
         MachineSkin.centered(g, font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f / %.1f s",
-                menu.progress() / 20F, menu.duration() / 20F)), barX + barW / 2, y + 97, barW + 8, MachineSkin.MUTED, .65F);
+                menu.progress() / 20F, menu.duration() / 20F)), barX + barW / 2, y + 103, barW + 8, MachineSkin.MUTED, .65F);
+        MachineSkin.meter(g, barX, y + 111, barW, 3, phase, MachineSkin.ICE, phase * menu.duration(), running);
 
         Component summary = text("washing_recipe");
         if (minecraft.level != null) {
@@ -87,7 +87,7 @@ public final class WashingScreen extends MachineScreen<WashingMenu> {
                 summary = Component.literal(washing.ingredientCount() + " × " + input.getHoverName().getString() + " → " + result);
             }
         }
-        MachineSkin.centered(g, font, summary, x + 124, y + 118, 196, MachineSkin.LIGHT, .68F);
+        MachineSkin.centered(g, font, summary, x + 124, y + 121, 196, MachineSkin.LIGHT, .68F);
 
         MachineSkin.panel(g, x + 18, y + 138, 138, 34, 0xFF465A68);
         MachineSkin.text(g, font, text("washing_hint_source"), x + 25, y + 145, 124, MachineSkin.MUTED, .72F);
