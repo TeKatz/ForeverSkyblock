@@ -27,7 +27,7 @@ sourceSets {
 }
 
 neoForge {
-    version = project.findProperty('packRuntime') ?: '21.1.249'
+    version = project.findProperty('packRuntime') ?: '21.1.264'
     addModdingDependenciesTo sourceSets.gameTest
     runs {
         server {
@@ -100,9 +100,9 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testImplementation 'com.google.code.gson:gson:2.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    compileOnly 'mezz.jei:jei-1.21.1-common-api:19.64.0.454'
-    compileOnly 'mezz.jei:jei-1.21.1-neoforge-api:19.64.0.454'
-    clientAdditionalRuntimeClasspath 'mezz.jei:jei-1.21.1-neoforge:19.64.0.454'
+    compileOnly 'mezz.jei:jei-1.21.1-common-api:19.69.0.457'
+    compileOnly 'mezz.jei:jei-1.21.1-neoforge-api:19.69.0.457'
+    clientAdditionalRuntimeClasspath 'mezz.jei:jei-1.21.1-neoforge:19.69.0.457'
     compileOnly 'maven.modrinth:jade:15.10.6+neoforge'
     clientAdditionalRuntimeClasspath 'maven.modrinth:jade:15.10.6+neoforge'
 }
