@@ -18,6 +18,8 @@ final class MachineGeometry {
                 x0, y0, z0, x1, y1, z1, light, overlay, false, faces);
     }
     private static final ResourceLocation MATERIALS = ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "textures/block/machine_materials.png");
+    private static final ResourceLocation MATERIALS_II = ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "textures/block/machine_materials_ii.png");
+    private static final ResourceLocation ASCENSION = ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "textures/block/ascension_materials.png");
     private static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/block/white_concrete.png");
     static void plantBox(PoseStack p, MultiBufferSource b, int color,
                          float x0, float y0, float z0, float x1, float y1, float z1, int light, int overlay) {
@@ -28,6 +30,8 @@ final class MachineGeometry {
     private static final ResourceLocation LIGHTS = ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "textures/block/machine_lights.png");
     static void box(PoseStack poses, MultiBufferSource buffers, int material, float x0, float y0, float z0,
                     float x1, float y1, float z1, int light, int overlay) {
+        int palette = material / 16;
+        material %= 16;
         if (material == 10) {
             box(poses, buffers, WHITE, 0, 0, 1, 1, 1F, .65F, .25F,
                     x0, y0, z0, x1, y1, z1, light, overlay, true);
@@ -37,7 +41,7 @@ final class MachineGeometry {
         float u0 = glow ? (material - 6) / 4.0F : (material % 3) / 3.0F;
         float v0 = glow ? 0 : (material / 3) / 2.0F;
         float du = glow ? 0.249F : Math.max(0.002F, (x1-x0)/48.0F), dv = glow ? 0.999F : Math.max(0.002F, (y1-y0)/32.0F);
-        box(poses, buffers, glow ? LIGHTS : MATERIALS, u0, v0, du, dv, 1, 1, 1,
+        box(poses, buffers, glow ? LIGHTS : palette == 2 ? ASCENSION : palette == 1 ? MATERIALS_II : MATERIALS, u0, v0, du, dv, 1, 1, 1,
                 x0, y0, z0, x1, y1, z1, light, overlay, glow);
     }
     private static void box(PoseStack poses, MultiBufferSource buffers, ResourceLocation texture,

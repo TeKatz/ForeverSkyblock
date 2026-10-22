@@ -34,6 +34,7 @@ public final class WashingScreen extends MachineScreen<WashingMenu> {
 
     @Override protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
+        skin.accent(MachineSkin.ICE);
         skin.frame(g, x, y, imageWidth, imageHeight);
         g.renderItem(new ItemStack(ForeverSkyblock.WASHING_BASIN.get()), x + 18, y + 10);
         MachineSkin.text(g, font, text("washing_title"), x + 42, y + 12, 130, MachineSkin.LIGHT, 1.05F);
@@ -64,12 +65,13 @@ public final class WashingScreen extends MachineScreen<WashingMenu> {
         skin.slot(g, x + WashingMenu.SECONDARY_OUTPUT_X, y + WashingMenu.MACHINE_Y, true);
 
         int barX = x + 83, barW = 82;
-        MachineSkin.panel(g, barX, y + 82, barW, 8, 0xFF637888);
-        int filled = Math.min(barW - 4, (barW - 4) * menu.progress() / menu.duration());
-        g.fill(barX + 2, y + 84, barX + 2 + filled, y + 88, MachineSkin.CYAN);
-        g.fill(barX + barW, y + 81, barX + barW + 3, y + 91, MachineSkin.CYAN);
+        boolean running = menu.status() == WashingBasinBlockEntity.RUNNING;
+        float partial = minecraft.isPaused() ? 0 : partialTick;
+        float phase = MachineAnimation.phase(menu.progress() + (running ? partial : 0), menu.duration());
+        MachineProcessEffects.washing(g, barX, y + 74, barW, phase, running, menu.status() == WashingBasinBlockEntity.BLOCKED);
         MachineSkin.centered(g, font, Component.literal(String.format(java.util.Locale.ROOT, "%.1f / %.1f s",
-                menu.progress() / 20F, menu.duration() / 20F)), barX + barW / 2, y + 101, barW + 8, MachineSkin.MUTED, .7F);
+                menu.progress() / 20F, menu.duration() / 20F)), barX + barW / 2, y + 103, barW + 8, MachineSkin.MUTED, .65F);
+        MachineSkin.meter(g, barX, y + 111, barW, 3, phase, MachineSkin.ICE, phase * menu.duration(), running);
 
         Component summary = text("washing_recipe");
         if (minecraft.level != null) {
@@ -85,7 +87,7 @@ public final class WashingScreen extends MachineScreen<WashingMenu> {
                 summary = Component.literal(washing.ingredientCount() + " × " + input.getHoverName().getString() + " → " + result);
             }
         }
-        MachineSkin.centered(g, font, summary, x + 124, y + 118, 196, MachineSkin.LIGHT, .68F);
+        MachineSkin.centered(g, font, summary, x + 124, y + 121, 196, MachineSkin.LIGHT, .68F);
 
         MachineSkin.panel(g, x + 18, y + 138, 138, 34, 0xFF465A68);
         MachineSkin.text(g, font, text("washing_hint_source"), x + 25, y + 145, 124, MachineSkin.MUTED, .72F);

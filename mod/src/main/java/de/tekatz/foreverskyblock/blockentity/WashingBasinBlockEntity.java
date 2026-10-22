@@ -33,6 +33,8 @@ public final class WashingBasinBlockEntity extends BlockEntity implements MenuPr
     public static final int DATA_COUNT = 4;
     public static final int IDLE = 0, RUNNING = 1, BLOCKED = 2, NO_WATER = 3;
 
+    public final MachineVisualState visual = new MachineVisualState();
+
     private int progress;
     private int duration = WashingRecipe.DEFAULT_TIME;
     private int status;
@@ -96,7 +98,10 @@ public final class WashingBasinBlockEntity extends BlockEntity implements MenuPr
         return recipeCheck.getRecipeFor(currentInput(), level).orElse(null);
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, WashingBasinBlockEntity basin) { basin.process(); }
+    public static void tick(Level level, BlockPos pos, BlockState state, WashingBasinBlockEntity basin) {
+        basin.process();
+        basin.visual.observe(basin, basin.status, basin.progress, basin.duration, basin.hasWaterSource() ? 1 : 0);
+    }
 
     /**
      * ItemStackHandler restores the serialized slot count from NBT. Basins saved before the second output and bonus
@@ -177,6 +182,18 @@ public final class WashingBasinBlockEntity extends BlockEntity implements MenuPr
             progress = 0;
             flushBonusBuffer();
         }
+    }
+
+    @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    }
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) { return visual.write(); }
+    @Override public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+        visual.read(tag, level == null ? 0 : level.getGameTime());
+    }
+    @Override public void onDataPacket(net.minecraft.network.Connection connection,
+            net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket packet, HolderLookup.Provider registries) {
+        handleUpdateTag(packet.getTag(), registries);
     }
 
     @Override protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {

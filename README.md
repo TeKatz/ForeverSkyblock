@@ -1,5 +1,7 @@
 # Forever Skyblock
 
+Development branch note: this checkout adds the **0.27.0 machine visual overhaul** on `feature/machine-visual-overhaul`. The integrated `main` baseline described below remains **0.26.4** until an authorized merge. See [machine visual overhaul](docs/MACHINE_VISUAL_OVERHAUL.md).
+
 **Forever Skyblock** is an Expert Skyblock modpack for **Minecraft 1.21.1 / NeoForge** built around deliberate progression, renewable resource loops and long-term automation.
 
 The current integrated `main` baseline is **0.26.4**. On October 22, 2026, the renewable resource-refining stack from PR #28 and its PR #29 hotfix set were integrated into `main`. The implemented material spine now reaches renewable Redstone and FE-powered refining for Lapis, Copper, Osmium, Emerald and Diamond.

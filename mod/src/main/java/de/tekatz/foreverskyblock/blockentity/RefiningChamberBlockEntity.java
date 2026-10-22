@@ -32,6 +32,8 @@ public final class RefiningChamberBlockEntity extends BlockEntity implements Men
     public static final int ENERGY_CAPACITY = 100_000, MAX_RECEIVE = 4_000;
     public static final int IDLE = 0, RUNNING = 1, BLOCKED = 2, NO_POWER = 3;
 
+    public final MachineVisualState visual = new MachineVisualState();
+
     private int progress;
     private int duration = RefiningRecipe.DEFAULT_TIME;
     private int status = IDLE;
@@ -86,7 +88,10 @@ public final class RefiningChamberBlockEntity extends BlockEntity implements Men
         if (level == null) return null;
         return recipeCheck.getRecipeFor(currentInput(), level).orElse(null);
     }
-    public static void tick(Level level, BlockPos pos, BlockState state, RefiningChamberBlockEntity chamber) { chamber.process(); }
+    public static void tick(Level level, BlockPos pos, BlockState state, RefiningChamberBlockEntity chamber) {
+        chamber.process();
+        chamber.visual.observe(chamber, chamber.status, chamber.progress, chamber.duration, 0);
+    }
 
     private void process() {
         RecipeHolder<RefiningRecipe> holder = findRecipe();
@@ -123,6 +128,18 @@ public final class RefiningChamberBlockEntity extends BlockEntity implements Men
         ItemStack out = inventory.getStackInSlot(OUTPUT);
         if (out.isEmpty()) inventory.setStackInSlot(OUTPUT, result.copy()); else out.grow(result.getCount());
         setChanged();
+    }
+
+    @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    }
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) { return visual.write(); }
+    @Override public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+        visual.read(tag, level == null ? 0 : level.getGameTime());
+    }
+    @Override public void onDataPacket(net.minecraft.network.Connection connection,
+            net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket packet, HolderLookup.Provider registries) {
+        handleUpdateTag(packet.getTag(), registries);
     }
 
     @Override protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {

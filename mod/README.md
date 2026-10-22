@@ -1,5 +1,7 @@
 # Forever Skyblock mod — 0.26.4 integrated baseline
 
+Development branch note: this checkout adds the **0.27.0 machine visual overhaul** on `feature/machine-visual-overhaul`. The integrated `main` baseline described below remains **0.26.4** until an authorized merge. See [machine visual overhaul](../docs/MACHINE_VISUAL_OVERHAUL.md).
+
 Minecraft 1.21.1 / NeoForge 21.1.x. Java 21. Maintained by TeKatz.
 
 The current `main` baseline is **0.26.4**. On October 22, 2026, PR #29 was merged into the resource-refining branch and PR #28 was then merged into `main`. The mod now contains the renewable Nether/Redstone bridge and the FE-powered Refining Condenser in addition to the existing Condenser, Washing, Garden, Crucible and K-menu systems.

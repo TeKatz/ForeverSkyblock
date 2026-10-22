@@ -101,6 +101,10 @@ The Studio is integrated into `main`. Authorized users can edit supported layout
 | [MODLIST_SNAPSHOT.md](MODLIST_SNAPSHOT.md) | Current supplied mod artifacts and version changes |
 | [MODS.md](MODS.md) | Runtime/build version policy and mod-list evidence |
 
+## Active development branches
+
+- [Machine visual overhaul](MACHINE_VISUAL_OVERHAUL.md) — presentation-only machine series redesign on `feature/machine-visual-overhaul`; not integrated into `main`.
+
 ## Historical / implementation records
 
 These documents preserve earlier phases or implementation handoffs. They are useful context, but do not override the live state/progression documents above.

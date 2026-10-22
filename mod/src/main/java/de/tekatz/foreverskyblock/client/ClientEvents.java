@@ -28,6 +28,8 @@ public final class ClientEvents {
         event.registerBlockEntityRenderer(ForeverSkyblock.GARDEN_CHAMBER_ENTITY.get(), GardenChamberRenderer::new);
         event.registerBlockEntityRenderer(ForeverSkyblock.ASCENSION_ENTITY.get(), AscensionRenderer::new);
         event.registerBlockEntityRenderer(ForeverSkyblock.CRUCIBLE_ENTITY.get(), CrucibleRenderer::new);
+        event.registerBlockEntityRenderer(ForeverSkyblock.WASHING_BASIN_ENTITY.get(), WashingRenderer::new);
+        event.registerBlockEntityRenderer(ForeverSkyblock.REFINING_CHAMBER_ENTITY.get(), RefiningRenderer::new);
     }
     @SubscribeEvent public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ForeverSkyblock.ASCENSION_MENU.get(), AscensionScreen::new);

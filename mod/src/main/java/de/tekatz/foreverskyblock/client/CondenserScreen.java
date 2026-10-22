@@ -141,6 +141,7 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
     @Override protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         updatePresentation(partialTick);
         int x = leftPos, y = topPos;
+        skin.accent(menu.hasGardenChamber() ? MachineSkin.GREEN : menu.machineTier() >= 2 ? MachineSkin.CYAN : MachineSkin.COPPER);
         skin.frame(g, x, y, imageWidth, imageHeight);
         g.renderItem(new ItemStack(menu.machineTier() >= 2 ? ForeverSkyblock.CONDENSER_MARK_II.get() : ForeverSkyblock.CONDENSER_MARK_I.get()), x + 18, y + 10);
         MachineSkin.text(g, font, text(menu.machineTier() >= 2 ? "condenser_title_ii" : "condenser_title"), x + 42, y + 12, 126, MachineSkin.LIGHT, 1.1F);
@@ -218,14 +219,14 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
     private void renderGarden(GuiGraphics g, int x, int y) {
         MachineSkin.panel(g, x + 14, y + 44, 220, 138, 0xFF335544);
         int left = x + 20, right = x + 228, top = y + 50, ground = y + 112;
-        g.fill(left, top, right, y + 68, 0xFF274B56);
-        g.fill(left, y + 68, right, y + 88, 0xFF35636A);
-        g.fill(left, y + 88, right, y + 100, 0xFF487263);
+        g.fill(left, top, right, y + 68, 0xFF182F3B);
+        g.fill(left, y + 68, right, y + 88, 0xFF234753);
+        g.fill(left, y + 88, right, y + 100, 0xFF305849);
         g.fill(left, y + 96, x + 72, y + 105, 0xFF355F48);
         g.fill(x + 58, y + 91, x + 124, y + 105, 0xFF3B684C);
         g.fill(x + 112, y + 94, right, y + 105, 0xFF315B45);
         g.fill(left, y + 103, right, ground, 0xFF47763D);
-        g.fill(left, ground, right, y + 117, 0xFF624830);
+        g.fill(left, ground, right, y + 117, 0xFF4B4033);
         g.fill(left, y + 103, right, y + 106, 0xFF6B9A4D);
         g.fill(x + 199, y + 56, x + 215, y + 72, 0x556F9B72);
         g.fill(x + 202, y + 59, x + 212, y + 69, 0xFFE8CF72);
@@ -233,9 +234,9 @@ public final class CondenserScreen extends MachineScreen<CondenserMenu> {
 
         boolean running = menu.gardenStatus() == CondenserBlockEntity.RUNNING;
         float phase = gardenPhase();
-        g.fill(left, top, right, top + 3, 0xFF899F9B);
-        g.fill(left, top, left + 3, ground, 0xFF617A73);
-        g.fill(right - 3, top, right, ground, 0xFF617A73);
+        g.fill(left, top, right, top + 3, 0xFFB1CFC2);
+        g.fill(left, top, left + 3, ground, 0xFF688D86);
+        g.fill(right - 3, top, right, ground, 0xFF688D86);
         g.fill(left + 3, top + 3, right - 3, top + 4, 0xFFB5C9BA);
         g.fill(x + 56, top + 4, x + 57, ground - 4, 0x445F9C98);
         g.fill(x + 190, top + 4, x + 191, ground - 4, 0x445F9C98);

@@ -60,6 +60,8 @@ public abstract class MachineScreen<M extends AbstractContainerMenu> extends Abs
     }
 
     protected void inventory(GuiGraphics g) {
+        MachineSkin.panel(g, leftPos + 18, topPos + layout.inventoryY() - 6, 212, layout.hotbarY() - layout.inventoryY() + 28, 0xFF405866);
+        g.fill(leftPos + 24, topPos + layout.hotbarY() - 6, leftPos + imageWidth - 24, topPos + layout.hotbarY() - 5, 0xFF344C5B);
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 skin.slot(g, leftPos + layout.inventoryX(col), topPos + layout.inventoryRowY(row), false);

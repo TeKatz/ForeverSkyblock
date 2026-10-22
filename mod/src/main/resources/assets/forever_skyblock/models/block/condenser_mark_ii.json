@@ -1,7 +1,7 @@
 {
   "parent": "forever_skyblock:block/condenser_mark_i",
   "textures": {
-    "materials": "forever_skyblock:block/freezing_metal",
+    "materials": "forever_skyblock:block/machine_materials_ii",
     "panels": "forever_skyblock:block/machine_panels",
     "lights": "forever_skyblock:block/machine_lights",
     "particle": "forever_skyblock:block/freezing_metal"

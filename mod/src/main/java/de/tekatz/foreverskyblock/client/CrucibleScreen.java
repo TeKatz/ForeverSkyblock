@@ -71,6 +71,7 @@ public final class CrucibleScreen extends MachineScreen<CrucibleMenu> {
         boolean melting = menu.status() == CrucibleBlockEntity.HEATING;
         boolean freezing = menu.status() == CrucibleBlockEntity.FREEZING;
 
+        skin.accent(MachineSkin.COPPER);
         skin.frame(g, x, y, imageWidth, imageHeight);
         g.renderItem(new ItemStack(ForeverSkyblock.CRUCIBLE.get()), x + 18, y + 10);
         MachineSkin.text(g, font, Component.literal("CRUCIBLE"), x + 42, y + 12, 128, MachineSkin.LIGHT, 1.05F);
