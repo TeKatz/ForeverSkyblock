@@ -60,7 +60,7 @@ public final class AscensionScreen extends MachineScreen<AscensionMenu> {
         inventory(g);
     }
     @Override public boolean mouseClicked(double x,double y,int button) {
-        int mx=logicalMouseX(x)-leftPos,my=logicalMouseY(y)-topPos;
+        int mx=(int)Math.floor(x)-leftPos,my=(int)Math.floor(y)-topPos;
         if(button==0&&mx>=23&&mx<=169&&my>=106&&my<=114&&ClientMachineRecipes.available()){ClientMachineRecipes.ascension();return true;}
         return super.mouseClicked(x,y,button);
     }
