@@ -1,11 +1,11 @@
 package de.tekatz.foreverskyblock.menu;
 
 /**
- * Shared immutable native GUI coordinates.
+ * Common logical machine coordinates plus an optional visual fit-to-window transform.
  *
- * Machine screens intentionally do not apply their own viewport scaling. AbstractContainerScreen owns
- * centering, resize handling, slot coordinates and mouse coordinates so vanilla-rendered ItemStacks always
- * stay on the exact same coordinate grid as the custom slot backgrounds.
+ * The viewport is deliberately presentation-only. AbstractContainerScreen keeps its native left/top/size values;
+ * MachineScreen maps the rendered panel and pointer input through this viewport without replacing Vanilla's
+ * container bounds. This keeps Vanilla ItemStacks and custom slot frames on one coordinate grid.
  */
 public record MachineLayout(int width, int height, int inventoryY, int hotbarY) {
     // MK II uses the extra vertical room for its automation/upgrade panel. Keeping the same layout for MK I
@@ -16,4 +16,25 @@ public record MachineLayout(int width, int height, int inventoryY, int hotbarY) 
 
     public int inventoryX(int column) { return 24 + column * 22; }
     public int inventoryRowY(int row) { return inventoryY + row * 20; }
+
+    public Viewport viewport(int windowWidth, int windowHeight, int logicalLeft, int logicalTop) {
+        int availableWidth = Math.max(1, windowWidth);
+        int availableHeight = Math.max(1, windowHeight);
+        double scale = 1.0;
+        if (availableWidth < width || availableHeight < height) {
+            scale = Math.min((availableWidth - 12.0) / width, (availableHeight - 12.0) / height);
+        }
+        scale = Math.max(.1, Math.min(1.0, scale));
+        return new Viewport(scale,
+                (windowWidth - width * scale) / 2,
+                (windowHeight - height * scale) / 2,
+                logicalLeft, logicalTop);
+    }
+
+    public record Viewport(double scale, double x, double y, int logicalLeft, int logicalTop) {
+        public double logicalX(double screenX) { return (screenX - x) / scale + logicalLeft; }
+        public double logicalY(double screenY) { return (screenY - y) / scale + logicalTop; }
+        public double screenX(double logicalX) { return x + (logicalX - logicalLeft) * scale; }
+        public double screenY(double logicalY) { return y + (logicalY - logicalTop) * scale; }
+    }
 }
