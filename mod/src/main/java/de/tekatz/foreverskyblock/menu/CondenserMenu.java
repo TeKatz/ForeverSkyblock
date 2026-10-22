@@ -30,6 +30,7 @@ public final class CondenserMenu extends AbstractContainerMenu {
     private final ContainerData data;
     private final ContainerLevelAccess access;
     private final DataSlot editMode = DataSlot.standalone();
+    private final DataSlot[] outputTotals = new DataSlot[4];
     private final @Nullable CondenserBlockEntity machine;
     private final net.minecraft.world.level.Level ownerLevel;
 
@@ -63,6 +64,37 @@ public final class CondenserMenu extends AbstractContainerMenu {
             addSlot(new Slot(playerInventory, col, MachineLayout.CONDENSER.inventoryX(col), MachineLayout.CONDENSER.hotbarY()));
         addDataSlots(data);
         addDataSlot(editMode);
+        int[] tracked = {CondenserBlockEntity.OUTPUT, CondenserBlockEntity.FREEZING_OUTPUT,
+                CondenserBlockEntity.GARDEN_OUTPUT_PRIMARY, CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY};
+        for (int i = 0; i < tracked.length; i++) {
+            final int machineSlot = tracked[i];
+            DataSlot total = machine == null ? DataSlot.standalone() : new DataSlot() {
+                @Override public int get() { return serverOutputTotal(machineSlot); }
+                @Override public void set(int value) { }
+            };
+            outputTotals[i] = total;
+            addDataSlot(total);
+        }
+    }
+
+    private int serverOutputTotal(int slot) {
+        if (machine == null) return 0;
+        int total = machine.inventory().getStackInSlot(slot).getCount();
+        int lane = switch (slot) {
+            case CondenserBlockEntity.OUTPUT -> 0;
+            case CondenserBlockEntity.FREEZING_OUTPUT -> 1;
+            case CondenserBlockEntity.GARDEN_OUTPUT_PRIMARY -> 2;
+            case CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY -> 3;
+            default -> -1;
+        };
+        if (lane >= 0) for (int segment = 0; segment < 2; segment++)
+            total += machine.outputBuffers().getStackInSlot(lane * 2 + segment).getCount();
+        return total;
+    }
+    private ItemStack displayBufferedCount(int slot, ItemStack stack) {
+        if (!ownerLevel.isClientSide || bufferUpgrades() <= 0 || stack.isEmpty()) return stack;
+        int total = storedOutputCount(slot);
+        return total > stack.getCount() ? stack.copyWithCount(total) : stack;
     }
 
     private Slot inputSlot(ItemStackHandler inventory, int index, int x, int y) {
@@ -80,6 +112,7 @@ public final class CondenserMenu extends AbstractContainerMenu {
             @Override public boolean isActive() {
                 return !hasGardenChamber() && (index == CondenserBlockEntity.OUTPUT || hasFreezingChamber());
             }
+            @Override public ItemStack getItem() { return displayBufferedCount(index, super.getItem()); }
             @Override public boolean mayPlace(ItemStack stack) { return false; }
             @Override public boolean mayPickup(Player player) { return isActive() && super.mayPickup(player); }
         };
@@ -98,6 +131,7 @@ public final class CondenserMenu extends AbstractContainerMenu {
     private Slot gardenOutputSlot(ItemStackHandler inventory, int index, int x) {
         return new SlotItemHandler(inventory, index, x, GARDEN_Y) {
             @Override public boolean isActive() { return hasGardenChamber(); }
+            @Override public ItemStack getItem() { return displayBufferedCount(index, super.getItem()); }
             @Override public boolean mayPlace(ItemStack stack) { return false; }
             @Override public boolean mayPickup(Player player) { return isActive() && super.mayPickup(player); }
         };
@@ -150,6 +184,15 @@ public final class CondenserMenu extends AbstractContainerMenu {
             case CondenserBlockEntity.GARDEN_OUTPUT_PRIMARY -> data.get(25);
             case CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY -> data.get(26);
             default -> CondenserBlockEntity.POLICY_BLOCK;
+        };
+    }
+    public int storedOutputCount(int slot) {
+        return switch (slot) {
+            case CondenserBlockEntity.OUTPUT -> outputTotals[0].get();
+            case CondenserBlockEntity.FREEZING_OUTPUT -> outputTotals[1].get();
+            case CondenserBlockEntity.GARDEN_OUTPUT_PRIMARY -> outputTotals[2].get();
+            case CondenserBlockEntity.GARDEN_OUTPUT_SECONDARY -> outputTotals[3].get();
+            default -> 0;
         };
     }
 

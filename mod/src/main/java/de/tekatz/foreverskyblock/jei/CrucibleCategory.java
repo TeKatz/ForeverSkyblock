@@ -15,6 +15,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.material.Fluids;
 
 public final class CrucibleCategory implements IRecipeCategory<CrucibleCategory.Process> {
     public enum Process { COBBLE_LAVA, FRAGMENTS_LAVA, NETHERRACK, OBSIDIAN }
@@ -34,15 +35,15 @@ public final class CrucibleCategory implements IRecipeCategory<CrucibleCategory.
     @Override public void setRecipe(IRecipeLayoutBuilder builder, Process recipe, IFocusGroup focuses) {
         if (recipe == Process.COBBLE_LAVA) {
             builder.addInputSlot(14, 12).addItemStack(new ItemStack(Items.COBBLESTONE, CrucibleBlockEntity.COBBLE_PER_BATCH));
-            builder.addOutputSlot(126, 12).addItemStack(new ItemStack(Items.LAVA_BUCKET));
+            builder.addOutputSlot(126, 12).addFluidStack(Fluids.LAVA, CrucibleBlockEntity.COBBLE_LAVA_MB);
         } else if (recipe == Process.FRAGMENTS_LAVA) {
             builder.addInputSlot(14, 12).addItemStack(new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), CrucibleBlockEntity.FRAGMENTS_PER_BATCH));
-            builder.addOutputSlot(126, 12).addItemStack(new ItemStack(Items.LAVA_BUCKET));
+            builder.addOutputSlot(126, 12).addFluidStack(Fluids.LAVA, CrucibleBlockEntity.FRAGMENTS_LAVA_MB);
         } else if (recipe == Process.NETHERRACK) {
             builder.addInputSlot(14, 12).addItemStack(new ItemStack(Items.GRAVEL));
             builder.addOutputSlot(126, 12).addItemStack(new ItemStack(Items.NETHERRACK));
         } else {
-            builder.addInputSlot(14, 12).addItemStack(new ItemStack(Items.LAVA_BUCKET));
+            builder.addInputSlot(14, 12).addFluidStack(Fluids.LAVA, CrucibleBlockEntity.BATCH_MB);
             builder.addOutputSlot(126, 12).addItemStack(new ItemStack(Items.OBSIDIAN));
             builder.addSlot(RecipeIngredientRole.CATALYST, 126, 83).addItemStack(new ItemStack(ForeverSkyblock.FREEZING_CHAMBER_MARK_I.get()));
         }
@@ -60,7 +61,7 @@ public final class CrucibleCategory implements IRecipeCategory<CrucibleCategory.
             centeredFit(g, Component.literal("Torch 300s · Campfire 80s"), 80, 51, 148, 0xFFB9C0C4, 1.0F);
             centeredFit(g, Component.literal("Lava 30s · Superheat 8s"), 80, 62, 148, 0xFFB9C0C4, 1.0F);
         } else if (recipe == Process.FRAGMENTS_LAVA) {
-            centeredFit(g, Component.literal("40 Stone Fragments → 1000 mB lava"), 80, 37, 148, 0xFFFFC58D, 1.0F);
+            centeredFit(g, Component.literal("40 Stone Fragments → 100 mB lava"), 80, 37, 148, 0xFFFFC58D, 1.0F);
             centeredFit(g, Component.literal("Torch 300s · Campfire 80s"), 80, 51, 148, 0xFFB9C0C4, 1.0F);
             centeredFit(g, Component.literal("Lava 30s · Superheat 8s"), 80, 62, 148, 0xFFB9C0C4, 1.0F);
         } else if (recipe == Process.NETHERRACK) {

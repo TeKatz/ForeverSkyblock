@@ -35,6 +35,7 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
     public static final int INPUT = 0, OUTPUT = 1, MACHINE_SLOTS = 2;
     public static final int DATA_COUNT = 9;
     public static final int CAPACITY = 4000, BATCH_MB = 1000;
+    public static final int COBBLE_LAVA_MB = 1000, FRAGMENTS_LAVA_MB = 100;
     public static final int COBBLE_PER_BATCH = 8, FRAGMENTS_PER_BATCH = 40;
     public static final int NETHERRACK_LAVA_MB = 250, NETHERRACK_DURATION = 80;
     public static final int FREEZE_DURATION = 100;
@@ -104,6 +105,11 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
         if (stack.is(Items.GRAVEL)) return 1;
         return 0;
     }
+    public static int lavaPerBatch(ItemStack stack) {
+        if (stack.is(Items.COBBLESTONE)) return COBBLE_LAVA_MB;
+        if (stack.is(ForeverSkyblock.STONE_FRAGMENT.get())) return FRAGMENTS_LAVA_MB;
+        return 0;
+    }
     public static int durationFor(int tier) {
         return switch (tier) {
             case HEAT_TORCH -> 6000;
@@ -132,7 +138,10 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
         resetFreezing();
         setChanged();
     }
-    public static void tick(Level level, BlockPos pos, BlockState state, CrucibleBlockEntity crucible) { crucible.process(); }
+    public static void tick(Level level, BlockPos pos, BlockState state, CrucibleBlockEntity crucible) {
+        crucible.process();
+        crucible.pushOutputItems();
+    }
 
     private void process() {
         if (level == null) return;
@@ -176,18 +185,19 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
 
         duration = durationFor(heatTier);
         int required = requiredCount(input);
-        if (required == 0 || input.getCount() < required) {
+        int producedLava = lavaPerBatch(input);
+        if (required == 0 || input.getCount() < required || producedLava <= 0) {
             status = outputBlocked ? OUTPUT_BLOCKED : freezing ? FREEZING : IDLE;
             return;
         }
         if (heatTier == HEAT_NONE) { status = freezing ? FREEZING : NO_HEAT; return; }
-        if (lavaMb + BATCH_MB > CAPACITY) { status = outputBlocked ? OUTPUT_BLOCKED : freezing ? FREEZING : STORAGE_FULL; return; }
+        if (lavaMb + producedLava > CAPACITY) { status = outputBlocked ? OUTPUT_BLOCKED : freezing ? FREEZING : STORAGE_FULL; return; }
         status = HEATING;
         progress++;
         setChanged();
         if (progress >= duration) {
             inventory.extractItem(INPUT, required, false);
-            changeLava(BATCH_MB);
+            changeLava(producedLava);
             progress = 0;
             progressInput = inventory.getStackInSlot(INPUT).isEmpty() ? null
                     : BuiltInRegistries.ITEM.getKey(inventory.getStackInSlot(INPUT).getItem());
@@ -242,6 +252,26 @@ public final class CrucibleBlockEntity extends BlockEntity implements MenuProvid
         if (target == null) return;
         int sent = target.fill(new FluidStack(Fluids.LAVA, Math.min(lavaMb, BATCH_MB)), IFluidHandler.FluidAction.EXECUTE);
         if (sent > 0) changeLava(-sent);
+    }
+    private void pushOutputItems() {
+        if (level == null || level.isClientSide) return;
+        ItemStack available = inventory.getStackInSlot(OUTPUT);
+        if (available.isEmpty()) return;
+        for (Direction direction : Direction.values()) {
+            BlockPos targetPos = worldPosition.relative(direction);
+            if (!level.hasChunkAt(targetPos)) continue;
+            IItemHandler target = level.getCapability(Capabilities.ItemHandler.BLOCK, targetPos, direction.getOpposite());
+            if (target == null) continue;
+            ItemStack remainder = available.copy();
+            for (int slot = 0; slot < target.getSlots() && !remainder.isEmpty(); slot++)
+                remainder = target.insertItem(slot, remainder, false);
+            int moved = available.getCount() - remainder.getCount();
+            if (moved <= 0) continue;
+            inventory.extractItem(OUTPUT, moved, false);
+            setChanged();
+            available = inventory.getStackInSlot(OUTPUT);
+            if (available.isEmpty()) break;
+        }
     }
     private boolean canAdd(net.minecraft.world.item.Item item) {
         ItemStack out = inventory.getStackInSlot(OUTPUT);

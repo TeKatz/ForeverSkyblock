@@ -36,7 +36,9 @@ public final class CondenserJeiPlugin implements IModPlugin {
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(TYPE, FreezingCategory.TYPE, CrucibleCategory.TYPE)),
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(WASHING_TYPE)),
                 () -> runtime.getRecipesGui().showTypes(java.util.List.of(GARDEN_TYPE)),
-                () -> runtime.getRecipesGui().showTypes(java.util.List.of(AscensionCategory.TYPE)));
+                () -> runtime.getRecipesGui().showTypes(java.util.List.of(AscensionCategory.TYPE)),
+                () -> runtime.getRecipesGui().showTypes(java.util.List.of(CrucibleCategory.TYPE)),
+                () -> runtime.getRecipesGui().showTypes(java.util.List.of(REFINING_TYPE)));
     }
     @Override public void onRuntimeUnavailable() {
         de.tekatz.foreverskyblock.client.ClientMachineRecipes.clear();

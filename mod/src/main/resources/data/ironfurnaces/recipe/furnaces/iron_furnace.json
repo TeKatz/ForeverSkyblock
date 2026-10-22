@@ -1,0 +1,21 @@
+{
+  "neoforge:conditions": [
+    { "type": "neoforge:mod_loaded", "modid": "ironfurnaces" }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "BIB",
+    "IFI",
+    "BIB"
+  ],
+  "key": {
+    "B": { "item": "minecraft:iron_block" },
+    "I": { "item": "minecraft:iron_ingot" },
+    "F": { "item": "minecraft:furnace" }
+  },
+  "result": {
+    "id": "ironfurnaces:iron_furnace",
+    "count": 1
+  }
+}

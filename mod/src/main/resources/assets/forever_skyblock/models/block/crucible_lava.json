@@ -1,0 +1,38 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "lava": "minecraft:block/lava_still",
+    "heat": "forever_skyblock:block/crucible_heated",
+    "particle": "minecraft:block/lava_still"
+  },
+  "elements": [
+    {
+      "from": [3.05, 8.4, 3.05],
+      "to": [12.95, 8.6, 12.95],
+      "faces": {
+        "up": { "texture": "#lava" },
+        "north": { "texture": "#lava" },
+        "south": { "texture": "#lava" },
+        "west": { "texture": "#lava" },
+        "east": { "texture": "#lava" }
+      }
+    },
+    {
+      "from": [0.0, 5.0, 0.0], "to": [16.0, 7.0, 0.20],
+      "faces": { "north": { "texture": "#heat" } }
+    },
+    {
+      "from": [0.0, 5.0, 15.80], "to": [16.0, 7.0, 16.0],
+      "faces": { "south": { "texture": "#heat" } }
+    },
+    {
+      "from": [0.0, 5.0, 0.20], "to": [0.20, 7.0, 15.80],
+      "faces": { "west": { "texture": "#heat" } }
+    },
+    {
+      "from": [15.80, 5.0, 0.20], "to": [16.0, 7.0, 15.80],
+      "faces": { "east": { "texture": "#heat" } }
+    }
+  ]
+}
