@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -255,7 +256,7 @@ public static class SelfUpdateService
 
         var restart = new ProcessStartInfo(targetExe)
         {
-            UseShellExecute = true,
+            UseShellExecute = false,
             WorkingDirectory = Path.GetDirectoryName(targetExe) ?? Environment.CurrentDirectory
         };
         restart.ArgumentList.Add("--updated-from");
