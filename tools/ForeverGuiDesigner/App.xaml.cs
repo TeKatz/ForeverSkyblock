@@ -28,6 +28,7 @@ public partial class App : Application
             window.EnableForeverPhase5InteractionCorrections();
             window.EnableForeverPhase6Tools();
             window.EnableForeverPhase6StableAnimation();
+            window.EnableForeverPhase7Tools();
             window.EnableSelfUpdater();
         }, DispatcherPriority.ContextIdle);
     }
