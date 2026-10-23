@@ -8,10 +8,18 @@ on:
   push:
     branches:
       - main
+      - feature/forever-gui-designer-mvp
     paths:
       - 'tools/ForeverGuiDesigner/**'
       - '.github/workflows/gui-designer.yml'
   workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gui-designer-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -30,7 +38,11 @@ jobs:
         run: dotnet restore .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
 
       - name: Build
-        run: dotnet build .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj --configuration Release --no-restore
+        run: >-
+          dotnet build .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
+          --configuration Release
+          --no-restore
+          -p:InformationalVersion=${{ github.sha }}
 
       - name: Publish portable Windows app
         run: >-
@@ -42,7 +54,31 @@ jobs:
           -p:IncludeNativeLibrariesForSelfExtract=true
           -p:DebugType=None
           -p:DebugSymbols=false
+          -p:InformationalVersion=${{ github.sha }}
           --output .\artifacts\ForeverGuiDesigner
+
+      - name: Create update manifest
+        if: github.event_name == 'push'
+        shell: pwsh
+        run: |
+          $channel = if ($env:GITHUB_REF -eq 'refs/heads/main') { 'stable' } else { 'development' }
+          $exe = Resolve-Path '.\artifacts\ForeverGuiDesigner\ForeverGuiDesigner.exe'
+          $item = Get-Item $exe
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          $manifest = [ordered]@{
+            channel = $channel
+            commit = $env:GITHUB_SHA
+            asset = 'ForeverGuiDesigner.exe'
+            sha256 = $hash
+            size = $item.Length
+            builtAt = (Get-Date).ToUniversalTime().ToString('o')
+            notes = if ($channel -eq 'development') {
+              'Latest development build from feature/forever-gui-designer-mvp.'
+            } else {
+              'Latest stable build from main.'
+            }
+          }
+          $manifest | ConvertTo-Json | Set-Content '.\artifacts\update-manifest.json' -Encoding UTF8
 
       - name: Upload Windows app
         uses: actions/upload-artifact@v4
@@ -51,3 +87,33 @@ jobs:
           path: .\artifacts\ForeverGuiDesigner\ForeverGuiDesigner.exe
           if-no-files-found: error
           compression-level: 0
+
+      - name: Publish self-update channel
+        if: github.event_name == 'push'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $channel = if ($env:GITHUB_REF -eq 'refs/heads/main') { 'stable' } else { 'development' }
+          $tag = "gui-designer-$channel"
+          $title = if ($channel -eq 'stable') { 'Forever GUI Designer Stable' } else { 'Forever GUI Designer Development' }
+          $notes = "Automated $channel channel for the Forever GUI Designer. Build: $env:GITHUB_SHA"
+
+          gh release view $tag *> $null
+          $exists = $LASTEXITCODE -eq 0
+          $global:LASTEXITCODE = 0
+
+          if (-not $exists) {
+            if ($channel -eq 'development') {
+              gh release create $tag --target $env:GITHUB_SHA --title $title --notes $notes --prerelease
+            } else {
+              gh release create $tag --target $env:GITHUB_SHA --title $title --notes $notes
+            }
+          } else {
+            gh release edit $tag --title $title --notes $notes
+          }
+
+          gh release upload $tag `
+            '.\artifacts\ForeverGuiDesigner\ForeverGuiDesigner.exe#ForeverGuiDesigner.exe' `
+            '.\artifacts\update-manifest.json#update-manifest.json' `
+            --clobber
