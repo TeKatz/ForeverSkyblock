@@ -26,21 +26,6 @@ The editor stores positions in Minecraft GUI-local coordinates rather than deskt
 - Drag multiple selected elements as one group.
 - Align left, horizontal center, right, top, vertical center or bottom.
 - Bring selected elements to the front or send them behind other elements.
-- Smart center/edge guides while dragging.
-- Equal horizontal/vertical distribution.
-- Eight resize handles directly on the canvas; Shift keeps aspect ratio, Alt resizes from center.
-
-### Layers / hierarchy
-
-Phase 8 adds a project-editor style hierarchy above the flat element list:
-
-- grouped / ungrouped tree
-- hide/show
-- lock/unlock (locked layers cannot be dragged on the canvas)
-- automatic groups and ungroup
-- layer up/down
-- drag-and-drop layer order and group reassignment
-- collapse/expand through the tree
 
 ### Minecraft-oriented components
 
@@ -50,24 +35,6 @@ Phase 8 adds a project-editor style hierarchy above the flat element list:
 - Texture
 - Player Inventory
 - Hotbar
-
-### True WYSIWYG text
-
-Phase 8 replaces generic WPF text in editable Text/Button previews with deterministic pixel rendering and Minecraft-like behaviour:
-
-- one-pixel shadow
-- left / center / right alignment
-- 0.25x–4x scale
-- native-pixel placement
-- visible overflow warning when the measured text no longer fits the element bounds
-
-The renderer uses the editor's compact deterministic bitmap fallback where a vanilla font atlas is not part of the selected project assets, so the canvas stays pixel-stable and self-contained.
-
-### Real item / block previews
-
-Slots can carry project-aware preview metadata. For mod items the resolver reads the real `models/item/*.json`, follows its texture reference and loads the referenced PNG from the selected ForeverSkyblock repository instead of guessing a filename.
-
-Preview controls include stack count, durability bar, ghost opacity and glint indication. Ascension's imported core slot is seeded from the actual `forever_skyblock:forever_core` item declared by `AscensionMenu`.
 
 ### Forever Skyblock asset browser
 
@@ -103,28 +70,23 @@ Generated/imported panel `Content` values are editor metadata only and are suppr
 
 ### Detailed Washing scene
 
-Washing mirrors the real `WashingScreen` / `MachineProcessEffects.washing` presentation with Running / Idle / Blocked / No water states, water surface, animated ripples/particles, moving meter highlight, timing, recipe summary, hints and persistent per-frame visuals.
+Washing mirrors the real `WashingScreen` / `MachineProcessEffects.washing` presentation with runtime states, water status, animated water/process effects, timing, meters, recipe summary and hints.
 
-### Phase 8 machine scenes
+### Phase 8 — True WYSIWYG
 
-Crucible, Ascension Chamber and Refining Condenser now receive editable WYSIWYG scene layers derived from the current Java Screen/Menu coordinates rather than hand-written generic mockups.
+- Deterministic Minecraft-style pixel text previews with shadow, alignment, scale controls and clipping warnings.
+- Project-aware item previews resolved from real item model JSON to repository textures, including stack count, durability, ghost and glint metadata.
+- Hierarchy/layer editing with groups, visibility, locks and drag/drop ordering.
+- Eight resize handles, pixel snapping, Shift aspect-ratio preservation and Alt center-resize.
+- Smart center/edge guides and equal horizontal/vertical distribution.
+- Unified Play/Pause/Stop/Loop/Scrub timeline with 0.25x / 0.5x / 1x / 2x speed.
+- Editable reconstructed Crucible, Ascension Chamber and Refining Condenser scenes based on their real Screen/Menu/MachineLayout coordinates.
 
-- **Crucible:** heat/tank/freezer/process panels, input/output labels, melt/freeze meters and the real Washing-layout footprint (248×286).
-- **Ascension Chamber:** title/core area, counter-rotating conversion rings, reward panel, conversion meter, recipient panel and real Forever Core input; uses the Ascension footprint (248×270).
-- **Refining Condenser:** energy panel/meter, material/catalyst/output scene, refining meter and information panel on the real 248×286 layout.
+#### Phase 8 performance guard (0.8.1)
 
-### Animation timeline
+The first 0.8.0 implementation attached hierarchy rebuilding, WYSIWYG decoration and resize-handle recreation directly to WPF `PreviewCanvas.LayoutUpdated`. Because those operations invalidate layout themselves, navigation and animation could trigger a self-amplifying UI-thread refresh storm.
 
-The Phase 8 timeline unifies fixed snapshots and live previewing:
-
-- Play / Pause / Stop
-- Loop
-- scrub slider
-- elapsed / duration display
-- 0.25x / 0.5x / 1x / 2x speed
-- existing 0/25/50/75/100% snapshots remain available
-
-Timeline ticks only mutate persistent meter/ring/Washing visuals. They never call `RenderLayout()` per frame.
+0.8.1 permanently gates that broad callback after initialization. A lightweight visual-generation detector now coalesces refresh work and performs a full Phase 8 refresh only when `RenderLayout()` actually replaces the editable visual generation. Timeline frames, guide movement and normal WPF layout passes therefore no longer rebuild the hierarchy or overlays. Resize handles follow drag operations through coordinate-only updates.
 
 ### Forever widgets
 
@@ -166,10 +128,10 @@ dotnet run --project .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
 
 The workflow publishes a self-contained `win-x64` build and refreshes the selected fixed self-update channel on successful push builds.
 
-## Next steps — Phase 9
+## Next steps
 
-- GUI Scale 1 / 2 / 3 / 4 / Auto simulator with selectable target resolution.
-- Source live reload for Java/assets.
-- Validation for overlaps, out-of-bounds elements, text clipping, invalid assets and inconsistent slot positions.
-- Reviewed Java diff/apply-back with selectable unambiguous coordinate changes, backup and undo.
-- Extend runtime tooltip/button state previews where useful.
+- GUI Scale simulator.
+- Java/asset source live reload.
+- Validation for overlaps, out-of-bounds geometry, text clipping, invalid assets and inconsistent slots.
+- Reviewed Java diff/apply-back with selectable safe changes and backup/undo.
+- Richer tooltip/button runtime-state previews.
