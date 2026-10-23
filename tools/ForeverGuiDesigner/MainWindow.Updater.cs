@@ -114,9 +114,25 @@ public partial class MainWindow
         SetUpdateButton("Checking…", false, accent: false);
         SetUpdateStatus($"Checking {SelectedUpdateChannel}…", "#93A5B0");
 
+        using var watchdogCancellation = new CancellationTokenSource();
+
         try
         {
-            var manifest = await ResolveUpdateManifestAsync(SelectedUpdateChannel);
+            // This watchdog deliberately lives above HttpClient. DNS, TLS and proxy
+            // failures on Windows can occasionally leave a network Task alive longer
+            // than its own cancellation timeout. The editor UI must never depend on
+            // that Task completing, so after 18 seconds we abandon the whole check.
+            var resolveTask = ResolveUpdateManifestAsync(SelectedUpdateChannel, watchdogCancellation.Token);
+            var watchdogTask = Task.Delay(TimeSpan.FromSeconds(18));
+            var completed = await Task.WhenAny(resolveTask, watchdogTask);
+
+            if (completed != resolveTask)
+            {
+                watchdogCancellation.Cancel();
+                throw new TimeoutException("The complete update check exceeded the 18 second safety timeout.");
+            }
+
+            var manifest = await resolveTask;
             if (manifest is null)
             {
                 SetUpdateStatus(SelectedUpdateChannel == UpdateChannel.Stable
@@ -152,16 +168,23 @@ public partial class MainWindow
         }
         finally
         {
+            watchdogCancellation.Cancel();
             _updateBusy = false;
         }
     }
 
-    private static async Task<UpdateManifest?> ResolveUpdateManifestAsync(UpdateChannel channel)
+    private static async Task<UpdateManifest?> ResolveUpdateManifestAsync(
+        UpdateChannel channel,
+        CancellationToken cancellationToken)
     {
         Exception? primaryError = null;
         try
         {
-            return await SelfUpdateService.CheckAsync(channel);
+            return await SelfUpdateService.CheckAsync(channel, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -170,7 +193,11 @@ public partial class MainWindow
 
         try
         {
-            return await ReleaseManifestFallback.CheckAsync(channel);
+            return await ReleaseManifestFallback.CheckAsync(channel, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception fallbackError)
         {
