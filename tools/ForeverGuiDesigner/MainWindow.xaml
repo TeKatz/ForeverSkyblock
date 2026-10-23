@@ -13,48 +13,141 @@
     <Window.Resources>
         <Style TargetType="Button">
             <Setter Property="Margin" Value="2"/>
-            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Padding" Value="9,5"/>
+            <Setter Property="Foreground" Value="#F2F5F7"/>
+            <Setter Property="Background" Value="#30363D"/>
+            <Setter Property="BorderBrush" Value="#4A535D"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Chrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#3A434D"/>
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#6D8192"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#20262C"/>
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#80B7D8"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Chrome" Property="Opacity" Value="0.42"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
+
         <Style TargetType="TextBox">
             <Setter Property="Margin" Value="0,2,0,8"/>
+            <Setter Property="Foreground" Value="#F0F3F5"/>
+            <Setter Property="Background" Value="#11161B"/>
+            <Setter Property="BorderBrush" Value="#46515B"/>
+            <Setter Property="CaretBrush" Value="#FFFFFF"/>
+            <Setter Property="SelectionBrush" Value="#335F7B"/>
+            <Setter Property="Padding" Value="5,3"/>
+        </Style>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="Foreground" Value="#F2F5F7"/>
+            <Setter Property="Background" Value="#2B3137"/>
+            <Setter Property="BorderBrush" Value="#4B5660"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="Margin" Value="2"/>
+        </Style>
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="#F2F5F7"/>
+            <Setter Property="Background" Value="#242A30"/>
+            <Setter Property="Padding" Value="6,3"/>
+        </Style>
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="#E8E8E8"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="#E8E8E8"/>
+            <Setter Property="Margin" Value="6,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="#E8E8E8"/>
         </Style>
     </Window.Resources>
 
     <DockPanel>
-        <ToolBar DockPanel.Dock="Top" Background="#24272B" Foreground="#E8E8E8">
-            <Button Click="New_Click">New</Button>
-            <Button Click="Open_Click">Open</Button>
-            <Button Click="Save_Click">Save</Button>
-            <Button Click="SaveAs_Click">Save As</Button>
-            <Separator/>
-            <Button Click="ChooseRepo_Click">Repo…</Button>
-            <TextBlock x:Name="RepoText" Width="210" Margin="4,0,8,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="#ADB4BC"/>
-            <Separator/>
-            <Button Tag="Slot" Click="AddElement_Click">+ Slot</Button>
-            <Button Tag="Text" Click="AddElement_Click">+ Text</Button>
-            <Button Tag="Button" Click="AddElement_Click">+ Button</Button>
-            <Button Tag="Texture" Click="AddElement_Click">+ Texture</Button>
-            <Button Tag="PlayerInventory" Click="AddElement_Click">+ Inventory</Button>
-            <Button Tag="Hotbar" Click="AddElement_Click">+ Hotbar</Button>
-            <Separator/>
-            <Button x:Name="UndoButton" Click="Undo_Click" ToolTip="Undo (Ctrl+Z)">Undo</Button>
-            <Button x:Name="RedoButton" Click="Redo_Click" ToolTip="Redo (Ctrl+Y)">Redo</Button>
-            <Separator/>
-            <TextBlock Margin="6,0,4,0" VerticalAlignment="Center">Zoom</TextBlock>
-            <ComboBox x:Name="ZoomCombo" Width="76" SelectedIndex="2" SelectionChanged="ZoomCombo_SelectionChanged">
-                <ComboBoxItem Tag="2">200%</ComboBoxItem>
-                <ComboBoxItem Tag="3">300%</ComboBoxItem>
-                <ComboBoxItem Tag="4">400%</ComboBoxItem>
-                <ComboBoxItem Tag="6">600%</ComboBoxItem>
-            </ComboBox>
-            <TextBlock Margin="10,0,4,0" VerticalAlignment="Center">Snap</TextBlock>
-            <ComboBox x:Name="SnapCombo" Width="62" SelectedIndex="0" SelectionChanged="SnapCombo_SelectionChanged">
-                <ComboBoxItem Tag="1">1 px</ComboBoxItem>
-                <ComboBoxItem Tag="2">2 px</ComboBoxItem>
-                <ComboBoxItem Tag="4">4 px</ComboBoxItem>
-                <ComboBoxItem Tag="8">8 px</ComboBoxItem>
-            </ComboBox>
-        </ToolBar>
+        <Border DockPanel.Dock="Top"
+                Background="#1D2228"
+                BorderBrush="#39434C"
+                BorderThickness="0,0,0,1"
+                Padding="8,6">
+            <StackPanel>
+                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled"
+                              CanContentScroll="False">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="FILE" Foreground="#7F929F" FontSize="10" FontWeight="Bold" Margin="4,0,6,0" VerticalAlignment="Center"/>
+                        <Button Click="New_Click">New</Button>
+                        <Button Click="Open_Click">Open</Button>
+                        <Button Click="Save_Click">Save</Button>
+                        <Button Click="SaveAs_Click">Save As</Button>
+                        <Button Click="ChooseRepo_Click" ToolTip="Choose the local ForeverSkyblock repository">Repo…</Button>
+                        <TextBlock x:Name="RepoText" Width="180" Margin="6,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="#AAB8C2"/>
+
+                        <Border Width="1" Height="24" Background="#3B454E" Margin="3,0,7,0"/>
+                        <TextBlock Text="ADD" Foreground="#7F929F" FontSize="10" FontWeight="Bold" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <Button Tag="Slot" Click="AddElement_Click">Slot</Button>
+                        <Button Tag="Text" Click="AddElement_Click">Text</Button>
+                        <Button Tag="Button" Click="AddElement_Click">Button</Button>
+                        <Button Tag="Texture" Click="AddElement_Click">Texture</Button>
+                        <Button Tag="PlayerInventory" Click="AddElement_Click">Inventory</Button>
+                        <Button Tag="Hotbar" Click="AddElement_Click">Hotbar</Button>
+
+                        <Border Width="1" Height="24" Background="#3B454E" Margin="7,0"/>
+                        <TextBlock Text="EDIT" Foreground="#7F929F" FontSize="10" FontWeight="Bold" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <Button x:Name="UndoButton" Click="Undo_Click" ToolTip="Undo (Ctrl+Z)">Undo</Button>
+                        <Button x:Name="RedoButton" Click="Redo_Click" ToolTip="Redo (Ctrl+Y)">Redo</Button>
+
+                        <Border Width="1" Height="24" Background="#3B454E" Margin="7,0"/>
+                        <TextBlock Text="VIEW" Foreground="#7F929F" FontSize="10" FontWeight="Bold" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Margin="3,0" VerticalAlignment="Center" Foreground="#AEBBC4">Zoom</TextBlock>
+                        <ComboBox x:Name="ZoomCombo" Width="78" SelectedIndex="2" SelectionChanged="ZoomCombo_SelectionChanged">
+                            <ComboBoxItem Tag="2">200%</ComboBoxItem>
+                            <ComboBoxItem Tag="3">300%</ComboBoxItem>
+                            <ComboBoxItem Tag="4">400%</ComboBoxItem>
+                            <ComboBoxItem Tag="6">600%</ComboBoxItem>
+                        </ComboBox>
+                        <TextBlock Margin="8,0,3,0" VerticalAlignment="Center" Foreground="#AEBBC4">Snap</TextBlock>
+                        <ComboBox x:Name="SnapCombo" Width="68" SelectedIndex="0" SelectionChanged="SnapCombo_SelectionChanged">
+                            <ComboBoxItem Tag="1">1 px</ComboBoxItem>
+                            <ComboBoxItem Tag="2">2 px</ComboBoxItem>
+                            <ComboBoxItem Tag="4">4 px</ComboBoxItem>
+                            <ComboBoxItem Tag="8">8 px</ComboBoxItem>
+                        </ComboBox>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <Border Height="1" Background="#303943" Margin="0,5,0,5"/>
+
+                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled"
+                              CanContentScroll="False">
+                    <StackPanel x:Name="SkyblockBarHost" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="FOREVER SKYBLOCK" Foreground="#80C7D6" FontSize="10" FontWeight="Bold" Margin="4,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Project-aware machine preview" Foreground="#7F929F" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </StackPanel>
+        </Border>
 
         <StatusBar DockPanel.Dock="Bottom" Background="#24272B" Foreground="#CFCFCF">
             <TextBlock x:Name="StatusText"/>
@@ -90,12 +183,13 @@
                     <TabItem Header="Assets">
                         <DockPanel Margin="6">
                             <StackPanel DockPanel.Dock="Top">
-                                <TextBlock Text="Search textures" Foreground="#AEB4BA"/>
+                                <TextBlock Text="Repository textures" FontWeight="SemiBold" Foreground="#D9E2E8" Margin="0,0,0,2"/>
+                                <TextBlock Text="Search block, item and GUI PNG assets" Foreground="#8F9DA7" FontSize="10" Margin="0,0,0,4"/>
                                 <TextBox x:Name="AssetFilterBox" TextChanged="AssetFilterBox_TextChanged"/>
                                 <TextBlock x:Name="AssetHintText" TextWrapping="Wrap" Foreground="#929AA2" Margin="0,0,0,8"
                                            Text="Choose the ForeverSkyblock repository to browse PNG assets."/>
                             </StackPanel>
-                            <Button DockPanel.Dock="Bottom" Click="UseAsset_Click" Margin="0,8,0,0" Padding="8,6">Use selected asset</Button>
+                            <Button DockPanel.Dock="Bottom" Click="UseAsset_Click" Margin="0,8,0,0" Padding="8,6">Use selected texture</Button>
                             <ListBox x:Name="AssetList"
                                      Background="#17191C"
                                      Foreground="#E8E8E8"
@@ -103,17 +197,22 @@
                                      MouseDoubleClick="AssetList_MouseDoubleClick">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="2">
+                                        <Grid Margin="3">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="38"/>
+                                                <ColumnDefinition Width="46"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
-                                            <Border Width="32" Height="32" Background="#101214" BorderBrush="#40464D" BorderThickness="1">
-                                                <Image Source="{Binding FullPath}" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                                            <Border Width="40" Height="40" Background="#11161B" BorderBrush="#46515B" BorderThickness="1" Padding="3">
+                                                <Grid Background="#252B31">
+                                                    <Image Source="{Binding PreviewSource}"
+                                                           Stretch="Uniform"
+                                                           RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                                                </Grid>
                                             </Border>
-                                            <StackPanel Grid.Column="1" Margin="6,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding RelativePath}" FontSize="10" Foreground="#939AA2" TextTrimming="CharacterEllipsis"/>
+                                            <StackPanel Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Foreground="#EEF2F4"/>
+                                                <TextBlock Text="{Binding Category}" FontSize="10" Foreground="#79B8C9" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding RelativePath}" FontSize="9" Foreground="#838F98" TextTrimming="CharacterEllipsis"/>
                                             </StackPanel>
                                         </Grid>
                                     </DataTemplate>
