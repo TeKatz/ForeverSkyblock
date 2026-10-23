@@ -124,6 +124,8 @@ dotnet run --project .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
 
 The GitHub Actions workflow publishes a self-contained `win-x64` build so the application can be tested without installing the .NET SDK.
 
+Phase 5 code passed restore, Release build, self-contained `win-x64` publish and artifact upload on commit `c062fb276093bcbb8129a8bbdbe5cdfa1e825dbd`.
+
 ## Layout format
 
 A layout contains its logical Minecraft GUI size and a list of elements:
