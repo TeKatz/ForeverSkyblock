@@ -11,6 +11,8 @@ public partial class MainWindow
     private ComboBox? _updateChannelCombo;
     private TextBlock? _updateStatusText;
     private Button? _updateButton;
+    private Button? _updateLogButton;
+    private CancellationTokenSource? _updateOperationCancellation;
     private bool _updateBusy;
     private bool _updaterInitialized;
 
@@ -48,10 +50,20 @@ public partial class MainWindow
         _updateButton = new Button
         {
             Content = "Check",
-            ToolTip = "Check GitHub for a newer Forever GUI Designer build. Updates are only installed after you confirm."
+            ToolTip = "Check GitHub for a newer Forever GUI Designer build. During a check this button cancels the operation."
         };
         _updateButton.Click += UpdateButton_Click;
         SkyblockBarHost.Children.Add(_updateButton);
+
+        _updateLogButton = new Button
+        {
+            Content = "Log",
+            ToolTip = $"Open updater diagnostics: {UpdaterDiagnostics.LogPath}"
+        };
+        _updateLogButton.Click += (_, _) => UpdaterDiagnostics.OpenLog();
+        SkyblockBarHost.Children.Add(_updateLogButton);
+
+        UpdaterDiagnostics.Write($"Updater initialized. Build={SelfUpdateService.CurrentCommit}, channel={SelectedUpdateChannel}, autoCheck={_updatePreferences.AutoCheck}.");
 
         if (_updatePreferences.AutoCheck)
             _ = CheckForUpdatesAsync(showErrors: false);
@@ -68,6 +80,9 @@ public partial class MainWindow
         if (!_updaterInitialized)
             return;
 
+        if (_updateBusy)
+            _updateOperationCancellation?.Cancel();
+
         _updatePreferences.Channel = SelectedUpdateChannel;
         SelfUpdateService.SavePreferences(_updatePreferences);
         _availableUpdate = null;
@@ -78,7 +93,13 @@ public partial class MainWindow
     private async void UpdateButton_Click(object sender, RoutedEventArgs e)
     {
         if (_updateBusy)
+        {
+            UpdaterDiagnostics.Write("User requested cancellation of the active updater operation.");
+            _updateOperationCancellation?.Cancel();
+            SetUpdateStatus("Canceling update check…", "#C5A474");
+            SetUpdateButton("Canceling…", false, accent: false);
             return;
+        }
 
         if (_availableUpdate is null)
         {
@@ -111,31 +132,47 @@ public partial class MainWindow
 
         _updateBusy = true;
         _availableUpdate = null;
-        SetUpdateButton("Checking…", false, accent: false);
-        SetUpdateStatus($"Checking {SelectedUpdateChannel}…", "#93A5B0");
+        var channel = SelectedUpdateChannel;
+        var operationCancellation = new CancellationTokenSource();
+        _updateOperationCancellation = operationCancellation;
 
-        using var watchdogCancellation = new CancellationTokenSource();
+        SetUpdateButton("Cancel", true, accent: false);
+        SetUpdateStatus($"Checking {channel}…", "#93A5B0");
+        UpdaterDiagnostics.Write($"Update check started for {channel}. UI thread={Environment.CurrentManagedThreadId}.");
 
         try
         {
-            // This watchdog deliberately lives above HttpClient. DNS, TLS and proxy
-            // failures on Windows can occasionally leave a network Task alive longer
-            // than its own cancellation timeout. The editor UI must never depend on
-            // that Task completing, so after 18 seconds we abandon the whole check.
-            var resolveTask = ResolveUpdateManifestAsync(SelectedUpdateChannel, watchdogCancellation.Token);
+            // The entire network resolver is started on a worker thread. This is
+            // intentionally stronger than normal async HttpClient usage: if Windows
+            // blocks synchronously in DNS/TLS/proxy setup before GetAsync yields a
+            // Task, the WPF dispatcher still remains free to run the watchdog/cancel.
+            var resolveTask = Task.Run(
+                () => ResolveUpdateManifestAsync(channel, operationCancellation.Token),
+                CancellationToken.None);
+
+            UpdaterDiagnostics.Write("Network resolver dispatched to worker thread; 18-second UI watchdog armed.");
+
             var watchdogTask = Task.Delay(TimeSpan.FromSeconds(18));
             var completed = await Task.WhenAny(resolveTask, watchdogTask);
 
             if (completed != resolveTask)
             {
-                watchdogCancellation.Cancel();
-                throw new TimeoutException("The complete update check exceeded the 18 second safety timeout.");
+                UpdaterDiagnostics.Write("UI watchdog fired after 18 seconds; abandoning network resolver.");
+                operationCancellation.Cancel();
+                _ = resolveTask.ContinueWith(
+                    task => UpdaterDiagnostics.Write($"Abandoned resolver later completed: status={task.Status}, error={task.Exception?.GetBaseException().Message}"),
+                    TaskScheduler.Default);
+                throw new TimeoutException("The complete update check exceeded the 18 second UI safety timeout. See updater.log for the last completed network step.");
             }
 
             var manifest = await resolveTask;
+            UpdaterDiagnostics.Write(manifest is null
+                ? "Update resolver completed without a release manifest."
+                : $"Update resolver completed. Remote build={manifest.Commit}, size={manifest.Size}.");
+
             if (manifest is null)
             {
-                SetUpdateStatus(SelectedUpdateChannel == UpdateChannel.Stable
+                SetUpdateStatus(channel == UpdateChannel.Stable
                     ? "No Stable build yet"
                     : "No Development build yet", "#93A5B0");
                 SetUpdateButton("Check", true, accent: false);
@@ -153,14 +190,21 @@ public partial class MainWindow
             SetUpdateStatus($"Update available · {SelfUpdateService.ShortCommit(manifest.Commit)}", "#8FD7E8");
             SetUpdateButton("Update & Restart", true, accent: true);
         }
+        catch (OperationCanceledException)
+        {
+            UpdaterDiagnostics.Write("Update check canceled.");
+            SetUpdateStatus("Update check canceled", "#C5A474");
+            SetUpdateButton("Retry", true, accent: false);
+        }
         catch (Exception ex)
         {
+            UpdaterDiagnostics.Write($"Update check failed: {ex}");
             SetUpdateStatus("Update check unavailable", "#C5A474");
             SetUpdateButton("Retry", true, accent: false);
             if (showErrors)
             {
                 MessageBox.Show(this,
-                    $"Could not check for updates through either GitHub check path.\n\n{ex.Message}",
+                    $"Could not check for updates.\n\n{ex.Message}\n\nDiagnostics: {UpdaterDiagnostics.LogPath}",
                     "Update check failed",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
@@ -168,8 +212,10 @@ public partial class MainWindow
         }
         finally
         {
-            watchdogCancellation.Cancel();
+            if (ReferenceEquals(_updateOperationCancellation, operationCancellation))
+                _updateOperationCancellation = null;
             _updateBusy = false;
+            UpdaterDiagnostics.Write("Update check UI operation finished and busy state released.");
         }
     }
 
@@ -177,30 +223,40 @@ public partial class MainWindow
         UpdateChannel channel,
         CancellationToken cancellationToken)
     {
+        UpdaterDiagnostics.Write($"Worker resolver entered on thread {Environment.CurrentManagedThreadId}; trying GitHub API.");
         Exception? primaryError = null;
         try
         {
-            return await SelfUpdateService.CheckAsync(channel, cancellationToken);
+            var result = await SelfUpdateService.CheckAsync(channel, cancellationToken);
+            UpdaterDiagnostics.Write("GitHub API path completed successfully.");
+            return result;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            UpdaterDiagnostics.Write("GitHub API path observed cancellation.");
             throw;
         }
         catch (Exception ex)
         {
             primaryError = ex;
+            UpdaterDiagnostics.Write($"GitHub API path failed: {ex.GetType().Name}: {ex.Message}");
         }
 
         try
         {
-            return await ReleaseManifestFallback.CheckAsync(channel, cancellationToken);
+            UpdaterDiagnostics.Write("Trying release-manifest fallback path.");
+            var result = await ReleaseManifestFallback.CheckAsync(channel, cancellationToken);
+            UpdaterDiagnostics.Write("Release-manifest fallback completed successfully.");
+            return result;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            UpdaterDiagnostics.Write("Release-manifest fallback observed cancellation.");
             throw;
         }
         catch (Exception fallbackError)
         {
+            UpdaterDiagnostics.Write($"Release-manifest fallback failed: {fallbackError.GetType().Name}: {fallbackError.Message}");
             throw new InvalidOperationException(
                 $"GitHub API: {primaryError?.Message ?? "unknown error"}\n" +
                 $"Release manifest fallback: {fallbackError.Message}",
@@ -211,8 +267,11 @@ public partial class MainWindow
     private async Task DownloadAndInstallAsync(UpdateManifest manifest)
     {
         _updateBusy = true;
-        SetUpdateButton("Downloading…", false, accent: true);
+        var operationCancellation = new CancellationTokenSource();
+        _updateOperationCancellation = operationCancellation;
+        SetUpdateButton("Cancel", true, accent: true);
         SetUpdateStatus("Downloading update…", "#8FD7E8");
+        UpdaterDiagnostics.Write($"Update download started. Build={manifest.Commit}, size={manifest.Size}.");
 
         try
         {
@@ -220,28 +279,43 @@ public partial class MainWindow
             {
                 var percent = (int)Math.Round(value * 100);
                 SetUpdateStatus($"Downloading… {percent}%", "#8FD7E8");
-                SetUpdateButton($"{percent}%", false, accent: true);
+                SetUpdateButton("Cancel", true, accent: true);
             });
 
-            var downloaded = await SelfUpdateService.DownloadAsync(SelectedUpdateChannel, manifest, progress);
+            var downloaded = await SelfUpdateService.DownloadAsync(
+                SelectedUpdateChannel,
+                manifest,
+                progress,
+                operationCancellation.Token);
+            UpdaterDiagnostics.Write($"Update download and verification completed: {downloaded}");
             SetUpdateStatus("Verified · restarting…", "#86C99B");
             SetUpdateButton("Restarting…", false, accent: true);
 
             SelfUpdateService.BeginApplyAndRestart(downloaded, manifest);
+            UpdaterDiagnostics.Write("Update helper started; shutting down editor.");
             Application.Current.Shutdown();
+        }
+        catch (OperationCanceledException)
+        {
+            UpdaterDiagnostics.Write("Update download canceled.");
+            SetUpdateStatus("Update canceled", "#C5A474");
+            SetUpdateButton("Retry", true, accent: false);
         }
         catch (Exception ex)
         {
+            UpdaterDiagnostics.Write($"Update install failed: {ex}");
             SetUpdateStatus("Update failed", "#E3A28E");
             SetUpdateButton("Retry", true, accent: false);
             MessageBox.Show(this,
-                $"The update could not be installed. The current editor was not replaced.\n\n{ex.Message}",
+                $"The update could not be installed. The current editor was not replaced.\n\n{ex.Message}\n\nDiagnostics: {UpdaterDiagnostics.LogPath}",
                 "Update failed",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }
         finally
         {
+            if (ReferenceEquals(_updateOperationCancellation, operationCancellation))
+                _updateOperationCancellation = null;
             _updateBusy = false;
         }
     }
@@ -252,7 +326,7 @@ public partial class MainWindow
             return;
         _updateStatusText.Text = text;
         _updateStatusText.Foreground = Brush(color);
-        _updateStatusText.ToolTip = $"Current build: {SelfUpdateService.CurrentCommit}";
+        _updateStatusText.ToolTip = $"Current build: {SelfUpdateService.CurrentCommit}\nLog: {UpdaterDiagnostics.LogPath}";
     }
 
     private void SetUpdateButton(string text, bool enabled, bool accent)
