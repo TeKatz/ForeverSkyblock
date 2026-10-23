@@ -1,29 +1,34 @@
 using System.Windows;
 using System.Windows.Threading;
+using ForeverGuiDesigner.Services;
 
 namespace ForeverGuiDesigner;
 
 public partial class App : Application
 {
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
+        if (await SelfUpdateService.TryRunApplyModeAsync(e.Args))
+        {
+            Shutdown();
+            return;
+        }
+
+        var window = new MainWindow();
+        MainWindow = window;
+        window.Show();
+
         Dispatcher.BeginInvoke(() =>
         {
-            if (Current.MainWindow is MainWindow window)
-            {
-                window.EnableForeverSkyblockTools();
-                window.EnableForeverPhase5Tools();
-                window.EnableForeverPhase5StateNormalization();
-                window.EnableForeverPhase5InteractionCorrections();
-                // Phase 6 depends on the project and state controls above so it can
-                // restyle every command ComboBox and add machine-specific scene controls.
-                window.EnableForeverPhase6Tools();
-                // Replace Phase 6's coarse full-presentation animation refresh with
-                // persistent scene visuals that mutate only their animated primitives.
-                window.EnableForeverPhase6StableAnimation();
-            }
+            window.EnableForeverSkyblockTools();
+            window.EnableForeverPhase5Tools();
+            window.EnableForeverPhase5StateNormalization();
+            window.EnableForeverPhase5InteractionCorrections();
+            window.EnableForeverPhase6Tools();
+            window.EnableForeverPhase6StableAnimation();
+            window.EnableSelfUpdater();
         }, DispatcherPriority.ContextIdle);
     }
 }
