@@ -2,6 +2,15 @@
 
 ## Development
 
+### 0.8.1 — Phase 8 performance hotfix
+
+- Fixed a severe WPF UI-thread regression where `PreviewCanvas.LayoutUpdated` rebuilt the Phase 8 hierarchy, redecorated every editor visual and removed/recreated all resize handles on virtually every layout pass.
+- The old broad `LayoutUpdated` refresh path is now permanently gated after Phase 8 initialization.
+- Added a lightweight visual-generation detector that coalesces refresh work and only performs a full Phase 8 refresh when `RenderLayout()` actually replaces the editor visuals.
+- Resize handles now follow dragged elements through coordinate-only updates instead of being recreated during movement.
+- Timeline and smart-guide layout invalidations no longer cascade into hierarchy/overlay rebuild storms.
+- Bumped the editor to 0.8.1.
+
 ### 0.8.0 — Phase 8: True WYSIWYG
 
 - Added deterministic Minecraft-style pixel text previews with one-pixel shadow, left/center/right alignment, scale controls and overflow warnings.
