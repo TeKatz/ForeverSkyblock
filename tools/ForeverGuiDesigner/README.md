@@ -119,7 +119,7 @@ These are ordinary editable layout elements and can be moved, resized, aligned, 
 
 ### Theme-safe command controls
 
-ComboBox controls in the command bars receive explicit high-contrast text, surface and border colors at runtime. This prevents Windows themes from producing unreadable light-on-light or dark-on-dark selected values.
+ComboBox controls in the command bars receive explicit high-contrast text, surface and border colors at runtime. This directly addresses Windows themes that render the native selection field as a light surface while inheriting light text, producing unreadable selected values.
 
 ### Java export
 
