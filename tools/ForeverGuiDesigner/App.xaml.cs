@@ -17,6 +17,8 @@ public partial class App : Application
                 window.EnableForeverPhase5Tools();
                 window.EnableForeverPhase5StateNormalization();
                 window.EnableForeverPhase5InteractionCorrections();
+                // Phase 6 depends on the project and state controls above so it can
+                // restyle every command ComboBox and add machine-specific scene controls.
                 window.EnableForeverPhase6Tools();
             }
         }, DispatcherPriority.ContextIdle);
