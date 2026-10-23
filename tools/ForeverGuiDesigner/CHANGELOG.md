@@ -2,6 +2,17 @@
 
 ## Development
 
+### 0.8.4 — Deterministic Washing render pipeline
+
+- Fixed the real reason `Apply properties` could still leave the Washing preview in the generic grey `RenderLayout()` state: the 0.8.3 final compositor was scheduled at `DispatcherPriority.SystemIdle`, which can be starved indefinitely by the editor's continuously ticking Render-priority animation timers.
+- Added a deterministic Washing coordinator that runs at `DispatcherPriority.Background` after the older Phase 5/6 background decorators, so it executes reliably while animations are active instead of waiting for the dispatcher to become fully idle.
+- The coordinator is triggered by machine load, Apply properties, element selection, Washing state/animation/progress changes and actual preview visual-generation replacements.
+- Strengthened the Washing slot invariant: all three runtime source slots are checked independently instead of treating any non-empty `machine_slot_*` set as complete.
+- Partial/broken scans now recreate only the missing source slots at the runtime frame coordinates 38/74, 170/74 and 198/74.
+- If a visible machine-slot model exists without a generated WPF visual, the preview is rebuilt once and the source compositor is applied again to the new visual generation.
+- Final Washing composition explicitly restores every visible machine slot and forces its visual above the process panel after older decorators have finished.
+- Bumped the editor to 0.8.4.
+
 ### 0.8.3 — Washing source compositor hotfix
 
 - Replaced the generated Washing preview image as the final visual authority with a deterministic WPF compositor derived directly from `WashingScreen`, `MachineScreen`, `MachineLayout` and `MachineSkin` geometry.
