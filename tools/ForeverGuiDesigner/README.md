@@ -56,6 +56,8 @@ The scanner detects `MachineScreen<...>` classes, resolves `MachineLayout`, pair
 
 The project scan reconstructs the common `MachineSkin.frame`, statically resolvable panels, the player inventory surface and matching repository textures. Imported slots/buttons remain editable above that preview.
 
+Washing preview initialization is normalized in the same refresh that inserts Phase 6 elements, so loading the machine no longer depends on toggling **Visual preview** off/on to restore the generated backdrop and decorated controls.
+
 ### Condenser state editor
 
 - MK I / MK II
@@ -88,6 +90,16 @@ These remain ordinary editable layout elements.
 
 Top ComboBoxes receive explicit high-contrast text/surface/border colors at runtime, avoiding unreadable selected values caused by Windows theme chrome.
 
+### Self updater
+
+The editor supports **Development** and **Stable** channels. It checks the GitHub Releases API for the channel release, extracts the embedded build commit and GitHub-provided SHA-256/size for `ForeverGuiDesigner.exe`, and compares that commit with the running build.
+
+- Startup checks are informational only; installation always requires **Update & Restart**.
+- Version checks use a short hard timeout and can never inherit the long EXE-download timeout.
+- The update executable is verified by size and SHA-256 before replacement.
+- A temporary helper process waits for the editor to exit, replaces the executable, restarts it and cleans itself up.
+- Development follows `feature/forever-gui-designer-mvp`; Stable follows `main`.
+
 ### Java export
 
 Export converts imported machine-slot frames back to the vanilla `Slot.x` / `Slot.y` coordinates and identifies source Screen/Menu/Layout in comments.
@@ -102,7 +114,7 @@ dotnet build .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj -c Release
 dotnet run --project .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
 ```
 
-The workflow publishes a self-contained `win-x64` build. Phase 6 passed restore, Release WPF build, portable publish and artifact upload on commit `bbf8b81143020f9ae9b962fe02d9480302ca7668`.
+The workflow publishes a self-contained `win-x64` build and refreshes the selected fixed self-update channel on successful push builds.
 
 ## Next steps
 
