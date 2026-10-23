@@ -172,7 +172,7 @@ A layout contains its logical Minecraft GUI size and a list of elements:
 
 ## Next steps
 
-- Extend rich process-scene previews to Refining, Crucible and Ascension.
+- Extend rich process-scene previews to Refining, Crucible and Ascension using the same scene infrastructure introduced for Washing.
 - Resolve more machine labels directly from language files.
 - Add visible guides/rulers and a project-aware snap grid.
 - Add Minecraft font rendering instead of desktop fallback fonts.
