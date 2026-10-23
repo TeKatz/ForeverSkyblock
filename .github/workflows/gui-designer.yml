@@ -17,9 +17,11 @@ on:
 permissions:
   contents: write
 
+# Release publication must be serialized. Canceling a run while it is replacing
+# channel assets can leave the fixed release in a mixed-build state.
 concurrency:
   group: gui-designer-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -65,10 +67,12 @@ jobs:
           $exe = Resolve-Path '.\artifacts\ForeverGuiDesigner\ForeverGuiDesigner.exe'
           $item = Get-Item $exe
           $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          $immutableAsset = "ForeverGuiDesigner-$env:GITHUB_SHA.exe"
+          Copy-Item $exe ".\artifacts\$immutableAsset" -Force
           $manifest = [ordered]@{
             channel = $channel
             commit = $env:GITHUB_SHA
-            asset = 'ForeverGuiDesigner.exe'
+            asset = $immutableAsset
             sha256 = $hash
             size = $item.Length
             builtAt = (Get-Date).ToUniversalTime().ToString('o')
@@ -98,6 +102,7 @@ jobs:
           $tag = "gui-designer-$channel"
           $title = if ($channel -eq 'stable') { 'Forever GUI Designer Stable' } else { 'Forever GUI Designer Development' }
           $notes = "Automated $channel channel for the Forever GUI Designer. Build: $env:GITHUB_SHA"
+          $immutableAsset = "ForeverGuiDesigner-$env:GITHUB_SHA.exe"
 
           gh release view $tag *> $null
           $exists = $LASTEXITCODE -eq 0
@@ -105,15 +110,24 @@ jobs:
 
           if (-not $exists) {
             if ($channel -eq 'development') {
-              gh release create $tag --target $env:GITHUB_SHA --title $title --notes $notes --prerelease
+              gh release create $tag --target $env:GITHUB_SHA --title $title --notes 'Initializing update channel…' --prerelease
             } else {
-              gh release create $tag --target $env:GITHUB_SHA --title $title --notes $notes
+              gh release create $tag --target $env:GITHUB_SHA --title $title --notes 'Initializing update channel…'
             }
-          } else {
-            gh release edit $tag --title $title --notes $notes
           }
 
+          # Upload the immutable asset first. A client that has already resolved a
+          # build can now always download that exact executable even if the channel
+          # advances while the download is in progress.
+          gh release upload $tag ".\artifacts\$immutableAsset#$immutableAsset" --clobber
+
+          # Keep the legacy alias for installed pre-immutable clients. The manifest
+          # itself points at the immutable asset.
           gh release upload $tag `
             '.\artifacts\ForeverGuiDesigner\ForeverGuiDesigner.exe#ForeverGuiDesigner.exe' `
             '.\artifacts\update-manifest.json#update-manifest.json' `
             --clobber
+
+          # The release body is the channel pointer consumed by the API path. Move
+          # it only after every asset for this build is present and verified by GH.
+          gh release edit $tag --title $title --notes $notes
