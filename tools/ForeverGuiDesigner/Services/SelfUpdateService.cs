@@ -194,21 +194,29 @@ public static class SelfUpdateService
         response.EnsureSuccessStatusCode();
 
         var total = response.Content.Headers.ContentLength ?? manifest.Size;
-        await using var input = await response.Content.ReadAsStreamAsync(cancellationToken);
-        await using var output = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 128, useAsync: true);
         var buffer = new byte[1024 * 128];
         long readTotal = 0;
-        while (true)
+
+        // Keep the download streams inside their own scope. The previous version
+        // tried to reopen the destination for SHA-256 verification while the writer
+        // still held it with FileShare.None, so Windows correctly rejected our own
+        // read attempt as "used by another process".
+        await using (var input = await response.Content.ReadAsStreamAsync(cancellationToken))
+        await using (var output = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 128, useAsync: true))
         {
-            var read = await input.ReadAsync(buffer, cancellationToken);
-            if (read <= 0)
-                break;
-            await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
-            readTotal += read;
-            if (total > 0)
-                progress?.Report(Math.Clamp((double)readTotal / total, 0, 1));
+            while (true)
+            {
+                var read = await input.ReadAsync(buffer, cancellationToken);
+                if (read <= 0)
+                    break;
+                await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                readTotal += read;
+                if (total > 0)
+                    progress?.Report(Math.Clamp((double)readTotal / total, 0, 1));
+            }
+
+            await output.FlushAsync(cancellationToken);
         }
-        await output.FlushAsync(cancellationToken);
 
         if (manifest.Size > 0 && readTotal != manifest.Size)
             throw new InvalidDataException($"Downloaded update size mismatch. Expected {manifest.Size} bytes, got {readTotal}.");
