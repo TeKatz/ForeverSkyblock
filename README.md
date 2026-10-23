@@ -2,7 +2,7 @@
 
 **Forever Skyblock** is an Expert Skyblock modpack for **Minecraft 1.21.1 / NeoForge** built around deliberate progression, renewable resource loops and long-term automation.
 
-The current integrated `main` mod baseline is **0.27.0**. The renewable resource-refining stack from PR #28/#29 and the machine visual overhaul from PR #30 are integrated. See [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) for the exact current state and [docs/PROGRESSION.md](docs/PROGRESSION.md) for the sequential progression map.
+The current integrated `main` mod baseline is **0.27.0**. The renewable resource-refining stack from PR #28/#29, the machine visual overhaul from PR #30 and omnidirectional machine item capabilities from PR #34 are integrated. Condensers, Garden Chambers, Washing Basins and Refining Condensers expose their permitted item operations on every face while retaining slot restrictions and separate Garden harvest routes. See [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) for the exact current state and [docs/PROGRESSION.md](docs/PROGRESSION.md) for the sequential progression map.
 
 ## Current pack baseline
 

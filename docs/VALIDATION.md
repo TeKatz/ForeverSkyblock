@@ -1,8 +1,8 @@
 # Validation status
 
-## Omnidirectional machine cables — branch-only validation, October 23, 2026
+## Omnidirectional machine cables — integrated October 23, 2026
 
-Source `ab743dbd90ba607a0a0751f6c25f05b34f7bf647` on `fix/omnidirectional-machine-cables` passed [Actions run 39910924225](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39910924225). This work belongs to [PR #34](https://github.com/TeKatz/ForeverSkyblock/pull/34); it has not been merged into `main` or published as a release. The mod version remains 0.27.0.
+Source `ab743dbd90ba607a0a0751f6c25f05b34f7bf647` on `fix/omnidirectional-machine-cables` passed [Actions run 39910924225](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39910924225). TeKatz subsequently authorized merging [PR #34](https://github.com/TeKatz/ForeverSkyblock/pull/34), now integrated into `main` as `88414546678f53ee4983f56d89b7ff7e9adbdd31`. The merge preserves the tested source and resources exactly. The mod version remains 0.27.0; no public release was created. [Post-merge Actions run 39917867033](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39917867033) also passed the build, all 100 JUnit tests, client startup/visual checks and all 122 required GameTests in each server run on NeoForge 21.1.264.
 
 The original branch's [failed run 39846106532](https://github.com/TeKatz/ForeverSkyblock/actions/runs/39846106532) completed compilation and client checks but failed two of 120 GameTests. `sidedAutomationAndSimulation` still forbade bottom insertion and top extraction; `portsExposeOnlyTheirHarvestAndSimulationDoesNotConsume` still expected non-bottom Garden capabilities to be absent. Those expectations contradicted the branch's intended capability contract. The registered Condenser, Garden Chamber, Washing Basin and Refining Condenser capabilities already selected their machine-owned combined handlers correctly. The follow-up corrects and expands the tests without changing production handlers, recipes, buffers, filters or output policies.
 
@@ -11,6 +11,8 @@ Coverage queries the actual registered `Capabilities.ItemHandler.BLOCK` provider
 Validation passed: Java 21 build and GameTest compilation; **100 JUnit tests**; client mixin/model startup check; machine GUI/block and K-menu visual/input fixtures; **122 required GameTests in each of the two dedicated-server runs**, both on NeoForge **21.1.264**, with the second run enabling the configured optional pack integrations including Mekanism. This does not claim a manual player-instance test or a physical Mekanism transporter-network transfer test.
 
 Downloaded and inspected CI artifact **12482433396** (`ForeverSkyblock-Mod`): archive integrity and artifact ZIP SHA-256 `094069b47c15ab32d0001e5997a2e3ee58ad11b239281f5b3f9a869c19aa8166` match. Its production JAR is `ForeverSkyblock-1.21.1-NeoForge-0.27.0.jar`, **1,107,408 bytes**, SHA-256 `11c3b4a217b262df1a7f52cbdc85585081469eeb22d855b487cf13e96c671b4e`. Java 21 bytecode, loader metadata, expected machine/adapter classes and all **250 source resource files** were verified; test/preview and bundled Minecraft/Mekanism classes are absent. The fixed island Git blob remains `4c0e3ada63bb61ef1d109ad110b66b6d359d473f`. A local wrapper attempt could not download Gradle in this environment; the successful build/runtime evidence above comes from the linked CI run.
+
+Post-merge artifact **12486605857** was downloaded from the successful Main run and inspected separately. Its ZIP SHA-256 is `52f013a7c3da79b80efba8edfc144885e76f0d3e8ad95f9cd16059690d104540`; the contained JAR has the same verified filename, byte size and SHA-256 as the pre-merge artifact above. All 250 source resources, Java 21/loader metadata, mixin class references and the absence of test/preview or bundled Minecraft/Mekanism classes were checked. The integration documentation follow-up changes Markdown only.
 
 ## 0.24.0 integration — PR #16
 

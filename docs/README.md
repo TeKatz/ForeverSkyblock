@@ -11,6 +11,7 @@ This directory contains the live integrated-state documentation plus historical/
 - **Current supplied mod list:** `Modliste(6).txt`, **94 enabled artifact labels**
 - **Machine visual overhaul:** integrated through PR #30
 - **Resource-refining stack:** integrated through PR #28/#29
+- **Omnidirectional machine item capabilities:** integrated through PR #34; slot restrictions and separate Garden harvest ports remain active
 
 The October 22 launcher list reports the current component/artifact state but does not provide a fresh loaded-mod-ID export or a new player-test result. Historical validation records keep the NeoForge versions actually used by those runs.
 

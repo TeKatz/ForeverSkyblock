@@ -1,5 +1,13 @@
 # Changelog
 
+## Omnidirectional machine cables integrated — October 23, 2026
+
+- Merge PR #34 into `main` as `88414546678f53ee4983f56d89b7ff7e9adbdd31`; the mod version remains 0.27.0.
+- Expose permitted item insertion/extraction on all six faces of both Condenser tiers, Garden Chamber, Washing Basin and Refining Condenser.
+- Preserve input validation, filters, hidden slots, buffers, output policies, separate Garden harvest routes and existing bottom-hopper flow.
+- Retain the Crucible's sided item/fluid contract and Ascension's existing omnidirectional access.
+- Replace obsolete sided-capability expectations with all-face regression coverage. Pre-merge validation passed 100 JUnit tests, client checks and 122 required GameTests in each server run on NeoForge 21.1.264; see [VALIDATION.md](VALIDATION.md).
+
 ## Item texture polish — October 22, 2026
 
 - Replace the Stone Meal, Nether Brick Dust, Nether Concentrate and Mineral Blend inventory textures with the approved pixel-art redesigns.

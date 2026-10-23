@@ -27,6 +27,8 @@ Key numbers:
 
 Mark II has **3 upgrade capacity** and three physical upgrade slots. Current cards are Processing Speed, Garden Accelerator, Buffer Expansion and Batch Processing. Outputs support independent **Block / Void Excess / Void All** policies.
 
+PR #34 adds item capability access on all six faces of both Condenser tiers, the Garden Chamber, Washing Basin and Refining Condenser. Input validation, exact-item filters, hidden slots, buffers and output restrictions still apply. Garden primary harvest stays on the Condenser and secondary harvest stays on the Chamber; hoppers below continue to work. The Crucible retains its sided item/fluid contract, and Ascension retains its existing omnidirectional access. See [validation](../docs/VALIDATION.md).
+
 The shared machine-container GUI uses native `AbstractContainerScreen` coordinates. The earlier fit-to-window scaling/mouse-remapping layer is not used.
 
 ## Crucible

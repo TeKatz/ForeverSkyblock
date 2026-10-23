@@ -1,6 +1,6 @@
 # Current integrated state
 
-Updated October 22, 2026. `main` is now **0.27.0** and includes both the renewable resource-refining stack from PR #28/#29 and the machine visual overhaul from PR #30.
+Updated October 23, 2026. `main` is **0.27.0** and includes the renewable resource-refining stack from PR #28/#29, the machine visual overhaul from PR #30 and omnidirectional machine item capabilities from PR #34.
 
 ## Baseline
 
@@ -45,6 +45,10 @@ Key behavior:
 
 See [MATERIAL_PROCESSING.md](MATERIAL_PROCESSING.md).
 
+### Machine item cable access
+
+PR #34 is integrated through merge `88414546678f53ee4983f56d89b7ff7e9adbdd31`. Condenser Mark I/II, Garden Chamber, Washing Basin and Refining Condenser item capabilities expose their permitted operations on all six faces. Slot validation, filters, output restrictions, buffers and policies remain active. Garden primary and secondary harvest still use the Condenser and Chamber respectively; bottom hoppers continue to work. The Crucible keeps its existing sided item/fluid behavior, and Ascension remains omnidirectional. Automated validation and the remaining manual transporter-network check are recorded in [VALIDATION.md](VALIDATION.md).
+
 ### Crucible — Lava, Obsidian and renewable Netherrack
 
 The Crucible has a **4,000 mB** internal Lava buffer.
@@ -73,7 +77,7 @@ The player-facing **Refining Condenser** uses the stable internal registry ID `f
 Machine properties:
 
 - primary input + catalyst + output;
-- item automation and bottom output extraction;
+- item input/output capability access on every face;
 - **100,000 FE** internal energy capacity;
 - maximum **4,000 FE/t** receive;
 - no energy export.
