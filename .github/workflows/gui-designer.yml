@@ -31,3 +31,23 @@ jobs:
 
       - name: Build
         run: dotnet build .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj --configuration Release --no-restore
+
+      - name: Publish portable Windows app
+        run: >-
+          dotnet publish .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:DebugType=None
+          -p:DebugSymbols=false
+          --output .\artifacts\ForeverGuiDesigner
+
+      - name: Upload Windows app
+        uses: actions/upload-artifact@v4
+        with:
+          name: ForeverGuiDesigner-Windows-x64
+          path: .\artifacts\ForeverGuiDesigner\ForeverGuiDesigner.exe
+          if-no-files-found: error
+          compression-level: 0
