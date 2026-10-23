@@ -16,6 +16,7 @@ public partial class App : Application
                 window.EnableForeverSkyblockTools();
                 window.EnableForeverPhase5Tools();
                 window.EnableForeverPhase5StateNormalization();
+                window.EnableForeverPhase5InteractionCorrections();
             }
         }, DispatcherPriority.ContextIdle);
     }
