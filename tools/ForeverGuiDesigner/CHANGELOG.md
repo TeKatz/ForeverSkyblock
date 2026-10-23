@@ -2,6 +2,19 @@
 
 ## Development
 
+### 0.8.5 — Exclusive Washing runtime controller
+
+- Replaced the stacked Washing hotfix queues with one exclusive synchronous presentation owner while Washing is active. The older Phase 6 refresh, Visual Fidelity, Machine Presentation and legacy Washing Source queues are gated instead of racing to rewrite the same WPF Borders.
+- Selection no longer relies on changing native machine Border thickness. Washing restores its source presentation in the same input event and draws a separate selection adorner, eliminating the one-pixel content shifts that made the whole GUI appear to jump when an element was clicked.
+- Apply properties and machine load now finish the complete Washing presentation synchronously in the same dispatcher turn, so the generic `RenderLayout()` body is not exposed as an intermediate frame.
+- Phase 8 compatibility is explicit: Washing text remains `MinecraftPixelText`, machine slots are wrapped as already-decorated Phase 8 item surfaces, and machine buttons use stable Minecraft-pixel button chrome that Phase 8 will not replace with frameless text.
+- The Recipes button therefore keeps its chrome across selection changes and has deterministic hover/selection styling without waiting for a later idle-priority fidelity pass.
+- Active Processing now has one live clock: the Phase 8 timeline. The old Phase 6 animation timer and Phase 7 processing timer remain stopped while Washing owns the preview.
+- Play selects/resumes Active Processing, Pause freezes both processing and decorative motion, Stop resets to 0.0 s and remains restartable, slider scrubbing pauses at the selected value, and non-looping playback stops cleanly at 5.0 s.
+- Running/Idle/Blocked/No water and Animate now gate the same requested playback state rather than independently stopping/restarting competing timers.
+- Other machine editors retain their existing Phase 5–8 presentation paths; exclusive ownership is released when Washing is no longer the active layout.
+- Bumped the editor to 0.8.5.
+
 ### 0.8.4 — Deterministic Washing render pipeline
 
 - Fixed the real reason `Apply properties` could still leave the Washing preview in the generic grey `RenderLayout()` state: the 0.8.3 final compositor was scheduled at `DispatcherPriority.SystemIdle`, which can be starved indefinitely by the editor's continuously ticking Render-priority animation timers.
@@ -21,7 +34,7 @@
 - Re-applies MachineSkin slot chrome to every imported player/hotbar slot and gives the three Washing machine slots a dedicated foreground layer above process panels.
 - Added a defensive source-slot fallback for old/broken scans: if no machine slots exist, Washing recreates the runtime frames at 38/74, 170/74 and 198/74 (corresponding to vanilla slot coordinates 42/78, 174/78 and 202/78).
 - Re-applies Washing panels, state marker, text, Recipes button and stable process/meter surfaces after every visual-generation replacement.
-- Keeps the 0.8.2 animation gating unchanged.
+- Keeps the corrected 0.8.2 animation gating unchanged.
 - Bumped the editor to 0.8.3.
 
 ### 0.8.2 — Machine presentation lifecycle hotfix
@@ -47,13 +60,13 @@
 ### 0.8.0 — Phase 8: True WYSIWYG
 
 - Added deterministic Minecraft-style pixel text previews with one-pixel shadow, left/center/right alignment, scale controls and overflow warnings.
-- Added project-aware item preview resolution from item model JSON to the real repository PNG, plus stack count, durability, ghost and glint preview metadata.
-- Added a hierarchy view with groups, visibility, locks, layer movement and drag-and-drop reordering.
-- Added eight canvas resize handles with Minecraft-pixel snapping; Shift preserves aspect ratio and Alt resizes from the center.
-- Added smart center/edge guides and equal horizontal/vertical distribution tools.
-- Added a persistent animation timeline with play, pause, stop, looping, scrubbing and 0.25x / 0.5x / 1x / 2x speed.
-- Timeline animation mutates persistent visuals only; it does not rebuild the canvas per frame.
-- Added editable reconstructed scenes for Crucible, Ascension Chamber and Refining Condenser based on their real Screen/Menu/MachineLayout coordinates.
+- Added project-aware item previews resolving real `models/item/*.json` texture references, with stack/durability/ghost/glint metadata.
+- Added a hierarchy view with groups, visibility, locks, collapse/expand, layer controls and drag/drop ordering.
+- Added eight canvas resize handles with pixel snap; Shift preserves ratio, Alt scales from center.
+- Added smart center/edge guides plus horizontal/vertical distribution.
+- Added a persistent animation timeline with Play / Pause / Stop / Loop / Scrub and 0.25x / 0.5x / 1x / 2x speed.
+- Timeline animation mutates persistent visuals rather than rebuilding the canvas.
+- Added reconstructed editable scenes for Crucible, Ascension Chamber and Refining Condenser based on their real Screen/Menu/MachineLayout coordinates.
 - Ascension's real `forever_skyblock:forever_core` input is resolved through the repository item model and texture path.
 - Bumped the editor to 0.8.0.
 

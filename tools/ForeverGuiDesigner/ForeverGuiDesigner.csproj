@@ -8,7 +8,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <AssemblyName>ForeverGuiDesigner</AssemblyName>
     <RootNamespace>ForeverGuiDesigner</RootNamespace>
-    <Version>0.8.4</Version>
+    <Version>0.8.5</Version>
     <InformationalVersion>local</InformationalVersion>
   </PropertyGroup>
 </Project>
