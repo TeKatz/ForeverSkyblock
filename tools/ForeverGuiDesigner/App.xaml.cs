@@ -17,6 +17,7 @@ public partial class App : Application
                 window.EnableForeverPhase5Tools();
                 window.EnableForeverPhase5StateNormalization();
                 window.EnableForeverPhase5InteractionCorrections();
+                window.EnableForeverPhase6Tools();
             }
         }, DispatcherPriority.ContextIdle);
     }
