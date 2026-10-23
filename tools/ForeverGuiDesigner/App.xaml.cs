@@ -22,6 +22,7 @@ public partial class App : Application
 
         Dispatcher.BeginInvoke(() =>
         {
+            window.EnablePersonalWorkspaceQoL();
             window.EnableForeverSkyblockTools();
             window.EnableForeverPhase5Tools();
             window.EnableForeverPhase5StateNormalization();
