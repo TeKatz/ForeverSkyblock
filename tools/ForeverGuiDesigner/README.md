@@ -1,8 +1,8 @@
 # Forever GUI Designer
 
-A small Windows-first visual editor for Forever Skyblock GUI layouts.
+A Windows-first visual editor for Forever Skyblock GUI layouts.
 
-The editor intentionally stores positions in Minecraft GUI-local coordinates rather than desktop/window coordinates. This keeps layouts useful for later Java Screen/Menu integration and independent of the player's resolution.
+The editor stores positions in Minecraft GUI-local coordinates rather than desktop/window coordinates. This keeps layouts useful for Java Screen/Menu integration and independent of the player's resolution.
 
 ## Current feature set
 
@@ -33,8 +33,8 @@ The editor intentionally stores positions in Minecraft GUI-local coordinates rat
 - Text
 - Button
 - Texture
-- Player Inventory (9 x 3 slots as one movable element)
-- Hotbar (9 slots as one movable element)
+- Player Inventory
+- Hotbar
 
 ### Forever Skyblock asset browser
 
@@ -44,13 +44,38 @@ The asset browser scans:
 
 `mod/src/main/resources/assets/forever_skyblock/textures`
 
-It shows PNG previews with nearest-neighbor scaling. Double-clicking a texture adds it to the canvas. If exactly one Texture element is selected, the selected repository asset is assigned to that element instead.
+It shows PNG previews with nearest-neighbor scaling. Double-clicking a texture adds it to the canvas. Texture references are stored as repository-relative asset paths such as `textures/item/forever_core.png`.
 
-Texture references are stored as repository-relative asset paths such as:
+## Forever project integration
 
-`textures/item/forever_core.png`
+The toolbar now contains a dedicated **Skyblock** workflow.
 
-This avoids putting machine-specific absolute Windows paths into layout JSON files.
+1. Select the local ForeverSkyblock repository with **Repo…**.
+2. Click **Scan project**.
+3. Select one of the detected machine screens.
+4. Click **Load machine** to create an editable layout from the actual Java sources.
+5. Edit the result visually and use **Export Java** to generate GUI-local constants for the mod.
+
+The scanner intentionally reads the project instead of shipping a fixed machine list. It detects classes extending `MachineScreen<...>`, resolves their `MachineLayout` constant, pairs them with their Menu class, and imports the static geometry it can prove from source.
+
+### Project-specific geometry
+
+Forever machine screens do not use the vanilla 176 x 166 assumption. The scanner reads the actual `MachineLayout.java` dimensions and inventory/hotbar coordinates.
+
+It also mirrors `MachineSkin.slot` geometry:
+
+- machine slot frames: 24 x 24, padded 4 px around vanilla `Slot.x` / `Slot.y`
+- player inventory/hotbar frames: 20 x 20, padded 2 px around vanilla slot coordinates
+
+Player inventory and hotbar slots are imported individually for these project templates so their real Forever spacing remains editable.
+
+### Java export
+
+**Export Java** creates a small Java layout class containing `GUI_WIDTH`, `GUI_HEIGHT`, and constants for editable machine slots/buttons/visual elements.
+
+For imported machine slots, exported X/Y values are converted back from the 24 x 24 visual frame to the vanilla `Slot.x` / `Slot.y` coordinates expected by the Menu. Player inventory coordinates are deliberately not duplicated because those remain derived from `MachineLayout` in the mod.
+
+The export includes comments identifying the imported Screen, Menu and `MachineLayout` source where available. It is intended as a safe handoff/snippet for integration rather than silently rewriting Java source files.
 
 ## Build
 
@@ -64,7 +89,7 @@ Run during development with:
 dotnet run --project .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
 ```
 
-The GitHub Actions workflow also publishes a self-contained `win-x64` build so the application can be tested without installing the .NET SDK.
+The GitHub Actions workflow publishes a self-contained `win-x64` build so the application can be tested without installing the .NET SDK.
 
 ## Layout format
 
@@ -73,17 +98,17 @@ A layout contains its logical Minecraft GUI size and a list of elements:
 ```json
 {
   "name": "Condenser",
-  "width": 176,
-  "height": 166,
+  "width": 248,
+  "height": 352,
   "elements": [
     {
-      "id": "input",
+      "id": "machine_slot_1",
       "type": "slot",
-      "x": 39,
-      "y": 30,
-      "width": 18,
-      "height": 18,
-      "content": "",
+      "x": 26,
+      "y": 57,
+      "width": 24,
+      "height": 24,
+      "content": "30,61",
       "texturePath": null,
       "visible": true
     }
@@ -93,10 +118,9 @@ A layout contains its logical Minecraft GUI size and a list of elements:
 
 ## Next steps
 
-- Minecraft font rendering.
-- Guides, rulers and visible snap grid.
-- More Forever-specific machine widgets (input/output slots, progress arrows, energy/fluid indicators, lock/recipe buttons).
-- Import existing Java Screen/Menu coordinates.
-- Export generated layout constants/data for the mod.
-- Machine GUI templates based on the actual Forever Skyblock screens.
-- Hover/pressed states and lightweight animation previews.
+- Import more dynamically calculated panels, labels and progress meters from Forever machine screens.
+- Add first-class Forever widgets for progress meters, panels, locks and machine status indicators.
+- Add visible guides/rulers and a project-aware snap grid.
+- Add Minecraft font rendering.
+- Add a reviewed apply-back workflow for updating selected Java constants rather than only exporting snippets.
+- Add hover/pressed states and lightweight animation previews.
