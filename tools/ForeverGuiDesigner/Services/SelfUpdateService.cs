@@ -39,6 +39,7 @@ public static class SelfUpdateService
     private const string Owner = "TeKatz";
     private const string Repository = "ForeverSkyblock";
     private const string ApplyArgument = "--apply-update";
+    private const string LegacyAssetName = "ForeverGuiDesigner.exe";
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -150,14 +151,26 @@ public static class SelfUpdateService
         var release = await JsonSerializer.DeserializeAsync<GitHubReleaseInfo>(stream, JsonOptions, timeout.Token)
                       ?? throw new InvalidDataException("GitHub returned an empty update release response.");
 
-        var asset = release.Assets.FirstOrDefault(candidate =>
-            string.Equals(candidate.Name, "ForeverGuiDesigner.exe", StringComparison.OrdinalIgnoreCase));
-        if (asset is null)
-            throw new InvalidDataException("The update release does not contain ForeverGuiDesigner.exe.");
-
+        // The release body is the channel pointer. Resolve the commit first, then
+        // bind the manifest to that build's immutable asset. This prevents a later
+        // channel publish from swapping the executable between CheckAsync and
+        // DownloadAsync and causing a SHA mismatch.
         var commit = ExtractBuildCommit(release.Body);
         if (string.IsNullOrWhiteSpace(commit))
             throw new InvalidDataException("The update release does not identify its build commit.");
+
+        var immutableAssetName = ImmutableAssetName(commit);
+        var asset = release.Assets.FirstOrDefault(candidate =>
+            string.Equals(candidate.Name, immutableAssetName, StringComparison.OrdinalIgnoreCase));
+
+        // Stable may temporarily still use the pre-immutable publisher until this
+        // branch is merged. Keep that channel readable without weakening the new
+        // development path once immutable assets are present.
+        asset ??= release.Assets.FirstOrDefault(candidate =>
+            string.Equals(candidate.Name, LegacyAssetName, StringComparison.OrdinalIgnoreCase));
+
+        if (asset is null)
+            throw new InvalidDataException($"The update release does not contain {immutableAssetName} or {LegacyAssetName}.");
 
         var digest = asset.Digest;
         if (string.IsNullOrWhiteSpace(digest) || !digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase))
@@ -225,7 +238,9 @@ public static class SelfUpdateService
         if (!string.Equals(actualHash, manifest.Sha256, StringComparison.OrdinalIgnoreCase))
         {
             File.Delete(destination);
-            throw new InvalidDataException("Downloaded update failed SHA-256 verification.");
+            throw new InvalidDataException(
+                $"Downloaded update failed SHA-256 verification for {manifest.Asset}. " +
+                "The release may have changed while this legacy asset was being downloaded; run Check again.");
         }
 
         progress?.Report(1);
@@ -346,6 +361,9 @@ public static class SelfUpdateService
         var match = Regex.Match(body, @"Build:\s*([0-9a-fA-F]{40})", RegexOptions.CultureInvariant);
         return match.Success ? match.Groups[1].Value.ToLowerInvariant() : string.Empty;
     }
+
+    private static string ImmutableAssetName(string commit)
+        => $"ForeverGuiDesigner-{commit}.exe";
 
     private static async Task<string> Sha256Async(string path, CancellationToken cancellationToken)
     {
