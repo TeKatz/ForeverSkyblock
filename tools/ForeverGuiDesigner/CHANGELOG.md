@@ -2,6 +2,14 @@
 
 ## Development
 
+### 0.8.7 — Runtime-sourced Washing preview
+
+- Fixed the remaining Washing progress split-brain: the exclusive timeline and visible process/meter surfaces now use the same progress value instead of the meter still reading the old Phase 5 progress selector.
+- Washing playback duration is sourced from the current runtime recipe/default (`processing_time` / `WashingRecipe.DEFAULT_TIME`) instead of the old hard-coded 5-second editor demo.
+- Washing preview text and representative recipe metadata are read from the selected repository (`en_us.json` plus the current washing recipe), so the editor follows the actual runtime source rather than stale Phase 6 strings.
+- Current runtime preview therefore tracks `WASHING BASIN`, water-source wording, current hints, the representative `4 × Stone Meal → Raw Iron` recipe and the 8.0-second processing time from the repository.
+- Bumped the editor to 0.8.7.
+
 ### 0.8.6 — Washing ownership hardening
 
 - Fixed the remaining delayed visual writer: Phase 5 was still refreshing on every `LayoutUpdated` and its broad `_panel_` / `_meter_` / `_status` predicates matched Phase 6 Washing elements, allowing the GUI to mutate again seconds after the user stopped interacting.

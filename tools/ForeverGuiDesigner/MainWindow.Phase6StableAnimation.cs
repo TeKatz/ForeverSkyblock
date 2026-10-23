@@ -243,7 +243,7 @@ public partial class MainWindow
 
     private void UpdateStableWashingScene(Canvas canvas, int width)
     {
-        var phase = CurrentProgress;
+        var phase = WashingVisualProgress;
         if (WashingRunning && _phase6PlayAnimations?.IsChecked == true)
             phase = (phase + _phase6AnimationClock * .14) % 1.0;
 
@@ -286,7 +286,7 @@ public partial class MainWindow
     private void UpdateStableWashingMeter(Canvas canvas, int width, int height)
     {
         var actualHeight = Math.Max(3, height);
-        var filled = (int)Math.Round(Math.Clamp(CurrentProgress, 0, 1) * width);
+        var filled = (int)Math.Round(WashingVisualProgress * width);
 
         var fill = canvas.Children.OfType<Rectangle>()
             .FirstOrDefault(r => string.Equals(r.Tag as string, "meter:fill", StringComparison.Ordinal));

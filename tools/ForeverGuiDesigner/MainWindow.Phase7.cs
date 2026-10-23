@@ -68,7 +68,7 @@ public partial class MainWindow
                 return;
 
             _phase7ProcessingClock += .05;
-            const double cycleSeconds = 5.0;
+            var cycleSeconds = IsWashingPhase6Active ? WashingRuntimeDurationSeconds : 5.0;
             var progress = (_phase7ProcessingClock % cycleSeconds) / cycleSeconds;
 
             // CurrentProgress already reads the selected item's numeric Tag. By
@@ -97,16 +97,26 @@ public partial class MainWindow
     {
         if (IsWashingPhase6Active)
         {
-            EnsureStableWashingAnimationVisuals();
-            UpdateStableWashingAnimationVisuals();
-
-            foreach (var pair in _visuals)
+            if (_washingExclusiveModeActive)
             {
-                if (!string.Equals(pair.Key.Id, "forever_phase6_washing_time", StringComparison.OrdinalIgnoreCase) ||
-                    pair.Value is not Border { Child: TextBlock text })
-                    continue;
+                // The exclusive Washing controller is the only progress owner. Phase 7
+                // may be called by older selection handlers, but it must never write an
+                // independent 5-second value back into the same surfaces.
+                UpdateExclusiveWashingRuntimeVisuals();
+            }
+            else
+            {
+                EnsureStableWashingAnimationVisuals();
+                UpdateStableWashingAnimationVisuals();
 
-                text.Text = $"{CurrentProgress * 5.0:0.0} / 5.0 s";
+                foreach (var pair in _visuals)
+                {
+                    if (!string.Equals(pair.Key.Id, "forever_phase6_washing_time", StringComparison.OrdinalIgnoreCase) ||
+                        pair.Value is not Border { Child: TextBlock text })
+                        continue;
+
+                    text.Text = FormatWashingRuntimeTime(CurrentProgress);
+                }
             }
         }
 

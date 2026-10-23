@@ -160,6 +160,8 @@ public partial class MainWindow
 
         if (firstEntry)
         {
+            RefreshWashingRuntimeProfile(force: true);
+            SynchronizeWashingRuntimeModelText();
             UpdatePhase6ControlAvailability();
             _washingPlaybackRequested = IsActiveProcessingSelected && CurrentProgress < 1.0;
             SetExclusiveWashingProgress(CurrentProgress, updateVisuals: false);
@@ -207,12 +209,17 @@ public partial class MainWindow
             EnterExclusiveWashingMode();
             UpdatePhase6ControlAvailability();
 
+            if (ensureStructure)
+                RefreshWashingRuntimeProfile();
+
             var changed = false;
             if (ensureStructure)
             {
                 changed |= EnsureWashingPhase6Elements();
                 changed |= EnsureCompleteWashingSourceSlots();
             }
+
+            SynchronizeWashingRuntimeModelText();
 
             if (changed)
                 RefreshElementList();
@@ -240,6 +247,7 @@ public partial class MainWindow
             if (!ExclusiveWashingMotionEnabled)
                 HideExclusiveWashingTransientMotion();
 
+            UpdateExclusiveWashingTimeText();
             UpdateWashingSelectionAdorners();
             if (_phase8Initialized)
                 EnsurePhase8OverlayVisuals();
@@ -294,6 +302,7 @@ public partial class MainWindow
 
         EnterExclusiveWashingMode();
         UpdatePhase6ControlAvailability();
+        SynchronizeWashingRuntimeModelText();
         ApplyExclusiveWashingPresentation(ensureStructure: false, rebuildBackdrop: true);
     }
 
@@ -411,7 +420,7 @@ public partial class MainWindow
         if (shouldAdvance)
         {
             var speed = _phase8SpeedBox?.SelectedItem is ComboBoxItem { Tag: double value } ? value : 1.0;
-            var next = _phase8TimelineProgress + dt * speed / 5.0;
+            var next = _phase8TimelineProgress + dt * speed / WashingRuntimeDurationSeconds;
             if (next >= 1.0)
             {
                 if (_phase8LoopBox?.IsChecked == true)
@@ -454,13 +463,15 @@ public partial class MainWindow
         }
 
         if (_phase8TimelineText is not null)
-            _phase8TimelineText.Text = $"{progress * 5.0:0.0}/5.0s";
+            _phase8TimelineText.Text = $"{progress * WashingRuntimeDurationSeconds:0.0}/{WashingRuntimeDurationSeconds:0.0}s";
 
         if (_phase7ActiveProcessingItem is not null && IsActiveProcessingSelected)
         {
             _phase7ActiveProcessingItem.Tag =
                 (progress * 100.0).ToString("0.###", CultureInfo.InvariantCulture);
         }
+
+        SynchronizeWashingRuntimeModelText();
 
         if (updateVisuals)
             UpdateExclusiveWashingRuntimeVisuals();
@@ -488,6 +499,7 @@ public partial class MainWindow
                 continue;
             }
 
+            pair.Key.Content = FormatWashingRuntimeTime(_phase8TimelineProgress);
             ApplyMachineTextFidelity(pair.Key, border, washing: true);
             NormalizeExclusiveWashingNativeOuterBorder(border);
             Panel.SetZIndex(border, 620);
