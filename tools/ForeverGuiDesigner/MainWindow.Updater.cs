@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using ForeverGuiDesigner.Services;
 
 namespace ForeverGuiDesigner;
@@ -13,6 +14,9 @@ public partial class MainWindow
     private Button? _updateButton;
     private Button? _updateLogButton;
     private CancellationTokenSource? _updateOperationCancellation;
+    private DispatcherTimer? _updateCheckWatchdog;
+    private int _updateCheckGeneration;
+    private bool _updateCheckInProgress;
     private bool _updateBusy;
     private bool _updaterInitialized;
 
@@ -66,7 +70,7 @@ public partial class MainWindow
         UpdaterDiagnostics.Write($"Updater initialized. Build={SelfUpdateService.CurrentCommit}, channel={SelectedUpdateChannel}, autoCheck={_updatePreferences.AutoCheck}.");
 
         if (_updatePreferences.AutoCheck)
-            _ = CheckForUpdatesAsync(showErrors: false);
+            StartUpdateCheck(showErrors: false);
     }
 
     private UpdateChannel SelectedUpdateChannel
@@ -75,35 +79,44 @@ public partial class MainWindow
             ? UpdateChannel.Stable
             : UpdateChannel.Development;
 
-    private async void UpdateChannelChanged(object sender, SelectionChangedEventArgs e)
+    private void UpdateChannelChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!_updaterInitialized)
             return;
 
-        if (_updateBusy)
+        if (_updateCheckInProgress)
+            AbandonActiveUpdateCheck("Update check canceled because the channel changed.");
+        else if (_updateBusy)
             _updateOperationCancellation?.Cancel();
 
         _updatePreferences.Channel = SelectedUpdateChannel;
         SelfUpdateService.SavePreferences(_updatePreferences);
         _availableUpdate = null;
         SetUpdateButton("Check", true, accent: false);
-        await CheckForUpdatesAsync(showErrors: false);
+        StartUpdateCheck(showErrors: false);
     }
 
     private async void UpdateButton_Click(object sender, RoutedEventArgs e)
     {
+        if (_updateCheckInProgress)
+        {
+            UpdaterDiagnostics.Write("User requested immediate cancellation of the active update check.");
+            AbandonActiveUpdateCheck("Update check canceled");
+            return;
+        }
+
         if (_updateBusy)
         {
-            UpdaterDiagnostics.Write("User requested cancellation of the active updater operation.");
+            UpdaterDiagnostics.Write("User requested cancellation of the active updater download/install operation.");
             _updateOperationCancellation?.Cancel();
-            SetUpdateStatus("Canceling update check…", "#C5A474");
+            SetUpdateStatus("Canceling update…", "#C5A474");
             SetUpdateButton("Canceling…", false, accent: false);
             return;
         }
 
         if (_availableUpdate is null)
         {
-            await CheckForUpdatesAsync(showErrors: true);
+            StartUpdateCheck(showErrors: true);
             return;
         }
 
@@ -125,98 +138,184 @@ public partial class MainWindow
         await DownloadAndInstallAsync(manifest);
     }
 
-    private async Task CheckForUpdatesAsync(bool showErrors)
+    private void StartUpdateCheck(bool showErrors)
     {
-        if (_updateBusy)
+        if (_updateBusy || _updateCheckInProgress)
             return;
 
         _updateBusy = true;
+        _updateCheckInProgress = true;
         _availableUpdate = null;
+
         var channel = SelectedUpdateChannel;
         var operationCancellation = new CancellationTokenSource();
         _updateOperationCancellation = operationCancellation;
+        var generation = ++_updateCheckGeneration;
 
         SetUpdateButton("Cancel", true, accent: false);
         SetUpdateStatus($"Checking {channel}…", "#93A5B0");
-        UpdaterDiagnostics.Write($"Update check started for {channel}. UI thread={Environment.CurrentManagedThreadId}.");
+        UpdaterDiagnostics.Write($"Update check #{generation} started for {channel}. UI thread={Environment.CurrentManagedThreadId}.");
 
-        try
+        StopUpdateCheckWatchdog();
+        _updateCheckWatchdog = new DispatcherTimer(DispatcherPriority.Send, Dispatcher)
         {
-            // The entire network resolver is started on a worker thread. This is
-            // intentionally stronger than normal async HttpClient usage: if Windows
-            // blocks synchronously in DNS/TLS/proxy setup before GetAsync yields a
-            // Task, the WPF dispatcher still remains free to run the watchdog/cancel.
-            var resolveTask = Task.Run(
-                () => ResolveUpdateManifestAsync(channel, operationCancellation.Token),
-                CancellationToken.None);
-
-            UpdaterDiagnostics.Write("Network resolver dispatched to worker thread; 18-second UI watchdog armed.");
-
-            var watchdogTask = Task.Delay(TimeSpan.FromSeconds(18));
-            var completed = await Task.WhenAny(resolveTask, watchdogTask);
-
-            if (completed != resolveTask)
-            {
-                UpdaterDiagnostics.Write("UI watchdog fired after 18 seconds; abandoning network resolver.");
-                operationCancellation.Cancel();
-                _ = resolveTask.ContinueWith(
-                    task => UpdaterDiagnostics.Write($"Abandoned resolver later completed: status={task.Status}, error={task.Exception?.GetBaseException().Message}"),
-                    TaskScheduler.Default);
-                throw new TimeoutException("The complete update check exceeded the 18 second UI safety timeout. See updater.log for the last completed network step.");
-            }
-
-            var manifest = await resolveTask;
-            UpdaterDiagnostics.Write(manifest is null
-                ? "Update resolver completed without a release manifest."
-                : $"Update resolver completed. Remote build={manifest.Commit}, size={manifest.Size}.");
-
-            if (manifest is null)
-            {
-                SetUpdateStatus(channel == UpdateChannel.Stable
-                    ? "No Stable build yet"
-                    : "No Development build yet", "#93A5B0");
-                SetUpdateButton("Check", true, accent: false);
+            Interval = TimeSpan.FromSeconds(18)
+        };
+        _updateCheckWatchdog.Tick += (_, _) =>
+        {
+            if (!_updateCheckInProgress || generation != _updateCheckGeneration)
                 return;
-            }
 
-            if (!SelfUpdateService.IsUpdateAvailable(manifest))
-            {
-                SetUpdateStatus($"Up to date · {SelfUpdateService.ShortCommit(manifest.Commit)}", "#86C99B");
-                SetUpdateButton("Check", true, accent: false);
-                return;
-            }
+            UpdaterDiagnostics.Write($"Dispatcher watchdog fired for update check #{generation}; abandoning worker.");
+            operationCancellation.Cancel();
+            CompleteUpdateCheckFailure(
+                generation,
+                operationCancellation,
+                new TimeoutException("The update check exceeded the 18 second UI safety timeout."),
+                showErrors: false);
+        };
+        _updateCheckWatchdog.Start();
 
-            _availableUpdate = manifest;
-            SetUpdateStatus($"Update available · {SelfUpdateService.ShortCommit(manifest.Commit)}", "#8FD7E8");
-            SetUpdateButton("Update & Restart", true, accent: true);
-        }
-        catch (OperationCanceledException)
+        UpdaterDiagnostics.Write($"Dispatching update check #{generation} to ThreadPool worker; callback will return via Dispatcher.BeginInvoke.");
+
+        Task.Run(async () =>
         {
-            UpdaterDiagnostics.Write("Update check canceled.");
-            SetUpdateStatus("Update check canceled", "#C5A474");
-            SetUpdateButton("Retry", true, accent: false);
-        }
-        catch (Exception ex)
+            UpdaterDiagnostics.Write($"Worker for update check #{generation} entered on thread {Environment.CurrentManagedThreadId}.");
+            return await ResolveUpdateManifestAsync(channel, operationCancellation.Token).ConfigureAwait(false);
+        }, CancellationToken.None).ContinueWith(task =>
         {
-            UpdaterDiagnostics.Write($"Update check failed: {ex}");
-            SetUpdateStatus("Update check unavailable", "#C5A474");
-            SetUpdateButton("Retry", true, accent: false);
-            if (showErrors)
+            UpdaterDiagnostics.Write($"ThreadPool continuation for update check #{generation}: status={task.Status}. Posting result to Dispatcher.");
+
+            _ = Dispatcher.BeginInvoke(new Action(() =>
             {
-                MessageBox.Show(this,
-                    $"Could not check for updates.\n\n{ex.Message}\n\nDiagnostics: {UpdaterDiagnostics.LogPath}",
-                    "Update check failed",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-            }
-        }
-        finally
+                UpdaterDiagnostics.Write($"Dispatcher callback entered for update check #{generation} on thread {Environment.CurrentManagedThreadId}.");
+
+                if (!_updateCheckInProgress || generation != _updateCheckGeneration)
+                {
+                    UpdaterDiagnostics.Write($"Dispatcher callback for stale update check #{generation} ignored.");
+                    return;
+                }
+
+                if (task.IsCanceled)
+                {
+                    CompleteUpdateCheckCanceled(generation, operationCancellation);
+                    return;
+                }
+
+                if (task.IsFaulted)
+                {
+                    CompleteUpdateCheckFailure(
+                        generation,
+                        operationCancellation,
+                        task.Exception?.GetBaseException() ?? new InvalidOperationException("Unknown updater worker failure."),
+                        showErrors);
+                    return;
+                }
+
+                CompleteUpdateCheckSuccess(generation, operationCancellation, channel, task.Result);
+            }), DispatcherPriority.Send);
+        }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+    }
+
+    private void CompleteUpdateCheckSuccess(
+        int generation,
+        CancellationTokenSource operationCancellation,
+        UpdateChannel channel,
+        UpdateManifest? manifest)
+    {
+        UpdaterDiagnostics.Write(manifest is null
+            ? $"Update check #{generation} completed without a release manifest."
+            : $"Update check #{generation} completed. Remote build={manifest.Commit}, size={manifest.Size}.");
+
+        ReleaseUpdateCheckState(generation, operationCancellation);
+
+        if (manifest is null)
         {
-            if (ReferenceEquals(_updateOperationCancellation, operationCancellation))
-                _updateOperationCancellation = null;
-            _updateBusy = false;
-            UpdaterDiagnostics.Write("Update check UI operation finished and busy state released.");
+            SetUpdateStatus(channel == UpdateChannel.Stable ? "No Stable build yet" : "No Development build yet", "#93A5B0");
+            SetUpdateButton("Check", true, accent: false);
+            return;
         }
+
+        if (!SelfUpdateService.IsUpdateAvailable(manifest))
+        {
+            SetUpdateStatus($"Up to date · {SelfUpdateService.ShortCommit(manifest.Commit)}", "#86C99B");
+            SetUpdateButton("Check", true, accent: false);
+            return;
+        }
+
+        _availableUpdate = manifest;
+        SetUpdateStatus($"Update available · {SelfUpdateService.ShortCommit(manifest.Commit)}", "#8FD7E8");
+        SetUpdateButton("Update & Restart", true, accent: true);
+    }
+
+    private void CompleteUpdateCheckCanceled(int generation, CancellationTokenSource operationCancellation)
+    {
+        UpdaterDiagnostics.Write($"Update check #{generation} observed cancellation.");
+        ReleaseUpdateCheckState(generation, operationCancellation);
+        SetUpdateStatus("Update check canceled", "#C5A474");
+        SetUpdateButton("Retry", true, accent: false);
+    }
+
+    private void CompleteUpdateCheckFailure(
+        int generation,
+        CancellationTokenSource operationCancellation,
+        Exception ex,
+        bool showErrors)
+    {
+        UpdaterDiagnostics.Write($"Update check #{generation} failed: {ex}");
+        ReleaseUpdateCheckState(generation, operationCancellation);
+        SetUpdateStatus("Update check unavailable", "#C5A474");
+        SetUpdateButton("Retry", true, accent: false);
+
+        if (showErrors)
+        {
+            MessageBox.Show(this,
+                $"Could not check for updates.\n\n{ex.Message}\n\nDiagnostics: {UpdaterDiagnostics.LogPath}",
+                "Update check failed",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+    }
+
+    private void AbandonActiveUpdateCheck(string status)
+    {
+        if (!_updateCheckInProgress)
+            return;
+
+        var cancellation = _updateOperationCancellation;
+        ++_updateCheckGeneration;
+        _updateCheckInProgress = false;
+        _updateBusy = false;
+        StopUpdateCheckWatchdog();
+        _updateOperationCancellation = null;
+        cancellation?.Cancel();
+        cancellation?.Dispose();
+
+        SetUpdateStatus(status, "#C5A474");
+        SetUpdateButton("Retry", true, accent: false);
+        UpdaterDiagnostics.Write($"Active update check was abandoned immediately. New generation={_updateCheckGeneration}.");
+    }
+
+    private void ReleaseUpdateCheckState(int generation, CancellationTokenSource operationCancellation)
+    {
+        if (generation != _updateCheckGeneration)
+            return;
+
+        StopUpdateCheckWatchdog();
+        _updateCheckInProgress = false;
+        _updateBusy = false;
+        if (ReferenceEquals(_updateOperationCancellation, operationCancellation))
+            _updateOperationCancellation = null;
+        operationCancellation.Dispose();
+        UpdaterDiagnostics.Write($"Update check #{generation} UI state released.");
+    }
+
+    private void StopUpdateCheckWatchdog()
+    {
+        if (_updateCheckWatchdog is null)
+            return;
+        _updateCheckWatchdog.Stop();
+        _updateCheckWatchdog = null;
     }
 
     private static async Task<UpdateManifest?> ResolveUpdateManifestAsync(
@@ -227,7 +326,7 @@ public partial class MainWindow
         Exception? primaryError = null;
         try
         {
-            var result = await SelfUpdateService.CheckAsync(channel, cancellationToken);
+            var result = await SelfUpdateService.CheckAsync(channel, cancellationToken).ConfigureAwait(false);
             UpdaterDiagnostics.Write("GitHub API path completed successfully.");
             return result;
         }
@@ -245,7 +344,7 @@ public partial class MainWindow
         try
         {
             UpdaterDiagnostics.Write("Trying release-manifest fallback path.");
-            var result = await ReleaseManifestFallback.CheckAsync(channel, cancellationToken);
+            var result = await ReleaseManifestFallback.CheckAsync(channel, cancellationToken).ConfigureAwait(false);
             UpdaterDiagnostics.Write("Release-manifest fallback completed successfully.");
             return result;
         }
@@ -317,6 +416,7 @@ public partial class MainWindow
             if (ReferenceEquals(_updateOperationCancellation, operationCancellation))
                 _updateOperationCancellation = null;
             _updateBusy = false;
+            operationCancellation.Dispose();
         }
     }
 
