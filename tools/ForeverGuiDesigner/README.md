@@ -58,11 +58,14 @@ The project scan reconstructs the common `MachineSkin.frame`, statically resolva
 
 Washing preview initialization is normalized in the same refresh that inserts Phase 6 elements, so loading the machine no longer depends on toggling **Visual preview** off/on to restore the generated backdrop and decorated controls.
 
+Generated/imported panel `Content` values are editor metadata only and are suppressed in the WYSIWYG preview. Helper labels such as `Washing process`, `Water connection`, `Washing hints`, `Condensing` or `Automation / upgrades` no longer leak into the actual GUI rendering.
+
 ### Condenser state editor
 
 - MK I / MK II
 - Base / Mixing / Freezing / Garden
 - 0 / 25 / 50 / 75 / 100% progress preview
+- **Active Processing** continuously loops progress from 0 → 100% without rebuilding the Canvas
 - state-specific editable anchors without rewriting coordinates
 
 ### Detailed Washing scene
@@ -76,6 +79,7 @@ Washing now mirrors much more of the real `WashingScreen` / `MachineProcessEffec
 - moving meter highlight
 - animation play/pause
 - editable status, panels, input/output labels, process scene, time, recipe summary and hints
+- **Active Processing** continuously drives both the progress meter and displayed processing time
 
 ### Forever widgets
 
@@ -96,6 +100,7 @@ The editor supports **Development** and **Stable** channels. It checks the GitHu
 
 - Startup checks are informational only; installation always requires **Update & Restart**.
 - Version checks use a short hard timeout and can never inherit the long EXE-download timeout.
+- If the GitHub Releases API is unavailable on the local network, the editor automatically falls back to the channel's tiny `update-manifest.json` release asset with its own short timeout.
 - The update executable is verified by size and SHA-256 before replacement.
 - A temporary helper process waits for the editor to exit, replaces the executable, restarts it and cleans itself up.
 - Development follows `feature/forever-gui-designer-mvp`; Stable follows `main`.
