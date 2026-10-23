@@ -6,6 +6,8 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace ForeverGuiDesigner.Services;
 
@@ -44,6 +46,30 @@ public static class SelfUpdateService
     };
 
     private static readonly HttpClient Client = CreateClient();
+
+    private sealed class GitHubReleaseInfo
+    {
+        [JsonPropertyName("body")]
+        public string? Body { get; set; }
+
+        [JsonPropertyName("published_at")]
+        public DateTimeOffset? PublishedAt { get; set; }
+
+        [JsonPropertyName("assets")]
+        public List<GitHubReleaseAsset> Assets { get; set; } = [];
+    }
+
+    private sealed class GitHubReleaseAsset
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("size")]
+        public long Size { get; set; }
+
+        [JsonPropertyName("digest")]
+        public string? Digest { get; set; }
+    }
 
     public static string CurrentCommit
     {
@@ -103,17 +129,52 @@ public static class SelfUpdateService
 
     public static async Task<UpdateManifest?> CheckAsync(UpdateChannel channel, CancellationToken cancellationToken = default)
     {
-        var uri = ManifestUri(channel, cacheBust: true);
-        using var response = await Client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        // Checking for an update should be a tiny API request, not a release-asset
+        // download. The old implementation fetched update-manifest.json through
+        // GitHub's release download redirect and inherited the 10 minute download
+        // timeout. On some Windows/network combinations that request can stall,
+        // leaving the editor visibly stuck on "Checking…".
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(12));
+
+        using var response = await Client.GetAsync(
+            ReleaseApiUri(channel),
+            HttpCompletionOption.ResponseContentRead,
+            timeout.Token);
+
         if (response.StatusCode == HttpStatusCode.NotFound)
             return null;
         response.EnsureSuccessStatusCode();
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        var manifest = await JsonSerializer.DeserializeAsync<UpdateManifest>(stream, JsonOptions, cancellationToken);
-        if (manifest is null || string.IsNullOrWhiteSpace(manifest.Commit) || string.IsNullOrWhiteSpace(manifest.Sha256))
-            throw new InvalidDataException("The update manifest is incomplete.");
-        return manifest;
+        await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
+        var release = await JsonSerializer.DeserializeAsync<GitHubReleaseInfo>(stream, JsonOptions, timeout.Token)
+                      ?? throw new InvalidDataException("GitHub returned an empty update release response.");
+
+        var asset = release.Assets.FirstOrDefault(candidate =>
+            string.Equals(candidate.Name, "ForeverGuiDesigner.exe", StringComparison.OrdinalIgnoreCase));
+        if (asset is null)
+            throw new InvalidDataException("The update release does not contain ForeverGuiDesigner.exe.");
+
+        var commit = ExtractBuildCommit(release.Body);
+        if (string.IsNullOrWhiteSpace(commit))
+            throw new InvalidDataException("The update release does not identify its build commit.");
+
+        var digest = asset.Digest;
+        if (string.IsNullOrWhiteSpace(digest) || !digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("GitHub did not provide a SHA-256 digest for the update executable.");
+
+        return new UpdateManifest
+        {
+            Channel = channel == UpdateChannel.Stable ? "stable" : "development",
+            Commit = commit,
+            Asset = asset.Name,
+            Sha256 = digest["sha256:".Length..].Trim().ToLowerInvariant(),
+            Size = asset.Size,
+            BuiltAt = release.PublishedAt ?? DateTimeOffset.MinValue,
+            Notes = channel == UpdateChannel.Stable
+                ? "Latest stable build from main."
+                : "Latest development build from feature/forever-gui-designer-mvp."
+        };
     }
 
     public static bool IsUpdateAvailable(UpdateManifest manifest)
@@ -269,6 +330,15 @@ public static class SelfUpdateService
         return true;
     }
 
+    private static string ExtractBuildCommit(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+            return string.Empty;
+
+        var match = Regex.Match(body, @"Build:\s*([0-9a-fA-F]{40})", RegexOptions.CultureInvariant);
+        return match.Success ? match.Groups[1].Value.ToLowerInvariant() : string.Empty;
+    }
+
     private static async Task<string> Sha256Async(string path, CancellationToken cancellationToken)
     {
         await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 128, useAsync: true);
@@ -281,18 +351,19 @@ public static class SelfUpdateService
     {
         var client = new HttpClient
         {
+            // Large EXE downloads are allowed to take a while. CheckAsync adds its
+            // own much shorter linked cancellation timeout for version checks.
             Timeout = TimeSpan.FromMinutes(10)
         };
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("ForeverGuiDesigner", "1.0"));
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoCache = true };
+        client.DefaultRequestHeaders.TryAddWithoutValidation("X-GitHub-Api-Version", "2022-11-28");
         return client;
     }
 
-    private static Uri ManifestUri(UpdateChannel channel, bool cacheBust)
-    {
-        var suffix = cacheBust ? $"?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}" : string.Empty;
-        return new Uri($"https://github.com/{Owner}/{Repository}/releases/download/{Tag(channel)}/update-manifest.json{suffix}");
-    }
+    private static Uri ReleaseApiUri(UpdateChannel channel)
+        => new($"https://api.github.com/repos/{Owner}/{Repository}/releases/tags/{Tag(channel)}");
 
     private static Uri AssetUri(UpdateChannel channel, string asset)
         => new($"https://github.com/{Owner}/{Repository}/releases/download/{Tag(channel)}/{Uri.EscapeDataString(asset)}");
