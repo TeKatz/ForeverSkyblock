@@ -30,6 +30,7 @@ public partial class App : Application
             window.EnableForeverPhase6StableAnimation();
             window.EnableForeverPhase7Tools();
             window.EnableForeverPhase8Tools();
+            window.EnableForeverPhase8InteractionTools();
             window.EnableSelfUpdater();
         }, DispatcherPriority.ContextIdle);
     }
