@@ -40,94 +40,57 @@ The editor stores positions in Minecraft GUI-local coordinates rather than deskt
 
 Use **Repo…** to select the local ForeverSkyblock repository. When the application is launched from inside the repository it attempts to detect it automatically.
 
-The asset browser scans:
-
-`mod/src/main/resources/assets/forever_skyblock/textures`
-
-It shows decoded PNG previews with nearest-neighbor scaling. Double-clicking a texture adds it to the canvas. Texture references are stored as repository-relative asset paths such as `textures/item/forever_core.png`.
+The asset browser scans `mod/src/main/resources/assets/forever_skyblock/textures`, shows decoded PNG previews with nearest-neighbor scaling, and stores repository-relative texture paths.
 
 ## Forever project integration
-
-The command bar contains a dedicated **FOREVER SKYBLOCK** workflow.
 
 1. Select the local ForeverSkyblock repository with **Repo…**.
 2. Click **Scan project**.
 3. Select one of the detected machine screens.
-4. Click **Load machine** to create an editable layout from the actual Java sources.
-5. Edit the result visually and use **Export Java** to generate GUI-local constants for the mod.
+4. Click **Load machine**.
+5. Edit visually and use **Export Java** for GUI-local constants.
 
-The scanner intentionally reads the project instead of shipping a fixed machine list. It detects classes extending `MachineScreen<...>`, resolves their `MachineLayout` constant, pairs them with their Menu class, and imports the static geometry it can prove from source.
-
-### Project-specific geometry
-
-Forever machine screens do not use the vanilla 176 x 166 assumption. The scanner reads the actual `MachineLayout.java` dimensions and inventory/hotbar coordinates.
-
-It also mirrors `MachineSkin.slot` geometry:
-
-- machine slot frames: 24 x 24, padded 4 px around vanilla `Slot.x` / `Slot.y`
-- player inventory/hotbar frames: 20 x 20, padded 2 px around vanilla slot coordinates
-
-Player inventory and hotbar slots are imported individually for these project templates so their real Forever spacing remains editable.
+The scanner detects `MachineScreen<...>` classes, resolves `MachineLayout`, pairs Screen and Menu sources and imports statically provable geometry.
 
 ### Visual machine preview
 
-The project scan reconstructs a non-interactive machine backdrop from the actual Forever rendering style. The preview mirrors `MachineSkin.frame`, statically resolvable `MachineSkin.panel(...)` regions, the shared player inventory panel and matching repository block/item textures. Imported slots, buttons and editor widgets remain editable above this backdrop.
-
-The **Visual preview** checkbox can hide this reconstructed background without changing layout data or Java export.
+The project scan reconstructs the common `MachineSkin.frame`, statically resolvable panels, the player inventory surface and matching repository textures. Imported slots/buttons remain editable above that preview.
 
 ### Condenser state editor
 
-The Condenser has a state-aware preview workflow:
-
-- tier: **MK I** / **MK II**
-- mode: **Base** / **Mixing** / **Freezing** / **Garden**
-- progress preview: **0 / 25 / 50 / 75 / 100%**
-
-Changing state does not rewrite layout coordinates. The editor switches preview and visibility of imported elements while keeping separate state anchors for state-specific surfaces.
+- MK I / MK II
+- Base / Mixing / Freezing / Garden
+- 0 / 25 / 50 / 75 / 100% progress preview
+- state-specific editable anchors without rewriting coordinates
 
 ### Detailed Washing scene
 
-Washing has a richer preview based directly on `WashingScreen` and `MachineProcessEffects.washing`:
+Washing now mirrors much more of the real `WashingScreen` / `MachineProcessEffects.washing` presentation:
 
-- runtime states: **Running**, **Idle**, **Blocked**, **No water**
-- connected-water / water-required presentation
-- animated washing ripples
+- Running / Idle / Blocked / No water states
+- water connected / required surface
+- animated water ripples
 - animated process particles
-- moving progress-meter highlight
-- shared progress percentage selector
-- animation play/pause control
-- editable status text and indicator
-- editable water panel and water-state label
-- editable input/output labels
-- editable washing process surface and animated process-scene anchor
-- editable processing-time label
-- editable recipe-summary anchor
-- editable hint panel and hint labels
-
-The animation is editor presentation state only. It does not rewrite layout coordinates or add temporary textures to the mod.
+- moving meter highlight
+- animation play/pause
+- editable status, panels, input/output labels, process scene, time, recipe summary and hints
 
 ### Forever widgets
 
-The Forever Skyblock command bar provides direct widget insertion for:
+- Panel
+- Meter
+- Lock
+- Status
 
-- **Panel** — MachineSkin-style panel surface
-- **Meter** — previewable progress meter
-- **Lock** — pixel-style Forever lock indicator
-- **Status** — machine status indicator
-
-These are ordinary editable layout elements and can be moved, resized, aligned, copied, saved and included in Java coordinate export.
+These remain ordinary editable layout elements.
 
 ### Theme-safe command controls
 
-ComboBox controls in the command bars receive explicit high-contrast text, surface and border colors at runtime. This directly addresses Windows themes that render the native selection field as a light surface while inheriting light text, producing unreadable selected values.
+Top ComboBoxes receive explicit high-contrast text/surface/border colors at runtime, avoiding unreadable selected values caused by Windows theme chrome.
 
 ### Java export
 
-**Export Java** creates a small Java layout class containing `GUI_WIDTH`, `GUI_HEIGHT`, and constants for editable machine slots/buttons/visual elements.
-
-For imported machine slots, exported X/Y values are converted back from the 24 x 24 visual frame to the vanilla `Slot.x` / `Slot.y` coordinates expected by the Menu. Player inventory coordinates remain derived from `MachineLayout`.
-
-The export includes comments identifying the imported Screen, Menu and `MachineLayout` source. It is intended as a reviewed handoff rather than silently rewriting Java source files.
+Export converts imported machine-slot frames back to the vanilla `Slot.x` / `Slot.y` coordinates and identifies source Screen/Menu/Layout in comments.
 
 ## Build
 
@@ -135,46 +98,17 @@ The export includes comments identifying the imported Screen, Menu and `MachineL
 dotnet build .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj -c Release
 ```
 
-Run during development with:
-
 ```powershell
 dotnet run --project .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
 ```
 
-The GitHub Actions workflow publishes a self-contained `win-x64` build so the application can be tested without installing the .NET SDK.
-
-Phase 6 code passed restore, Release WPF build, self-contained `win-x64` publish and artifact upload on commit `bbf8b81143020f9ae9b962fe02d9480302ca7668`.
-
-## Layout format
-
-A layout contains its logical Minecraft GUI size and a list of elements:
-
-```json
-{
-  "name": "Condenser",
-  "width": 248,
-  "height": 352,
-  "elements": [
-    {
-      "id": "machine_slot_1",
-      "type": "slot",
-      "x": 26,
-      "y": 57,
-      "width": 24,
-      "height": 24,
-      "content": "30,61",
-      "texturePath": null,
-      "visible": true
-    }
-  ]
-}
-```
+The workflow publishes a self-contained `win-x64` build. Phase 6 passed restore, Release WPF build, portable publish and artifact upload on commit `bbf8b81143020f9ae9b962fe02d9480302ca7668`.
 
 ## Next steps
 
-- Extend rich process-scene previews to Refining, Crucible and Ascension using the same scene infrastructure introduced for Washing.
-- Resolve more machine labels directly from language files.
-- Add visible guides/rulers and a project-aware snap grid.
-- Add Minecraft font rendering instead of desktop fallback fonts.
-- Add a reviewed apply-back workflow for selected Java constants.
+- Extend rich process scenes to Refining, Crucible and Ascension.
+- Resolve machine labels from language files.
+- Add guides/rulers and project-aware snap grid.
+- Add Minecraft font rendering.
+- Add reviewed apply-back for selected Java constants.
 - Add hover/pressed states and more runtime-state previews.
