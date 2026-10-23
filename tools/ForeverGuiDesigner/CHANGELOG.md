@@ -2,6 +2,17 @@
 
 ## Development
 
+### 0.8.2 — Machine presentation lifecycle hotfix
+
+- Added a final machine-presentation coordinator that runs after all Phase 5–8 background/context-idle decorators, so machine visuals no longer fall back to the generic grey renderer after load or `Apply properties`.
+- Restores the source-derived MachineSkin backdrop explicitly after every canvas rebuild instead of relying on an incidental `LayoutUpdated` callback.
+- Added semantic Z-layers for machine panels, process surfaces, slots, text and buttons; Washing input/output slots can no longer be hidden behind the generated process panel.
+- Unified Washing animation gating: motion only advances while the Washing scene is `Running` and `Animate` is enabled.
+- `Idle`, `Blocked`, `No water` and `Animate=false` now stop the stable Washing timer, Active Processing and any running Phase 8 timeline instead of allowing hidden progress loops to keep driving the scene.
+- Paused Washing scenes collapse transient particles and meter shine while keeping the selected progress value as a static preview.
+- Dynamic Washing time text is updated without rebuilding the canvas.
+- Bumped the editor to 0.8.2.
+
 ### 0.8.1 — Phase 8 performance hotfix
 
 - Fixed a severe WPF UI-thread regression where `PreviewCanvas.LayoutUpdated` rebuilt the Phase 8 hierarchy, redecorated every editor visual and removed/recreated all resize handles on virtually every layout pass.
