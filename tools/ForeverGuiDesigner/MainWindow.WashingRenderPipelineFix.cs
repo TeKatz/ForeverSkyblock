@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using ForeverGuiDesigner.Controls;
 using ForeverGuiDesigner.Models;
@@ -9,16 +11,13 @@ namespace ForeverGuiDesigner;
 /// <summary>
 /// Exclusive Washing presentation/playback controller.
 ///
-/// Older editor phases were designed as incremental additions and each owns valid
-/// functionality in isolation. Washing, however, ended up with several presentation
-/// queues and two competing progress clocks touching the same WPF visuals. This
-/// controller turns those older passes into passive helpers while Washing is active:
-/// one synchronous presentation owner and the Phase 8 timeline as the only live clock.
-/// Other machine editors keep their existing Phase 5-8 behaviour unchanged.
+/// Washing is intentionally treated as a single-owner runtime preview. Older phases
+/// still provide helper methods, but while Washing is active none of their asynchronous
+/// presentation loops are allowed to mutate the same WPF visuals behind this controller.
 /// </summary>
 public partial class MainWindow
 {
-    private const string WashingSelectionAdornerTag = "__forever_washing_selection_adorner_v1";
+    private const string WashingSelectionAdornerTag = "__forever_washing_selection_adorner_v2";
 
     private readonly HashSet<Border> _washingExclusiveButtonHooks = [];
     private bool _washingRenderPipelineFixInitialized;
@@ -28,7 +27,6 @@ public partial class MainWindow
     private FrameworkElement? _washingRenderPipelineVisualAnchor;
     private int _washingRenderPipelineVisualCount = -1;
     private DateTime _washingUnifiedLastTick = DateTime.UtcNow;
-    private double _washingDynamicTextAccumulator;
 
     public void EnableWashingRenderPipelineFix()
     {
@@ -44,14 +42,15 @@ public partial class MainWindow
 
         ApplyButton.Click += (_, _) => SynchronizeExclusiveWashingAfterOperation(ensureStructure: true, rebuildBackdrop: true);
 
-        // Selection must be restored synchronously. The base editor intentionally
-        // changes BorderThickness/BorderBrush for every element; doing the Washing
-        // restoration in the same input event prevents a one-frame geometry shift.
-        ElementsList.SelectionChanged += (_, _) =>
-        {
-            if (IsWashingPhase6Active && !_washingRenderPipelineFixApplying)
-                ApplyExclusiveWashingPresentation(ensureStructure: false, rebuildBackdrop: false);
-        };
+        // Direct canvas selection suppresses ElementsList.SelectionChanged in the base
+        // editor. Listen to the bubbling mouse event as well, after the element's own
+        // selection handler has executed, so source chrome is restored before WPF paints.
+        PreviewCanvas.AddHandler(UIElement.MouseLeftButtonDownEvent,
+            new MouseButtonEventHandler((_, _) => SynchronizeExclusiveWashingSelection()), true);
+
+        ElementsList.SelectionChanged += (_, _) => SynchronizeExclusiveWashingSelection();
+        if (_phase8Hierarchy is not null)
+            _phase8Hierarchy.SelectedItemChanged += (_, _) => SynchronizeExclusiveWashingSelection();
 
         if (_phase6WashingStatusCombo is not null)
             _phase6WashingStatusCombo.SelectionChanged += (_, _) => HandleWashingGateChanged();
@@ -65,8 +64,8 @@ public partial class MainWindow
         if (_foreverProgressCombo is not null)
             _foreverProgressCombo.SelectionChanged += (_, _) => HandleWashingProgressSelectionChanged();
 
-        // The existing timeline controls remain the UI, but their Washing semantics
-        // are unified here so Play/Pause/Stop all control the same progress source.
+        // Existing Phase 8 controls remain the UI. Their original handlers run first;
+        // these handlers normalize the final Washing state in the same routed event.
         foreach (var button in SkyblockBarHost.Children.OfType<Button>())
         {
             switch (button.Content as string)
@@ -86,9 +85,8 @@ public partial class MainWindow
         if (_phase8TimelineSlider is not null)
             _phase8TimelineSlider.ValueChanged += (_, _) => HandleExclusiveWashingTimelineScrub();
 
-        // Phase 8's render timer is always alive. While Washing is active it becomes
-        // the single clock for both Active Processing and decorative motion. The old
-        // Phase 6 stable timer and Phase 7 processing timer stay stopped.
+        // Reuse the Phase 8 timer only as a heartbeat. _phase8Playing stays false while
+        // Washing owns the preview, so Phase8TimelineTick itself cannot be a second clock.
         if (_phase8TimelineTimer is not null)
             _phase8TimelineTimer.Tick += (_, _) => TickExclusiveWashingRuntime();
 
@@ -126,13 +124,30 @@ public partial class MainWindow
         }
     }
 
+    private void SynchronizeExclusiveWashingSelection()
+    {
+        if (!IsWashingPhase6Active || _washingRenderPipelineFixApplying)
+            return;
+
+        EnterExclusiveWashingMode();
+        RestoreExclusiveWashingElementChrome();
+        UpdateWashingSelectionAdorners();
+
+        // Phase 8 handles are editor chrome, not machine chrome. Keep them in sync
+        // immediately so clearing a selection cannot leave stale resize handles behind.
+        if (_phase8Initialized)
+            EnsurePhase8OverlayVisuals();
+    }
+
     private void EnterExclusiveWashingMode()
     {
         var firstEntry = !_washingExclusiveModeActive;
         _washingExclusiveModeActive = true;
 
-        // Gate every legacy full-presentation queue. Their helper methods remain
-        // available and are called directly below in one deterministic order.
+        // Phase 5 was the remaining delayed writer in 0.8.5. Its broad widget
+        // predicates classify phase6 Washing ids containing _panel_, _meter_ and
+        // _status as generic Phase 5 widgets. Keep its refresh loop gated too.
+        _phase5Refreshing = true;
         _phase6Refreshing = true;
         _visualFidelityApplying = true;
         _machinePresentationApplying = true;
@@ -141,15 +156,15 @@ public partial class MainWindow
         _phase6Timer?.Stop();
         _phase6StableAnimationTimer?.Stop();
         _phase7ProcessingTimer?.Stop();
+        _phase8Playing = false;
 
         if (firstEntry)
         {
-            _washingPlaybackRequested = IsActiveProcessingSelected;
-            SyncTimelineDisplayOnly(CurrentProgress);
+            UpdatePhase6ControlAvailability();
+            _washingPlaybackRequested = IsActiveProcessingSelected && CurrentProgress < 1.0;
+            SetExclusiveWashingProgress(CurrentProgress, updateVisuals: false);
             _washingUnifiedLastTick = DateTime.UtcNow;
         }
-
-        SyncExclusiveWashingPlaybackState();
     }
 
     private void ExitExclusiveWashingMode()
@@ -158,6 +173,7 @@ public partial class MainWindow
             return;
 
         _washingExclusiveModeActive = false;
+        _phase5Refreshing = false;
         _phase6Refreshing = false;
         _visualFidelityApplying = false;
         _machinePresentationApplying = false;
@@ -170,9 +186,10 @@ public partial class MainWindow
         _washingExclusiveButtonHooks.Clear();
         _washingUnifiedLastTick = DateTime.UtcNow;
 
-        // Hand ownership back to the normal editor pipeline for every other machine.
         if (IsActiveProcessingSelected)
             _phase7ProcessingTimer?.Start();
+
+        QueuePhase5Refresh();
         QueuePhase6Refresh();
         QueueVisualFidelityPass();
         QueueMachinePresentation();
@@ -188,6 +205,7 @@ public partial class MainWindow
         try
         {
             EnterExclusiveWashingMode();
+            UpdatePhase6ControlAvailability();
 
             var changed = false;
             if (ensureStructure)
@@ -201,9 +219,6 @@ public partial class MainWindow
 
             if (changed || VisibleWashingMachineSlotMissingVisual())
             {
-                // This is synchronous on purpose. The source presentation is applied
-                // immediately afterwards in the same dispatcher turn, so the user
-                // never sees RenderLayout()'s generic grey intermediate frame.
                 RenderLayout();
                 rebuildBackdrop = true;
             }
@@ -219,41 +234,15 @@ public partial class MainWindow
             HideGeneratedPanelMetadata();
 
             _washingExclusiveButtonHooks.RemoveWhere(border => !_visuals.Values.Contains(border));
+            RestoreExclusiveWashingElementChrome();
 
-            foreach (var pair in _visuals)
-            {
-                var model = pair.Key;
-                if (pair.Value is not Border border)
-                    continue;
-
-                switch (model.Type)
-                {
-                    case GuiElementType.Slot:
-                        ApplyMachineSlotFidelity(model, border, washing: true);
-                        NormalizeExclusiveWashingNativeOuterBorder(border);
-                        WrapExclusiveWashingSlotForPhase8(border);
-                        break;
-
-                    case GuiElementType.Button:
-                        ApplyExclusiveWashingButtonChrome(model, border, border.IsMouseOver);
-                        break;
-
-                    case GuiElementType.Text:
-                        ApplyMachineTextFidelity(model, border, washing: true);
-                        NormalizeExclusiveWashingNativeOuterBorder(border);
-                        break;
-                }
-
-                ApplyWashingSourceSurface(model, border);
-            }
-
-            ApplyWashingSourceLayering();
-            SyncExclusiveWashingPlaybackState();
             UpdateStableWashingAnimationVisuals();
             if (!ExclusiveWashingMotionEnabled)
                 HideExclusiveWashingTransientMotion();
 
             UpdateWashingSelectionAdorners();
+            if (_phase8Initialized)
+                EnsurePhase8OverlayVisuals();
 
             CaptureFidelityVisualGeneration();
             CaptureMachinePresentationGeneration();
@@ -266,13 +255,45 @@ public partial class MainWindow
         }
     }
 
+    private void RestoreExclusiveWashingElementChrome()
+    {
+        foreach (var pair in _visuals)
+        {
+            var model = pair.Key;
+            if (pair.Value is not Border border)
+                continue;
+
+            switch (model.Type)
+            {
+                case GuiElementType.Slot:
+                    ApplyMachineSlotFidelity(model, border, washing: true);
+                    NormalizeExclusiveWashingNativeOuterBorder(border);
+                    WrapExclusiveWashingSlotForPhase8(border);
+                    break;
+
+                case GuiElementType.Button:
+                    ApplyExclusiveWashingButtonChrome(model, border, border.IsMouseOver);
+                    break;
+
+                case GuiElementType.Text:
+                    ApplyMachineTextFidelity(model, border, washing: true);
+                    NormalizeExclusiveWashingNativeOuterBorder(border);
+                    break;
+            }
+
+            ApplyWashingSourceSurface(model, border);
+        }
+
+        ApplyWashingSourceLayering();
+    }
+
     private void HandleWashingGateChanged()
     {
         if (!IsWashingPhase6Active)
             return;
 
         EnterExclusiveWashingMode();
-        SyncExclusiveWashingPlaybackState();
+        UpdatePhase6ControlAvailability();
         ApplyExclusiveWashingPresentation(ensureStructure: false, rebuildBackdrop: true);
     }
 
@@ -283,21 +304,19 @@ public partial class MainWindow
 
         EnterExclusiveWashingMode();
         _phase7ProcessingTimer?.Stop();
+        _phase8Playing = false;
 
         if (IsActiveProcessingSelected)
         {
-            // Phase 7's earlier selection handler has already reset its live item to
-            // zero. Mirror that value into the one surviving Phase 8 clock and start.
-            SyncTimelineDisplayOnly(CurrentProgress);
+            SetExclusiveWashingProgress(CurrentProgress, updateVisuals: false);
             _washingPlaybackRequested = true;
         }
         else
         {
             _washingPlaybackRequested = false;
-            SyncTimelineDisplayOnly(CurrentProgress);
+            SetExclusiveWashingProgress(CurrentProgress, updateVisuals: false);
         }
 
-        SyncExclusiveWashingPlaybackState();
         ApplyExclusiveWashingPresentation(ensureStructure: false, rebuildBackdrop: false);
     }
 
@@ -311,9 +330,13 @@ public partial class MainWindow
         if (_phase7ActiveProcessingItem is not null && !IsActiveProcessingSelected)
             _foreverProgressCombo!.SelectedItem = _phase7ActiveProcessingItem;
 
+        if (_phase8TimelineProgress >= .999999)
+            SetExclusiveWashingProgress(0, updateVisuals: true);
+
         _washingPlaybackRequested = true;
-        SyncExclusiveWashingPlaybackState();
-        ApplyExclusiveWashingPresentation(ensureStructure: false, rebuildBackdrop: false);
+        _phase8Playing = false;
+        _washingUnifiedLastTick = DateTime.UtcNow;
+        UpdateExclusiveWashingRuntimeVisuals();
     }
 
     private void PauseExclusiveWashingPlayback()
@@ -325,8 +348,7 @@ public partial class MainWindow
         _washingPlaybackRequested = false;
         _phase8Playing = false;
         _phase7ProcessingTimer?.Stop();
-        SyncExclusiveWashingPlaybackState();
-        ApplyExclusiveWashingPresentation(ensureStructure: false, rebuildBackdrop: false);
+        UpdateExclusiveWashingRuntimeVisuals();
     }
 
     private void StopExclusiveWashingPlayback()
@@ -343,9 +365,8 @@ public partial class MainWindow
         if (_phase7ActiveProcessingItem is not null && !IsActiveProcessingSelected)
             _foreverProgressCombo!.SelectedItem = _phase7ActiveProcessingItem;
 
-        SetPhase8TimelineProgress(0);
-        SyncExclusiveWashingPlaybackState();
-        ApplyExclusiveWashingPresentation(ensureStructure: false, rebuildBackdrop: false);
+        SetExclusiveWashingProgress(0, updateVisuals: true);
+        _washingUnifiedLastTick = DateTime.UtcNow;
     }
 
     private void HandleExclusiveWashingTimelineScrub()
@@ -357,8 +378,8 @@ public partial class MainWindow
         _washingPlaybackRequested = false;
         _phase8Playing = false;
         _phase7ProcessingTimer?.Stop();
-        SyncExclusiveWashingPlaybackState();
-        ApplyExclusiveWashingPresentation(ensureStructure: false, rebuildBackdrop: false);
+        SetExclusiveWashingProgress((_phase8TimelineSlider?.Value ?? 0) / 100.0, updateVisuals: true);
+        _washingUnifiedLastTick = DateTime.UtcNow;
     }
 
     private void TickExclusiveWashingRuntime()
@@ -376,73 +397,85 @@ public partial class MainWindow
 
         EnterExclusiveWashingMode();
 
-        // A non-looping timeline that reached 100% is a real stop condition.
-        if (IsActiveProcessingSelected && _phase8TimelineProgress >= 1 && _phase8LoopBox?.IsChecked != true)
-            _washingPlaybackRequested = false;
+        // Never let the original Phase 8 tick become a second Washing clock.
+        _phase8Playing = false;
+        _phase6Timer?.Stop();
+        _phase6StableAnimationTimer?.Stop();
+        _phase7ProcessingTimer?.Stop();
 
-        SyncExclusiveWashingPlaybackState();
+        var shouldAdvance = IsActiveProcessingSelected &&
+                            _washingPlaybackRequested &&
+                            WashingRunning &&
+                            _phase6PlayAnimations?.IsChecked == true;
+
+        if (shouldAdvance)
+        {
+            var speed = _phase8SpeedBox?.SelectedItem is ComboBoxItem { Tag: double value } ? value : 1.0;
+            var next = _phase8TimelineProgress + dt * speed / 5.0;
+            if (next >= 1.0)
+            {
+                if (_phase8LoopBox?.IsChecked == true)
+                {
+                    next %= 1.0;
+                }
+                else
+                {
+                    next = 1.0;
+                    _washingPlaybackRequested = false;
+                }
+            }
+
+            SetExclusiveWashingProgress(next, updateVisuals: false);
+        }
 
         if (ExclusiveWashingMotionEnabled)
             _phase6AnimationClock += dt;
+
+        UpdateExclusiveWashingRuntimeVisuals();
+    }
+
+    private bool ExclusiveWashingMotionEnabled
+        => IsWashingPhase6Active &&
+           WashingRunning &&
+           _phase6PlayAnimations?.IsChecked == true &&
+           (!IsActiveProcessingSelected || _washingPlaybackRequested);
+
+    private void SetExclusiveWashingProgress(double progress, bool updateVisuals)
+    {
+        progress = Math.Clamp(progress, 0, 1);
+        _phase8TimelineProgress = progress;
+        _phase8Playing = false;
+
+        if (_phase8TimelineSlider is not null)
+        {
+            _phase8UpdatingSlider = true;
+            _phase8TimelineSlider.Value = progress * 100.0;
+            _phase8UpdatingSlider = false;
+        }
+
+        if (_phase8TimelineText is not null)
+            _phase8TimelineText.Text = $"{progress * 5.0:0.0}/5.0s";
+
+        if (_phase7ActiveProcessingItem is not null && IsActiveProcessingSelected)
+        {
+            _phase7ActiveProcessingItem.Tag =
+                (progress * 100.0).ToString("0.###", CultureInfo.InvariantCulture);
+        }
+
+        if (updateVisuals)
+            UpdateExclusiveWashingRuntimeVisuals();
+    }
+
+    private void UpdateExclusiveWashingRuntimeVisuals()
+    {
+        if (!IsWashingPhase6Active)
+            return;
 
         EnsureStableWashingAnimationVisuals();
         UpdateStableWashingAnimationVisuals();
         if (!ExclusiveWashingMotionEnabled)
             HideExclusiveWashingTransientMotion();
-
-        _washingDynamicTextAccumulator += dt;
-        if (_washingDynamicTextAccumulator >= .05)
-        {
-            _washingDynamicTextAccumulator = 0;
-            UpdateExclusiveWashingTimeText();
-        }
-    }
-
-    private bool ExclusiveWashingMotionEnabled
-    {
-        get
-        {
-            if (!IsWashingPhase6Active || !WashingRunning || _phase6PlayAnimations?.IsChecked != true)
-                return false;
-
-            return !IsActiveProcessingSelected || _washingPlaybackRequested;
-        }
-    }
-
-    private void SyncExclusiveWashingPlaybackState()
-    {
-        if (!IsWashingPhase6Active)
-            return;
-
-        // Phase 8 is the only live Washing clock. These timers are intentionally kept
-        // stopped even if an older synchronous state handler tried to restart them.
-        _phase6Timer?.Stop();
-        _phase6StableAnimationTimer?.Stop();
-        _phase7ProcessingTimer?.Stop();
-
-        var shouldPlayTimeline = IsActiveProcessingSelected &&
-                                 _washingPlaybackRequested &&
-                                 WashingRunning &&
-                                 _phase6PlayAnimations?.IsChecked == true;
-
-        if (shouldPlayTimeline && !_phase8Playing)
-            _phase8LastTick = DateTime.UtcNow;
-
-        _phase8Playing = shouldPlayTimeline;
-    }
-
-    private void SyncTimelineDisplayOnly(double progress)
-    {
-        _phase8TimelineProgress = Math.Clamp(progress, 0, 1);
-        if (_phase8TimelineSlider is not null)
-        {
-            _phase8UpdatingSlider = true;
-            _phase8TimelineSlider.Value = _phase8TimelineProgress * 100;
-            _phase8UpdatingSlider = false;
-        }
-
-        if (_phase8TimelineText is not null)
-            _phase8TimelineText.Text = $"{_phase8TimelineProgress * 5.0:0.0}/5.0s";
+        UpdateExclusiveWashingTimeText();
     }
 
     private void UpdateExclusiveWashingTimeText()
@@ -474,26 +507,20 @@ public partial class MainWindow
             {
                 foreach (var particle in scene.Children.OfType<System.Windows.Shapes.Rectangle>()
                              .Where(rect => rect.Tag is string tag && tag.StartsWith("particle:", StringComparison.Ordinal)))
-                {
                     particle.Visibility = Visibility.Collapsed;
-                }
             }
             else if (string.Equals(pair.Key.Id, "forever_phase6_washing_meter_progress", StringComparison.OrdinalIgnoreCase) &&
                      border.Child is Canvas { Tag: StableWashingMeterTag } meter)
             {
                 foreach (var shine in meter.Children.OfType<System.Windows.Shapes.Rectangle>()
                              .Where(rect => rect.Tag is string tag && tag.StartsWith("meter:shine:", StringComparison.Ordinal)))
-                {
                     shine.Visibility = Visibility.Collapsed;
-                }
             }
         }
     }
 
-    private void NormalizeExclusiveWashingNativeOuterBorder(Border border)
+    private static void NormalizeExclusiveWashingNativeOuterBorder(Border border)
     {
-        // Selection is rendered by a separate overlay. Never change native element
-        // border thickness; doing so moves the child by one pixel in WPF.
         border.BorderBrush = Brushes.Transparent;
         border.BorderThickness = new Thickness(0);
     }
@@ -520,13 +547,12 @@ public partial class MainWindow
     private void ApplyExclusiveWashingButtonChrome(GuiElementModel model, Border border, bool hover)
     {
         var accent = WashingHasWater ? "#9DDDF0" : "#FFBF76";
-        var selected = _selection.Contains(model);
 
         border.Background = new LinearGradientBrush(
             Brush(hover ? "#37515E" : "#263B4B").Color,
             Brush("#172936").Color,
             90);
-        border.BorderBrush = Brush(selected ? "#2E9BFF" : hover ? accent : "#6A818C");
+        border.BorderBrush = Brush(hover ? accent : "#6A818C");
         border.BorderThickness = new Thickness(1);
         border.ClipToBounds = true;
 
@@ -544,8 +570,6 @@ public partial class MainWindow
             IsHitTestVisible = false
         };
 
-        // Phase 8 treats MinecraftPixelText as already decorated, so it cannot
-        // replace the button body with a frameless generic text control anymore.
         if (_washingExclusiveButtonHooks.Add(border))
         {
             border.MouseEnter += (_, _) =>

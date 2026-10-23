@@ -2,6 +2,18 @@
 
 ## Development
 
+### 0.8.6 — Washing ownership hardening
+
+- Fixed the remaining delayed visual writer: Phase 5 was still refreshing on every `LayoutUpdated` and its broad `_panel_` / `_meter_` / `_status` predicates matched Phase 6 Washing elements, allowing the GUI to mutate again seconds after the user stopped interacting.
+- Washing exclusive mode now gates the Phase 5 presentation loop in addition to Phase 6, Visual Fidelity, Machine Presentation and the legacy Washing Source renderer.
+- Fixed direct canvas selection bypassing the 0.8.5 selection restore path. Canvas clicks suppress `ElementsList.SelectionChanged`, so Washing now synchronizes source chrome from the bubbling canvas mouse event after the base selection handler has run.
+- Hierarchy and element-list selection use the same synchronous selection restoration path, and Phase 8 resize handles are synchronized immediately so stale handles cannot remain after clearing a selection.
+- Scene and Animate controls are explicitly restored through `UpdatePhase6ControlAvailability()` when exclusive Washing ownership starts, preventing the Washing animation controls from remaining hidden after a gated Phase 6 refresh.
+- Removed Phase 8 as an active Washing progress clock. Its timer is now only a heartbeat; `_phase8Playing` remains false while Washing is active and the exclusive controller advances the 0–5 s timeline itself.
+- Play resumes Active Processing, restarting from 0 when playback is already at 5 s; Pause freezes the current value; Stop deterministically resets to 0; scrubbing pauses at the selected value; Loop and speed are honored by the same single clock.
+- The exclusive progress setter updates the timeline slider/text and Active Processing tag atomically, preventing Pause/Stop from being overwritten by a second scheduler.
+- Bumped the editor to 0.8.6.
+
 ### 0.8.5 — Exclusive Washing runtime controller
 
 - Replaced the stacked Washing hotfix queues with one exclusive synchronous presentation owner while Washing is active. The older Phase 6 refresh, Visual Fidelity, Machine Presentation and legacy Washing Source queues are gated instead of racing to rewrite the same WPF Borders.
@@ -62,11 +74,11 @@
 - Added deterministic Minecraft-style pixel text previews with one-pixel shadow, left/center/right alignment, scale controls and overflow warnings.
 - Added project-aware item previews resolving real `models/item/*.json` texture references, with stack/durability/ghost/glint metadata.
 - Added a hierarchy view with groups, visibility, locks, collapse/expand, layer controls and drag/drop ordering.
-- Added eight canvas resize handles with pixel snap; Shift preserves ratio, Alt scales from center.
-- Added smart center/edge guides plus horizontal/vertical distribution.
-- Added a persistent animation timeline with Play / Pause / Stop / Loop / Scrub and 0.25x / 0.5x / 1x / 2x speed.
-- Timeline animation mutates persistent visuals rather than rebuilding the canvas.
-- Added reconstructed editable scenes for Crucible, Ascension Chamber and Refining Condenser based on their real Screen/Menu/MachineLayout coordinates.
+- Added eight canvas resize handles with pixel snap; Shift preserves ratio and Alt resizes from the center.
+- Added smart center/edge guides and equal horizontal/vertical distribution tools.
+- Added a persistent animation timeline with play, pause, stop, looping, scrubbing and 0.25x / 0.5x / 1x / 2x speed.
+- Timeline animation mutates persistent visuals only; it does not rebuild the canvas per frame.
+- Added editable reconstructed scenes for Crucible, Ascension Chamber and Refining Condenser based on their real Screen/Menu/MachineLayout coordinates.
 - Ascension's real `forever_skyblock:forever_core` input is resolved through the repository item model and texture path.
 - Bumped the editor to 0.8.0.
 
