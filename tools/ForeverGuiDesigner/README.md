@@ -83,9 +83,13 @@ The Condenser now has a state-aware preview workflow in the Forever Skyblock com
 - mode: **Base** / **Mixing** / **Freezing** / **Garden**
 - progress preview: **0 / 25 / 50 / 75 / 100%**
 
-Changing state does not rewrite layout coordinates. Instead the editor switches the preview and visibility of the existing imported elements. Machine slots follow the actual Condenser coordinates, the Recipes button moves to its Garden position, Edit Locks hides in Garden mode, and MK II-only automation/policy content is only shown for MK II.
+Changing state does not rewrite layout coordinates. Instead the editor switches the preview and visibility of the existing imported elements. Machine slots follow the actual Condenser coordinates, Edit Locks hides in Garden mode, and MK II-only automation/policy content is only shown for MK II.
+
+Garden Recipes is represented as its own editor anchor at the runtime Garden position instead of visually moving the normal Recipes element while retaining stale coordinates. This keeps dragging predictable and export-safe.
 
 When a Condenser is loaded, the editor adds editable project-aware layout anchors for its major state surfaces: process/freezing/garden panels, module labels, progress meters, lock indicators, automation headers and MK II output policy buttons. Shared non-Garden surfaces are normalized into independent Base/Mixing/Freezing variants so each state can be edited separately.
+
+State preview rendering is guarded against redundant `LayoutUpdated` refresh loops: normal editor redraws still rebuild the presentation, but adding the state backdrop itself does not continuously trigger another backdrop rebuild.
 
 ### Forever widgets
 
