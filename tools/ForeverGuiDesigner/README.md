@@ -77,38 +77,57 @@ The **Visual preview** checkbox can hide this reconstructed background without c
 
 ### Condenser state editor
 
-The Condenser now has a state-aware preview workflow in the Forever Skyblock command bar:
+The Condenser has a state-aware preview workflow:
 
 - tier: **MK I** / **MK II**
 - mode: **Base** / **Mixing** / **Freezing** / **Garden**
 - progress preview: **0 / 25 / 50 / 75 / 100%**
 
-Changing state does not rewrite layout coordinates. Instead the editor switches the preview and visibility of the existing imported elements. Machine slots follow the actual Condenser coordinates, Edit Locks hides in Garden mode, and MK II-only automation/policy content is only shown for MK II.
+Changing state does not rewrite layout coordinates. The editor switches preview and visibility of imported elements while keeping separate state anchors for state-specific surfaces.
 
-Garden Recipes is represented as its own editor anchor at the runtime Garden position instead of visually moving the normal Recipes element while retaining stale coordinates. This keeps dragging predictable and export-safe.
+### Detailed Washing scene
 
-When a Condenser is loaded, the editor adds editable project-aware layout anchors for its major state surfaces: process/freezing/garden panels, module labels, progress meters, lock indicators, automation headers and MK II output policy buttons. Shared non-Garden surfaces are normalized into independent Base/Mixing/Freezing variants so each state can be edited separately.
+Washing now has a richer preview based directly on `WashingScreen` and `MachineProcessEffects.washing`:
 
-State preview rendering is guarded against redundant `LayoutUpdated` refresh loops: normal editor redraws still rebuild the presentation, but adding the state backdrop itself does not continuously trigger another backdrop rebuild.
+- runtime states: **Running**, **Idle**, **Blocked**, **No water**
+- connected-water / water-required presentation
+- animated washing ripples
+- animated process particles
+- moving progress-meter highlight
+- shared progress percentage selector
+- animation play/pause control
+- editable status text and indicator
+- editable water panel and water-state label
+- editable input/output labels
+- editable washing process surface and animated process-scene anchor
+- editable processing-time label
+- editable recipe-summary anchor
+- editable hint panel and hint labels
+
+The animation is editor presentation state only. It does not rewrite layout coordinates or add temporary textures to the mod.
 
 ### Forever widgets
 
-The Forever Skyblock command bar also provides direct widget insertion for:
+The Forever Skyblock command bar provides direct widget insertion for:
 
 - **Panel** — MachineSkin-style panel surface
-- **Meter** — previewable progress meter using the selected progress percentage
+- **Meter** — previewable progress meter
 - **Lock** — pixel-style Forever lock indicator
 - **Status** — machine status indicator
 
-These widgets are ordinary editable layout elements: they can be selected, dragged, resized, aligned, copied, saved and included in Java coordinate export. Their Forever-specific appearance is an editor presentation layer and does not require adding temporary PNG files to the mod assets.
+These are ordinary editable layout elements and can be moved, resized, aligned, copied, saved and included in Java coordinate export.
+
+### Theme-safe command controls
+
+ComboBox controls in the command bars receive explicit high-contrast text, surface and border colors at runtime. This prevents Windows themes from producing unreadable light-on-light or dark-on-dark selected values.
 
 ### Java export
 
 **Export Java** creates a small Java layout class containing `GUI_WIDTH`, `GUI_HEIGHT`, and constants for editable machine slots/buttons/visual elements.
 
-For imported machine slots, exported X/Y values are converted back from the 24 x 24 visual frame to the vanilla `Slot.x` / `Slot.y` coordinates expected by the Menu. Player inventory coordinates are deliberately not duplicated because those remain derived from `MachineLayout` in the mod.
+For imported machine slots, exported X/Y values are converted back from the 24 x 24 visual frame to the vanilla `Slot.x` / `Slot.y` coordinates expected by the Menu. Player inventory coordinates remain derived from `MachineLayout`.
 
-The export includes comments identifying the imported Screen, Menu and `MachineLayout` source where available. It is intended as a safe handoff/snippet for integration rather than silently rewriting Java source files.
+The export includes comments identifying the imported Screen, Menu and `MachineLayout` source. It is intended as a reviewed handoff rather than silently rewriting Java source files.
 
 ## Build
 
@@ -123,8 +142,6 @@ dotnet run --project .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
 ```
 
 The GitHub Actions workflow publishes a self-contained `win-x64` build so the application can be tested without installing the .NET SDK.
-
-Phase 5 code passed restore, Release build, self-contained `win-x64` publish and artifact upload on commit `c062fb276093bcbb8129a8bbdbe5cdfa1e825dbd`.
 
 ## Layout format
 
@@ -153,9 +170,9 @@ A layout contains its logical Minecraft GUI size and a list of elements:
 
 ## Next steps
 
-- Extend state-aware previews to Washing, Crucible and Ascension where useful.
-- Parse more dynamic labels and process-scene geometry directly from Java instead of relying on project-aware editor anchors.
+- Extend rich process-scene previews to Refining, Crucible and Ascension.
+- Resolve more machine labels directly from language files.
 - Add visible guides/rulers and a project-aware snap grid.
-- Add Minecraft font rendering.
-- Add a reviewed apply-back workflow for updating selected Java constants rather than only exporting snippets.
-- Add hover/pressed states and lightweight animation playback.
+- Add Minecraft font rendering instead of desktop fallback fonts.
+- Add a reviewed apply-back workflow for selected Java constants.
+- Add hover/pressed states and more runtime-state previews.
