@@ -12,11 +12,13 @@ public sealed class ForeverMachineTemplate
     public string LayoutKey { get; init; } = string.Empty;
     public string ScreenPath { get; init; } = string.Empty;
     public string? MenuPath { get; init; }
+    public string? PreviewImagePath { get; init; }
     public GuiLayoutModel Layout { get; init; } = new();
     public int MachineSlotCount { get; init; }
     public int ButtonCount { get; init; }
 
-    public string Summary => $"{Layout.Width}×{Layout.Height} · {MachineSlotCount} machine slots · {ButtonCount} buttons";
+    public bool HasVisualPreview => !string.IsNullOrWhiteSpace(PreviewImagePath) && File.Exists(PreviewImagePath);
+    public string Summary => $"{Layout.Width}×{Layout.Height} · {MachineSlotCount} machine slots · {ButtonCount} buttons · {(HasVisualPreview ? "visual preview" : "layout only")}";
 }
 
 public sealed class ForeverScanResult
@@ -59,6 +61,7 @@ public static class ForeverProjectScanner
         foreach (var screenPath in Directory.EnumerateFiles(javaRoot, "*Screen.java", SearchOption.AllDirectories))
         {
             var source = File.ReadAllText(screenPath);
+            var screenClass = Path.GetFileNameWithoutExtension(screenPath);
             var menuMatch = Regex.Match(source, @"extends\s+MachineScreen<(?<menu>[A-Za-z0-9_]+)>");
             if (!menuMatch.Success)
                 continue;
@@ -84,7 +87,7 @@ public static class ForeverProjectScanner
 
             var layout = new GuiLayoutModel
             {
-                Name = Humanize(Path.GetFileNameWithoutExtension(screenPath).Replace("Screen", string.Empty)),
+                Name = Humanize(screenClass.Replace("Screen", string.Empty)),
                 Width = spec.Width,
                 Height = spec.Height,
                 Elements = []
@@ -170,7 +173,17 @@ public static class ForeverProjectScanner
                 Content = layout.Name
             });
 
-            var screenClass = Path.GetFileNameWithoutExtension(screenPath);
+            var previewPath = ForeverMachinePreviewRenderer.CreatePreview(
+                repoRoot,
+                screenClass,
+                source,
+                spec.Width,
+                spec.Height,
+                spec.InventoryY,
+                spec.HotbarY);
+            if (previewPath is null)
+                result.Warnings.Add($"{screenClass}: visual preview could not be generated; layout import still works.");
+
             result.Templates.Add(new ForeverMachineTemplate
             {
                 DisplayName = layout.Name,
@@ -179,6 +192,7 @@ public static class ForeverProjectScanner
                 LayoutKey = layoutKey,
                 ScreenPath = Path.GetRelativePath(repoRoot, screenPath).Replace('\\', '/'),
                 MenuPath = menuPath is null ? null : Path.GetRelativePath(repoRoot, menuPath).Replace('\\', '/'),
+                PreviewImagePath = previewPath,
                 Layout = layout,
                 MachineSlotCount = machineSlots.Count,
                 ButtonCount = buttons.Count
