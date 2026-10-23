@@ -49,6 +49,7 @@ public partial class MainWindow
             AddIfMissing("forever_phase5_mk2_base_policy_main", GuiElementType.Button, 126, 224, 49, 18, "Block");
             AddIfMissing("forever_phase5_mk2_mixing_policy_main", GuiElementType.Button, 126, 224, 49, 18, "Block");
             AddIfMissing("forever_phase5_mk2_freezing_policy_main", GuiElementType.Button, 126, 224, 49, 18, "Block");
+            AddIfMissing("forever_phase5_garden_recipe", GuiElementType.Button, 94, 151, 60, 20, "Recipes");
 
             RefreshElementList();
             RenderLayout();
