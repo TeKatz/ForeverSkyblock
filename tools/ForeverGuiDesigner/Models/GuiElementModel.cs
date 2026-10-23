@@ -5,7 +5,9 @@ public enum GuiElementType
     Slot,
     Text,
     Button,
-    Texture
+    Texture,
+    PlayerInventory,
+    Hotbar
 }
 
 public sealed class GuiElementModel
@@ -19,6 +21,22 @@ public sealed class GuiElementModel
     public string Content { get; set; } = string.Empty;
     public string? TexturePath { get; set; }
     public bool Visible { get; set; } = true;
+
+    public GuiElementModel Clone()
+    {
+        return new GuiElementModel
+        {
+            Id = Id,
+            Type = Type,
+            X = X,
+            Y = Y,
+            Width = Width,
+            Height = Height,
+            Content = Content,
+            TexturePath = TexturePath,
+            Visible = Visible
+        };
+    }
 
     public override string ToString() => $"{Id}  [{Type}]";
 }

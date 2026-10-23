@@ -1,39 +1,78 @@
 # Forever GUI Designer
 
-Small Windows-first visual editor for Forever Skyblock GUI layouts.
+A small Windows-first visual editor for Forever Skyblock GUI layouts.
 
-This is the first MVP. It deliberately stores positions in Minecraft GUI-local pixels rather than desktop/window coordinates, so the same layout data can later be consumed by the mod.
+The editor intentionally stores positions in Minecraft GUI-local coordinates rather than desktop/window coordinates. This keeps layouts useful for later Java Screen/Menu integration and independent of the player's resolution.
 
-## Current MVP
+## Current feature set
 
-- WPF / .NET 8 Windows desktop application
-- 176×166 Minecraft-style preview canvas by default
-- Add Slot, Text, Button and Texture placeholder elements
-- Select and drag elements on the canvas
-- Configurable 1/2/4/8 px snapping
-- 200/300/400/600% preview zoom
-- Property inspector for id, x, y, width, height and content
-- Arrow-key movement (1 px, or 5 px with Shift)
-- Delete selected element
-- JSON open/save
-- Example Condenser draft layout
+### Layout editing
 
-## Build and run
+- Create, open and save JSON GUI layouts.
+- Drag elements directly on the Minecraft-sized preview canvas.
+- Pixel snapping at 1, 2, 4 or 8 px.
+- Preview zoom from 200% to 600%.
+- Property inspector for id, position, size and text content.
+- Keyboard nudging: arrow keys = 1 px, Shift + arrow keys = 5 px.
+- Delete selected elements.
+- Copy/paste with Ctrl+C / Ctrl+V.
+- Undo/redo with Ctrl+Z / Ctrl+Y.
+- Ctrl+A selects all elements.
 
-Install the .NET 8 SDK on Windows, then from the repository root:
+### Multi-selection and layout tools
+
+- Extended selection in the element list.
+- Ctrl-click selection directly on the preview.
+- Drag multiple selected elements as one group.
+- Align left, horizontal center, right, top, vertical center or bottom.
+- Bring selected elements to the front or send them behind other elements.
+
+### Minecraft-oriented components
+
+- Slot
+- Text
+- Button
+- Texture
+- Player Inventory (9 x 3 slots as one movable element)
+- Hotbar (9 slots as one movable element)
+
+### Forever Skyblock asset browser
+
+Use **Repo…** to select the local ForeverSkyblock repository. When the application is launched from inside the repository it attempts to detect it automatically.
+
+The asset browser scans:
+
+`mod/src/main/resources/assets/forever_skyblock/textures`
+
+It shows PNG previews with nearest-neighbor scaling. Double-clicking a texture adds it to the canvas. If exactly one Texture element is selected, the selected repository asset is assigned to that element instead.
+
+Texture references are stored as repository-relative asset paths such as:
+
+`textures/item/forever_core.png`
+
+This avoids putting machine-specific absolute Windows paths into layout JSON files.
+
+## Build
 
 ```powershell
-dotnet build .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
+dotnet build .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj -c Release
+```
+
+Run during development with:
+
+```powershell
 dotnet run --project .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
 ```
 
-The build output is intentionally ignored by the repository.
+The GitHub Actions workflow also publishes a self-contained `win-x64` build so the application can be tested without installing the .NET SDK.
 
 ## Layout format
 
+A layout contains its logical Minecraft GUI size and a list of elements:
+
 ```json
 {
-  "name": "Example",
+  "name": "Condenser",
   "width": 176,
   "height": 166,
   "elements": [
@@ -41,7 +80,7 @@ The build output is intentionally ignored by the repository.
       "id": "input",
       "type": "slot",
       "x": 39,
-      "y": 34,
+      "y": 30,
       "width": 18,
       "height": 18,
       "content": "",
@@ -52,15 +91,12 @@ The build output is intentionally ignored by the repository.
 }
 ```
 
-Coordinates are local to the Minecraft GUI. They are not screen-resolution coordinates.
+## Next steps
 
-## Next implementation steps
-
-1. Repository auto-detection and direct asset browser for `mod/src/main/resources/assets/forever_skyblock`.
-2. Load PNG textures with nearest-neighbor rendering instead of placeholder rectangles.
-3. Minecraft font preview and dedicated player-inventory/hotbar components.
-4. Multi-selection, alignment tools, copy/paste and undo/redo.
-5. Forever-specific widgets such as machine slots, recipe buttons, progress arrows and energy/fluid bars.
-6. Export/import bridge to the actual Java Screen/Menu layout definitions.
-
-The editor is intentionally independent from the mod build for now; no Python, Node.js or Electron runtime is required.
+- Minecraft font rendering.
+- Guides, rulers and visible snap grid.
+- More Forever-specific machine widgets (input/output slots, progress arrows, energy/fluid indicators, lock/recipe buttons).
+- Import existing Java Screen/Menu coordinates.
+- Export generated layout constants/data for the mod.
+- Machine GUI templates based on the actual Forever Skyblock screens.
+- Hover/pressed states and lightweight animation previews.
