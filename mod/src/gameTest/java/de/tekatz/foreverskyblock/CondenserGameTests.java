@@ -85,24 +85,33 @@ public final class CondenserGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void sidedAutomationAndSimulation(GameTestHelper h) {
+    public static void omnidirectionalAutomationAndSimulation(GameTestHelper h) {
         var machine = machine(h, POS);
         var level = h.getLevel();
         var pos = h.absolutePos(POS);
-        IItemHandler top = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, Direction.UP);
-        IItemHandler bottom = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, Direction.DOWN);
-        IItemHandler side = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, Direction.EAST);
-        check(h, top != null && bottom != null && side != null, "Expose item capabilities on every side");
-        check(h, top.insertItem(0, new ItemStack(Items.OAK_LOG), true).isEmpty(), "Simulated valid insertion accepted");
-        check(h, machine.inventory().getStackInSlot(0).isEmpty(), "Simulation must not mutate inventory");
-        check(h, !top.insertItem(0, new ItemStack(Items.IRON_INGOT), false).isEmpty(), "Reject invalid inputs");
-        check(h, !bottom.insertItem(0, new ItemStack(Items.OAK_LOG), false).isEmpty(), "Bottom must not insert");
-        check(h, side.insertItem(0, new ItemStack(Items.BIRCH_PLANKS), false).isEmpty(), "Side accepts tagged planks");
-        check(h, bottom.extractItem(0, 1, false).isEmpty(), "Automation must not steal input");
+        for (Direction face : Direction.values()) {
+            IItemHandler access = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, face);
+            check(h, access != null, "Expose item capability on " + face);
+            check(h, access.insertItem(0, new ItemStack(Items.OAK_LOG), true).isEmpty(), "Simulated valid insertion accepted on " + face);
+            check(h, machine.inventory().getStackInSlot(0).isEmpty(), "Insertion simulation must not mutate inventory");
+            check(h, !access.isItemValid(0, new ItemStack(Items.IRON_INGOT))
+                    && !access.insertItem(0, new ItemStack(Items.IRON_INGOT), false).isEmpty(), "Reject invalid inputs");
+            check(h, access.insertItem(0, new ItemStack(Items.BIRCH_PLANKS), false).isEmpty(), "Every face accepts tagged planks");
+            check(h, access.extractItem(0, 1, false).isEmpty(), "Automation must not steal input");
+            check(h, !access.isItemValid(1, new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get()))
+                    && !access.insertItem(1, new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get()), false).isEmpty(), "Output remains extraction-only");
+            machine.inventory().setStackInSlot(1, new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), 4));
+            check(h, access.extractItem(1, 4, true).getCount() == 4 && output(machine) == 4, "Simulated extraction leaves output intact");
+            var extracted = access.extractItem(1, 4, false);
+            check(h, extracted.is(ForeverSkyblock.STONE_FRAGMENT.get()) && extracted.getCount() == 4 && output(machine) == 0,
+                    "Every face extracts exact output on " + face);
+            check(h, machine.inventory().getStackInSlot(0).getCount() == 1, "Output extraction retains input");
+            machine.inventory().setStackInSlot(0, ItemStack.EMPTY);
+        }
+        var unsided = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, null);
+        check(h, unsided != null && unsided.insertItem(0, new ItemStack(Items.OAK_LOG), false).isEmpty(), "Unsided insertion remains supported");
         machine.inventory().setStackInSlot(1, new ItemStack(ForeverSkyblock.STONE_FRAGMENT.get(), 4));
-        check(h, top.extractItem(1, 4, false).isEmpty(), "Top must not extract output");
-        check(h, bottom.extractItem(1, 4, true).getCount() == 4 && output(machine) == 4, "Simulated extraction leaves output intact");
-        check(h, bottom.extractItem(1, 4, false).getCount() == 4 && output(machine) == 0, "Bottom extracts output");
+        check(h, unsided.extractItem(1, 4, false).getCount() == 4, "Unsided extraction remains supported");
         h.succeed();
     }
 
