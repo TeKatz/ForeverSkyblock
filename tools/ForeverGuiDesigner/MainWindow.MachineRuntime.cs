@@ -373,13 +373,13 @@ public partial class MainWindow
         var c=new Canvas{Tag=MachineRuntimeBackdropTag,Width=_layout.Width,Height=_layout.Height,IsHitTestVisible=false,Background=Brush("#111315")};Panel.SetZIndex(c,-950);DrawMachineRuntimeFrame(c,RuntimeAccent());
         switch(ActiveRuntimeScreen)
         {
-            case"CrucibleScreen":Panel(18,35,212,18,"#5A4536");Panel(18,58,103,18,"#355B66");Panel(127,58,103,18,"#355B66");Panel(18,81,212,70,"#54616D");break;
-            case"RefiningScreen":Panel(18,35,212,20,"#465A68");Panel(18,60,212,72,"#54616D");Panel(18,138,212,34,"#465A68");break;
-            case"AscensionScreen":Panel(190,9,40,15,"#615372");Panel(149,46,70,41,"#8E4FD2");Panel(23,106,146,8,"#697487");Panel(20,120,208,17,"#576073");break;
-            case"CondenserScreen":if(CurrentMode=="garden"){Panel(42,31,164,12,"#315B45");Panel(14,44,220,138,"#335544");Panel(18,183,212,16,"#466252");}else{Panel(42,31,164,12,"#365A66");Panel(14,44,220,64,"#54616D");Panel(14,113,220,43,"#465A68");Panel(18,187,212,12,"#5D6875");}Panel(18,203,212,51,CurrentTier=="mk2"?"#4B5E6E":"#3E454C");break;
+            case"CrucibleScreen":BackdropPanel(18,35,212,18,"#5A4536");BackdropPanel(18,58,103,18,"#355B66");BackdropPanel(127,58,103,18,"#355B66");BackdropPanel(18,81,212,70,"#54616D");break;
+            case"RefiningScreen":BackdropPanel(18,35,212,20,"#465A68");BackdropPanel(18,60,212,72,"#54616D");BackdropPanel(18,138,212,34,"#465A68");break;
+            case"AscensionScreen":BackdropPanel(190,9,40,15,"#615372");BackdropPanel(149,46,70,41,"#8E4FD2");BackdropPanel(23,106,146,8,"#697487");BackdropPanel(20,120,208,17,"#576073");break;
+            case"CondenserScreen":if(CurrentMode=="garden"){BackdropPanel(42,31,164,12,"#315B45");BackdropPanel(14,44,220,138,"#335544");BackdropPanel(18,183,212,16,"#466252");}else{BackdropPanel(42,31,164,12,"#365A66");BackdropPanel(14,44,220,64,"#54616D");BackdropPanel(14,113,220,43,"#465A68");BackdropPanel(18,187,212,12,"#5D6875");}BackdropPanel(18,203,212,51,CurrentTier=="mk2"?"#4B5E6E":"#3E454C");break;
         }
-        var iy=ActiveRuntimeScreen=="CondenserScreen"?260:ActiveRuntimeScreen=="AscensionScreen"?176:190;Panel(18,iy-6,212,92,"#405866");PreviewCanvas.Children.Insert(0,c);
-        void Panel(double x,double y,double w,double h,string edge){AddMachineRuntimeRect(c,x,y,w,h,"#0A151F");AddMachineRuntimeRect(c,x+1,y+1,w-2,h-2,edge);AddMachineRuntimeRect(c,x+2,y+2,w-4,h-4,"#182A37");AddMachineRuntimeRect(c,x+3,y+1,w-6,1,"#637884");}
+        var iy=ActiveRuntimeScreen=="CondenserScreen"?260:ActiveRuntimeScreen=="AscensionScreen"?176:190;BackdropPanel(18,iy-6,212,92,"#405866");PreviewCanvas.Children.Insert(0,c);
+        void BackdropPanel(double x,double y,double w,double h,string edge){AddMachineRuntimeRect(c,x,y,w,h,"#0A151F");AddMachineRuntimeRect(c,x+1,y+1,w-2,h-2,edge);AddMachineRuntimeRect(c,x+2,y+2,w-4,h-4,"#182A37");AddMachineRuntimeRect(c,x+3,y+1,w-6,1,"#637884");}
     }
     private static void DrawMachineRuntimeFrame(Canvas c,string accent){AddMachineRuntimeRect(c,0,0,c.Width,c.Height,"#0C151F");AddMachineRuntimeRect(c,3,4,c.Width-6,c.Height-8,"#253746");AddMachineRuntimeRect(c,8,7,c.Width-16,20,"#101D29");AddMachineRuntimeRect(c,14,27,c.Width-28,1,"#526979");AddMachineRuntimeRect(c,14,27,52,1,accent);AddMachineRuntimeRect(c,10,33,1,c.Height-45,"#344A58");AddMachineRuntimeRect(c,c.Width-11,33,1,c.Height-45,"#344A58");AddMachineRuntimeRect(c,c.Width/2-14,c.Height-4,28,1,accent);}
     private static void AddMachineRuntimeRect(Canvas c,double x,double y,double w,double h,string color){if(w<=0||h<=0)return;var r=new Rectangle{Width=w,Height=h,Fill=Brush(color),SnapsToDevicePixels=true,IsHitTestVisible=false};Canvas.SetLeft(r,x);Canvas.SetTop(r,y);c.Children.Add(r);}
