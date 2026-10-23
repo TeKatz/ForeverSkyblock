@@ -40,7 +40,7 @@ public partial class MainWindow
                 _layout.Elements.Remove(element);
 
             AddStateCopies("panel_condensing", GuiElementType.Texture, 14, 44, 220, 64, "Condensing");
-            AddStateCopies("panel_freezing_area", GuiElementType.Texture, 14, 113, 220, 43, "Freezing chamber");
+            AddStateCopies("panel_secondary_area", GuiElementType.Texture, 14, 113, 220, 43, "Freezing chamber");
             AddStateCopies("panel_module_hint", GuiElementType.Texture, 18, 187, 212, 12, "Module hint");
             AddStateCopies("label_input", GuiElementType.Text, 18, 48, 43, 9, "Input");
             AddStateCopies("label_output", GuiElementType.Text, 189, 48, 41, 9, "Output");
