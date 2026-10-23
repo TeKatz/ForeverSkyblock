@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private Point _dragElementStart;
     private bool _isDragging;
     private bool _dirty;
+    private bool _suppressSelectionChange;
     private string? _currentPath;
     private int _snap = 1;
 
@@ -48,9 +49,6 @@ public partial class MainWindow : Window
         _selectedElement = null;
         _dirty = false;
 
-        PreviewCanvas.Width = Math.Max(1, _layout.Width);
-        PreviewCanvas.Height = Math.Max(1, _layout.Height);
-
         RefreshElementList();
         RenderLayout();
         UpdateInspector();
@@ -59,9 +57,17 @@ public partial class MainWindow : Window
 
     private void RefreshElementList()
     {
-        ElementsList.ItemsSource = null;
-        ElementsList.ItemsSource = _layout.Elements;
-        ElementsList.SelectedItem = _selectedElement;
+        _suppressSelectionChange = true;
+        try
+        {
+            ElementsList.ItemsSource = null;
+            ElementsList.ItemsSource = _layout.Elements;
+            ElementsList.SelectedItem = _selectedElement;
+        }
+        finally
+        {
+            _suppressSelectionChange = false;
+        }
     }
 
     private void RenderLayout()
@@ -77,7 +83,6 @@ public partial class MainWindow : Window
             visual.MouseLeftButtonDown += Element_MouseLeftButtonDown;
             visual.MouseMove += Element_MouseMove;
             visual.MouseLeftButtonUp += Element_MouseLeftButtonUp;
-
             Canvas.SetLeft(visual, element.X);
             Canvas.SetTop(visual, element.Y);
             PreviewCanvas.Children.Add(visual);
@@ -100,13 +105,13 @@ public partial class MainWindow : Window
         switch (element.Type)
         {
             case GuiElementType.Slot:
-                border.Background = ColorBrush("#8B8B8B");
-                border.BorderBrush = ColorBrush("#373737");
+                border.Background = Brush("#8B8B8B");
+                border.BorderBrush = Brush("#373737");
                 border.Child = new Border
                 {
                     Margin = new Thickness(2),
-                    Background = ColorBrush("#B7B7B7"),
-                    BorderBrush = ColorBrush("#FFFFFF"),
+                    Background = Brush("#B7B7B7"),
+                    BorderBrush = Brushes.White,
                     BorderThickness = new Thickness(1, 1, 0, 0)
                 };
                 break;
@@ -114,38 +119,23 @@ public partial class MainWindow : Window
             case GuiElementType.Text:
                 border.Background = Brushes.Transparent;
                 border.BorderBrush = Brushes.Transparent;
-                border.Child = new TextBlock
-                {
-                    Text = string.IsNullOrWhiteSpace(element.Content) ? element.Id : element.Content,
-                    FontSize = 7,
-                    Foreground = ColorBrush("#3F3F3F"),
-                    VerticalAlignment = VerticalAlignment.Center,
-                    TextTrimming = TextTrimming.CharacterEllipsis
-                };
+                border.Child = Label(element, "#3F3F3F", 7, HorizontalAlignment.Left);
                 break;
 
             case GuiElementType.Button:
-                border.Background = ColorBrush("#777777");
-                border.BorderBrush = ColorBrush("#2C2C2C");
-                border.Child = new TextBlock
-                {
-                    Text = string.IsNullOrWhiteSpace(element.Content) ? element.Id : element.Content,
-                    FontSize = 7,
-                    Foreground = Brushes.White,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    TextTrimming = TextTrimming.CharacterEllipsis
-                };
+                border.Background = Brush("#777777");
+                border.BorderBrush = Brush("#2C2C2C");
+                border.Child = Label(element, "#FFFFFF", 7, HorizontalAlignment.Center);
                 break;
 
             case GuiElementType.Texture:
-                border.Background = ColorBrush("#676B70");
-                border.BorderBrush = ColorBrush("#34373A");
+                border.Background = Brush("#676B70");
+                border.BorderBrush = Brush("#34373A");
                 border.Child = new TextBlock
                 {
                     Text = "texture",
                     FontSize = 6,
-                    Foreground = ColorBrush("#E4E4E4"),
+                    Foreground = Brush("#E4E4E4"),
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center
                 };
@@ -155,10 +145,21 @@ public partial class MainWindow : Window
         return border;
     }
 
-    private static SolidColorBrush ColorBrush(string color)
+    private static TextBlock Label(GuiElementModel element, string color, double fontSize, HorizontalAlignment alignment)
     {
-        return (SolidColorBrush)new BrushConverter().ConvertFromString(color)!;
+        return new TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(element.Content) ? element.Id : element.Content,
+            FontSize = fontSize,
+            Foreground = Brush(color),
+            HorizontalAlignment = alignment,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis
+        };
     }
+
+    private static SolidColorBrush Brush(string color)
+        => (SolidColorBrush)new BrushConverter().ConvertFromString(color)!;
 
     private void SelectElement(GuiElementModel? element)
     {
@@ -166,7 +167,15 @@ public partial class MainWindow : Window
 
         if (!ReferenceEquals(ElementsList.SelectedItem, element))
         {
-            ElementsList.SelectedItem = element;
+            _suppressSelectionChange = true;
+            try
+            {
+                ElementsList.SelectedItem = element;
+            }
+            finally
+            {
+                _suppressSelectionChange = false;
+            }
         }
 
         UpdateInspector();
@@ -182,23 +191,21 @@ public partial class MainWindow : Window
                 continue;
             }
 
-            var selected = ReferenceEquals(model, _selectedElement);
-            if (selected)
+            if (ReferenceEquals(model, _selectedElement))
             {
-                child.BorderBrush = ColorBrush("#2E9BFF");
+                child.BorderBrush = Brush("#2E9BFF");
                 child.BorderThickness = new Thickness(1.5);
+                continue;
             }
-            else
+
+            child.BorderThickness = new Thickness(1);
+            child.BorderBrush = model.Type switch
             {
-                child.BorderThickness = new Thickness(1);
-                child.BorderBrush = model.Type switch
-                {
-                    GuiElementType.Text => Brushes.Transparent,
-                    GuiElementType.Slot => ColorBrush("#373737"),
-                    GuiElementType.Button => ColorBrush("#2C2C2C"),
-                    _ => ColorBrush("#34373A")
-                };
-            }
+                GuiElementType.Text => Brushes.Transparent,
+                GuiElementType.Slot => Brush("#373737"),
+                GuiElementType.Button => Brush("#2C2C2C"),
+                _ => Brush("#34373A")
+            };
         }
     }
 
@@ -211,7 +218,6 @@ public partial class MainWindow : Window
 
         e.Handled = true;
         SelectElement(element);
-
         _isDragging = true;
         _dragVisual = visual;
         _dragStart = e.GetPosition(PreviewCanvas);
@@ -221,23 +227,18 @@ public partial class MainWindow : Window
 
     private void Element_MouseMove(object sender, MouseEventArgs e)
     {
-        if (!_isDragging || e.LeftButton != MouseButtonState.Pressed || !ReferenceEquals(sender, _dragVisual))
-        {
-            return;
-        }
-
-        if (_selectedElement is null || _dragVisual is null)
+        if (!_isDragging || e.LeftButton != MouseButtonState.Pressed || !ReferenceEquals(sender, _dragVisual) ||
+            _selectedElement is null || _dragVisual is null)
         {
             return;
         }
 
         var position = e.GetPosition(PreviewCanvas);
-        var x = Snap(_dragElementStart.X + position.X - _dragStart.X);
-        var y = Snap(_dragElementStart.Y + position.Y - _dragStart.Y);
+        var x = (int)Snap(_dragElementStart.X + position.X - _dragStart.X);
+        var y = (int)Snap(_dragElementStart.Y + position.Y - _dragStart.Y);
 
-        _selectedElement.X = Clamp((int)x, 0, Math.Max(0, _layout.Width - _selectedElement.Width));
-        _selectedElement.Y = Clamp((int)y, 0, Math.Max(0, _layout.Height - _selectedElement.Height));
-
+        _selectedElement.X = Clamp(x, 0, Math.Max(0, _layout.Width - _selectedElement.Width));
+        _selectedElement.Y = Clamp(y, 0, Math.Max(0, _layout.Height - _selectedElement.Height));
         Canvas.SetLeft(_dragVisual, _selectedElement.X);
         Canvas.SetTop(_dragVisual, _selectedElement.Y);
         UpdateInspector();
@@ -252,34 +253,25 @@ public partial class MainWindow : Window
         }
 
         _isDragging = false;
-        if (_dragVisual is not null)
-        {
-            _dragVisual.ReleaseMouseCapture();
-        }
+        _dragVisual?.ReleaseMouseCapture();
         _dragVisual = null;
         e.Handled = true;
     }
 
     private double Snap(double value)
-    {
-        return Math.Round(value / _snap, MidpointRounding.AwayFromZero) * _snap;
-    }
+        => Math.Round(value / _snap, MidpointRounding.AwayFromZero) * _snap;
 
     private static int Clamp(int value, int min, int max)
-    {
-        return Math.Min(Math.Max(value, min), max);
-    }
+        => Math.Min(Math.Max(value, min), max);
 
     private void ElementsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ElementsList.SelectedItem is GuiElementModel element)
+        if (_suppressSelectionChange)
         {
-            SelectElement(element);
+            return;
         }
-        else if (ElementsList.SelectedItem is null && !_isDragging)
-        {
-            SelectElement(null);
-        }
+
+        SelectElement(ElementsList.SelectedItem as GuiElementModel);
     }
 
     private void PreviewCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -311,8 +303,8 @@ public partial class MainWindow : Window
         {
             Id = CreateUniqueId(type.ToString().ToLowerInvariant()),
             Type = type,
-            X = SnapToInt(Math.Max(0, (_layout.Width - width) / 2)),
-            Y = SnapToInt(Math.Max(0, (_layout.Height - height) / 2)),
+            X = (int)Snap(Math.Max(0, (_layout.Width - width) / 2)),
+            Y = (int)Snap(Math.Max(0, (_layout.Height - height) / 2)),
             Width = width,
             Height = height,
             Content = content
@@ -325,8 +317,6 @@ public partial class MainWindow : Window
         UpdateInspector();
         MarkDirty();
     }
-
-    private int SnapToInt(int value) => (int)Snap(value);
 
     private string CreateUniqueId(string prefix)
     {
@@ -344,23 +334,13 @@ public partial class MainWindow : Window
 
     private void UpdateInspector()
     {
-        var hasSelection = _selectedElement is not null;
-        TypeText.Text = hasSelection ? _selectedElement!.Type.ToString() : "No selection";
-        IdBox.IsEnabled = hasSelection;
-        XBox.IsEnabled = hasSelection;
-        YBox.IsEnabled = hasSelection;
-        WidthBox.IsEnabled = hasSelection;
-        HeightBox.IsEnabled = hasSelection;
-        ContentBox.IsEnabled = hasSelection;
+        var enabled = _selectedElement is not null;
+        TypeText.Text = enabled ? _selectedElement!.Type.ToString() : "No selection";
+        IdBox.IsEnabled = XBox.IsEnabled = YBox.IsEnabled = WidthBox.IsEnabled = HeightBox.IsEnabled = ContentBox.IsEnabled = enabled;
 
-        if (!hasSelection)
+        if (!enabled)
         {
-            IdBox.Text = string.Empty;
-            XBox.Text = string.Empty;
-            YBox.Text = string.Empty;
-            WidthBox.Text = string.Empty;
-            HeightBox.Text = string.Empty;
-            ContentBox.Text = string.Empty;
+            IdBox.Text = XBox.Text = YBox.Text = WidthBox.Text = HeightBox.Text = ContentBox.Text = string.Empty;
             return;
         }
 
@@ -379,10 +359,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (!int.TryParse(XBox.Text, out var x) ||
-            !int.TryParse(YBox.Text, out var y) ||
-            !int.TryParse(WidthBox.Text, out var width) ||
-            !int.TryParse(HeightBox.Text, out var height))
+        if (!int.TryParse(XBox.Text, out var x) || !int.TryParse(YBox.Text, out var y) ||
+            !int.TryParse(WidthBox.Text, out var width) || !int.TryParse(HeightBox.Text, out var height))
         {
             MessageBox.Show(this, "X, Y, Width and Height must be whole numbers.", "Invalid value", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -404,9 +382,7 @@ public partial class MainWindow : Window
     }
 
     private void New_Click(object sender, RoutedEventArgs e)
-    {
-        LoadLayoutIntoEditor(new GuiLayoutModel(), null);
-    }
+        => LoadLayoutIntoEditor(new GuiLayoutModel(), null);
 
     private void Open_Click(object sender, RoutedEventArgs e)
     {
@@ -423,8 +399,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var json = File.ReadAllText(dialog.FileName);
-            var layout = JsonSerializer.Deserialize<GuiLayoutModel>(json, JsonOptions)
+            var layout = JsonSerializer.Deserialize<GuiLayoutModel>(File.ReadAllText(dialog.FileName), JsonOptions)
                          ?? throw new InvalidDataException("The layout file was empty.");
             layout.Elements ??= [];
             LoadLayoutIntoEditor(layout, dialog.FileName);
@@ -442,7 +417,6 @@ public partial class MainWindow : Window
             SaveAs_Click(sender, e);
             return;
         }
-
         SaveTo(_currentPath);
     }
 
@@ -452,7 +426,7 @@ public partial class MainWindow : Window
         {
             Filter = "Forever GUI layout (*.json)|*.json",
             Title = "Save GUI layout",
-            FileName = string.IsNullOrWhiteSpace(_layout.Name) ? "layout.json" : SanitizeFileName(_layout.Name) + ".json"
+            FileName = (string.IsNullOrWhiteSpace(_layout.Name) ? "layout" : SanitizeFileName(_layout.Name)) + ".json"
         };
 
         if (dialog.ShowDialog(this) == true)
@@ -484,18 +458,16 @@ public partial class MainWindow : Window
 
     private void ZoomCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (PreviewScale is null || ZoomCombo.SelectedItem is not ComboBoxItem item || item.Tag is not string value || !double.TryParse(value, out var zoom))
+        if (PreviewScale is null || ZoomCombo.SelectedItem is not ComboBoxItem { Tag: string value } || !double.TryParse(value, out var zoom))
         {
             return;
         }
-
-        PreviewScale.ScaleX = zoom;
-        PreviewScale.ScaleY = zoom;
+        PreviewScale.ScaleX = PreviewScale.ScaleY = zoom;
     }
 
     private void SnapCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (SnapCombo.SelectedItem is ComboBoxItem item && item.Tag is string value && int.TryParse(value, out var snap))
+        if (SnapCombo.SelectedItem is ComboBoxItem { Tag: string value } && int.TryParse(value, out var snap))
         {
             _snap = Math.Max(1, snap);
         }
@@ -510,7 +482,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (_selectedElement is null)
+        if (Keyboard.FocusedElement is TextBox || _selectedElement is null)
         {
             return;
         }
@@ -528,25 +500,18 @@ public partial class MainWindow : Window
         }
 
         var step = (Keyboard.Modifiers & ModifierKeys.Shift) != 0 ? 5 : 1;
-        var dx = 0;
-        var dy = 0;
-
-        switch (e.Key)
+        var (dx, dy) = e.Key switch
         {
-            case Key.Left:
-                dx = -step;
-                break;
-            case Key.Right:
-                dx = step;
-                break;
-            case Key.Up:
-                dy = -step;
-                break;
-            case Key.Down:
-                dy = step;
-                break;
-            default:
-                return;
+            Key.Left => (-step, 0),
+            Key.Right => (step, 0),
+            Key.Up => (0, -step),
+            Key.Down => (0, step),
+            _ => (0, 0)
+        };
+
+        if (dx == 0 && dy == 0)
+        {
+            return;
         }
 
         _selectedElement.X = Clamp(_selectedElement.X + dx, 0, Math.Max(0, _layout.Width - _selectedElement.Width));
