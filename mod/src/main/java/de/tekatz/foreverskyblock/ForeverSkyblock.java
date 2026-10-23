@@ -179,6 +179,7 @@ public final class ForeverSkyblock {
 
         // Modded item networks need a complete machine view from every connected face. The machine-owned handlers
         // still enforce which slots accept input and which slots permit extraction; only the face restriction is removed.
+        // Query capabilities in integration tests: direct automation(side) calls retain the internal sided views.
         // Vanilla hopper flow is unchanged: hoppers below still pull outputs from the machine's underside.
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, CONDENSER_ENTITY.get(),
                 (machine, side) -> de.tekatz.foreverskyblock.blockentity.CondenserAutomationHandler.create(machine, null));

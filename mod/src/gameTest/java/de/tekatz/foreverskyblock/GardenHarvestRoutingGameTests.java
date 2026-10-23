@@ -53,9 +53,36 @@ public final class GardenHarvestRoutingGameTests {
                 && !secondary.isItemValid(0, new ItemStack(Items.WHEAT_SEEDS)), "Harvest port must reject insertion");
         h.assertTrue(secondary.extractItem(1, 1, false).isEmpty() && secondary.extractItem(0, 0, false).isEmpty()
                 && secondary.extractItem(0, -1, false).isEmpty(), "Invalid requests must not touch inventory");
-        for (Direction side : Direction.values()) if (side != Direction.DOWN)
-            h.assertTrue(level.getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(CHAMBER), side) == null,
-                    "Chamber harvest is accessible only below the block");
+        for (Direction side : Direction.values()) {
+            var mainPort = level.getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(POS), side);
+            var chamberPort = level.getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(CHAMBER), side);
+            h.assertTrue(mainPort != null && chamberPort != null && chamberPort.getSlots() == 1,
+                    "Both harvest ports are accessible on " + side);
+            m.inventory().setStackInSlot(GARDEN_SPECIMEN, ItemStack.EMPTY);
+            h.assertTrue(mainPort.insertItem(GARDEN_SPECIMEN, new ItemStack(Items.WHEAT_SEEDS), true).isEmpty()
+                    && m.inventory().getStackInSlot(GARDEN_SPECIMEN).isEmpty(), "Specimen adapter supports simulation on every face");
+            h.assertTrue(mainPort.insertItem(GARDEN_SPECIMEN, new ItemStack(Items.WHEAT_SEEDS), false).isEmpty()
+                    && m.inventory().getStackInSlot(GARDEN_SPECIMEN).getCount() == 1, "Every face can insert the retained specimen");
+            h.assertTrue(mainPort.getStackInSlot(GARDEN_OUTPUT_SECONDARY).isEmpty()
+                    && mainPort.extractItem(GARDEN_OUTPUT_SECONDARY, 64, false).isEmpty()
+                    && mainPort.extractItem(GARDEN_SPECIMEN, 1, false).isEmpty(), "Every face preserves harvest separation and the specimen");
+            h.assertTrue(chamberPort.getStackInSlot(0).is(Items.WHEAT_SEEDS)
+                    && !chamberPort.isItemValid(0, new ItemStack(Items.WHEAT_SEEDS))
+                    && !chamberPort.insertItem(0, new ItemStack(Items.WHEAT_SEEDS), false).isEmpty(), "Every chamber face is output-only");
+            h.assertTrue(mainPort.extractItem(GARDEN_OUTPUT_PRIMARY, 4, true).getCount() == 4
+                    && chamberPort.extractItem(0, 2, true).getCount() == 2
+                    && m.inventory().getStackInSlot(GARDEN_OUTPUT_PRIMARY).getCount() == 4
+                    && m.inventory().getStackInSlot(GARDEN_OUTPUT_SECONDARY).getCount() == 2, "Every face simulates without consuming harvest");
+            h.assertTrue(mainPort.extractItem(GARDEN_OUTPUT_PRIMARY, 4, false).getCount() == 4
+                    && chamberPort.extractItem(0, 2, false).getCount() == 2
+                    && m.inventory().getStackInSlot(GARDEN_OUTPUT_PRIMARY).isEmpty()
+                    && m.inventory().getStackInSlot(GARDEN_OUTPUT_SECONDARY).isEmpty(), "Every face drains its own harvest exactly once");
+            m.inventory().setStackInSlot(GARDEN_OUTPUT_PRIMARY, new ItemStack(Items.WHEAT, 4));
+            m.inventory().setStackInSlot(GARDEN_OUTPUT_SECONDARY, new ItemStack(Items.WHEAT_SEEDS, 2));
+        }
+        var unsidedChamber = level.getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(CHAMBER), null);
+        h.assertTrue(unsidedChamber != null && unsidedChamber.extractItem(0, 2, true).getCount() == 2,
+                "Unsided chamber access remains supported");
         var menu = new CondenserMenu(1, net.neoforged.neoforge.common.util.FakePlayerFactory.getMinecraft(h.getLevel()).getInventory(), m);
         h.assertTrue(menu.getSlot(GARDEN_OUTPUT_PRIMARY).getItem().is(Items.WHEAT)
                 && menu.getSlot(GARDEN_OUTPUT_SECONDARY).getItem().is(Items.WHEAT_SEEDS), "Both real outputs remain accessible in the Condenser GUI");

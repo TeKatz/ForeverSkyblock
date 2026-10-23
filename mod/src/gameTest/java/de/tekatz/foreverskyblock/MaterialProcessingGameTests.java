@@ -89,16 +89,29 @@ public final class MaterialProcessingGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void washingAutomationIsSided(GameTestHelper h) {
+    public static void washingAutomationWorksOnEveryFace(GameTestHelper h) {
         var machine = basin(h, POS);
         var absolute = h.absolutePos(POS);
-        var top = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, absolute, Direction.UP);
-        var bottom = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, absolute, Direction.DOWN);
-        check(h, top != null && bottom != null, "Washing Basin must expose item automation");
-        check(h, top.insertItem(0, new ItemStack(ForeverSkyblock.STONE_MEAL.get(), 4), false).isEmpty(), "Top automation inserts valid washing input");
-        check(h, !top.insertItem(0, new ItemStack(Items.OAK_LOG), false).isEmpty(), "Automation rejects invalid washing input");
-        machine.inventory().setStackInSlot(WashingBasinBlockEntity.OUTPUT, new ItemStack(Items.RAW_IRON));
-        check(h, bottom.extractItem(WashingBasinBlockEntity.OUTPUT, 1, false).is(Items.RAW_IRON), "Bottom automation extracts washing output");
+        for (Direction face : Direction.values()) {
+            var access = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, absolute, face);
+            check(h, access != null && access.getSlots() == WashingBasinBlockEntity.MACHINE_SLOTS, "Washing capability exposes only public slots on " + face);
+            var input = new ItemStack(ForeverSkyblock.STONE_MEAL.get(), 4);
+            check(h, access.insertItem(0, input, true).isEmpty() && machine.inventory().getStackInSlot(0).isEmpty(), "Simulated washing input does not mutate inventory");
+            check(h, access.insertItem(0, input, false).isEmpty(), "Every face accepts valid washing input");
+            check(h, !access.insertItem(0, new ItemStack(Items.OAK_LOG), false).isEmpty()
+                    && access.extractItem(0, 4, false).isEmpty(), "Invalid inputs and input extraction remain forbidden");
+            machine.inventory().setStackInSlot(WashingBasinBlockEntity.OUTPUT, new ItemStack(Items.RAW_IRON));
+            machine.inventory().setStackInSlot(WashingBasinBlockEntity.SECONDARY_OUTPUT, new ItemStack(Items.QUARTZ, 2));
+            for (int slot : new int[] {WashingBasinBlockEntity.OUTPUT, WashingBasinBlockEntity.SECONDARY_OUTPUT}) {
+                var expected = machine.inventory().getStackInSlot(slot).copy();
+                check(h, !access.isItemValid(slot, expected) && !access.insertItem(slot, expected, false).isEmpty(), "Washing outputs reject insertion");
+                check(h, ItemStack.matches(access.extractItem(slot, 64, true), expected)
+                        && ItemStack.matches(machine.inventory().getStackInSlot(slot), expected), "Simulated washing output does not consume items");
+                check(h, ItemStack.matches(access.extractItem(slot, 64, false), expected)
+                        && machine.inventory().getStackInSlot(slot).isEmpty(), "Every face drains both washing outputs exactly on " + face);
+            }
+            machine.inventory().setStackInSlot(0, ItemStack.EMPTY);
+        }
         h.succeed();
     }
 

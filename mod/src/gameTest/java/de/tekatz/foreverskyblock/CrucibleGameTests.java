@@ -13,6 +13,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -91,12 +92,20 @@ public final class CrucibleGameTests {
     @GameTest(template = "empty")
     public static void itemAndFluidCapabilitiesRespectAutomationDirections(GameTestHelper h) {
         CrucibleBlockEntity crucible = setup(h, Blocks.LAVA);
-        ItemStack remainder = crucible.automation(Direction.UP).insertItem(CrucibleBlockEntity.INPUT, new ItemStack(Items.COBBLESTONE, 8), false);
+        var top = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(POS), Direction.UP);
+        var bottom = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(POS), Direction.DOWN);
+        check(h, top != null && bottom != null, "Crucible keeps registered sided item capabilities");
+        ItemStack remainder = top.insertItem(CrucibleBlockEntity.INPUT, new ItemStack(Items.COBBLESTONE, 8), false);
         check(h, remainder.isEmpty(), "Top/side automation accepts Crucible input");
-        check(h, crucible.automation(Direction.DOWN).insertItem(CrucibleBlockEntity.INPUT, new ItemStack(Items.COBBLESTONE), false).getCount() == 1,
+        check(h, bottom.insertItem(CrucibleBlockEntity.INPUT, new ItemStack(Items.COBBLESTONE), false).getCount() == 1,
                 "Bottom automation is output-only");
         tick(h, crucible, 600);
-        var drained = crucible.fluidAutomation(Direction.NORTH).drain(250, IFluidHandler.FluidAction.EXECUTE);
+        crucible.inventory().setStackInSlot(CrucibleBlockEntity.OUTPUT, new ItemStack(Items.OBSIDIAN));
+        check(h, top.extractItem(CrucibleBlockEntity.OUTPUT, 1, false).isEmpty()
+                && bottom.extractItem(CrucibleBlockEntity.OUTPUT, 1, false).is(Items.OBSIDIAN), "Crucible output remains accessible only through its output view");
+        var fluid = h.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, h.absolutePos(POS), Direction.NORTH);
+        check(h, fluid != null, "Crucible keeps its registered fluid capability");
+        var drained = fluid.drain(250, IFluidHandler.FluidAction.EXECUTE);
         check(h, drained.getAmount() == 250 && drained.getFluid() == net.minecraft.world.level.material.Fluids.LAVA, "Fluid cables can drain stored lava");
         check(h, crucible.lavaMb() == 750, "Fluid extraction updates the internal buffer");
         h.succeed();
