@@ -20,6 +20,9 @@ public partial class App : Application
                 // Phase 6 depends on the project and state controls above so it can
                 // restyle every command ComboBox and add machine-specific scene controls.
                 window.EnableForeverPhase6Tools();
+                // Replace Phase 6's coarse full-presentation animation refresh with
+                // persistent scene visuals that mutate only their animated primitives.
+                window.EnableForeverPhase6StableAnimation();
             }
         }, DispatcherPriority.ContextIdle);
     }
