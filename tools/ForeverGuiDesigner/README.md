@@ -44,11 +44,11 @@ The asset browser scans:
 
 `mod/src/main/resources/assets/forever_skyblock/textures`
 
-It shows PNG previews with nearest-neighbor scaling. Double-clicking a texture adds it to the canvas. Texture references are stored as repository-relative asset paths such as `textures/item/forever_core.png`.
+It shows decoded PNG previews with nearest-neighbor scaling. Double-clicking a texture adds it to the canvas. Texture references are stored as repository-relative asset paths such as `textures/item/forever_core.png`.
 
 ## Forever project integration
 
-The toolbar now contains a dedicated **Skyblock** workflow.
+The command bar contains a dedicated **FOREVER SKYBLOCK** workflow.
 
 1. Select the local ForeverSkyblock repository with **Repo…**.
 2. Click **Scan project**.
@@ -68,6 +68,35 @@ It also mirrors `MachineSkin.slot` geometry:
 - player inventory/hotbar frames: 20 x 20, padded 2 px around vanilla slot coordinates
 
 Player inventory and hotbar slots are imported individually for these project templates so their real Forever spacing remains editable.
+
+### Visual machine preview
+
+The project scan reconstructs a non-interactive machine backdrop from the actual Forever rendering style. The preview mirrors `MachineSkin.frame`, statically resolvable `MachineSkin.panel(...)` regions, the shared player inventory panel and matching repository block/item textures. Imported slots, buttons and editor widgets remain editable above this backdrop.
+
+The **Visual preview** checkbox can hide this reconstructed background without changing layout data or Java export.
+
+### Condenser state editor
+
+The Condenser now has a state-aware preview workflow in the Forever Skyblock command bar:
+
+- tier: **MK I** / **MK II**
+- mode: **Base** / **Mixing** / **Freezing** / **Garden**
+- progress preview: **0 / 25 / 50 / 75 / 100%**
+
+Changing state does not rewrite layout coordinates. Instead the editor switches the preview and visibility of the existing imported elements. Machine slots follow the actual Condenser coordinates, the Recipes button moves to its Garden position, Edit Locks hides in Garden mode, and MK II-only automation/policy content is only shown for MK II.
+
+When a Condenser is loaded, the editor adds editable project-aware layout anchors for its major state surfaces: process/freezing/garden panels, module labels, progress meters, lock indicators, automation headers and MK II output policy buttons. Shared non-Garden surfaces are normalized into independent Base/Mixing/Freezing variants so each state can be edited separately.
+
+### Forever widgets
+
+The Forever Skyblock command bar also provides direct widget insertion for:
+
+- **Panel** — MachineSkin-style panel surface
+- **Meter** — previewable progress meter using the selected progress percentage
+- **Lock** — pixel-style Forever lock indicator
+- **Status** — machine status indicator
+
+These widgets are ordinary editable layout elements: they can be selected, dragged, resized, aligned, copied, saved and included in Java coordinate export. Their Forever-specific appearance is an editor presentation layer and does not require adding temporary PNG files to the mod assets.
 
 ### Java export
 
@@ -118,9 +147,9 @@ A layout contains its logical Minecraft GUI size and a list of elements:
 
 ## Next steps
 
-- Import more dynamically calculated panels, labels and progress meters from Forever machine screens.
-- Add first-class Forever widgets for progress meters, panels, locks and machine status indicators.
+- Extend state-aware previews to Washing, Crucible and Ascension where useful.
+- Parse more dynamic labels and process-scene geometry directly from Java instead of relying on project-aware editor anchors.
 - Add visible guides/rulers and a project-aware snap grid.
 - Add Minecraft font rendering.
 - Add a reviewed apply-back workflow for updating selected Java constants rather than only exporting snippets.
-- Add hover/pressed states and lightweight animation previews.
+- Add hover/pressed states and lightweight animation playback.
