@@ -120,22 +120,17 @@ public partial class MainWindow
         {
             ApplyThemeSafeComboBoxes();
             UpdatePhase6ControlAvailability();
+            _phase6LoadRequested = false;
 
-            if (_phase6LoadRequested)
-            {
-                _phase6LoadRequested = false;
-                if (IsWashingPhase6Active && EnsureWashingPhase6Elements())
-                {
-                    RefreshElementList();
-                    RenderLayout();
-                    return;
-                }
-            }
-            else if (IsWashingPhase6Active && EnsureWashingPhase6Elements())
+            if (IsWashingPhase6Active && EnsureWashingPhase6Elements())
             {
                 RefreshElementList();
                 RenderLayout();
-                return;
+
+                // RenderLayout clears every generated PreviewCanvas child. Reinsert the
+                // project backdrop immediately so the first Washing load reaches the
+                // exact same presentation state as a later Visual preview toggle.
+                EnsureForeverVisualPreview();
             }
 
             if (!IsWashingPhase6Active)
@@ -144,8 +139,14 @@ public partial class MainWindow
                 return;
             }
 
+            // Finish the complete presentation in the same refresh that created the
+            // Phase 6 elements. Previously this depended on a LayoutUpdated callback,
+            // but that callback fires while _phase6Refreshing is still true and its
+            // queued refresh is therefore discarded on the initial machine load.
             DecorateWashingElements();
             EnsureWashingOverlay();
+            EnsureStableWashingAnimationVisuals();
+            UpdateStableWashingAnimationVisuals();
             UpdateSelectionVisuals();
         }
         finally
