@@ -12,7 +12,10 @@ public partial class App : Application
         Dispatcher.BeginInvoke(() =>
         {
             if (Current.MainWindow is MainWindow window)
+            {
                 window.EnableForeverSkyblockTools();
+                window.EnableForeverPhase5Tools();
+            }
         }, DispatcherPriority.ContextIdle);
     }
 }
