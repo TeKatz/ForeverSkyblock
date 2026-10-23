@@ -87,7 +87,7 @@ Changing state does not rewrite layout coordinates. The editor switches preview 
 
 ### Detailed Washing scene
 
-Washing now has a richer preview based directly on `WashingScreen` and `MachineProcessEffects.washing`:
+Washing has a richer preview based directly on `WashingScreen` and `MachineProcessEffects.washing`:
 
 - runtime states: **Running**, **Idle**, **Blocked**, **No water**
 - connected-water / water-required presentation
@@ -142,6 +142,8 @@ dotnet run --project .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
 ```
 
 The GitHub Actions workflow publishes a self-contained `win-x64` build so the application can be tested without installing the .NET SDK.
+
+Phase 6 code passed restore, Release WPF build, self-contained `win-x64` publish and artifact upload on commit `bbf8b81143020f9ae9b962fe02d9480302ca7668`.
 
 ## Layout format
 
