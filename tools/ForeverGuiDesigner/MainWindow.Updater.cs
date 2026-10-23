@@ -116,7 +116,7 @@ public partial class MainWindow
 
         try
         {
-            var manifest = await SelfUpdateService.CheckAsync(SelectedUpdateChannel);
+            var manifest = await ResolveUpdateManifestAsync(SelectedUpdateChannel);
             if (manifest is null)
             {
                 SetUpdateStatus(SelectedUpdateChannel == UpdateChannel.Stable
@@ -144,7 +144,7 @@ public partial class MainWindow
             if (showErrors)
             {
                 MessageBox.Show(this,
-                    $"Could not check for updates.\n\n{ex.Message}",
+                    $"Could not check for updates through either GitHub check path.\n\n{ex.Message}",
                     "Update check failed",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
@@ -153,6 +153,31 @@ public partial class MainWindow
         finally
         {
             _updateBusy = false;
+        }
+    }
+
+    private static async Task<UpdateManifest?> ResolveUpdateManifestAsync(UpdateChannel channel)
+    {
+        Exception? primaryError = null;
+        try
+        {
+            return await SelfUpdateService.CheckAsync(channel);
+        }
+        catch (Exception ex)
+        {
+            primaryError = ex;
+        }
+
+        try
+        {
+            return await ReleaseManifestFallback.CheckAsync(channel);
+        }
+        catch (Exception fallbackError)
+        {
+            throw new InvalidOperationException(
+                $"GitHub API: {primaryError?.Message ?? "unknown error"}\n" +
+                $"Release manifest fallback: {fallbackError.Message}",
+                fallbackError);
         }
     }
 
