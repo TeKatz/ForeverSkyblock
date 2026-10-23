@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -186,7 +187,8 @@ public static class SelfUpdateService
         start.ArgumentList.Add(Environment.ProcessId.ToString());
         start.ArgumentList.Add(manifest.Commit);
 
-        Process.Start(start) ?? throw new InvalidOperationException("Could not start the update helper.");
+        if (Process.Start(start) is null)
+            throw new InvalidOperationException("Could not start the update helper.");
     }
 
     public static async Task<bool> TryRunApplyModeAsync(string[] args)
