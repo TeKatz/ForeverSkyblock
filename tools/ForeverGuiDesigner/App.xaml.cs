@@ -34,6 +34,7 @@ public partial class App : Application
             window.EnableForeverPhase8PerformanceHotfix();
             window.EnableForeverVisualFidelityPatch();
             window.EnableMachinePresentationLifecycleFix();
+            window.EnableWashingSourceRenderer();
             window.EnableSelfUpdater();
         }, DispatcherPriority.ContextIdle);
     }

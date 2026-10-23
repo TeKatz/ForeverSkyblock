@@ -2,6 +2,17 @@
 
 ## Development
 
+### 0.8.3 — Washing source compositor hotfix
+
+- Replaced the generated Washing preview image as the final visual authority with a deterministic WPF compositor derived directly from `WashingScreen`, `MachineScreen`, `MachineLayout` and `MachineSkin` geometry.
+- The final Washing compositor runs at `DispatcherPriority.SystemIdle`, after the older Phase 5–8 decorators and the 0.8.2 presentation coordinator, so a later generic decorator cannot win after `Apply properties`.
+- Rebuilds the complete MachineSkin frame and the shared 212×92 player-inventory panel directly in the canvas instead of depending on a temporary preview PNG surviving `RenderLayout()`.
+- Re-applies MachineSkin slot chrome to every imported player/hotbar slot and gives the three Washing machine slots a dedicated foreground layer above process panels.
+- Added a defensive source-slot fallback for old/broken scans: if no machine slots exist, Washing recreates the runtime frames at 38/74, 170/74 and 198/74 (corresponding to vanilla slot coordinates 42/78, 174/78 and 202/78).
+- Re-applies Washing panels, state marker, text, Recipes button and stable process/meter surfaces after every visual-generation replacement.
+- Keeps the 0.8.2 animation gating unchanged.
+- Bumped the editor to 0.8.3.
+
 ### 0.8.2 — Machine presentation lifecycle hotfix
 
 - Added a final machine-presentation coordinator that runs after all Phase 5–8 background/context-idle decorators, so machine visuals no longer fall back to the generic grey renderer after load or `Apply properties`.
