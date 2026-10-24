@@ -14,6 +14,7 @@ public partial class MainWindow
     private Canvas? _phase9SnapshotSimulatorScreen;
     private TextBlock? _phase9SnapshotSimulatorInfo;
     private BitmapSource? _phase9SnapshotSimulatorBitmap;
+    private int _phase9SnapshotSimulatorScale;
     private bool _phase9SnapshotCaptureQueued;
     private FrameworkElement? _phase9SnapshotVisualAnchor;
     private int _phase9SnapshotVisualCount = -1;
@@ -32,7 +33,7 @@ public partial class MainWindow
             var replacement = new Button
             {
                 Content = "Simulator",
-                ToolTip = "Preview the current GUI centered inside a Minecraft logical viewport at the selected framebuffer resolution and GUI scale."
+                ToolTip = "Preview the current GUI centered inside the selected Minecraft framebuffer at the chosen GUI scale."
             };
             replacement.Click += (_, _) => ShowPhase9SnapshotSimulator();
             SkyblockBarHost.Children.RemoveAt(index);
@@ -88,7 +89,6 @@ public partial class MainWindow
                 SnapsToDevicePixels = true
             };
             RenderOptions.SetEdgeMode(_phase9SnapshotSimulatorScreen, EdgeMode.Aliased);
-            RenderOptions.SetBitmapScalingMode(_phase9SnapshotSimulatorScreen, BitmapScalingMode.NearestNeighbor);
 
             var viewbox = new Viewbox
             {
@@ -97,10 +97,13 @@ public partial class MainWindow
                 Margin = new Thickness(14),
                 Child = _phase9SnapshotSimulatorScreen
             };
+            // The simulator shows a full framebuffer scaled to fit this window. Use a
+            // high-quality final downscale so thin bitmap-font rows are not discarded.
+            RenderOptions.SetBitmapScalingMode(viewbox, BitmapScalingMode.HighQuality);
 
             var hint = new TextBlock
             {
-                Text = "Dark area = Minecraft logical viewport. The GUI should appear fully visible and centered. Resolution/GUI-scale changes reuse the same native snapshot.",
+                Text = "Dark area = simulated framebuffer. The GUI is rendered at real framebuffer pixel density for the selected GUI scale, then the complete framebuffer is fitted into this window.",
                 Foreground = Brush("#87949D"),
                 FontSize = 10,
                 Margin = new Thickness(12, 0, 12, 9),
@@ -132,6 +135,7 @@ public partial class MainWindow
                 _phase9SnapshotSimulatorScreen = null;
                 _phase9SnapshotSimulatorInfo = null;
                 _phase9SnapshotSimulatorBitmap = null;
+                _phase9SnapshotSimulatorScale = 0;
                 _phase9SnapshotCaptureQueued = false;
             };
         }
@@ -191,71 +195,88 @@ public partial class MainWindow
             _phase9SnapshotSimulatorInfo is null)
             return;
 
-        if (capturePreview || _phase9SnapshotSimulatorBitmap is null)
-            _phase9SnapshotSimulatorBitmap = CapturePhase9PreviewSnapshot();
-
         var (framebufferWidth, framebufferHeight) = GetPhase9Resolution();
         var guiScale = GetPhase9GuiScale(framebufferWidth, framebufferHeight);
         var logicalWidth = (int)Math.Ceiling(framebufferWidth / (double)guiScale);
         var logicalHeight = (int)Math.Ceiling(framebufferHeight / (double)guiScale);
 
-        _phase9SnapshotSimulatorScreen.Width = logicalWidth;
-        _phase9SnapshotSimulatorScreen.Height = logicalHeight;
+        // Text in the editor uses a bitmap-style 5x7 renderer and may use fractional
+        // logical pixels (for example 0.72 px). Rasterizing that at 1x destroys rows
+        // before the simulator can enlarge them. Capture directly at GUI-scale pixel
+        // density instead: 248x270 at scale 3 becomes a 744x810 framebuffer bitmap.
+        if (capturePreview ||
+            _phase9SnapshotSimulatorBitmap is null ||
+            _phase9SnapshotSimulatorScale != guiScale)
+        {
+            _phase9SnapshotSimulatorBitmap = CapturePhase9PreviewSnapshot(guiScale);
+            _phase9SnapshotSimulatorScale = _phase9SnapshotSimulatorBitmap is null ? 0 : guiScale;
+        }
+
+        // Model the actual framebuffer, not a 1x logical canvas. The GUI occupies the
+        // exact same relative screen area, but all source pixels exist at the density
+        // Minecraft would present for this GUI scale.
+        _phase9SnapshotSimulatorScreen.Width = framebufferWidth;
+        _phase9SnapshotSimulatorScreen.Height = framebufferHeight;
         _phase9SnapshotSimulatorScreen.Children.Clear();
 
-        AddSimulatorGuide(_phase9SnapshotSimulatorScreen, logicalWidth / 2.0, 0, logicalWidth / 2.0, logicalHeight);
-        AddSimulatorGuide(_phase9SnapshotSimulatorScreen, 0, logicalHeight / 2.0, logicalWidth, logicalHeight / 2.0);
+        AddSimulatorGuide(_phase9SnapshotSimulatorScreen, framebufferWidth / 2.0, 0, framebufferWidth / 2.0, framebufferHeight);
+        AddSimulatorGuide(_phase9SnapshotSimulatorScreen, 0, framebufferHeight / 2.0, framebufferWidth, framebufferHeight / 2.0);
 
         var guiWidth = Math.Max(1, _layout.Width);
         var guiHeight = Math.Max(1, _layout.Height);
+        var framebufferGuiWidth = guiWidth * guiScale;
+        var framebufferGuiHeight = guiHeight * guiScale;
         var image = new Image
         {
-            Width = guiWidth,
-            Height = guiHeight,
+            Width = framebufferGuiWidth,
+            Height = framebufferGuiHeight,
             Source = _phase9SnapshotSimulatorBitmap,
             Stretch = Stretch.Fill,
             SnapsToDevicePixels = true,
             IsHitTestVisible = false
         };
-        RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.NearestNeighbor);
+        // The bitmap is normally displayed 1:1 inside the framebuffer. If the outer
+        // Viewbox scales the full framebuffer, high-quality sampling prevents skipped
+        // glyph rows at non-integer window sizes.
+        RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
 
         var gui = new Border
         {
-            Width = guiWidth,
-            Height = guiHeight,
+            Width = framebufferGuiWidth,
+            Height = framebufferGuiHeight,
             Background = _phase9SnapshotSimulatorBitmap is null ? Brush("#3A2020") : Brushes.Transparent,
             BorderBrush = _phase9SnapshotSimulatorBitmap is null ? Brush("#D96A63") : Brush("#6D8192"),
-            BorderThickness = new Thickness(0.5),
+            BorderThickness = new Thickness(1),
             Child = image,
             SnapsToDevicePixels = true,
             IsHitTestVisible = false
         };
-        Canvas.SetLeft(gui, Math.Floor((logicalWidth - guiWidth) / 2.0));
-        Canvas.SetTop(gui, Math.Floor((logicalHeight - guiHeight) / 2.0));
+        Canvas.SetLeft(gui, Math.Floor((framebufferWidth - framebufferGuiWidth) / 2.0));
+        Canvas.SetTop(gui, Math.Floor((framebufferHeight - framebufferGuiHeight) / 2.0));
         _phase9SnapshotSimulatorScreen.Children.Add(gui);
 
         _phase9SnapshotSimulatorInfo.Text = _phase9SnapshotSimulatorBitmap is null
             ? $"Framebuffer {framebufferWidth}×{framebufferHeight} · GUI scale {guiScale}x · logical viewport {logicalWidth}×{logicalHeight} · preview snapshot unavailable"
             : $"Framebuffer {framebufferWidth}×{framebufferHeight} · GUI scale {guiScale}x · logical viewport {logicalWidth}×{logicalHeight} · " +
-              $"GUI {guiWidth}×{guiHeight} logical px / {guiWidth * guiScale}×{guiHeight * guiScale} framebuffer px";
+              $"GUI {guiWidth}×{guiHeight} logical px / {framebufferGuiWidth}×{framebufferGuiHeight} framebuffer px";
     }
 
-    private BitmapSource? CapturePhase9PreviewSnapshot()
+    private BitmapSource? CapturePhase9PreviewSnapshot(int guiScale)
     {
         if (_layout.Width <= 0 || _layout.Height <= 0 || PreviewCanvas.ActualWidth <= 0 || PreviewCanvas.ActualHeight <= 0)
             return null;
 
         try
         {
-            var pixelWidth = Math.Max(1, _layout.Width);
-            var pixelHeight = Math.Max(1, _layout.Height);
+            var logicalWidth = Math.Max(1, _layout.Width);
+            var logicalHeight = Math.Max(1, _layout.Height);
+            var pixelWidth = Math.Max(1, logicalWidth * guiScale);
+            var pixelHeight = Math.Max(1, logicalHeight * guiScale);
 
-            // Do not render PreviewCanvas directly. Its editor zoom is a LayoutTransform,
-            // and RenderTargetBitmap faithfully keeps that transformed visual state. A
-            // native-sized target therefore captures only a zoomed fragment. Instead,
-            // paint the complete visual through a VisualBrush into a fresh DrawingVisual
-            // at (0,0). Stretch.Fill maps the transformed editor visual back onto exactly
-            // the GUI's native logical bounds without mutating or re-laying out the editor.
+            // VisualBrush normalizes away the editor LayoutTransform while the larger
+            // destination rectangle preserves the chosen Minecraft GUI-scale density.
+            // Fractional pixel-font strokes therefore rasterize at multiple framebuffer
+            // pixels instead of being truncated in a 1x intermediate bitmap.
             var sourceBrush = new VisualBrush(PreviewCanvas)
             {
                 Stretch = Stretch.Fill,
