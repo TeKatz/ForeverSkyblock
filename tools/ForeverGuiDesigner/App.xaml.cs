@@ -49,6 +49,7 @@ public partial class App : Application
             window.EnableContextMenuVisualPolish();
             window.EnableRuntimeContextSelectionFix();
             window.EnableContextCommandRepairs();
+            window.EnableContextCommandFinalizationFix();
             window.EnableStartupPresentationHooks();
         }, DispatcherPriority.ContextIdle);
     }
