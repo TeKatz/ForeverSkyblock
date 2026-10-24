@@ -1,16 +1,17 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Threading;
 using ForeverGuiDesigner.Models;
 
 namespace ForeverGuiDesigner;
 
 /// <summary>
-/// Selection in source-faithful machine previews is editor chrome only.
-/// Runtime controls must never receive generic editor selection styling and selection
-/// suppression must never outlive the input event that required it.
+/// Keeps editor selection out of source-faithful machine chrome.
+///
+/// The exclusive Washing/non-Washing owners remain the only render owners. This helper
+/// only establishes selection before the legacy SetSelection path can paint generic
+/// Border chrome. It never schedules presentation work and never keeps a render-owner
+/// re-entrancy flag across routed events or dispatcher turns.
 /// </summary>
 public partial class MainWindow
 {
@@ -18,7 +19,6 @@ public partial class MainWindow
     private int _runtimeSelectionWriterSuppressionDepth;
     private bool _runtimeSelectionPreviousWashingApplying;
     private bool _runtimeSelectionPreviousMachineApplying;
-    private int _runtimeSelectionNormalizeToken;
 
     public void EnableRuntimeSelectionStabilityFix()
     {
@@ -26,33 +26,19 @@ public partial class MainWindow
             return;
         _runtimeSelectionStabilityInitialized = true;
 
-        // Tunnelling input establishes runtime-safe selection before legacy element/list
-        // handlers execute. The suppression is released synchronously by the matching
-        // bubbling MouseLeftButtonDown event; it never survives into a context-menu action.
-        PreviewCanvas.AddHandler(UIElement.PreviewMouseDownEvent,
-            new MouseButtonEventHandler(RuntimeSelectionPreviewMouseDown), true);
-        PreviewCanvas.AddHandler(UIElement.MouseLeftButtonDownEvent,
-            new MouseButtonEventHandler(RuntimeSelectionMouseDownCompleted), true);
-
-        ElementsList.AddHandler(UIElement.PreviewMouseDownEvent,
-            new MouseButtonEventHandler(RuntimeSelectionPreviewMouseDown), true);
-        ElementsList.AddHandler(UIElement.MouseLeftButtonDownEvent,
-            new MouseButtonEventHandler(RuntimeSelectionMouseDownCompleted), true);
-
+        // Tunnelling left-click selection runs before the base element/list/tree
+        // handlers. Runtime-safe selection is completed synchronously here. No matching
+        // bubbling callback is required, so no state can leak into a later edit command.
+        PreviewCanvas.AddHandler(UIElement.PreviewMouseLeftButtonDownEvent,
+            new MouseButtonEventHandler(RuntimeSelectionPreviewMouseLeftButtonDown), true);
+        ElementsList.AddHandler(UIElement.PreviewMouseLeftButtonDownEvent,
+            new MouseButtonEventHandler(RuntimeSelectionPreviewMouseLeftButtonDown), true);
         if (_phase8Hierarchy is not null)
         {
-            _phase8Hierarchy.AddHandler(UIElement.PreviewMouseDownEvent,
-                new MouseButtonEventHandler(RuntimeSelectionPreviewMouseDown), true);
-            _phase8Hierarchy.AddHandler(UIElement.MouseLeftButtonDownEvent,
-                new MouseButtonEventHandler(RuntimeSelectionMouseDownCompleted), true);
-            _phase8Hierarchy.SelectedItemChanged += (_, _) => QueueRuntimeSelectionOuterNormalization();
+            _phase8Hierarchy.AddHandler(UIElement.PreviewMouseLeftButtonDownEvent,
+                new MouseButtonEventHandler(RuntimeSelectionPreviewMouseLeftButtonDown), true);
         }
 
-        // This also catches programmatic SetSelection callers that still synchronize the
-        // ListBox directly (validation navigation, legacy helpers, etc.). Their generic
-        // border paint is repaired after the synchronous SetSelection call returns, but
-        // no child visual or source surface is rebuilt.
-        ElementsList.SelectionChanged += (_, _) => QueueRuntimeSelectionOuterNormalization();
         PreviewKeyDown += RuntimeSelectionPreviewKeyDown;
     }
 
@@ -60,12 +46,10 @@ public partial class MainWindow
         => (_washingExclusiveModeActive && IsWashingPhase6Active) ||
            (_machineRuntimeExclusiveActive && IsNonWashingRuntimeMachineActive);
 
-    private void RuntimeSelectionPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    private void RuntimeSelectionPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (!RuntimeSelectionPreviewActive || e.ChangedButton != MouseButton.Left)
+        if (!RuntimeSelectionPreviewActive)
             return;
-
-        BeginRuntimeSelectionWriterSuppression();
 
         if (ReferenceEquals(sender, PreviewCanvas))
         {
@@ -83,15 +67,6 @@ public partial class MainWindow
             HandleRuntimeHierarchyLeftSelection(e);
     }
 
-    private void RuntimeSelectionMouseDownCompleted(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ChangedButton != MouseButton.Left || _runtimeSelectionWriterSuppressionDepth == 0)
-            return;
-
-        EndRuntimeSelectionWriterSuppression();
-        RefreshRuntimeSelectionOverlaysOnly();
-    }
-
     private void HandleRuntimeCanvasLeftSelection(MouseButtonEventArgs e)
     {
         var element = FindGuiElementFromVisual(e.OriginalSource as DependencyObject);
@@ -101,13 +76,16 @@ public partial class MainWindow
         {
             if (control)
             {
+                // Ctrl-click is completely owned here. Letting the base element handler
+                // continue would toggle the same element a second time.
                 ToggleRuntimeSafeSelection(element);
                 e.Handled = true;
             }
             else if (!_selection.Contains(element))
             {
-                // Leave the event unhandled so the established drag-start logic still runs.
-                // It sees the element already selected and therefore skips SetSelection().
+                // Preselect without touching runtime chrome. Keep the event unhandled so
+                // the established base drag-start logic still captures the mouse. It sees
+                // the element already selected and therefore skips SetSelection().
                 SetRuntimeSafeSelection([element]);
             }
             return;
@@ -116,6 +94,7 @@ public partial class MainWindow
         if (ReferenceEquals(e.OriginalSource, PreviewCanvas))
         {
             SetRuntimeSafeSelection([]);
+            // Prevent PreviewCanvas_MouseLeftButtonDown from entering SetSelection([]).
             e.Handled = true;
         }
     }
@@ -134,6 +113,8 @@ public partial class MainWindow
         else
             SetRuntimeSafeSelection([element]);
 
+        // We synchronized SelectedItems ourselves; suppress the ListBox's normal
+        // mutation so ElementsList_SelectionChanged cannot call SetSelection().
         e.Handled = true;
     }
 
@@ -151,6 +132,7 @@ public partial class MainWindow
         else
             SetRuntimeSafeSelection([element]);
 
+        // Prevent TreeView.SelectedItemChanged from calling SetSelection([model]).
         e.Handled = true;
     }
 
@@ -159,8 +141,7 @@ public partial class MainWindow
         if (!RuntimeSelectionPreviewActive || Keyboard.FocusedElement is TextBox)
             return;
 
-        var control = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
-        if (control && e.Key == Key.A)
+        if ((Keyboard.Modifiers & ModifierKeys.Control) != 0 && e.Key == Key.A)
         {
             SetRuntimeSafeSelection(_layout.Elements);
             e.Handled = true;
@@ -168,9 +149,10 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Temporarily gates only the legacy selection synchronizers. This scope is strictly
-    /// synchronous and reference-counted so nested list synchronization is safe. It must
-    /// never span a dispatcher turn or a context-menu command.
+    /// Suppresses only the legacy selection synchronizers while SelectedItems is being
+    /// changed by SetRuntimeSafeSelection. The scope is reference-counted and strictly
+    /// synchronous; callers must pair it in try/finally and it must never span an input
+    /// event, context-menu command or dispatcher callback.
     /// </summary>
     private void BeginRuntimeSelectionWriterSuppression()
     {
@@ -196,140 +178,5 @@ public partial class MainWindow
 
         _washingRenderPipelineFixApplying = _runtimeSelectionPreviousWashingApplying;
         _machineRuntimeApplying = _runtimeSelectionPreviousMachineApplying;
-    }
-
-    private void QueueRuntimeSelectionOuterNormalization()
-    {
-        if (!RuntimeSelectionPreviewActive)
-            return;
-
-        var token = ++_runtimeSelectionNormalizeToken;
-        Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
-        {
-            if (token != _runtimeSelectionNormalizeToken || !RuntimeSelectionPreviewActive)
-                return;
-
-            NormalizeRuntimeSelectionOuterChrome();
-            RefreshRuntimeSelectionOverlaysOnly();
-        }));
-    }
-
-    private void NormalizeRuntimeSelectionOuterChrome()
-    {
-        if (_washingExclusiveModeActive && IsWashingPhase6Active)
-            NormalizeWashingSelectionChrome();
-        else if (_machineRuntimeExclusiveActive && IsNonWashingRuntimeMachineActive)
-            NormalizeMachineRuntimeSelectionChrome();
-    }
-
-    private void NormalizeWashingSelectionChrome()
-    {
-        var accent = WashingHasWater ? "#9DDDF0" : "#FFBF76";
-
-        foreach (var pair in _visuals)
-        {
-            var model = pair.Key;
-            if (pair.Value is not Border border)
-                continue;
-
-            switch (model.Type)
-            {
-                case GuiElementType.Slot:
-                case GuiElementType.Text:
-                case GuiElementType.PlayerInventory:
-                case GuiElementType.Hotbar:
-                    border.BorderBrush = Brushes.Transparent;
-                    border.BorderThickness = new Thickness(0);
-                    break;
-
-                case GuiElementType.Button:
-                    border.BorderBrush = Brush(border.IsMouseOver ? accent : "#6A818C");
-                    border.BorderThickness = new Thickness(1);
-                    break;
-
-                case GuiElementType.Texture:
-                    NormalizeWashingTextureOuterChrome(model, border);
-                    break;
-            }
-        }
-    }
-
-    private void NormalizeWashingTextureOuterChrome(GuiElementModel model, Border border)
-    {
-        switch (model.Id)
-        {
-            case "forever_phase6_washing_panel_water":
-                border.BorderBrush = Brush(WashingHasWater ? "#355B66" : "#5C4939");
-                border.BorderThickness = new Thickness(1);
-                break;
-
-            case "forever_phase6_washing_panel_process":
-                border.BorderBrush = Brush("#54616D");
-                border.BorderThickness = new Thickness(1);
-                break;
-
-            case "forever_phase6_washing_panel_hints":
-                border.BorderBrush = Brush("#465A68");
-                border.BorderThickness = new Thickness(1);
-                break;
-
-            default:
-                border.BorderBrush = Brushes.Transparent;
-                border.BorderThickness = new Thickness(0);
-                break;
-        }
-    }
-
-    private void NormalizeMachineRuntimeSelectionChrome()
-    {
-        foreach (var pair in _visuals)
-        {
-            var model = pair.Key;
-            if (pair.Value is not Border border)
-                continue;
-
-            switch (model.Type)
-            {
-                case GuiElementType.Slot:
-                case GuiElementType.Text:
-                case GuiElementType.PlayerInventory:
-                case GuiElementType.Hotbar:
-                    border.BorderBrush = Brushes.Transparent;
-                    border.BorderThickness = new Thickness(0);
-                    break;
-
-                case GuiElementType.Button:
-                    border.BorderBrush = border.IsMouseOver ? Brush(RuntimeAccent()) : Brush("#6A818C");
-                    border.BorderThickness = new Thickness(1);
-                    break;
-
-                case GuiElementType.Texture:
-                    NormalizeMachineRuntimeTextureOuterChrome(model, border);
-                    break;
-            }
-        }
-    }
-
-    private void NormalizeMachineRuntimeTextureOuterChrome(GuiElementModel model, Border border)
-    {
-        var id = model.Id;
-        if (id.StartsWith(MachineRuntimePrefix, StringComparison.OrdinalIgnoreCase) &&
-            id.Contains("ring_", StringComparison.OrdinalIgnoreCase))
-        {
-            border.BorderBrush = Brush("#8E4FD2");
-            border.BorderThickness = new Thickness(2);
-            return;
-        }
-
-        if (id.StartsWith(MachineRuntimePrefix, StringComparison.OrdinalIgnoreCase) &&
-            id.Contains("_scene", StringComparison.OrdinalIgnoreCase))
-        {
-            border.BorderBrush = Brush(id.Contains("garden", StringComparison.OrdinalIgnoreCase) ? "#5A8A63" : "#566D7A");
-            border.BorderThickness = new Thickness(1);
-            return;
-        }
-
-        border.BorderBrush = Brushes.Transparent;
-        border.BorderThickness = new Thickness(0);
     }
 }
