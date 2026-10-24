@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -14,8 +13,10 @@ public partial class MainWindow
     private Window? _phase9SnapshotSimulatorWindow;
     private Canvas? _phase9SnapshotSimulatorScreen;
     private TextBlock? _phase9SnapshotSimulatorInfo;
-    private DispatcherTimer? _phase9SnapshotSimulatorTimer;
-    private string? _phase9SnapshotSimulatorSignature;
+    private BitmapSource? _phase9SnapshotSimulatorBitmap;
+    private bool _phase9SnapshotCaptureQueued;
+    private FrameworkElement? _phase9SnapshotVisualAnchor;
+    private int _phase9SnapshotVisualCount = -1;
 
     public void EnablePhase9SimulatorSnapshotFix()
     {
@@ -38,21 +39,40 @@ public partial class MainWindow
             SkyblockBarHost.Children.Insert(index, replacement);
         }
 
+        // Scale/resolution changes only alter the simulated viewport. Reuse the existing
+        // bitmap instead of recapturing the complete editor visual tree.
         if (_phase9GuiScaleCombo is not null)
-            _phase9GuiScaleCombo.SelectionChanged += (_, _) => RefreshPhase9SnapshotSimulator(force: true);
+            _phase9GuiScaleCombo.SelectionChanged += (_, _) => RefreshPhase9SnapshotSimulator(capturePreview: false);
         if (_phase9ResolutionCombo is not null)
-            _phase9ResolutionCombo.SelectionChanged += (_, _) => RefreshPhase9SnapshotSimulator(force: true);
+            _phase9ResolutionCombo.SelectionChanged += (_, _) => RefreshPhase9SnapshotSimulator(capturePreview: false);
 
-        _phase9SnapshotSimulatorTimer = new DispatcherTimer(DispatcherPriority.Background)
-        {
-            Interval = TimeSpan.FromMilliseconds(250)
-        };
-        _phase9SnapshotSimulatorTimer.Tick += (_, _) => RefreshPhase9SnapshotSimulator(force: false);
+        // A machine load actually replaces the editor visuals, so capture once after the
+        // load/render pipeline reaches ContextIdle.
+        var loadButton = SkyblockBarHost.Children.OfType<Button>()
+            .FirstOrDefault(button => string.Equals(button.Content?.ToString(), "Load machine", StringComparison.Ordinal));
+        if (loadButton is not null)
+            loadButton.Click += (_, _) => QueuePhase9SnapshotCapture();
+
+        ApplyButton.Click += (_, _) => QueuePhase9SnapshotCapture();
+
+        if (_machineRuntimeStateCombo is not null)
+            _machineRuntimeStateCombo.SelectionChanged += (_, _) => QueuePhase9SnapshotCapture();
+        if (_foreverTierCombo is not null)
+            _foreverTierCombo.SelectionChanged += (_, _) => QueuePhase9SnapshotCapture();
+        if (_foreverModeCombo is not null)
+            _foreverModeCombo.SelectionChanged += (_, _) => QueuePhase9SnapshotCapture();
+        if (_foreverProgressCombo is not null)
+            _foreverProgressCombo.SelectionChanged += (_, _) => QueuePhase9SnapshotCapture();
+        if (_phase8TimelineSlider is not null)
+            _phase8TimelineSlider.ValueChanged += (_, _) => QueuePhase9SnapshotCapture();
+
+        CapturePhase9SnapshotVisualGeneration();
+        PreviewCanvas.LayoutUpdated += Phase9SnapshotLayoutUpdated;
 
         Closed += (_, _) =>
         {
-            _phase9SnapshotSimulatorTimer?.Stop();
             _phase9SnapshotSimulatorWindow?.Close();
+            _phase9SnapshotSimulatorBitmap = null;
         };
     }
 
@@ -86,7 +106,7 @@ public partial class MainWindow
 
             var hint = new TextBlock
             {
-                Text = "The dark area is the Minecraft logical viewport. The loaded GUI is centered inside it at the selected GUI scale.",
+                Text = "Dark area = Minecraft logical viewport. The GUI should appear fully visible and centered. Resolution/GUI-scale changes reuse the same native snapshot.",
                 Foreground = Brush("#87949D"),
                 FontSize = 10,
                 Margin = new Thickness(12, 0, 12, 9),
@@ -114,33 +134,73 @@ public partial class MainWindow
             };
             _phase9SnapshotSimulatorWindow.Closed += (_, _) =>
             {
-                _phase9SnapshotSimulatorTimer?.Stop();
                 _phase9SnapshotSimulatorWindow = null;
                 _phase9SnapshotSimulatorScreen = null;
                 _phase9SnapshotSimulatorInfo = null;
-                _phase9SnapshotSimulatorSignature = null;
+                _phase9SnapshotSimulatorBitmap = null;
+                _phase9SnapshotCaptureQueued = false;
             };
         }
 
-        _phase9SnapshotSimulatorSignature = null;
-        RefreshPhase9SnapshotSimulator(force: true);
+        // Show first, then capture. The previous implementation tried to refresh while
+        // IsVisible was still false and therefore always waited for the polling timer.
         if (!_phase9SnapshotSimulatorWindow.IsVisible)
             _phase9SnapshotSimulatorWindow.Show();
         _phase9SnapshotSimulatorWindow.Activate();
-        _phase9SnapshotSimulatorTimer?.Start();
+
+        RefreshPhase9SnapshotSimulator(capturePreview: true);
     }
 
-    private void RefreshPhase9SnapshotSimulator(bool force)
+    private void Phase9SnapshotLayoutUpdated(object? sender, EventArgs e)
+    {
+        if (_phase9SnapshotSimulatorWindow?.IsVisible != true)
+            return;
+        if (!Phase9SnapshotVisualGenerationChanged())
+            return;
+
+        CapturePhase9SnapshotVisualGeneration();
+        QueuePhase9SnapshotCapture();
+    }
+
+    private bool Phase9SnapshotVisualGenerationChanged()
+    {
+        var anchor = _visuals.Count == 0 ? null : _visuals.Values.First();
+        return _visuals.Count != _phase9SnapshotVisualCount ||
+               !ReferenceEquals(anchor, _phase9SnapshotVisualAnchor);
+    }
+
+    private void CapturePhase9SnapshotVisualGeneration()
+    {
+        _phase9SnapshotVisualCount = _visuals.Count;
+        _phase9SnapshotVisualAnchor = _visuals.Count == 0 ? null : _visuals.Values.First();
+    }
+
+    private void QueuePhase9SnapshotCapture()
+    {
+        if (_phase9SnapshotSimulatorWindow?.IsVisible != true || _phase9SnapshotCaptureQueued)
+            return;
+
+        _phase9SnapshotCaptureQueued = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
+        {
+            _phase9SnapshotCaptureQueued = false;
+            if (_phase9SnapshotSimulatorWindow?.IsVisible != true)
+                return;
+
+            CapturePhase9SnapshotVisualGeneration();
+            RefreshPhase9SnapshotSimulator(capturePreview: true);
+        }));
+    }
+
+    private void RefreshPhase9SnapshotSimulator(bool capturePreview)
     {
         if (_phase9SnapshotSimulatorWindow?.IsVisible != true ||
             _phase9SnapshotSimulatorScreen is null ||
             _phase9SnapshotSimulatorInfo is null)
             return;
 
-        var signature = BuildPhase9SnapshotSimulatorSignature();
-        if (!force && string.Equals(signature, _phase9SnapshotSimulatorSignature, StringComparison.Ordinal))
-            return;
-        _phase9SnapshotSimulatorSignature = signature;
+        if (capturePreview || _phase9SnapshotSimulatorBitmap is null)
+            _phase9SnapshotSimulatorBitmap = CapturePhase9PreviewSnapshot();
 
         var (framebufferWidth, framebufferHeight) = GetPhase9Resolution();
         var guiScale = GetPhase9GuiScale(framebufferWidth, framebufferHeight);
@@ -164,14 +224,13 @@ public partial class MainWindow
             logicalWidth,
             logicalHeight / 2.0);
 
-        var snapshot = CapturePhase9PreviewSnapshot();
         var guiWidth = Math.Max(1, _layout.Width);
         var guiHeight = Math.Max(1, _layout.Height);
         var image = new Image
         {
             Width = guiWidth,
             Height = guiHeight,
-            Source = snapshot,
+            Source = _phase9SnapshotSimulatorBitmap,
             Stretch = Stretch.Fill,
             SnapsToDevicePixels = true,
             IsHitTestVisible = false
@@ -182,8 +241,8 @@ public partial class MainWindow
         {
             Width = guiWidth,
             Height = guiHeight,
-            Background = snapshot is null ? Brush("#3A2020") : Brushes.Transparent,
-            BorderBrush = snapshot is null ? Brush("#D96A63") : Brush("#6D8192"),
+            Background = _phase9SnapshotSimulatorBitmap is null ? Brush("#3A2020") : Brushes.Transparent,
+            BorderBrush = _phase9SnapshotSimulatorBitmap is null ? Brush("#D96A63") : Brush("#6D8192"),
             BorderThickness = new Thickness(0.5),
             Child = image,
             SnapsToDevicePixels = true,
@@ -193,7 +252,7 @@ public partial class MainWindow
         Canvas.SetTop(gui, Math.Floor((logicalHeight - guiHeight) / 2.0));
         _phase9SnapshotSimulatorScreen.Children.Add(gui);
 
-        _phase9SnapshotSimulatorInfo.Text = snapshot is null
+        _phase9SnapshotSimulatorInfo.Text = _phase9SnapshotSimulatorBitmap is null
             ? $"Framebuffer {framebufferWidth}×{framebufferHeight} · GUI scale {guiScale}x · logical viewport {logicalWidth}×{logicalHeight} · preview snapshot unavailable"
             : $"Framebuffer {framebufferWidth}×{framebufferHeight} · GUI scale {guiScale}x · logical viewport {logicalWidth}×{logicalHeight} · " +
               $"GUI {guiWidth}×{guiHeight} logical px / {guiWidth * guiScale}×{guiHeight * guiScale} framebuffer px";
@@ -208,13 +267,14 @@ public partial class MainWindow
         {
             PreviewCanvas.UpdateLayout();
 
-            var zoomX = PreviewScale?.ScaleX ?? 1.0;
-            var zoomY = PreviewScale?.ScaleY ?? 1.0;
-            var pixelWidth = Math.Max(1, (int)Math.Ceiling(_layout.Width * Math.Max(1.0, zoomX)));
-            var pixelHeight = Math.Max(1, (int)Math.Ceiling(_layout.Height * Math.Max(1.0, zoomY)));
-
-            // Capture the already composed editor canvas into a detached bitmap. This avoids
-            // the cross-window VisualBrush path that can render as an empty/black surface.
+            // RenderTargetBitmap.Render() receives the PreviewCanvas visual itself, whose
+            // native coordinate system is the GUI's logical pixel size. The editor's
+            // LayoutTransform (for example 300% zoom) belongs to the editor presentation
+            // and must NOT increase the bitmap dimensions. The previous implementation
+            // multiplied the target bitmap by PreviewScale, leaving large transparent
+            // regions and making the visible GUI look cropped/shrunk in the simulator.
+            var pixelWidth = Math.Max(1, _layout.Width);
+            var pixelHeight = Math.Max(1, _layout.Height);
             var bitmap = new RenderTargetBitmap(pixelWidth, pixelHeight, 96, 96, PixelFormats.Pbgra32);
             bitmap.Render(PreviewCanvas);
             bitmap.Freeze();
@@ -224,23 +284,6 @@ public partial class MainWindow
         {
             return null;
         }
-    }
-
-    private string BuildPhase9SnapshotSimulatorSignature()
-    {
-        var parts = new List<string>(_layout.Elements.Count + 4)
-        {
-            $"{_layout.Width}x{_layout.Height}",
-            ((_phase9ResolutionCombo?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "1920x1080"),
-            ((_phase9GuiScaleCombo?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "2"),
-            _phase8TimelineProgress.ToString("0.00", CultureInfo.InvariantCulture)
-        };
-
-        foreach (var element in _layout.Elements)
-        {
-            parts.Add($"{element.Id}:{element.Type}:{element.X}:{element.Y}:{element.Width}:{element.Height}:{element.Visible}:{element.Content ?? string.Empty}:{element.TexturePath ?? string.Empty}");
-        }
-        return string.Join('|', parts);
     }
 
     private static void AddSimulatorGuide(Canvas canvas, double x1, double y1, double x2, double y2)
