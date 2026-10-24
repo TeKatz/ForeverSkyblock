@@ -153,18 +153,22 @@ public partial class MainWindow
             (ActiveRuntimeScreen == "AscensionScreen" && model.Id.Equals("start", StringComparison.OrdinalIgnoreCase)) ||
             (ActiveRuntimeScreen == "CondenserScreen" && model.Id.Equals("filters", StringComparison.OrdinalIgnoreCase)) ||
             (ActiveRuntimeScreen == "CrucibleScreen" && model.Id.Contains("mode", StringComparison.OrdinalIgnoreCase));
+        var enabled = NonWashingSourceButtonEnabled(model);
+        var sourceHover = enabled && hover;
 
-        border.Background = CreateNonWashingButtonBackground(model, hover, primary, accent);
-        border.BorderBrush = Brush(hover ? accent : "#6A818C");
+        border.Background = CreateNonWashingButtonBackground(model, sourceHover, primary, accent, enabled);
+        border.BorderBrush = Brush(!enabled ? "#3B4B58" : sourceHover ? accent : "#6A818C");
         border.BorderThickness = new Thickness(1);
         border.ClipToBounds = true;
         border.SnapsToDevicePixels = true;
 
         var value = string.IsNullOrWhiteSpace(model.Content) ? model.Id : model.Content;
-        if (border.Child is MinecraftPixelText existing)
+        var stateTag = enabled ? "source-button-enabled" : "source-button-disabled";
+        if (border.Child is MinecraftPixelText existing &&
+            string.Equals(existing.Tag as string, stateTag, StringComparison.Ordinal))
         {
-            // Keep the same child object alive just like the source-owned dynamic text
-            // surfaces. Phase 8 therefore sees a stable MinecraftPixelText at all times.
+            // Keep the same child object alive across selection changes. Phase 8 therefore
+            // always sees a direct MinecraftPixelText and has no reason to redecorate it.
             existing.Text = value;
             existing.Width = Math.Max(1, model.Width - 4);
             existing.Height = 8;
@@ -174,13 +178,16 @@ public partial class MainWindow
         }
         else
         {
+            // Foreground is immutable in MinecraftPixelText, so only replace the direct
+            // child when the actual source enabled-state changes, never for selection.
             border.Child = new MinecraftPixelText(
                 value,
-                Brush("#E6EEE9"),
+                Brush(enabled ? "#E6EEE9" : "#A0B4BE"),
                 false,
                 .92,
                 "center")
             {
+                Tag = stateTag,
                 Width = Math.Max(1, model.Width - 4),
                 Height = 8,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -204,23 +211,39 @@ public partial class MainWindow
         }
     }
 
+    private bool NonWashingSourceButtonEnabled(GuiElementModel model)
+    {
+        // MachineButton source rules are mostly "active when visible" for the non-Washing
+        // screens. Ascension is the exception represented by the designer state model:
+        // while the chamber is processing, start.active is false in AscensionScreen.
+        if (ActiveRuntimeScreen == "AscensionScreen" &&
+            model.Id.Equals("start", StringComparison.OrdinalIgnoreCase))
+        {
+            return CurrentMachineRuntimeState != "processing";
+        }
+
+        return true;
+    }
+
     private Brush CreateNonWashingButtonBackground(
         GuiElementModel model,
         bool hover,
         bool primary,
-        string accent)
+        string accent,
+        bool enabled)
     {
         var baseBrush = new LinearGradientBrush(
-            Brush(hover ? "#37515E" : "#263B4B").Color,
+            Brush(hover && enabled ? "#37515E" : "#263B4B").Color,
             Brush("#172936").Color,
             90);
 
-        if (!primary)
+        var needsAccent = (primary && enabled) || (hover && enabled);
+        if (!needsAccent)
             return baseBrush;
 
-        // Preserve the machine-specific two-pixel primary accent without wrapping the
-        // text in a Grid. The direct MinecraftPixelText child is what keeps Phase 8 from
-        // treating this source button as an undecorated generic editor button.
+        // Preserve MachineSkin.button chrome without wrapping the text in a Grid:
+        // primary+enabled -> permanent 2 px accent strip on the left;
+        // hover+enabled   -> one-pixel accent underline near the bottom.
         var width = Math.Max(1, model.Width);
         var height = Math.Max(1, model.Height);
         var drawing = new DrawingGroup();
@@ -228,10 +251,22 @@ public partial class MainWindow
             baseBrush,
             null,
             new RectangleGeometry(new Rect(0, 0, width, height))));
-        drawing.Children.Add(new GeometryDrawing(
-            Brush(accent),
-            null,
-            new RectangleGeometry(new Rect(1, 1, Math.Min(2, width), Math.Max(0, height - 2)))));
+
+        if (primary && enabled)
+        {
+            drawing.Children.Add(new GeometryDrawing(
+                Brush(accent),
+                null,
+                new RectangleGeometry(new Rect(1, 1, Math.Min(2, width), Math.Max(0, height - 2)))));
+        }
+
+        if (hover && enabled && width > 10 && height >= 4)
+        {
+            drawing.Children.Add(new GeometryDrawing(
+                Brush(accent),
+                null,
+                new RectangleGeometry(new Rect(4, Math.Max(0, height - 4), Math.Max(1, width - 10), 1))));
+        }
 
         return new DrawingBrush(drawing)
         {
