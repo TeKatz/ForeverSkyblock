@@ -43,6 +43,7 @@ public partial class App : Application
             window.EnableExclusiveMachineRuntimeTools();
             window.EnableMachineRuntimeVisualPolish();
             window.EnableMachineRuntimePerformanceFix();
+            window.EnableNonWashingStableAnimation();
             window.EnableRuntimeSelectionStabilityFix();
             window.EnableSelfUpdater();
             window.EnableCompactContextMenus();
