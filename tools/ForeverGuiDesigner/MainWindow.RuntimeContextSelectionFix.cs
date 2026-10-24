@@ -6,15 +6,9 @@ using ForeverGuiDesigner.Models;
 namespace ForeverGuiDesigner;
 
 /// <summary>
-/// Right-click selection is special in the designer: opening the context menu may
-/// select the element under the pointer before the menu is shown. The base SetSelection
-/// path calls UpdateSelectionVisuals synchronously, which repaints the real element
-/// borders with generic editor chrome. Source-faithful machine previews must never be
-/// modified just because their context menu opens.
-///
-/// Replace only the context-menu selection handlers. Normal editor layouts keep using
-/// SetSelection; exclusive machine previews update the model/list selection plus their
-/// dedicated selection adorners without touching any machine visual.
+/// Runtime/source-faithful machine previews must never repaint their real controls
+/// merely because the editor selection changed. Keep selection state in the model,
+/// list and dedicated adorners, and leave the machine visual tree untouched.
 /// </summary>
 public partial class MainWindow
 {
@@ -26,9 +20,8 @@ public partial class MainWindow
             return;
         _runtimeContextSelectionFixInitialized = true;
 
-        // EnableCompactContextMenus registered the original handlers immediately before
-        // this initializer runs. Remove exactly those handlers and replace them with the
-        // runtime-safe variants below.
+        // EnableCompactContextMenus registered generic right-click selection handlers.
+        // Runtime previews need the safe selection path instead.
         PreviewCanvas.PreviewMouseRightButtonDown -= WorkspacePreviewMouseRightButtonDown;
         ElementsList.PreviewMouseRightButtonDown -= ElementsListPreviewMouseRightButtonDown;
 
@@ -61,14 +54,18 @@ public partial class MainWindow
             return;
         }
 
+        SetRuntimeSafeSelection([element]);
+    }
+
+    private void SetRuntimeSafeSelection(IEnumerable<GuiElementModel> elements)
+    {
         _selection.Clear();
-        if (_layout.Elements.Contains(element))
+        foreach (var element in elements.Where(_layout.Elements.Contains))
             _selection.Add(element);
 
-        // Mirror SetSelection's list synchronization, but deliberately skip
-        // UpdateSelectionVisuals(). That method writes generic BorderThickness and
-        // BorderBrush values into the real runtime controls and caused the persistent
-        // visual jump when the context menu was opened.
+        // Mirror SetSelection's list synchronization but deliberately never call
+        // UpdateSelectionVisuals(). That method paints generic Border chrome directly
+        // onto the source-faithful controls and is the root cause of the GUI jump.
         _suppressSelectionChange = true;
         try
         {
@@ -83,7 +80,21 @@ public partial class MainWindow
 
         UpdateInspector();
         UpdateStatus();
+        RefreshRuntimeSelectionOverlaysOnly();
+    }
 
+    private void ToggleRuntimeSafeSelection(GuiElementModel element)
+    {
+        var updated = _selection.ToList();
+        if (updated.Contains(element))
+            updated.Remove(element);
+        else if (_layout.Elements.Contains(element))
+            updated.Add(element);
+        SetRuntimeSafeSelection(updated);
+    }
+
+    private void RefreshRuntimeSelectionOverlaysOnly()
+    {
         if (_washingExclusiveModeActive && IsWashingPhase6Active)
             UpdateWashingSelectionAdorners();
         else if (_machineRuntimeExclusiveActive && IsNonWashingRuntimeMachineActive)
