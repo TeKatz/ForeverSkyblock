@@ -34,6 +34,7 @@ public partial class App : Application
             window.EnableForeverPhase8InteractionTools();
             window.EnableForeverPhase8PerformanceHotfix();
             window.EnableForeverPhase9Tools();
+            window.EnablePhase9SimulatorSnapshotFix();
             window.EnableForeverVisualFidelityPatch();
             window.EnableMachinePresentationLifecycleFix();
             window.EnableWashingSourceRenderer();
