@@ -16,13 +16,17 @@ This is intentionally an editor-layout operation. Java apply-back continues to s
 
 The legacy commands reordered `_layout.Elements`, but the Washing source renderer, exclusive machine runtime and machine-presentation lifecycle later assigned fixed semantic `Panel.ZIndex` values. Those final writers won over the list order.
 
-Explicit front/back commands now persist a narrow editor Z override (`+900` / `-900`). The normal semantic layer values remain untouched until the user invokes one of these commands. Selection adorners remain above the override range and machine backdrops remain below it.
+Explicit front/back commands persist a narrow editor Z override (`+900` / `-900`). The normal semantic layer values remain untouched until the user invokes one of these commands. Selection adorners remain above the override range and machine backdrops remain below it.
+
+The first implementation restored this Z override through a deferred `ContextIdle -> SystemIdle` callback. Runtime testing showed that this was not a reliable final-writer boundary while the editor's render-priority timeline dispatcher remained active: the override was applied, then a later machine presentation pass could restore its semantic Z value before the idle callback ran. The correction is now synchronous and deterministic: a final `LayoutUpdated` handler is registered after all machine presentation owners and reapplies only already-declared editor overrides when the visual owner has actually changed them.
 
 ### Edit Text
 
 The dialog already updated `GuiElementModel.Content`. Runtime synchronization and Washing fidelity then replaced source-owned titles/status/time text with current runtime values, making the edit appear to fail.
 
-An explicit text edit now stores an editor text override. The normal runtime text remains authoritative for untouched elements; only the deliberately edited element is restored after the final presentation owner has run. Undo/redo and layout JSON preserve the override.
+An explicit text edit stores an editor text override. The normal runtime text remains authoritative for untouched elements; only the deliberately edited element is restored after the final presentation owner has run. Undo/redo and layout JSON preserve the override.
+
+As with Z-order, the original idle-dispatch restoration was not a reliable final writer under the active render dispatcher. Text override visuals carry a signature and are now restored synchronously by the last registered layout-finalization handler. If the correct override visual is already present, the pass is a no-op; this prevents the old LayoutUpdated/render-storm failure mode from returning.
 
 ## Custom textures
 
@@ -42,4 +46,4 @@ The repaired semantics are shared by the context menu and keyboard commands:
 
 The persistent **Bring front** and **Send back** buttons are also rebound to the repaired layer commands.
 
-No polling timer and no replacement machine renderer were introduced. A coalesced final pass only runs when at least one explicit editor override exists.
+No polling timer and no replacement machine renderer were introduced. Explicit editor overrides are finalized synchronously only when such an override exists; text and texture visuals are signature-guarded and Z changes are value-guarded, so unchanged presentation is not rebuilt.
