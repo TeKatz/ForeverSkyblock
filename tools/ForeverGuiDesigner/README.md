@@ -61,17 +61,31 @@ Washing preview initialization is normalized in the same refresh that inserts Ph
 
 Generated/imported panel `Content` values are editor metadata only and are suppressed in the WYSIWYG preview. Helper labels such as `Washing process`, `Water connection`, `Washing hints`, `Condensing` or `Automation / upgrades` no longer leak into the actual GUI rendering.
 
+### Machine attachment previews
+
+The attachment selector models physical machine neighbors independently from runtime state where the source GUI supports those combinations.
+
+- **Condenser Mark I:** None / Mixing / Freezing / Mixing + Freezing.
+- **Condenser Mark II:** keeps the established Base / Mixing / Freezing / Garden state selector unchanged; Garden remains its separate special presentation path.
+- **Crucible:** None / Freezing / Tank / Tank + Freezing. The established combined Tank + Freezing presentation remains the default so existing previews do not silently change.
+- Removing the Crucible Freezing attachment disables the impossible `Freezing` runtime state until the attachment is restored.
+
+The combined Condenser Mark I preview reuses the real Mixing recipe/process path and adds the Freezing route, meter and slots on top instead of inventing a second disconnected machine renderer.
+
 ### Condenser state editor
 
-- MK I / MK II
-- Base / Mixing / Freezing / Garden
-- 0 / 25 / 50 / 75 / 100% progress preview
-- **Active Processing** continuously loops progress from 0 → 100% without rebuilding the Canvas
-- state-specific editable anchors without rewriting coordinates
+- MK I / MK II tier preview.
+- Mark I attachment combinations are selected through **ATTACHMENTS**.
+- Mark II retains Base / Mixing / Freezing / Garden.
+- 0 / 25 / 50 / 75 / 100% progress preview.
+- **Active Processing** continuously loops progress from 0 → 100% without rebuilding the Canvas.
+- State-specific editable anchors without rewriting coordinates.
 
 ### Detailed Washing scene
 
-Washing mirrors the real `WashingScreen` / `MachineProcessEffects.washing` presentation with runtime states, water status, animated water/process effects, timing, meters, recipe summary and hints.
+Washing mirrors the real `WashingScreen` / `MachineScreen` / `MachineProcessEffects.washing` presentation with runtime states, water status, animated water/process effects, timing, meters, recipe summary and hints.
+
+The **SCENE** controls are shown only for Washing Basin; all other machine previews use the runtime owner without a redundant scene selector. The source header is normalized to `Washing` beside the machine icon.
 
 ### Phase 8 — True WYSIWYG
 
@@ -79,15 +93,16 @@ Washing mirrors the real `WashingScreen` / `MachineProcessEffects.washing` prese
 - Project-aware item previews resolved from real item model JSON to repository textures, including stack count, durability, ghost and glint metadata.
 - Hierarchy/layer editing with groups, visibility, locks and drag/drop ordering.
 - Eight resize handles, pixel snapping, Shift aspect-ratio preservation and Alt center-resize.
+- Resize-handle mouse-down is isolated from the Washing/non-Washing runtime selection synchronizers. The same `Thumb` keeps capture for the complete drag and the runtime presentation is restored only after resize completion.
 - Smart center/edge guides and equal horizontal/vertical distribution.
 - Unified Play/Pause/Stop/Loop/Scrub timeline with 0.25x / 0.5x / 1x / 2x speed.
 - Editable reconstructed Crucible, Ascension Chamber and Refining Condenser scenes based on their real Screen/Menu/MachineLayout coordinates.
 
-#### Phase 8 performance guard (0.8.1)
+#### Phase 8 performance guard (0.8.1+)
 
 The first 0.8.0 implementation attached hierarchy rebuilding, WYSIWYG decoration and resize-handle recreation directly to WPF `PreviewCanvas.LayoutUpdated`. Because those operations invalidate layout themselves, navigation and animation could trigger a self-amplifying UI-thread refresh storm.
 
-0.8.1 permanently gates that broad callback after initialization. A lightweight visual-generation detector now coalesces refresh work and performs a full Phase 8 refresh only when `RenderLayout()` actually replaces the editable visual generation. Timeline frames, guide movement and normal WPF layout passes therefore no longer rebuild the hierarchy or overlays. Resize handles follow drag operations through coordinate-only updates.
+0.8.1 permanently gates that broad callback after initialization. A lightweight visual-generation detector now coalesces refresh work and performs a full Phase 8 refresh only when `RenderLayout()` actually replaces the editable visual generation. Timeline frames, guide movement and normal WPF layout passes therefore no longer rebuild the hierarchy or overlays. Resize handles follow drag operations through coordinate-only updates. The current interaction guard additionally prevents source-runtime selection callbacks from replacing the active resize `Thumb` on mouse-down.
 
 ### Phase 9 — Source workflow
 
