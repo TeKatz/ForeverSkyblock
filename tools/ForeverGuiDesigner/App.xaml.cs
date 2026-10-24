@@ -46,6 +46,7 @@ public partial class App : Application
             window.EnableSelfUpdater();
             window.EnableCompactContextMenus();
             window.EnableContextMenuVisualPolish();
+            window.EnableRuntimeContextSelectionFix();
         }, DispatcherPriority.ContextIdle);
     }
 }
