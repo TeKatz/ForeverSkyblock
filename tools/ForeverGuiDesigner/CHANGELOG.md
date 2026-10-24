@@ -2,6 +2,16 @@
 
 ## Development
 
+### Attachment and resize follow-up
+
+- Added explicit attachment previews for Condenser Mark I: None, Mixing, Freezing and Mixing + Freezing. The combined state reuses the established Mixing process path while exposing the Freezing route and does not replace the separate Garden presentation.
+- Kept Condenser Mark II on its existing Base / Mixing / Freezing / Garden selector and preserves its previous mode while switching through Mark I attachment previews.
+- Added Crucible attachment previews for None, Freezing, Tank and Tank + Freezing. The established combined state remains the default and the Freezing runtime state is disabled while no Freezing Chamber is attached.
+- Limited the legacy SCENE controls to Washing Basin, where that scene owner is still meaningful; other machine previews use their runtime owner directly.
+- Normalized the Washing Basin source header to `Washing` beside the machine icon.
+- Fixed Phase 8 resize-handle ownership under source-faithful machine previews. Resize mouse-down now suppresses the Washing/non-Washing selection refreshes that used to replace the captured `Thumb`; source presentation is restored only after DragCompleted.
+- The new attachment/resize partial compiles successfully in the Windows GUI Designer GitHub Actions build before activation was wired into startup; the final branch-head workflow remains the authoritative packaging validation.
+
 ### 0.9.0 — Phase 9 source workflow
 
 - Added a GUI Scale simulator with 854×480 through 3840×2160 framebuffer presets, fixed 1x–4x scale choices and an Auto mode that renders the current GUI in the effective logical viewport without changing stored coordinates.
