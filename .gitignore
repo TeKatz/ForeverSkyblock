@@ -1,6 +1,8 @@
 # Build and IDE state
 **/.gradle/
 **/build/
+**/bin/
+**/obj/
 **/.idea/
 **/*.iml
 **/run/
