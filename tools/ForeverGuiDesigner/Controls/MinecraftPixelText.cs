@@ -13,13 +13,31 @@ namespace ForeverGuiDesigner.Controls;
 internal sealed class MinecraftPixelText : FrameworkElement
 {
     private static readonly IReadOnlyDictionary<char, string[]> Glyphs = BuildGlyphs();
-    private readonly string _text;
+    private string _text;
     private readonly Brush _foreground;
     private readonly bool _shadow;
     private readonly double _scale;
     private readonly string _alignment;
 
     public bool IsOverflowing { get; private set; }
+
+    /// <summary>
+    /// Mutable text content for source-owned machine previews. Updating this property
+    /// invalidates only this bitmap glyph surface; callers do not need to replace the
+    /// Border.Child and therefore do not disturb WPF layout or source geometry.
+    /// </summary>
+    public string Text
+    {
+        get => _text;
+        set
+        {
+            var next = value ?? string.Empty;
+            if (string.Equals(_text, next, StringComparison.Ordinal))
+                return;
+            _text = next;
+            InvalidateVisual();
+        }
+    }
 
     public MinecraftPixelText(string text, Brush foreground, bool shadow, double scale, string alignment)
     {
