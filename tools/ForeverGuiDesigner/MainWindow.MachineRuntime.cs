@@ -423,7 +423,7 @@ public partial class MainWindow
     private bool HasMachineRuntimeBackdrop()=>PreviewCanvas.Children.OfType<FrameworkElement>().Any(child=>Equals(child.Tag,MachineRuntimeBackdropTag));
     private void RemoveMachineRuntimeBackdrop(){foreach(var child in PreviewCanvas.Children.OfType<FrameworkElement>().Where(child=>Equals(child.Tag,MachineRuntimeBackdropTag)).ToList())PreviewCanvas.Children.Remove(child);}
 
-    private void SynchronizeMachineRuntimeSelection(){if(!IsNonWashingRuntimeMachineActive||_machineRuntimeApplying)return;EnterExclusiveMachineRuntime();RestoreMachineRuntimeChrome();UpdateMachineRuntimeSelectionAdorners();if(_phase8Initialized)EnsurePhase8OverlayVisuals();}
+    private void SynchronizeMachineRuntimeSelection(){if(!IsNonWashingRuntimeMachineActive||_machineRuntimeApplying)return;EnterExclusiveMachineRuntime();UpdateMachineRuntimeSelectionAdorners();if(_phase8Initialized)EnsurePhase8OverlayVisuals();}
     private void UpdateMachineRuntimeSelectionAdorners(){RemoveMachineRuntimeSelectionAdorners();if(!IsNonWashingRuntimeMachineActive)return;foreach(var m in _selection.Where(m=>m.Visible&&_visuals.ContainsKey(m))){var b=new Border{Tag=MachineRuntimeSelectionTag,Width=Math.Max(1,m.Width),Height=Math.Max(1,m.Height),Background=Brushes.Transparent,BorderBrush=Brush("#2E9BFF"),BorderThickness=new Thickness(1),IsHitTestVisible=false};Canvas.SetLeft(b,m.X);Canvas.SetTop(b,m.Y);Panel.SetZIndex(b,10000);PreviewCanvas.Children.Add(b);}}
     private void RemoveMachineRuntimeSelectionAdorners(){foreach(var child in PreviewCanvas.Children.OfType<FrameworkElement>().Where(child=>Equals(child.Tag,MachineRuntimeSelectionTag)).ToList())PreviewCanvas.Children.Remove(child);}
 
