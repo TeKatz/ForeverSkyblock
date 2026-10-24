@@ -17,6 +17,7 @@ public partial class App : Application
         }
 
         var window = new MainWindow();
+        window.PrepareStartupPresentation();
         MainWindow = window;
         window.Show();
 
@@ -47,6 +48,7 @@ public partial class App : Application
             window.EnableCompactContextMenus();
             window.EnableContextMenuVisualPolish();
             window.EnableRuntimeContextSelectionFix();
+            window.EnableStartupPresentationHooks();
         }, DispatcherPriority.ContextIdle);
     }
 }

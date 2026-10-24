@@ -10,5 +10,11 @@
     <RootNamespace>ForeverGuiDesigner</RootNamespace>
     <Version>0.9.0</Version>
     <InformationalVersion>local</InformationalVersion>
+    <ApplicationIcon>Assets\ForeverGuiDesigner.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\empty-state-kitten.png" />
+    <Resource Include="Assets\ForeverGuiDesigner.ico" />
+  </ItemGroup>
 </Project>
