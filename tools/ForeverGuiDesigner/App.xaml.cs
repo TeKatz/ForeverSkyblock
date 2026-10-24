@@ -54,6 +54,7 @@ public partial class App : Application
             window.EnableContextCommandFinalizationFix();
             window.EnableStartupPresentationHooks();
             window.EnableAttachmentAndResizeFix();
+            window.EnableCondenserCombinedAttachmentPolish();
         }, DispatcherPriority.ContextIdle);
     }
 }
