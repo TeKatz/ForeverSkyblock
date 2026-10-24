@@ -152,6 +152,7 @@ public partial class MainWindow
                 RefreshCondenserSourceRecipePreview();
 
             ApplyNonWashingSourceParityStatic();
+            ApplyAscensionCondenserHandoffStaticPreview();
             ApplySourceMachineGeometry();
             HideApproximationTextures();
             ApplySourceMachineSlotStyling();
@@ -183,8 +184,57 @@ public partial class MainWindow
             !string.Equals(dynamicSignature, _machineRuntimePerformanceDynamicSignature, StringComparison.Ordinal))
         {
             RebuildNonWashingSourceParityOverlayWithRecipes();
+            AddCondenserMkIFreezingHintToSourceOverlay();
             _machineRuntimePerformanceDynamicSignature = dynamicSignature;
             _machineRuntimePolishSignature = dynamicSignature;
         }
+    }
+
+    private void ApplyAscensionCondenserHandoffStaticPreview()
+    {
+        if (ActiveRuntimeScreen == "AscensionScreen")
+        {
+            // The desktop designer has no live player/profile source. Use the explicit
+            // source-faithful screenshot values as static preview data rather than
+            // presenting PLAYER / ? as if they were live runtime values.
+            SetAndRenderRuntimeText(MachineRuntimePrefix + "conversion", "1 Forever Core → 1 Perk Point");
+            SetAndRenderRuntimeText(MachineRuntimePrefix + "time_text", "10 s");
+            SetAndRenderRuntimeText(MachineRuntimePrefix + "power_text", "No power required");
+            SetAndRenderRuntimeText(MachineRuntimePrefix + "recipient", "Recipient: TeKatz");
+            SetAndRenderRuntimeText(MachineRuntimePrefix + "balance", "BALANCE: 1 PP");
+            return;
+        }
+
+        if (ActiveRuntimeScreen == "CondenserScreen" &&
+            CurrentTier != "mk2" &&
+            CurrentMode is not ("garden" or "mixing" or "freezing"))
+        {
+            SetAndRenderRuntimeText(
+                MachineRuntimePrefix + "module_hint",
+                "Attach Mixing or Freezing Chambers directly to expand this Condenser");
+        }
+    }
+
+    private void AddCondenserMkIFreezingHintToSourceOverlay()
+    {
+        if (ActiveRuntimeScreen != "CondenserScreen" ||
+            CurrentTier == "mk2" ||
+            CurrentMode is "garden" or "freezing")
+        {
+            return;
+        }
+
+        var canvas = PreviewCanvas.Children
+            .OfType<Canvas>()
+            .FirstOrDefault(element => Equals(element.Tag, MachineRuntimePolishTag));
+        if (canvas is null)
+            return;
+
+        // CondenserScreen centers freezing_hint at x+124 / y+129 over width 202.
+        // Keep the source compositor as the sole owner and add only the missing text.
+        AddOverlayText(
+            canvas,
+            "Attach a Freezing Chamber to unlock material freezing",
+            23, 129, 202, 7, .67, "center", "#A0B4BE");
     }
 }
