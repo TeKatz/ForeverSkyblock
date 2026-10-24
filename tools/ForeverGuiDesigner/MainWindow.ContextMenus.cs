@@ -25,8 +25,10 @@ public partial class MainWindow
             Foreground = Brush("#F2F5F7"),
             BorderBrush = Brush("#46515B"),
             BorderThickness = new Thickness(1),
-            Padding = new Thickness(2)
+            Padding = new Thickness(2),
+            HasDropShadow = false
         };
+        InstallDarkContextMenuTheme(_workspaceContextMenu);
         _workspaceContextMenu.Opened += (_, _) => RebuildWorkspaceContextMenu();
 
         PreviewCanvas.ContextMenu = _workspaceContextMenu;
@@ -38,15 +40,20 @@ public partial class MainWindow
 
     private void RemoveMovedToolbarCommands()
     {
-        if (UndoButton.Parent is Panel mainBar)
+        var mainBar = ZoomCombo.Parent as Panel;
+        if (mainBar is not null)
         {
             RemoveToolbarSection(mainBar, "ADD", child =>
                 child is Button { Tag: string tag } && tag is "Slot" or "Text" or "Button" or "Texture" or "PlayerInventory" or "Hotbar");
             RemoveToolbarSection(mainBar, "EDIT", child => ReferenceEquals(child, UndoButton) || ReferenceEquals(child, RedoButton));
         }
 
+        RemoveSkyblockText("Project-aware machine preview");
+
         RemoveSkyblockSection("WIDGETS", child =>
             child is Button { Tag: string tag } && tag is "panel" or "meter" or "lock" or "status");
+        RemoveSkyblockSection("POSITION", child =>
+            child is Button button && button.Content?.ToString() is "Distribute H" or "Distribute V");
 
         RemoveSkyblockButton("Export Java", removePrecedingSeparator: true);
         RemoveSkyblockButton("Reload source", removePrecedingSeparator: false);
@@ -55,6 +62,84 @@ public partial class MainWindow
 
         if (_phase9LiveReloadToggle?.Parent is Panel liveParent)
             liveParent.Children.Remove(_phase9LiveReloadToggle);
+
+        RemoveSkyblockLabel("PHASE 9", removePrecedingSeparator: true);
+
+        if (_machineRuntimeSourceText?.Parent is Panel sourceParent)
+            sourceParent.Children.Remove(_machineRuntimeSourceText);
+
+        RelocateTimelineToMainToolbar(mainBar);
+    }
+
+    private void RelocateTimelineToMainToolbar(Panel? mainBar)
+    {
+        if (mainBar is null)
+            return;
+
+        var timelineLabel = SkyblockBarHost.Children.OfType<TextBlock>()
+            .FirstOrDefault(text => string.Equals(text.Text, "TIMELINE", StringComparison.Ordinal));
+        if (timelineLabel is null)
+            return;
+
+        var separator = PreviousBorder(SkyblockBarHost, timelineLabel);
+        var play = SkyblockBarHost.Children.OfType<Button>().FirstOrDefault(button => Equals(button.Content, "▶"));
+        var pause = SkyblockBarHost.Children.OfType<Button>().FirstOrDefault(button => Equals(button.Content, "Ⅱ"));
+        var stop = SkyblockBarHost.Children.OfType<Button>().FirstOrDefault(button => Equals(button.Content, "■"));
+
+        var timelineControls = new UIElement?[]
+        {
+            timelineLabel,
+            play,
+            pause,
+            stop,
+            _phase8LoopBox,
+            _phase8TimelineSlider,
+            _phase8TimelineText,
+            _phase8SpeedBox
+        }
+        .Where(control => control is not null)
+        .Cast<UIElement>()
+        .ToList();
+
+        if (separator is not null)
+            SkyblockBarHost.Children.Remove(separator);
+        foreach (var control in timelineControls)
+        {
+            if (control is FrameworkElement { Parent: Panel parent })
+                parent.Children.Remove(control);
+        }
+
+        mainBar.Children.Add(SeparatorBar());
+        foreach (var control in timelineControls)
+            mainBar.Children.Add(control);
+    }
+
+    private static void InstallDarkContextMenuTheme(ContextMenu menu)
+    {
+        InstallDarkMenuResources(menu.Resources);
+
+        var itemStyle = new Style(typeof(MenuItem));
+        itemStyle.Setters.Add(new Setter(Control.ForegroundProperty, Brush("#F2F5F7")));
+        itemStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brush("#20252B")));
+        itemStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 4, 8, 4)));
+        itemStyle.Setters.Add(new Setter(Control.FontSizeProperty, 12.0));
+        var disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+        disabled.Setters.Add(new Setter(Control.ForegroundProperty, Brush("#75818A")));
+        itemStyle.Triggers.Add(disabled);
+        menu.Resources[typeof(MenuItem)] = itemStyle;
+    }
+
+    private static void InstallDarkMenuResources(ResourceDictionary resources)
+    {
+        resources[SystemColors.MenuBrushKey] = Brush("#20252B");
+        resources[SystemColors.MenuTextBrushKey] = Brush("#F2F5F7");
+        resources[SystemColors.HighlightBrushKey] = Brush("#35576A");
+        resources[SystemColors.HighlightTextBrushKey] = Brush("#FFFFFF");
+        resources[SystemColors.GrayTextBrushKey] = Brush("#75818A");
+        resources[SystemColors.ControlBrushKey] = Brush("#20252B");
+        resources[SystemColors.ControlTextBrushKey] = Brush("#F2F5F7");
+        resources[SystemColors.WindowBrushKey] = Brush("#20252B");
+        resources[SystemColors.WindowTextBrushKey] = Brush("#F2F5F7");
     }
 
     private static void RemoveToolbarSection(Panel host, string label, Func<UIElement, bool> belongsToSection)
@@ -85,6 +170,27 @@ public partial class MainWindow
         foreach (var child in toRemove)
             SkyblockBarHost.Children.Remove(child);
         SkyblockBarHost.Children.Remove(sectionLabel);
+        if (separator is not null)
+            SkyblockBarHost.Children.Remove(separator);
+    }
+
+    private void RemoveSkyblockText(string text)
+    {
+        var label = SkyblockBarHost.Children.OfType<TextBlock>()
+            .FirstOrDefault(candidate => string.Equals(candidate.Text, text, StringComparison.Ordinal));
+        if (label is not null)
+            SkyblockBarHost.Children.Remove(label);
+    }
+
+    private void RemoveSkyblockLabel(string text, bool removePrecedingSeparator)
+    {
+        var label = SkyblockBarHost.Children.OfType<TextBlock>()
+            .FirstOrDefault(candidate => string.Equals(candidate.Text, text, StringComparison.Ordinal));
+        if (label is null)
+            return;
+
+        var separator = removePrecedingSeparator ? PreviousBorder(SkyblockBarHost, label) : null;
+        SkyblockBarHost.Children.Remove(label);
         if (separator is not null)
             SkyblockBarHost.Children.Remove(separator);
     }
@@ -176,6 +282,7 @@ public partial class MainWindow
         _workspaceContextMenu.Items.Add(new Separator());
         _workspaceContextMenu.Items.Add(BuildAddMenu());
         _workspaceContextMenu.Items.Add(BuildEditMenu());
+        _workspaceContextMenu.Items.Add(BuildPositionMenu());
         _workspaceContextMenu.Items.Add(BuildSourceMenu());
     }
 
@@ -209,19 +316,25 @@ public partial class MainWindow
         return edit;
     }
 
+    private MenuItem BuildPositionMenu()
+    {
+        var position = ContextSubmenu("Position");
+        var canDistribute = _selection.Count >= 3;
+        position.Items.Add(ContextItem("Distribute horizontally", (_, _) => DistributePhase8Selection(horizontal: true), canDistribute));
+        position.Items.Add(ContextItem("Distribute vertically", (_, _) => DistributePhase8Selection(horizontal: false), canDistribute));
+        return position;
+    }
+
     private MenuItem BuildSourceMenu()
     {
         var source = ContextSubmenu("Source / Java");
         source.Items.Add(ContextItem("Export Java…", JavaExport_Click));
         source.Items.Add(new Separator());
 
-        var live = new MenuItem
-        {
-            Header = "Live Source",
-            IsCheckable = true,
-            IsChecked = _phase9LiveReloadToggle?.IsChecked == true,
-            IsEnabled = _phase9LiveReloadToggle is not null
-        };
+        var live = ContextSubmenu("Live Source");
+        live.IsCheckable = true;
+        live.IsChecked = _phase9LiveReloadToggle?.IsChecked == true;
+        live.IsEnabled = _phase9LiveReloadToggle is not null;
         live.Click += (_, _) =>
         {
             if (_phase9LiveReloadToggle is not null)
@@ -252,7 +365,16 @@ public partial class MainWindow
     }
 
     private static MenuItem ContextSubmenu(string header)
-        => new() { Header = header };
+    {
+        var item = new MenuItem
+        {
+            Header = header,
+            Background = Brush("#20252B"),
+            Foreground = Brush("#F2F5F7")
+        };
+        InstallDarkMenuResources(item.Resources);
+        return item;
+    }
 
     private static MenuItem ContextItem(
         string header,
@@ -264,8 +386,11 @@ public partial class MainWindow
         {
             Header = header,
             IsEnabled = enabled,
-            InputGestureText = gesture ?? string.Empty
+            InputGestureText = gesture ?? string.Empty,
+            Background = Brush("#20252B"),
+            Foreground = enabled ? Brush("#F2F5F7") : Brush("#75818A")
         };
+        InstallDarkMenuResources(item.Resources);
         item.Click += handler;
         return item;
     }
