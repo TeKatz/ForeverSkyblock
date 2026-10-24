@@ -151,10 +151,10 @@ public partial class MainWindow
     }
 
     private Button? FindButtonByContent(string content)
-        => FindVisualChildren<Button>(this)
+        => FindStartupVisualChildren<Button>(this)
             .FirstOrDefault(button => string.Equals(button.Content?.ToString(), content, StringComparison.Ordinal));
 
-    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject root) where T : DependencyObject
+    private static IEnumerable<T> FindStartupVisualChildren<T>(DependencyObject root) where T : DependencyObject
     {
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
         {
@@ -162,7 +162,7 @@ public partial class MainWindow
             if (child is T match)
                 yield return match;
 
-            foreach (var descendant in FindVisualChildren<T>(child))
+            foreach (var descendant in FindStartupVisualChildren<T>(child))
                 yield return descendant;
         }
     }
