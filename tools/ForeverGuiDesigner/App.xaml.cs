@@ -40,6 +40,7 @@ public partial class App : Application
             window.EnableWashingRenderPipelineFix();
             window.EnableExclusiveMachineRuntimeTools();
             window.EnableMachineRuntimeVisualPolish();
+            window.EnableMachineRuntimePerformanceFix();
             window.EnableSelfUpdater();
         }, DispatcherPriority.ContextIdle);
     }
