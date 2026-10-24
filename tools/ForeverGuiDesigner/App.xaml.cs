@@ -45,6 +45,7 @@ public partial class App : Application
             window.EnableMachineRuntimePerformanceFix();
             window.EnableNonWashingStableAnimation();
             window.EnableRuntimeSelectionStabilityFix();
+            window.EnableNonWashingSourceButtonOwnership();
             window.EnableSelfUpdater();
             window.EnableCompactContextMenus();
             window.EnableContextMenuVisualPolish();
