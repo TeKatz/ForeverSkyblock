@@ -68,19 +68,22 @@ public partial class MainWindow
 
                 var input = ReadCondenserResourceId(root, "ingredient");
                 var secondary = ReadCondenserResourceId(root, "secondary_ingredient");
-                var result = ReadCondenserResourceId(root, "result");
+                // CondenserRecipe.Serializer uses ItemStack.EMPTY when result is omitted;
+                // CondenserRecipe.result() then produces Stone Fragments. Mirror that here.
+                var result = ReadCondenserResourceId(root, "result") ?? "forever_skyblock:stone_fragment";
                 var hasSecondary = !string.IsNullOrWhiteSpace(secondary);
-                if (hasSecondary != needsSecondary || string.IsNullOrWhiteSpace(result))
+                if (hasSecondary != needsSecondary)
                     continue;
 
+                // The recipe codec's DEFAULT_TIME is 160 ticks when processing_time is omitted.
                 var ticks = root.TryGetProperty("processing_time", out var timeElement) && timeElement.TryGetInt32(out var parsedTicks)
                     ? Math.Max(1, parsedTicks)
-                    : Math.Max(1, (int)Math.Round(_condenserSourceRecipeDurationSeconds * 20));
+                    : 160;
 
                 _condenserSourceInput = input;
                 _condenserSourceSecondary = secondary;
                 _condenserSourceResult = result;
-                _condenserSourceJob = ClassifyCondenserSourceJob(result!, hasSecondary);
+                _condenserSourceJob = ClassifyCondenserSourceJob(result, hasSecondary);
                 _condenserSourceRecipeDurationSeconds = ticks / 20.0;
 
                 var inputName = SourceResourceName(input, language, "Input");
