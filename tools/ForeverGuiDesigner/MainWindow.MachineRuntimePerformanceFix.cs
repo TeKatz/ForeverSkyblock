@@ -10,13 +10,13 @@ namespace ForeverGuiDesigner;
 /// The original polish pass listened to both PreviewCanvas.LayoutUpdated and the
 /// always-running Phase 8 16 ms timeline timer. Once a non-Washing machine was
 /// active that meant a full text/button/slot restyle on virtually every frame.
-/// Replacing Border.Child during that restyle invalidated WPF layout again, so the
+/// Replacing Border.Child during that restyle invalidated layout again, so the
 /// LayoutUpdated hook could sustain the work even while the editor was otherwise idle.
 ///
 /// Keep the old pass gated for compatibility and drive the source-parity renderer
 /// from explicit state changes plus a cheap editable-visual generation detector.
-/// Timeline progress only rebuilds the background/process overlay and is coalesced
-/// to one-percent buckets; static controls are left untouched while animation advances.
+/// When the stable animation owner is available, the source overlay is completely
+/// static during playback; only the dedicated animation layer mutates per frame.
 /// </summary>
 public partial class MainWindow
 {
@@ -154,14 +154,20 @@ public partial class MainWindow
             CaptureMachineRuntimePerformanceGeneration();
         }
 
-        // Minecraft's GUI presentation does not benefit from rebuilding a WPF tree
-        // at monitor refresh rate. One-percent progress buckets keep the animation
-        // responsive while bounding allocations and layout invalidations.
-        var progressBucket = Math.Clamp(
-            (int)Math.Round(_phase8TimelineProgress * 100.0, MidpointRounding.AwayFromZero),
-            0,
-            100);
-        var dynamicSignature = staticSignature + "|p=" + progressBucket;
+        // Once the stable animation owner is enabled, progress must never rebuild the
+        // source-parity canvas. Replacing that canvas while the runtime timer is active
+        // was the remaining source of flashing and geometry churn. State/tier/mode or
+        // editable-generation changes still rebuild it normally.
+        var stableAnimationOwnsMotion = _nonWashingStableAnimationInitialized;
+        var progressBucket = stableAnimationOwnsMotion
+            ? 0
+            : Math.Clamp(
+                (int)Math.Round(_phase8TimelineProgress * 100.0, MidpointRounding.AwayFromZero),
+                0,
+                100);
+        var dynamicSignature = stableAnimationOwnsMotion
+            ? staticSignature + "|stable-motion"
+            : staticSignature + "|p=" + progressBucket;
         var overlayExists = PreviewCanvas.Children.OfType<FrameworkElement>()
             .Any(element => Equals(element.Tag, MachineRuntimePolishTag));
 
