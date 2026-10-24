@@ -137,8 +137,12 @@ public partial class MainWindow
         {
             _machineRuntimePerformanceStaticDirty = false;
 
-            // State/text data is synchronized before geometry recreates the Minecraft
-            // pixel-text children, so the rendered controls and source overlay agree.
+            // Resolve the Condenser presentation from a real compatible recipe before
+            // runtime text/timing is synchronized. Other machines keep their existing
+            // source profile path and do not perform any recipe-directory scan.
+            if (ActiveRuntimeScreen == "CondenserScreen")
+                RefreshCondenserSourceRecipePreview();
+
             ApplyNonWashingSourceParityStatic();
             ApplySourceMachineGeometry();
             HideApproximationTextures();
@@ -164,7 +168,7 @@ public partial class MainWindow
         if (!overlayExists ||
             !string.Equals(dynamicSignature, _machineRuntimePerformanceDynamicSignature, StringComparison.Ordinal))
         {
-            RebuildNonWashingSourceParityOverlay();
+            RebuildNonWashingSourceParityOverlayWithRecipes();
             _machineRuntimePerformanceDynamicSignature = dynamicSignature;
             _machineRuntimePolishSignature = dynamicSignature;
         }
