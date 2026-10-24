@@ -238,16 +238,7 @@ public partial class MainWindow
 
         foreach (var element in _layout.Elements)
         {
-            parts.Add(string.Join(':',
-                element.Id,
-                element.Type,
-                element.X,
-                element.Y,
-                element.Width,
-                element.Height,
-                element.Visible,
-                element.Content ?? string.Empty,
-                element.TexturePath ?? string.Empty));
+            parts.Add($"{element.Id}:{element.Type}:{element.X}:{element.Y}:{element.Width}:{element.Height}:{element.Visible}:{element.Content ?? string.Empty}:{element.TexturePath ?? string.Empty}");
         }
         return string.Join('|', parts);
     }
