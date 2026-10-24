@@ -43,6 +43,7 @@ public partial class App : Application
             window.EnableMachineRuntimeVisualPolish();
             window.EnableMachineRuntimePerformanceFix();
             window.EnableSelfUpdater();
+            window.EnableCompactContextMenus();
         }, DispatcherPriority.ContextIdle);
     }
 }
