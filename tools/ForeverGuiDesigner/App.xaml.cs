@@ -33,6 +33,7 @@ public partial class App : Application
             window.EnableForeverPhase8Tools();
             window.EnableForeverPhase8InteractionTools();
             window.EnableForeverPhase8PerformanceHotfix();
+            window.EnableForeverPhase9Tools();
             window.EnableForeverVisualFidelityPatch();
             window.EnableMachinePresentationLifecycleFix();
             window.EnableWashingSourceRenderer();
