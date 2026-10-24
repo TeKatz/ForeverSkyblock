@@ -63,19 +63,28 @@ public partial class MainWindow
         foreach (var element in elements.Where(_layout.Elements.Contains))
             _selection.Add(element);
 
-        // Mirror SetSelection's list synchronization but deliberately never call
-        // UpdateSelectionVisuals(). That method paints generic Border chrome directly
-        // onto the source-faithful controls and is the root cause of the GUI jump.
-        _suppressSelectionChange = true;
+        // ElementsList.SelectedItems raises SelectionChanged synchronously. Legacy
+        // runtime owners still listen to that event, so gate only that exact mutation.
+        // The reference-counted scope composes safely with the outer left-click scope
+        // from RuntimeSelectionStability and is restored before this method returns.
+        BeginRuntimeSelectionWriterSuppression();
         try
         {
-            ElementsList.SelectedItems.Clear();
-            foreach (var selected in _selection)
-                ElementsList.SelectedItems.Add(selected);
+            _suppressSelectionChange = true;
+            try
+            {
+                ElementsList.SelectedItems.Clear();
+                foreach (var selected in _selection)
+                    ElementsList.SelectedItems.Add(selected);
+            }
+            finally
+            {
+                _suppressSelectionChange = false;
+            }
         }
         finally
         {
-            _suppressSelectionChange = false;
+            EndRuntimeSelectionWriterSuppression();
         }
 
         UpdateInspector();
