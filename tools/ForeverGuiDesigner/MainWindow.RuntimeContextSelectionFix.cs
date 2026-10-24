@@ -63,10 +63,10 @@ public partial class MainWindow
         foreach (var element in elements.Where(_layout.Elements.Contains))
             _selection.Add(element);
 
-        // ElementsList.SelectedItems raises SelectionChanged synchronously. Legacy
-        // runtime owners still listen to that event, so gate only that exact mutation.
-        // The reference-counted scope composes safely with the outer left-click scope
-        // from RuntimeSelectionStability and is restored before this method returns.
+        // ElementsList.SelectedItems raises SelectionChanged synchronously and the
+        // exclusive runtime owners listen to that event. Gate only this exact mutation,
+        // then restore the owner flags before returning. No suppression survives into a
+        // routed-event continuation, dispatcher callback or later context-menu command.
         BeginRuntimeSelectionWriterSuppression();
         try
         {
