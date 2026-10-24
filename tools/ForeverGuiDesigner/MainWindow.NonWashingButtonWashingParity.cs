@@ -214,12 +214,13 @@ public partial class MainWindow
     private bool NonWashingSourceButtonEnabled(GuiElementModel model)
     {
         // MachineButton source rules are mostly "active when visible" for the non-Washing
-        // screens. Ascension is the exception represented by the designer state model:
-        // while the chamber is processing, start.active is false in AscensionScreen.
+        // screens. Ascension is the exception: AscensionScreen activates Start only when
+        // it is not busy AND slot 0 contains a Forever Core. The desktop designer has no
+        // live menu slot source, so its source-faithful default/no-core preview is disabled.
         if (ActiveRuntimeScreen == "AscensionScreen" &&
             model.Id.Equals("start", StringComparison.OrdinalIgnoreCase))
         {
-            return CurrentMachineRuntimeState != "processing";
+            return false;
         }
 
         return true;
