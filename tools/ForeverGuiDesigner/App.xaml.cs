@@ -53,6 +53,7 @@ public partial class App : Application
             window.EnableContextCommandRepairs();
             window.EnableContextCommandFinalizationFix();
             window.EnableStartupPresentationHooks();
+            window.EnableAttachmentAndResizeFix();
         }, DispatcherPriority.ContextIdle);
     }
 }
