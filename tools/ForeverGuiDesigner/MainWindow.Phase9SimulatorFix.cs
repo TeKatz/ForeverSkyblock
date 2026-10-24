@@ -39,15 +39,11 @@ public partial class MainWindow
             SkyblockBarHost.Children.Insert(index, replacement);
         }
 
-        // Scale/resolution changes only alter the simulated viewport. Reuse the existing
-        // bitmap instead of recapturing the complete editor visual tree.
         if (_phase9GuiScaleCombo is not null)
             _phase9GuiScaleCombo.SelectionChanged += (_, _) => RefreshPhase9SnapshotSimulator(capturePreview: false);
         if (_phase9ResolutionCombo is not null)
             _phase9ResolutionCombo.SelectionChanged += (_, _) => RefreshPhase9SnapshotSimulator(capturePreview: false);
 
-        // A machine load actually replaces the editor visuals, so capture once after the
-        // load/render pipeline reaches ContextIdle.
         var loadButton = SkyblockBarHost.Children.OfType<Button>()
             .FirstOrDefault(button => string.Equals(button.Content?.ToString(), "Load machine", StringComparison.Ordinal));
         if (loadButton is not null)
@@ -63,8 +59,6 @@ public partial class MainWindow
             _foreverModeCombo.SelectionChanged += (_, _) => QueuePhase9SnapshotCapture();
         if (_foreverProgressCombo is not null)
             _foreverProgressCombo.SelectionChanged += (_, _) => QueuePhase9SnapshotCapture();
-        if (_phase8TimelineSlider is not null)
-            _phase8TimelineSlider.ValueChanged += (_, _) => QueuePhase9SnapshotCapture();
 
         CapturePhase9SnapshotVisualGeneration();
         PreviewCanvas.LayoutUpdated += Phase9SnapshotLayoutUpdated;
@@ -142,8 +136,6 @@ public partial class MainWindow
             };
         }
 
-        // Show first, then capture. The previous implementation tried to refresh while
-        // IsVisible was still false and therefore always waited for the polling timer.
         if (!_phase9SnapshotSimulatorWindow.IsVisible)
             _phase9SnapshotSimulatorWindow.Show();
         _phase9SnapshotSimulatorWindow.Activate();
@@ -211,18 +203,8 @@ public partial class MainWindow
         _phase9SnapshotSimulatorScreen.Height = logicalHeight;
         _phase9SnapshotSimulatorScreen.Children.Clear();
 
-        AddSimulatorGuide(
-            _phase9SnapshotSimulatorScreen,
-            logicalWidth / 2.0,
-            0,
-            logicalWidth / 2.0,
-            logicalHeight);
-        AddSimulatorGuide(
-            _phase9SnapshotSimulatorScreen,
-            0,
-            logicalHeight / 2.0,
-            logicalWidth,
-            logicalHeight / 2.0);
+        AddSimulatorGuide(_phase9SnapshotSimulatorScreen, logicalWidth / 2.0, 0, logicalWidth / 2.0, logicalHeight);
+        AddSimulatorGuide(_phase9SnapshotSimulatorScreen, 0, logicalHeight / 2.0, logicalWidth, logicalHeight / 2.0);
 
         var guiWidth = Math.Max(1, _layout.Width);
         var guiHeight = Math.Max(1, _layout.Height);
@@ -265,18 +247,35 @@ public partial class MainWindow
 
         try
         {
-            PreviewCanvas.UpdateLayout();
-
-            // RenderTargetBitmap.Render() receives the PreviewCanvas visual itself, whose
-            // native coordinate system is the GUI's logical pixel size. The editor's
-            // LayoutTransform (for example 300% zoom) belongs to the editor presentation
-            // and must NOT increase the bitmap dimensions. The previous implementation
-            // multiplied the target bitmap by PreviewScale, leaving large transparent
-            // regions and making the visible GUI look cropped/shrunk in the simulator.
             var pixelWidth = Math.Max(1, _layout.Width);
             var pixelHeight = Math.Max(1, _layout.Height);
+
+            // Do not render PreviewCanvas directly. Its editor zoom is a LayoutTransform,
+            // and RenderTargetBitmap faithfully keeps that transformed visual state. A
+            // native-sized target therefore captures only a zoomed fragment. Instead,
+            // paint the complete visual through a VisualBrush into a fresh DrawingVisual
+            // at (0,0). Stretch.Fill maps the transformed editor visual back onto exactly
+            // the GUI's native logical bounds without mutating or re-laying out the editor.
+            var sourceBrush = new VisualBrush(PreviewCanvas)
+            {
+                Stretch = Stretch.Fill,
+                AlignmentX = AlignmentX.Left,
+                AlignmentY = AlignmentY.Top
+            };
+
+            var snapshotVisual = new DrawingVisual();
+            RenderOptions.SetEdgeMode(snapshotVisual, EdgeMode.Aliased);
+            RenderOptions.SetBitmapScalingMode(snapshotVisual, BitmapScalingMode.NearestNeighbor);
+            using (var drawing = snapshotVisual.RenderOpen())
+            {
+                drawing.DrawRectangle(
+                    sourceBrush,
+                    null,
+                    new Rect(0, 0, pixelWidth, pixelHeight));
+            }
+
             var bitmap = new RenderTargetBitmap(pixelWidth, pixelHeight, 96, 96, PixelFormats.Pbgra32);
-            bitmap.Render(PreviewCanvas);
+            bitmap.Render(snapshotVisual);
             bitmap.Freeze();
             return bitmap;
         }
