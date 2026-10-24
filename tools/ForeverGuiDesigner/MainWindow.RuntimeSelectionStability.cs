@@ -9,17 +9,16 @@ namespace ForeverGuiDesigner;
 
 /// <summary>
 /// Selection in source-faithful machine previews is editor chrome only.
-/// Runtime controls must never receive the generic editor Border selection styling.
-/// This coordinator intercepts selection input before the legacy SetSelection path can
-/// call UpdateSelectionVisuals, then updates only dedicated adorners/resize handles.
+/// Runtime controls must never receive generic editor selection styling and selection
+/// suppression must never outlive the input event that required it.
 /// </summary>
 public partial class MainWindow
 {
     private bool _runtimeSelectionStabilityInitialized;
-    private bool _runtimeSelectionGuardActive;
+    private int _runtimeSelectionWriterSuppressionDepth;
     private bool _runtimeSelectionPreviousWashingApplying;
     private bool _runtimeSelectionPreviousMachineApplying;
-    private int _runtimeSelectionGuardToken;
+    private int _runtimeSelectionNormalizeToken;
 
     public void EnableRuntimeSelectionStabilityFix()
     {
@@ -27,19 +26,33 @@ public partial class MainWindow
             return;
         _runtimeSelectionStabilityInitialized = true;
 
-        // Tunnelling input runs before element/list/tree selection handlers. For runtime
-        // previews we establish selection here so the later generic SetSelection path is
-        // never entered for ordinary clicks.
+        // Tunnelling input establishes runtime-safe selection before legacy element/list
+        // handlers execute. The suppression is released synchronously by the matching
+        // bubbling MouseLeftButtonDown event; it never survives into a context-menu action.
         PreviewCanvas.AddHandler(UIElement.PreviewMouseDownEvent,
             new MouseButtonEventHandler(RuntimeSelectionPreviewMouseDown), true);
+        PreviewCanvas.AddHandler(UIElement.MouseLeftButtonDownEvent,
+            new MouseButtonEventHandler(RuntimeSelectionMouseDownCompleted), true);
+
         ElementsList.AddHandler(UIElement.PreviewMouseDownEvent,
             new MouseButtonEventHandler(RuntimeSelectionPreviewMouseDown), true);
+        ElementsList.AddHandler(UIElement.MouseLeftButtonDownEvent,
+            new MouseButtonEventHandler(RuntimeSelectionMouseDownCompleted), true);
+
         if (_phase8Hierarchy is not null)
         {
             _phase8Hierarchy.AddHandler(UIElement.PreviewMouseDownEvent,
                 new MouseButtonEventHandler(RuntimeSelectionPreviewMouseDown), true);
+            _phase8Hierarchy.AddHandler(UIElement.MouseLeftButtonDownEvent,
+                new MouseButtonEventHandler(RuntimeSelectionMouseDownCompleted), true);
+            _phase8Hierarchy.SelectedItemChanged += (_, _) => QueueRuntimeSelectionOuterNormalization();
         }
 
+        // This also catches programmatic SetSelection callers that still synchronize the
+        // ListBox directly (validation navigation, legacy helpers, etc.). Their generic
+        // border paint is repaired after the synchronous SetSelection call returns, but
+        // no child visual or source surface is rebuilt.
+        ElementsList.SelectionChanged += (_, _) => QueueRuntimeSelectionOuterNormalization();
         PreviewKeyDown += RuntimeSelectionPreviewKeyDown;
     }
 
@@ -49,13 +62,10 @@ public partial class MainWindow
 
     private void RuntimeSelectionPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
-        if (!RuntimeSelectionPreviewActive)
+        if (!RuntimeSelectionPreviewActive || e.ChangedButton != MouseButton.Left)
             return;
 
-        BeginRuntimeSelectionGuard();
-
-        if (e.ChangedButton != MouseButton.Left)
-            return;
+        BeginRuntimeSelectionWriterSuppression();
 
         if (ReferenceEquals(sender, PreviewCanvas))
         {
@@ -73,6 +83,15 @@ public partial class MainWindow
             HandleRuntimeHierarchyLeftSelection(e);
     }
 
+    private void RuntimeSelectionMouseDownCompleted(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left || _runtimeSelectionWriterSuppressionDepth == 0)
+            return;
+
+        EndRuntimeSelectionWriterSuppression();
+        RefreshRuntimeSelectionOverlaysOnly();
+    }
+
     private void HandleRuntimeCanvasLeftSelection(MouseButtonEventArgs e)
     {
         var element = FindGuiElementFromVisual(e.OriginalSource as DependencyObject);
@@ -82,16 +101,13 @@ public partial class MainWindow
         {
             if (control)
             {
-                // Legacy Element_MouseLeftButtonDown would call ToggleSelection and then
-                // SetSelection. Handle Ctrl-click completely here to avoid that writer.
                 ToggleRuntimeSafeSelection(element);
                 e.Handled = true;
             }
             else if (!_selection.Contains(element))
             {
-                // Preselect without touching runtime chrome. Leave the event unhandled so
-                // the existing drag-start logic still runs; it now sees the element already
-                // selected and therefore skips SetSelection.
+                // Leave the event unhandled so the established drag-start logic still runs.
+                // It sees the element already selected and therefore skips SetSelection().
                 SetRuntimeSafeSelection([element]);
             }
             return;
@@ -100,7 +116,6 @@ public partial class MainWindow
         if (ReferenceEquals(e.OriginalSource, PreviewCanvas))
         {
             SetRuntimeSafeSelection([]);
-            // Prevent PreviewCanvas_MouseLeftButtonDown from calling SetSelection([]).
             e.Handled = true;
         }
     }
@@ -119,8 +134,6 @@ public partial class MainWindow
         else
             SetRuntimeSafeSelection([element]);
 
-        // We already synchronized SelectedItems ourselves. Suppress the ListBox's normal
-        // selection mutation so ElementsList_SelectionChanged cannot call SetSelection.
         e.Handled = true;
     }
 
@@ -138,7 +151,6 @@ public partial class MainWindow
         else
             SetRuntimeSafeSelection([element]);
 
-        // Prevent TreeView.SelectedItemChanged from entering SetSelection([model]).
         e.Handled = true;
     }
 
@@ -150,60 +162,64 @@ public partial class MainWindow
         var control = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
         if (control && e.Key == Key.A)
         {
-            BeginRuntimeSelectionGuard();
             SetRuntimeSafeSelection(_layout.Elements);
             e.Handled = true;
         }
     }
 
-    private void BeginRuntimeSelectionGuard()
+    /// <summary>
+    /// Temporarily gates only the legacy selection synchronizers. This scope is strictly
+    /// synchronous and reference-counted so nested list synchronization is safe. It must
+    /// never span a dispatcher turn or a context-menu command.
+    /// </summary>
+    private void BeginRuntimeSelectionWriterSuppression()
     {
-        var token = ++_runtimeSelectionGuardToken;
+        if (_runtimeSelectionWriterSuppressionDepth++ != 0)
+            return;
 
-        if (!_runtimeSelectionGuardActive)
+        _runtimeSelectionPreviousWashingApplying = _washingRenderPipelineFixApplying;
+        _runtimeSelectionPreviousMachineApplying = _machineRuntimeApplying;
+
+        if (_washingExclusiveModeActive && IsWashingPhase6Active)
+            _washingRenderPipelineFixApplying = true;
+        if (_machineRuntimeExclusiveActive && IsNonWashingRuntimeMachineActive)
+            _machineRuntimeApplying = true;
+    }
+
+    private void EndRuntimeSelectionWriterSuppression()
+    {
+        if (_runtimeSelectionWriterSuppressionDepth <= 0)
+            return;
+
+        if (--_runtimeSelectionWriterSuppressionDepth != 0)
+            return;
+
+        _washingRenderPipelineFixApplying = _runtimeSelectionPreviousWashingApplying;
+        _machineRuntimeApplying = _runtimeSelectionPreviousMachineApplying;
+    }
+
+    private void QueueRuntimeSelectionOuterNormalization()
+    {
+        if (!RuntimeSelectionPreviewActive)
+            return;
+
+        var token = ++_runtimeSelectionNormalizeToken;
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
         {
-            _runtimeSelectionGuardActive = true;
-            _runtimeSelectionPreviousWashingApplying = _washingRenderPipelineFixApplying;
-            _runtimeSelectionPreviousMachineApplying = _machineRuntimeApplying;
-
-            if (_washingExclusiveModeActive && IsWashingPhase6Active)
-                _washingRenderPipelineFixApplying = true;
-            if (_machineRuntimeExclusiveActive && IsNonWashingRuntimeMachineActive)
-                _machineRuntimeApplying = true;
-        }
-
-        Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
-        {
-            if (token != _runtimeSelectionGuardToken)
+            if (token != _runtimeSelectionNormalizeToken || !RuntimeSelectionPreviewActive)
                 return;
-            EndRuntimeSelectionGuard();
+
+            NormalizeRuntimeSelectionOuterChrome();
+            RefreshRuntimeSelectionOverlaysOnly();
         }));
     }
 
-    private void EndRuntimeSelectionGuard()
+    private void NormalizeRuntimeSelectionOuterChrome()
     {
-        if (!_runtimeSelectionGuardActive)
-            return;
-
-        _runtimeSelectionGuardActive = false;
-        _washingRenderPipelineFixApplying = _runtimeSelectionPreviousWashingApplying;
-        _machineRuntimeApplying = _runtimeSelectionPreviousMachineApplying;
-
-        // Never rebuild children or source chrome here. Only normalize outer properties
-        // and refresh dedicated editor overlays.
         if (_washingExclusiveModeActive && IsWashingPhase6Active)
-        {
             NormalizeWashingSelectionChrome();
-            UpdateWashingSelectionAdorners();
-        }
         else if (_machineRuntimeExclusiveActive && IsNonWashingRuntimeMachineActive)
-        {
             NormalizeMachineRuntimeSelectionChrome();
-            UpdateMachineRuntimeSelectionAdorners();
-        }
-
-        if (_phase8Initialized)
-            EnsurePhase8OverlayVisuals();
     }
 
     private void NormalizeWashingSelectionChrome()
