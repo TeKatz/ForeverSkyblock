@@ -13,11 +13,10 @@ namespace ForeverGuiDesigner;
 /// Replacing Border.Child during that restyle invalidated WPF layout again, so the
 /// LayoutUpdated hook could sustain the work even while the editor was otherwise idle.
 ///
-/// Keep the old pass gated for compatibility and drive the same source-derived
-/// rendering from explicit state changes plus a cheap editable-visual generation
-/// detector. Timeline progress only rebuilds the background/process overlay and is
-/// coalesced to one-percent buckets; static controls are left untouched while the
-/// animation advances.
+/// Keep the old pass gated for compatibility and drive the source-parity renderer
+/// from explicit state changes plus a cheap editable-visual generation detector.
+/// Timeline progress only rebuilds the background/process overlay and is coalesced
+/// to one-percent buckets; static controls are left untouched while animation advances.
 /// </summary>
 public partial class MainWindow
 {
@@ -138,6 +137,9 @@ public partial class MainWindow
         {
             _machineRuntimePerformanceStaticDirty = false;
 
+            // State/text data is synchronized before geometry recreates the Minecraft
+            // pixel-text children, so the rendered controls and source overlay agree.
+            ApplyNonWashingSourceParityStatic();
             ApplySourceMachineGeometry();
             HideApproximationTextures();
             ApplySourceMachineSlotStyling();
@@ -162,7 +164,7 @@ public partial class MainWindow
         if (!overlayExists ||
             !string.Equals(dynamicSignature, _machineRuntimePerformanceDynamicSignature, StringComparison.Ordinal))
         {
-            RebuildMachineRuntimePolishOverlay();
+            RebuildNonWashingSourceParityOverlay();
             _machineRuntimePerformanceDynamicSignature = dynamicSignature;
             _machineRuntimePolishSignature = dynamicSignature;
         }
