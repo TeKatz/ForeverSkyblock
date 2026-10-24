@@ -20,6 +20,8 @@ public partial class MainWindow
 {
     private const int EditorSendToBackZ = -900;
     private const int EditorBringToFrontZ = 900;
+    private const string EditorTextOverrideTagPrefix = "__forever_editor_text_override:";
+    private const string EditorTextureOverrideTagPrefix = "__forever_editor_texture_override:";
 
     private bool _contextCommandRepairsInitialized;
     private bool _contextCommandRepairQueued;
@@ -508,7 +510,7 @@ public partial class MainWindow
         if (ElementsList.ItemsSource is null)
             return;
 
-        var signature = string.Join('\u001F', _layout.Elements
+        var signature = string.Join("\u001F", _layout.Elements
             .Where(element => element.EditorSuppressed)
             .Select(element => element.Id));
 
@@ -559,11 +561,17 @@ public partial class MainWindow
         if (element.EditorTextOverride is null || !_visuals.TryGetValue(element, out var visual) || visual is not Border border)
             return;
 
-        element.Content = element.EditorTextOverride;
+        var overrideText = element.EditorTextOverride;
+        element.Content = overrideText;
+        var signature = $"{EditorTextOverrideTagPrefix}{overrideText}|{element.TextScale}|{element.TextAlignment}|{element.TextShadow}|washing={IsWashingPhase6Active}|blocked={WashingBlocked}|water={WashingHasWater}|running={WashingRunning}";
+        if (border.Child is FrameworkElement { Tag: string tag } && string.Equals(tag, signature, StringComparison.Ordinal))
+            return;
 
         if (IsNonWashingRuntimeMachineActive && _machineRuntimeExclusiveActive)
         {
             ApplyMachineRuntimeText(element, border);
+            if (border.Child is FrameworkElement runtimeText)
+                runtimeText.Tag = signature;
             return;
         }
 
@@ -625,12 +633,13 @@ public partial class MainWindow
             color = "#A0B4BE";
         }
 
-        var required = EstimatePixelTextWidth(element.EditorTextOverride, scale);
+        var required = EstimatePixelTextWidth(overrideText, scale);
         border.ToolTip = required > element.Width + .01
             ? $"Text overflow: ~{required:0.#} px required, {element.Width} px available."
             : null;
-        border.Child = new MinecraftPixelText(element.EditorTextOverride, Brush(color), shadow, scale, alignment)
+        border.Child = new MinecraftPixelText(overrideText, Brush(color), shadow, scale, alignment)
         {
+            Tag = signature,
             Width = Math.Max(1, element.Width),
             Height = Math.Max(1, element.Height)
         };
@@ -656,10 +665,15 @@ public partial class MainWindow
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
             return;
 
+        var signature = EditorTextureOverrideTagPrefix + path;
+        if (border.Child is FrameworkElement { Tag: string tag } && string.Equals(tag, signature, StringComparison.Ordinal))
+            return;
+
         try
         {
             var image = new Image
             {
+                Tag = signature,
                 Source = LoadBitmap(path),
                 Stretch = Stretch.Fill,
                 SnapsToDevicePixels = true,
