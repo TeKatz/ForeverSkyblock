@@ -8,14 +8,10 @@ using ForeverGuiDesigner.Models;
 namespace ForeverGuiDesigner;
 
 /// <summary>
-/// Selection in the source-faithful machine previews is editor chrome only.
-/// The base editor normally paints selection directly onto each element Border; the
-/// exclusive machine renderers already use separate adorners, so letting both systems
-/// run changes border thickness and can reflow/repaint the real GUI on every click.
-///
-/// Guard the legacy selection-restoration callbacks during the input event, then restore
-/// only outer Border properties. No child visual, slot body, text glyph tree, runtime
-/// surface or machine geometry is rebuilt just because an element was selected.
+/// Selection in source-faithful machine previews is editor chrome only.
+/// Runtime controls must never receive the generic editor Border selection styling.
+/// This coordinator intercepts selection input before the legacy SetSelection path can
+/// call UpdateSelectionVisuals, then updates only dedicated adorners/resize handles.
 /// </summary>
 public partial class MainWindow
 {
@@ -31,8 +27,9 @@ public partial class MainWindow
             return;
         _runtimeSelectionStabilityInitialized = true;
 
-        // Tunnelling mouse input runs before the existing bubbling selection handlers.
-        // This also intentionally runs before the context-menu right-click selector.
+        // Tunnelling input runs before element/list/tree selection handlers. For runtime
+        // previews we establish selection here so the later generic SetSelection path is
+        // never entered for ordinary clicks.
         PreviewCanvas.AddHandler(UIElement.PreviewMouseDownEvent,
             new MouseButtonEventHandler(RuntimeSelectionPreviewMouseDown), true);
         ElementsList.AddHandler(UIElement.PreviewMouseDownEvent,
@@ -52,8 +49,97 @@ public partial class MainWindow
 
     private void RuntimeSelectionPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
-        if (RuntimeSelectionPreviewActive)
-            BeginRuntimeSelectionGuard();
+        if (!RuntimeSelectionPreviewActive)
+            return;
+
+        BeginRuntimeSelectionGuard();
+
+        if (e.ChangedButton != MouseButton.Left)
+            return;
+
+        if (ReferenceEquals(sender, PreviewCanvas))
+        {
+            HandleRuntimeCanvasLeftSelection(e);
+            return;
+        }
+
+        if (ReferenceEquals(sender, ElementsList))
+        {
+            HandleRuntimeElementsListLeftSelection(e);
+            return;
+        }
+
+        if (_phase8Hierarchy is not null && ReferenceEquals(sender, _phase8Hierarchy))
+            HandleRuntimeHierarchyLeftSelection(e);
+    }
+
+    private void HandleRuntimeCanvasLeftSelection(MouseButtonEventArgs e)
+    {
+        var element = FindGuiElementFromVisual(e.OriginalSource as DependencyObject);
+        var control = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+
+        if (element is not null)
+        {
+            if (control)
+            {
+                // Legacy Element_MouseLeftButtonDown would call ToggleSelection and then
+                // SetSelection. Handle Ctrl-click completely here to avoid that writer.
+                ToggleRuntimeSafeSelection(element);
+                e.Handled = true;
+            }
+            else if (!_selection.Contains(element))
+            {
+                // Preselect without touching runtime chrome. Leave the event unhandled so
+                // the existing drag-start logic still runs; it now sees the element already
+                // selected and therefore skips SetSelection.
+                SetRuntimeSafeSelection([element]);
+            }
+            return;
+        }
+
+        if (ReferenceEquals(e.OriginalSource, PreviewCanvas))
+        {
+            SetRuntimeSafeSelection([]);
+            // Prevent PreviewCanvas_MouseLeftButtonDown from calling SetSelection([]).
+            e.Handled = true;
+        }
+    }
+
+    private void HandleRuntimeElementsListLeftSelection(MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is not DependencyObject source)
+            return;
+
+        var container = ItemsControl.ContainerFromElement(ElementsList, source) as ListBoxItem;
+        if (container?.DataContext is not GuiElementModel element)
+            return;
+
+        if ((Keyboard.Modifiers & ModifierKeys.Control) != 0)
+            ToggleRuntimeSafeSelection(element);
+        else
+            SetRuntimeSafeSelection([element]);
+
+        // We already synchronized SelectedItems ourselves. Suppress the ListBox's normal
+        // selection mutation so ElementsList_SelectionChanged cannot call SetSelection.
+        e.Handled = true;
+    }
+
+    private void HandleRuntimeHierarchyLeftSelection(MouseButtonEventArgs e)
+    {
+        if (_phase8Hierarchy is null || e.OriginalSource is not DependencyObject source)
+            return;
+
+        var container = ItemsControl.ContainerFromElement(_phase8Hierarchy, source) as TreeViewItem;
+        if (container?.Tag is not GuiElementModel element)
+            return;
+
+        if ((Keyboard.Modifiers & ModifierKeys.Control) != 0)
+            ToggleRuntimeSafeSelection(element);
+        else
+            SetRuntimeSafeSelection([element]);
+
+        // Prevent TreeView.SelectedItemChanged from entering SetSelection([model]).
+        e.Handled = true;
     }
 
     private void RuntimeSelectionPreviewKeyDown(object sender, KeyEventArgs e)
@@ -62,11 +148,11 @@ public partial class MainWindow
             return;
 
         var control = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
-        if ((control && e.Key == Key.A) ||
-            ElementsList.IsKeyboardFocusWithin ||
-            _phase8Hierarchy?.IsKeyboardFocusWithin == true)
+        if (control && e.Key == Key.A)
         {
             BeginRuntimeSelectionGuard();
+            SetRuntimeSafeSelection(_layout.Elements);
+            e.Handled = true;
         }
     }
 
@@ -86,8 +172,6 @@ public partial class MainWindow
                 _machineRuntimeApplying = true;
         }
 
-        // ContextIdle runs after synchronous selection changes and the Phase 8
-        // Background refresh, so the final state is normalized once, not repeatedly.
         Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
         {
             if (token != _runtimeSelectionGuardToken)
@@ -105,6 +189,8 @@ public partial class MainWindow
         _washingRenderPipelineFixApplying = _runtimeSelectionPreviousWashingApplying;
         _machineRuntimeApplying = _runtimeSelectionPreviousMachineApplying;
 
+        // Never rebuild children or source chrome here. Only normalize outer properties
+        // and refresh dedicated editor overlays.
         if (_washingExclusiveModeActive && IsWashingPhase6Active)
         {
             NormalizeWashingSelectionChrome();
@@ -172,8 +258,6 @@ public partial class MainWindow
                 break;
 
             default:
-                // Status, process scene, meter and free runtime texture anchors draw
-                // their own source-faithful chrome inside the child visual.
                 border.BorderBrush = Brushes.Transparent;
                 border.BorderThickness = new Thickness(0);
                 break;
