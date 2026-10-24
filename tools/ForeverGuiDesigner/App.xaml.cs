@@ -42,8 +42,10 @@ public partial class App : Application
             window.EnableExclusiveMachineRuntimeTools();
             window.EnableMachineRuntimeVisualPolish();
             window.EnableMachineRuntimePerformanceFix();
+            window.EnableRuntimeSelectionStabilityFix();
             window.EnableSelfUpdater();
             window.EnableCompactContextMenus();
+            window.EnableContextMenuVisualPolish();
         }, DispatcherPriority.ContextIdle);
     }
 }
