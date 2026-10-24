@@ -292,17 +292,36 @@ public partial class MainWindow
         _ => "IDLE"
     };
 
+    private bool SourceRuntimePresentationOwnsVisuals => _machineRuntimePerformanceFixInitialized && IsExclusiveNonWashingMachineRuntimeActive;
+
     private void RestoreMachineRuntimeChrome()
     {
+        var sourceOwned = SourceRuntimePresentationOwnsVisuals;
         foreach (var pair in _visuals)
         {
             var model = pair.Key;
             if (model.Id.StartsWith("forever_phase5_",StringComparison.OrdinalIgnoreCase) || model.Id.StartsWith("forever_phase8_",StringComparison.OrdinalIgnoreCase)) { pair.Value.Visibility=Visibility.Collapsed; continue; }
             if (pair.Value is not Border border) continue;
-            if (model.Type==GuiElementType.Slot) { ApplyMachineSlotFidelity(model,border,false); border.BorderBrush=Brushes.Transparent; border.BorderThickness=new Thickness(0); }
-            else if (model.Type==GuiElementType.Button) ApplyMachineRuntimeButton(model,border,border.IsMouseOver);
-            else if (model.Type==GuiElementType.Text) ApplyMachineRuntimeText(model,border);
-            else if (model.Id.StartsWith(MachineRuntimePrefix,StringComparison.OrdinalIgnoreCase)) ApplyMachineRuntimeTexture(model,border);
+            if (model.Type==GuiElementType.Slot)
+            {
+                ApplyMachineSlotFidelity(model,border,false);
+                border.BorderBrush=Brushes.Transparent;
+                border.BorderThickness=new Thickness(0);
+            }
+            else if (model.Type==GuiElementType.Button)
+            {
+                if (sourceOwned) ApplySourceMachineButton(model,border,border.IsMouseOver);
+                else ApplyMachineRuntimeButton(model,border,border.IsMouseOver);
+            }
+            else if (model.Type==GuiElementType.Text)
+            {
+                if (sourceOwned) UpdateSourceRuntimeTextBorderInPlace(model,border);
+                else ApplyMachineRuntimeText(model,border);
+            }
+            else if (model.Id.StartsWith(MachineRuntimePrefix,StringComparison.OrdinalIgnoreCase) && !sourceOwned)
+            {
+                ApplyMachineRuntimeTexture(model,border);
+            }
         }
         foreach (var pair in _visuals) Panel.SetZIndex(pair.Value, pair.Key.Id.StartsWith("machine_slot_",StringComparison.OrdinalIgnoreCase)?700:pair.Key.Type==GuiElementType.Button?650:pair.Key.Id.StartsWith(MachineRuntimePrefix,StringComparison.OrdinalIgnoreCase)?600:0);
     }
@@ -314,11 +333,29 @@ public partial class MainWindow
         border.Child=new MinecraftPixelText(string.IsNullOrWhiteSpace(model.Content)?model.Id:model.Content,color,model.TextShadow,model.TextScale<=0?.72:model.TextScale,model.TextAlignment){Width=Math.Max(1,model.Width),Height=Math.Max(1,model.Height),HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center,IsHitTestVisible=false};
     }
 
+    private void UpdateSourceRuntimeTextBorderInPlace(GuiElementModel model, Border border)
+    {
+        if (border.Child is MinecraftPixelText text)
+            text.Text = string.IsNullOrWhiteSpace(model.Content) ? model.Id : model.Content;
+    }
+
     private void ApplyMachineRuntimeButton(GuiElementModel model, Border border, bool hover)
     {
         border.Background=new LinearGradientBrush(Brush(hover?"#37515E":"#263B4B").Color,Brush("#172936").Color,90); border.BorderBrush=hover?Brush(RuntimeAccent()):Brush("#6A818C"); border.BorderThickness=new Thickness(1);
         border.Child=new MinecraftPixelText(string.IsNullOrWhiteSpace(model.Content)?model.Id:model.Content,Brush("#E6EEE9"),false,.82,"center"){Width=Math.Max(1,model.Width-4),Height=8,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center,IsHitTestVisible=false};
-        if (_machineRuntimeButtonHooks.Add(border)) { border.MouseEnter+=(_,_)=>{if(IsNonWashingRuntimeMachineActive&&border.Tag is GuiElementModel m)ApplyMachineRuntimeButton(m,border,true);}; border.MouseLeave+=(_,_)=>{if(IsNonWashingRuntimeMachineActive&&border.Tag is GuiElementModel m)ApplyMachineRuntimeButton(m,border,false);}; }
+        if (_machineRuntimeButtonHooks.Add(border))
+        {
+            border.MouseEnter+=(_,_)=>
+            {
+                if(!_machineRuntimePerformanceFixInitialized && IsNonWashingRuntimeMachineActive && border.Tag is GuiElementModel m)
+                    ApplyMachineRuntimeButton(m,border,true);
+            };
+            border.MouseLeave+=(_,_)=>
+            {
+                if(!_machineRuntimePerformanceFixInitialized && IsNonWashingRuntimeMachineActive && border.Tag is GuiElementModel m)
+                    ApplyMachineRuntimeButton(m,border,false);
+            };
+        }
     }
 
     private void ApplyMachineRuntimeTexture(GuiElementModel model, Border border)
@@ -398,7 +435,70 @@ public partial class MainWindow
     private void HandleMachineRuntimeScrub(){if(!IsNonWashingRuntimeMachineActive||_phase8UpdatingSlider)return;EnterExclusiveMachineRuntime();_machineRuntimePlaybackRequested=false;_phase8Playing=false;SetMachineRuntimeProgress((_phase8TimelineSlider?.Value??0)/100.0,true);_machineRuntimeLastTick=DateTime.UtcNow;}
     private void TickMachineRuntime(){var now=DateTime.UtcNow;var dt=Math.Clamp((now-_machineRuntimeLastTick).TotalSeconds,0,.1);_machineRuntimeLastTick=now;if(!IsNonWashingRuntimeMachineActive){if(_machineRuntimeExclusiveActive)ExitExclusiveMachineRuntime();return;}if(!_machineRuntimeExclusiveActive)EnterExclusiveMachineRuntime();_phase8Playing=false;_phase6Timer?.Stop();_phase6StableAnimationTimer?.Stop();_phase7ProcessingTimer?.Stop();if(!_machineRuntimePlaybackRequested||!RuntimeStateRuns)return;var speed=_phase8SpeedBox?.SelectedItem is ComboBoxItem{Tag:double s}?s:1;var next=_phase8TimelineProgress+dt*speed/MachineRuntimeDurationSeconds;if(next>=1){if(_phase8LoopBox?.IsChecked==true)next%=1;else{next=1;_machineRuntimePlaybackRequested=false;}}SetMachineRuntimeProgress(next,true);}
     private void SetMachineRuntimeProgress(double p,bool update){p=Math.Clamp(p,0,1);_phase8TimelineProgress=p;_phase8Playing=false;if(_phase8TimelineSlider is not null){_phase8UpdatingSlider=true;_phase8TimelineSlider.Value=p*100;_phase8UpdatingSlider=false;}if(_phase8TimelineText is not null)_phase8TimelineText.Text=$"{p*MachineRuntimeDurationSeconds:0.0}/{MachineRuntimeDurationSeconds:0.0}s";if(_phase7ActiveProcessingItem is not null&&IsActiveProcessingSelected)_phase7ActiveProcessingItem.Tag=(p*100).ToString("0.###",CultureInfo.InvariantCulture);SynchronizeMachineRuntimeText();if(update)UpdateMachineRuntimeDynamicVisuals();}
-    private void UpdateMachineRuntimeDynamicVisuals(){if(!IsNonWashingRuntimeMachineActive)return;SynchronizeMachineRuntimeText();foreach(var pair in _visuals){if(pair.Value is not Border b||!pair.Key.Id.StartsWith(MachineRuntimePrefix,StringComparison.OrdinalIgnoreCase))continue;if(pair.Key.Type==GuiElementType.Text)ApplyMachineRuntimeText(pair.Key,b);else if(pair.Key.Type==GuiElementType.Texture)ApplyMachineRuntimeTexture(pair.Key,b);if(pair.Key.Id.Contains("ring_1"))pair.Value.RenderTransform=new RotateTransform(_phase8TimelineProgress*360,pair.Key.Width/2.0,pair.Key.Height/2.0);else if(pair.Key.Id.Contains("ring_2"))pair.Value.RenderTransform=new RotateTransform(-_phase8TimelineProgress*360,pair.Key.Width/2.0,pair.Key.Height/2.0);}ApplyMachineRuntimeVisibility();UpdateMachineRuntimeSelectionAdorners();}
+
+    private void UpdateMachineRuntimeDynamicVisuals()
+    {
+        if(!IsNonWashingRuntimeMachineActive)return;
+        SynchronizeMachineRuntimeText();
+
+        if (SourceRuntimePresentationOwnsVisuals)
+        {
+            SynchronizeSourceOwnedRuntimeDynamicText();
+            return;
+        }
+
+        foreach(var pair in _visuals)
+        {
+            if(pair.Value is not Border b||!pair.Key.Id.StartsWith(MachineRuntimePrefix,StringComparison.OrdinalIgnoreCase))continue;
+            if(pair.Key.Type==GuiElementType.Text)ApplyMachineRuntimeText(pair.Key,b);
+            else if(pair.Key.Type==GuiElementType.Texture)ApplyMachineRuntimeTexture(pair.Key,b);
+            if(pair.Key.Id.Contains("ring_1"))pair.Value.RenderTransform=new RotateTransform(_phase8TimelineProgress*360,pair.Key.Width/2.0,pair.Key.Height/2.0);
+            else if(pair.Key.Id.Contains("ring_2"))pair.Value.RenderTransform=new RotateTransform(-_phase8TimelineProgress*360,pair.Key.Width/2.0,pair.Key.Height/2.0);
+        }
+        ApplyMachineRuntimeVisibility();
+        UpdateMachineRuntimeSelectionAdorners();
+    }
+
+    private void SynchronizeSourceOwnedRuntimeDynamicText()
+    {
+        switch (ActiveRuntimeScreen)
+        {
+            case "CrucibleScreen":
+                SetMachineRuntimeText(MachineRuntimePrefix + "lava_text", $"{PreviewCrucibleLavaMb()} mB");
+                break;
+            case "RefiningScreen":
+                SetMachineRuntimeText(MachineRuntimePrefix + "energy_text", $"{Math.Round(10000 * PreviewRefiningEnergyRatio()):0} / 10000 FE");
+                break;
+            case "CondenserScreen":
+                SetMachineRuntimeText(MachineRuntimePrefix + "status_text", CondenserSourceStatusText());
+                if (CurrentMode == "freezing")
+                {
+                    var items = Math.Clamp((int)Math.Round(_phase8TimelineProgress * 40), 0, 40);
+                    SetMachineRuntimeText(MachineRuntimePrefix + "freezing_text", $"{items} / 40");
+                }
+                if (CurrentMode == "garden")
+                {
+                    SetMachineRuntimeText(MachineRuntimePrefix + "garden_time", RuntimeTimeText());
+                }
+                else
+                {
+                    SetMachineRuntimeText(MachineRuntimePrefix + "recipe_summary", _condenserSourceRecipeSummary);
+                    SetMachineRuntimeText(MachineRuntimePrefix + "time_text", RuntimeTimeText());
+                }
+                break;
+        }
+
+        foreach (var pair in _visuals)
+        {
+            if (pair.Key.Type != GuiElementType.Text || pair.Value is not Border border)
+                continue;
+            if (!pair.Key.Id.StartsWith(MachineRuntimePrefix, StringComparison.OrdinalIgnoreCase) &&
+                !pair.Key.Id.Equals("screen_title", StringComparison.OrdinalIgnoreCase))
+                continue;
+            UpdateSourceRuntimeTextBorderInPlace(pair.Key, border);
+        }
+    }
+
     private bool RuntimeMachineSlotMissingVisual()=>_layout.Elements.Any(m=>m.Visible&&m.Type==GuiElementType.Slot&&m.Id.StartsWith("machine_slot_",StringComparison.OrdinalIgnoreCase)&&!_visuals.ContainsKey(m));
     private bool MachineRuntimeGenerationChanged(){var anchor=_visuals.Count==0?null:_visuals.Values.First();return _visuals.Count!=_machineRuntimeVisualCount||!ReferenceEquals(anchor,_machineRuntimeVisualAnchor);}
     private void CaptureMachineRuntimeGeneration(){_machineRuntimeVisualCount=_visuals.Count;_machineRuntimeVisualAnchor=_visuals.Count==0?null:_visuals.Values.First();}
