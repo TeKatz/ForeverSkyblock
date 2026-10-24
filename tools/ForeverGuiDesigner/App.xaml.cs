@@ -38,6 +38,7 @@ public partial class App : Application
             window.EnableWashingSourceRenderer();
             window.EnableWashingRenderPipelineFix();
             window.EnableExclusiveMachineRuntimeTools();
+            window.EnableMachineRuntimeVisualPolish();
             window.EnableSelfUpdater();
         }, DispatcherPriority.ContextIdle);
     }
