@@ -1,8 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 using ForeverGuiDesigner.Controls;
 using ForeverGuiDesigner.Models;
@@ -10,21 +8,17 @@ using ForeverGuiDesigner.Models;
 namespace ForeverGuiDesigner;
 
 /// <summary>
-/// Gives Crucible, Refining, Ascension and Condenser buttons the same ownership model
-/// as the stable Washing preview:
-/// - the real element Border owns background + native button border;
-/// - hover is local to exactly that Border;
-/// - editor selection is a separate runtime adorner and never becomes button chrome;
-/// - selection/deselection cannot leave generic editor chrome on the real button;
-/// - the final static pass runs after older source/polish writers.
+/// Gives Crucible, Refining, Ascension and Condenser buttons the same structural
+/// ownership model as the stable Washing preview.
 ///
-/// Geometry/content/accent remain machine-specific; only the proven Washing lifecycle
-/// and interaction model are shared.
+/// The native Border owns background + outline, MinecraftPixelText is the direct child,
+/// hover is local to that Border, and editor selection remains a separate adorner.
+/// Keeping MinecraftPixelText as the direct child is important: Phase 8 only replaces
+/// Text/Button children that are not MinecraftPixelText, which used to destroy the
+/// nested non-Washing button Grid for one frame during selection changes.
 /// </summary>
 public partial class MainWindow
 {
-    private const string NonWashingButtonChromeTag = "__forever_non_washing_button_washing_parity_v2";
-
     private bool _nonWashingButtonWashingParityInitialized;
     private bool _nonWashingButtonWashingParityQueued;
     private FrameworkElement? _nonWashingButtonWashingParityVisualAnchor;
@@ -54,52 +48,39 @@ public partial class MainWindow
         if (_foreverModeCombo is not null)
             _foreverModeCombo.SelectionChanged += (_, _) => QueueNonWashingButtonWashingParity();
 
-        // Selection is editor chrome only. The legacy runtime path still has an older
-        // MouseDown synchronizer, so do not rely on handler registration order. Restore
-        // once on MouseDown and, crucially, again on MouseUp after every MouseDown writer
-        // and the phase-8 selection handles have finished their work.
+        // Match Washing's selection lifecycle: restore source button chrome synchronously
+        // in the same input event. No deferred selection repair and no drift polling.
         PreviewCanvas.AddHandler(
             UIElement.MouseLeftButtonDownEvent,
-            new MouseButtonEventHandler((_, _) => FinalizeNonWashingButtonInteraction()),
+            new System.Windows.Input.MouseButtonEventHandler((_, _) => SynchronizeNonWashingButtonSelection()),
             true);
-        PreviewCanvas.AddHandler(
-            UIElement.MouseLeftButtonUpEvent,
-            new MouseButtonEventHandler((_, _) => FinalizeNonWashingButtonInteraction()),
-            true);
-
-        ElementsList.SelectionChanged += (_, _) => FinalizeNonWashingButtonInteraction();
+        ElementsList.SelectionChanged += (_, _) => SynchronizeNonWashingButtonSelection();
         if (_phase8Hierarchy is not null)
-            _phase8Hierarchy.SelectedItemChanged += (_, _) => FinalizeNonWashingButtonInteraction();
+            _phase8Hierarchy.SelectedItemChanged += (_, _) => SynchronizeNonWashingButtonSelection();
 
+        // A new visual generation means RenderLayout replaced the actual Border objects.
+        // Re-apply button ownership once for that generation only.
         PreviewCanvas.LayoutUpdated += (_, _) =>
         {
-            if (!IsExclusiveNonWashingMachineRuntimeActive)
+            if (!IsExclusiveNonWashingMachineRuntimeActive ||
+                !NonWashingButtonWashingParityGenerationChanged())
+            {
                 return;
+            }
 
-            var generationChanged = NonWashingButtonWashingParityGenerationChanged();
-            if (generationChanged)
-                CaptureNonWashingButtonWashingParityGeneration();
-
-            // UpdateSelectionVisuals() and a few old decorators can still write the
-            // native Border after selection. Detect that directly instead of depending
-            // on event ordering. Queue only the button repair; never rebuild the machine.
-            if (generationChanged || NonWashingButtonChromeDrifted())
-                QueueNonWashingButtonWashingParity();
+            CaptureNonWashingButtonWashingParityGeneration();
+            QueueNonWashingButtonWashingParity();
         };
 
         QueueNonWashingButtonWashingParity();
     }
 
-    private void FinalizeNonWashingButtonInteraction()
+    private void SynchronizeNonWashingButtonSelection()
     {
         if (!IsExclusiveNonWashingMachineRuntimeActive)
             return;
 
         RestoreNonWashingButtonsFromWashingPattern();
-
-        // Keep a final low-priority pass as a safety net for any older dispatcher work
-        // queued by the same selection event. This pass touches buttons only.
-        QueueNonWashingButtonWashingParity();
     }
 
     private void QueueNonWashingButtonWashingParity()
@@ -113,8 +94,6 @@ public partial class MainWindow
             return;
         _nonWashingButtonWashingParityQueued = true;
 
-        // Washing's source renderer is the last presentation owner. Match that rule for
-        // non-Washing buttons only, without making another machine-wide render owner.
         Dispatcher.BeginInvoke(DispatcherPriority.SystemIdle, new Action(() =>
         {
             _nonWashingButtonWashingParityQueued = false;
@@ -140,8 +119,8 @@ public partial class MainWindow
             if (pair.Key.Type != GuiElementType.Button || pair.Value is not Border border)
                 continue;
 
-            // Prevent the older polish/runtime paths from registering another local
-            // MouseEnter/MouseLeave owner for this exact visual generation.
+            // Reserve this visual generation before the older runtime/polish paths can
+            // register competing hover callbacks on the same Border.
             _machineRuntimePolishButtonHooks.Add(border);
             _machineRuntimeButtonHooks.Add(border);
         }
@@ -175,54 +154,40 @@ public partial class MainWindow
             (ActiveRuntimeScreen == "CondenserScreen" && model.Id.Equals("filters", StringComparison.OrdinalIgnoreCase)) ||
             (ActiveRuntimeScreen == "CrucibleScreen" && model.Id.Contains("mode", StringComparison.OrdinalIgnoreCase));
 
-        // Same native ownership as ApplyExclusiveWashingButtonChrome: the real Border
-        // owns background and outline. Selection is drawn elsewhere as an adorner.
-        border.Background = new LinearGradientBrush(
-            Brush(hover ? "#37515E" : "#263B4B").Color,
-            Brush("#172936").Color,
-            90);
+        border.Background = CreateNonWashingButtonBackground(model, hover, primary, accent);
         border.BorderBrush = Brush(hover ? accent : "#6A818C");
         border.BorderThickness = new Thickness(1);
         border.ClipToBounds = true;
         border.SnapsToDevicePixels = true;
 
-        var content = new Grid
+        var value = string.IsNullOrWhiteSpace(model.Content) ? model.Id : model.Content;
+        if (border.Child is MinecraftPixelText existing)
         {
-            Tag = NonWashingButtonChromeTag,
-            Width = Math.Max(1, model.Width - 2),
-            Height = Math.Max(1, model.Height - 2),
-            IsHitTestVisible = false,
-            ClipToBounds = true
-        };
-
-        if (primary)
-        {
-            content.Children.Add(new Rectangle
-            {
-                Width = 2,
-                Fill = Brush(accent),
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Stretch,
-                Margin = new Thickness(0, 1, 0, 1),
-                IsHitTestVisible = false
-            });
+            // Keep the same child object alive just like the source-owned dynamic text
+            // surfaces. Phase 8 therefore sees a stable MinecraftPixelText at all times.
+            existing.Text = value;
+            existing.Width = Math.Max(1, model.Width - 4);
+            existing.Height = 8;
+            existing.HorizontalAlignment = HorizontalAlignment.Center;
+            existing.VerticalAlignment = VerticalAlignment.Center;
+            existing.IsHitTestVisible = false;
         }
-
-        content.Children.Add(new MinecraftPixelText(
-            string.IsNullOrWhiteSpace(model.Content) ? model.Id : model.Content,
-            Brush("#E6EEE9"),
-            false,
-            .92,
-            "center")
+        else
         {
-            Width = Math.Max(1, model.Width - 6),
-            Height = 8,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            IsHitTestVisible = false
-        });
-
-        border.Child = content;
+            border.Child = new MinecraftPixelText(
+                value,
+                Brush("#E6EEE9"),
+                false,
+                .92,
+                "center")
+            {
+                Width = Math.Max(1, model.Width - 4),
+                Height = 8,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                IsHitTestVisible = false
+            };
+        }
 
         if (_nonWashingButtonWashingParityHooks.Add(border))
         {
@@ -239,40 +204,44 @@ public partial class MainWindow
         }
     }
 
-    private bool NonWashingButtonChromeDrifted()
+    private Brush CreateNonWashingButtonBackground(
+        GuiElementModel model,
+        bool hover,
+        bool primary,
+        string accent)
     {
-        var accent = SourceFrameAccent();
+        var baseBrush = new LinearGradientBrush(
+            Brush(hover ? "#37515E" : "#263B4B").Color,
+            Brush("#172936").Color,
+            90);
 
-        foreach (var pair in _visuals)
+        if (!primary)
+            return baseBrush;
+
+        // Preserve the machine-specific two-pixel primary accent without wrapping the
+        // text in a Grid. The direct MinecraftPixelText child is what keeps Phase 8 from
+        // treating this source button as an undecorated generic editor button.
+        var width = Math.Max(1, model.Width);
+        var height = Math.Max(1, model.Height);
+        var drawing = new DrawingGroup();
+        drawing.Children.Add(new GeometryDrawing(
+            baseBrush,
+            null,
+            new RectangleGeometry(new Rect(0, 0, width, height))));
+        drawing.Children.Add(new GeometryDrawing(
+            Brush(accent),
+            null,
+            new RectangleGeometry(new Rect(1, 1, Math.Min(2, width), Math.Max(0, height - 2)))));
+
+        return new DrawingBrush(drawing)
         {
-            if (pair.Key.Type != GuiElementType.Button ||
-                pair.Value is not Border border ||
-                pair.Value.Visibility != Visibility.Visible)
-            {
-                continue;
-            }
-
-            if (border.Child is not Grid { Tag: string tag } ||
-                !string.Equals(tag, NonWashingButtonChromeTag, StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            if (border.Background is not LinearGradientBrush ||
-                border.BorderThickness.Left != 1 ||
-                border.BorderThickness.Top != 1 ||
-                border.BorderThickness.Right != 1 ||
-                border.BorderThickness.Bottom != 1)
-            {
-                return true;
-            }
-
-            var expected = Brush(border.IsMouseOver ? accent : "#6A818C").Color;
-            if (border.BorderBrush is not SolidColorBrush actual || actual.Color != expected)
-                return true;
-        }
-
-        return false;
+            Viewbox = new Rect(0, 0, width, height),
+            ViewboxUnits = BrushMappingMode.Absolute,
+            Viewport = new Rect(0, 0, 1, 1),
+            ViewportUnits = BrushMappingMode.RelativeToBoundingBox,
+            Stretch = Stretch.Fill,
+            TileMode = TileMode.None
+        };
     }
 
     private bool NonWashingButtonWashingParityGenerationChanged()
