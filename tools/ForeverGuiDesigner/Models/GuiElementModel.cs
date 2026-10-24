@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace ForeverGuiDesigner.Models;
 
 public enum GuiElementType
@@ -34,6 +36,18 @@ public sealed class GuiElementModel
     public bool GhostPreview { get; set; }
     public bool GlintPreview { get; set; }
 
+    // Explicit editor overrides. Source/runtime presentation remains the default owner;
+    // these values are only honored after a user invokes the matching editing command.
+    public bool EditorSuppressed { get; set; }
+    public string? EditorTextOverride { get; set; }
+    public int? EditorZIndexOverride { get; set; }
+    public bool EditorCustomTextureOverride { get; set; }
+
+    // Runtime-only classification used to distinguish source-backed controls from
+    // ordinary editor-created elements. Reconstructed after load/undo as needed.
+    [JsonIgnore]
+    public bool EditorSourceOwned { get; set; }
+
     public GuiElementModel Clone()
     {
         return new GuiElementModel
@@ -56,7 +70,12 @@ public sealed class GuiElementModel
             StackCount = StackCount,
             Durability = Durability,
             GhostPreview = GhostPreview,
-            GlintPreview = GlintPreview
+            GlintPreview = GlintPreview,
+            EditorSuppressed = EditorSuppressed,
+            EditorTextOverride = EditorTextOverride,
+            EditorZIndexOverride = EditorZIndexOverride,
+            EditorCustomTextureOverride = EditorCustomTextureOverride,
+            EditorSourceOwned = EditorSourceOwned
         };
     }
 
