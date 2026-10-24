@@ -2,6 +2,17 @@
 
 ## Development
 
+### 0.9.0 — Phase 9 source workflow
+
+- Added a GUI Scale simulator with 854×480 through 3840×2160 framebuffer presets, fixed 1x–4x scale choices and an Auto mode that renders the current GUI in the effective logical viewport without changing stored coordinates.
+- Added debounced live source watching for Java and `assets/forever_skyblock` files. Clean imported machines reload automatically, while active editor changes are preserved instead of being overwritten by external source saves.
+- Added a validation panel for duplicate ids, invalid/out-of-bounds geometry, fixed Forever slot sizes, missing texture references and overlapping interactive controls. Validation errors block apply-back and selecting an issue jumps to its element.
+- Added reviewed Java diff/apply-back for statically bound `MachineButton` geometry, Menu-backed machine-slot constants and literal `MachineSkin.slot(..., true)` coordinates.
+- Shared source constants are protected against conflicting per-element edits; ambiguous mappings are rejected instead of guessed.
+- Java apply-back rechecks reviewed source contents immediately before writing, stages replacements with backups, rolls back on failure and reloads the active machine after success.
+- Editor-only buttons are reported during review and are never silently invented in Java.
+- Added explicit Phase 9 controls to the existing project toolbar and documented the source-editing workflow.
+
 ### 0.8.7 — Runtime-sourced Washing preview
 
 - Fixed the remaining Washing progress split-brain: the exclusive timeline and visible process/meter surfaces now use the same progress value instead of the meter still reading the old Phase 5 progress selector.

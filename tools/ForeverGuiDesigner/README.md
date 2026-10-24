@@ -48,7 +48,8 @@ The asset browser scans `mod/src/main/resources/assets/forever_skyblock/textures
 2. Click **Scan project**.
 3. Select one of the detected machine screens.
 4. Click **Load machine**.
-5. Edit visually and use **Export Java** for GUI-local constants.
+5. Edit visually, run **Validate**, then use **Review Java…** to inspect and apply safe source-backed geometry changes.
+6. **Export Java** remains available for standalone GUI-local constant snippets.
 
 The scanner detects `MachineScreen<...>` classes, resolves `MachineLayout`, pairs Screen and Menu sources and imports statically provable geometry.
 
@@ -87,6 +88,39 @@ Washing mirrors the real `WashingScreen` / `MachineProcessEffects.washing` prese
 The first 0.8.0 implementation attached hierarchy rebuilding, WYSIWYG decoration and resize-handle recreation directly to WPF `PreviewCanvas.LayoutUpdated`. Because those operations invalidate layout themselves, navigation and animation could trigger a self-amplifying UI-thread refresh storm.
 
 0.8.1 permanently gates that broad callback after initialization. A lightweight visual-generation detector now coalesces refresh work and performs a full Phase 8 refresh only when `RenderLayout()` actually replaces the editable visual generation. Timeline frames, guide movement and normal WPF layout passes therefore no longer rebuild the hierarchy or overlays. Resize handles follow drag operations through coordinate-only updates.
+
+### Phase 9 — Source workflow
+
+#### GUI Scale simulator
+
+- Simulates the GUI centered in a Minecraft-style logical viewport instead of changing stored GUI-local coordinates.
+- Presets cover 854×480 through 3840×2160 framebuffer resolutions and GUI scales 1x–4x plus Auto.
+- The simulator reports framebuffer size, effective logical viewport and the GUI's physical framebuffer footprint.
+
+#### Java/asset live reload
+
+- Watches `mod/src/main/java` and `assets/forever_skyblock` recursively.
+- Debounces IDE/file-system write bursts before rescanning.
+- Clean imported layouts reload automatically.
+- If the current imported layout has editor changes, source and visual assets refresh without discarding those local edits.
+- Manual **Reload source** asks before replacing edited geometry.
+
+#### Validation
+
+- Detects duplicate/empty ids, invalid dimensions and out-of-bounds geometry.
+- Checks fixed Forever machine-slot geometry and player-slot frame sizing.
+- Reports missing texture references and overlapping interactive slots/buttons.
+- Validation issues are selectable and jump back to the affected element.
+- Errors block Java apply-back; warnings remain reviewable.
+
+#### Reviewed Java diff/apply-back
+
+- **Review Java…** creates a read-only before/after diff before any source file is touched.
+- Source-backed `MachineButton` x/y/width/height geometry can be applied back to the matching Screen.
+- Machine-slot movement applies to resolved Menu constants or literal `MachineSkin.slot(..., true)` coordinates.
+- Shared Java constants are changed only when every linked slot requests the same value; conflicts are blocked instead of guessed.
+- Editor-only buttons are explicitly reported and are not silently invented in Java.
+- Apply rechecks that source files still match the reviewed originals, stages all writes, uses replacement backups and reloads the machine after success.
 
 ### Forever widgets
 
@@ -130,8 +164,6 @@ The workflow publishes a self-contained `win-x64` build and refreshes the select
 
 ## Next steps
 
-- GUI Scale simulator.
-- Java/asset source live reload.
-- Validation for overlaps, out-of-bounds geometry, text clipping, invalid assets and inconsistent slots.
-- Reviewed Java diff/apply-back with selectable safe changes and backup/undo.
+- Expand apply-back bindings beyond statically resolved machine slots and `MachineButton` geometry.
 - Richer tooltip/button runtime-state previews.
+- Optional validation autofixes for safe, mechanical issues.
