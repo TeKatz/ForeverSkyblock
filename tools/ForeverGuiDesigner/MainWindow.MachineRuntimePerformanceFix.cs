@@ -55,7 +55,15 @@ public partial class MainWindow
         if (_foreverModeCombo is not null)
             _foreverModeCombo.SelectionChanged += (_, _) => QueueMachineRuntimePerformanceRefresh(staticRefresh: true);
         if (_phase8TimelineSlider is not null)
-            _phase8TimelineSlider.ValueChanged += (_, _) => QueueMachineRuntimePerformanceRefresh(staticRefresh: false);
+        {
+            _phase8TimelineSlider.ValueChanged += (_, _) =>
+            {
+                // Stable animation mutates its own fixed visual primitives and source
+                // text in-place. Do not enqueue the source compositor for every frame.
+                if (!_nonWashingStableAnimationInitialized)
+                    QueueMachineRuntimePerformanceRefresh(staticRefresh: false);
+            };
+        }
 
         QueueMachineRuntimePerformanceRefresh(staticRefresh: true);
     }
