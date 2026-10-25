@@ -9,9 +9,9 @@ using ForeverGuiDesigner.Services;
 namespace ForeverGuiDesigner;
 
 /// <summary>
-/// Phase 17 block animation authoring surface. This is deliberately separate from the legacy GUI
-/// timeline. Tracks are kept in memory; the existing block model remains the source geometry and
-/// the Minecraft runtime MachineAnimation class remains the source of truth for machine curves.
+/// Phase 17 block animation authoring surface. Phase 17A routes target identity through the shared
+/// AnimationTargetRegistry so model reordering cannot silently detach or delete authored tracks.
+/// The Minecraft runtime MachineAnimation class remains the source of truth for machine curves.
 /// </summary>
 public partial class MainWindow
 {
@@ -63,6 +63,9 @@ public partial class MainWindow
 
     private sealed class StudioBlockAnimationTrack
     {
+        // Stable identity for Phase 17A+ tracks. Legacy tracks may legitimately keep this null
+        // until an explicit future Review/Apply save migrates them.
+        public string? TargetId { get; init; }
         public required string ModelKey { get; init; }
         public required int ElementIndex { get; init; }
         public List<StudioBlockAnimationKeyframe> Keyframes { get; } = [];
@@ -168,7 +171,7 @@ public partial class MainWindow
             IsHitTestVisible = false,
             Child = new TextBlock
             {
-                Text = "BLOCK ANIMATION · PHASE 17",
+                Text = "BLOCK ANIMATION · PHASE 17A",
                 Foreground = Brush("#7ED9DB"),
                 FontSize = 11,
                 FontWeight = FontWeights.SemiBold
@@ -217,14 +220,14 @@ public partial class MainWindow
         inspector.Children.Add(StudioSectionLabel("BLOCK ANIMATION STUDIO"));
         inspector.Children.Add(new TextBlock
         {
-            Text = "A dedicated block timeline. GUI animation remains a separate system. Tracks are currently authoring/preview data only and are not written to project files.",
+            Text = "A dedicated block timeline. GUI animation remains a separate system. Phase 17A resolves every authored element through a stable TargetId; tracks are still preview-only and are not written to project files.",
             Foreground = Brush("#8FA1AA"),
             FontSize = 12,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 8, 0, 18)
         });
 
-        inspector.Children.Add(BlockViewerLabel("Animated element"));
+        inspector.Children.Add(BlockViewerLabel("Animated target"));
         _studioAnimationElementCombo = BlockViewerCombo();
         _studioAnimationElementCombo.SelectionChanged += (_, _) =>
         {
@@ -552,17 +555,25 @@ public partial class MainWindow
             return;
         }
 
-        var selected = _studioAnimationElementCombo?.SelectedIndex ?? _studioSelectedElementIndex;
-        var entries = _studioEditableBlockModel.Elements
-            .Select((element, index) => DescribeStudioBlockElement(element, index))
-            .ToList();
+        var selectedTargetId = (_studioAnimationElementCombo?.SelectedItem as AnimationTargetDescriptor)?.TargetId.Value;
+        var selectedIndex = _studioAnimationElementCombo?.SelectedIndex ?? _studioSelectedElementIndex;
+        RebuildStudioAnimationTargetRegistry();
+        var entries = _studioAnimationTargetRegistry.JsonTargetsForModel(_studioEditableBlockModel.SourcePath).ToList();
+        var stableSelectedIndex = string.IsNullOrWhiteSpace(selectedTargetId)
+            ? -1
+            : entries.FindIndex(entry => string.Equals(entry.TargetId.Value, selectedTargetId, StringComparison.Ordinal));
+
         _studioAnimationUiUpdating = true;
         try
         {
             if (_studioAnimationElementCombo is not null)
             {
                 _studioAnimationElementCombo.ItemsSource = entries;
-                _studioAnimationElementCombo.SelectedIndex = entries.Count == 0 ? -1 : Math.Clamp(selected, 0, entries.Count - 1);
+                _studioAnimationElementCombo.SelectedIndex = entries.Count == 0
+                    ? -1
+                    : stableSelectedIndex >= 0
+                        ? stableSelectedIndex
+                        : Math.Clamp(selectedIndex, 0, entries.Count - 1);
             }
         }
         finally
@@ -572,11 +583,12 @@ public partial class MainWindow
 
         RenderStudioAnimationFrame(_studioAnimationTimeline?.Value ?? 0);
         RefreshStudioAnimationTrackUi();
+        var health = DescribeStudioAnimationTargetHealth();
         SetStudioAnimationStatus(
             entries.Count == 0
-                ? "The selected model has no elements to animate."
-                : "Animation preview ready. Keyframes stay in memory and do not touch source JSON.",
-            entries.Count == 0 ? "#D8B26A" : "#74C99A");
+                ? "The selected model has no animation targets."
+                : $"Animation target registry ready · {entries.Count} JSON target(s) · {_studioAnimationTargetRegistry.RuntimeTargets().Count} runtime target(s).{health}",
+            entries.Count == 0 || health.Contains("TARGET WARNING", StringComparison.Ordinal) ? "#D8B26A" : "#74C99A");
     }
 
     private void RefreshStudioAnimationTrackUi()
@@ -602,16 +614,24 @@ public partial class MainWindow
 
     private StudioBlockAnimationTrack? GetStudioAnimationTrack(bool create)
     {
-        if (_studioEditableBlockModel is null || _studioAnimationElementCombo is null || _studioAnimationElementCombo.SelectedIndex < 0)
+        var target = GetSelectedStudioAnimationTarget();
+        if (target is null || target.Kind != AnimationTargetKind.JsonModelElement || target.ElementIndex is not int elementIndex)
             return null;
-        var elementIndex = _studioAnimationElementCombo.SelectedIndex;
-        var key = $"{_studioEditableBlockModel.SourcePath}|element:{elementIndex}";
-        if (_studioAnimationTracks.TryGetValue(key, out var existing))
+
+        var existing = FindStudioAnimationTrackForTarget(target);
+        if (existing is not null)
             return existing;
         if (!create)
             return null;
-        var created = new StudioBlockAnimationTrack { ModelKey = key, ElementIndex = elementIndex };
-        _studioAnimationTracks[key] = created;
+
+        var legacyModelKey = $"{target.ModelKey}|element:{elementIndex}";
+        var created = new StudioBlockAnimationTrack
+        {
+            TargetId = target.TargetId.Value,
+            ModelKey = legacyModelKey,
+            ElementIndex = elementIndex
+        };
+        _studioAnimationTracks[target.TargetId.Value] = created;
         return created;
     }
 
@@ -620,7 +640,7 @@ public partial class MainWindow
         var track = GetStudioAnimationTrack(create: true);
         if (track is null)
         {
-            SetStudioAnimationStatus("Select an element before adding a keyframe.", "#E18B8B");
+            SetStudioAnimationStatus("Select an animation target before adding a keyframe.", "#E18B8B");
             return;
         }
         if (!TryReadStudioAnimationFrameFields(out var keyframe))
@@ -639,7 +659,10 @@ public partial class MainWindow
             SetStudioAnimationDuration(keyframe.TimeSeconds);
         RefreshStudioAnimationTrackUi();
         SetStudioAnimationTimelineTime(keyframe.TimeSeconds);
-        SetStudioAnimationStatus($"Keyframe stored at {keyframe.TimeSeconds:0.###}s for element {track.ElementIndex + 1}.", "#74C99A");
+        var resolution = ResolveStudioAnimationTrack(track);
+        SetStudioAnimationStatus(
+            $"Keyframe stored at {keyframe.TimeSeconds:0.###}s for {DescribeStudioAnimationTarget(resolution.Target)}.{DescribeStudioAnimationTargetHealth()}",
+            resolution.State == AnimationTargetResolutionState.Unresolved ? "#D8B26A" : "#74C99A");
     }
 
     private bool TryReadStudioAnimationFrameFields(out StudioBlockAnimationKeyframe keyframe)
@@ -830,9 +853,9 @@ public partial class MainWindow
                 _studioAnimationPlayButton.Content = "Play";
             return;
         }
-        if (_studioEditableBlockModel is null || _studioAnimationElementCombo is null || _studioAnimationElementCombo.SelectedIndex < 0)
+        if (_studioEditableBlockModel is null || GetSelectedStudioAnimationTarget() is null)
         {
-            SetStudioAnimationStatus("Load a block model and select an element before playback.", "#D8B26A");
+            SetStudioAnimationStatus("Load a block model and select an animation target before playback.", "#D8B26A");
             return;
         }
         if ((_studioAnimationTimeline?.Value ?? 0) >= _studioAnimationDurationSeconds)
@@ -882,15 +905,20 @@ public partial class MainWindow
     {
         if (_studioAnimationViewport is null || _studioEditableBlockModel is null || string.IsNullOrWhiteSpace(_repoRoot))
             return;
-        var selectedIndex = _studioAnimationElementCombo?.SelectedIndex ?? -1;
-        if (selectedIndex < 0 || selectedIndex >= _studioEditableBlockModel.Elements.Count)
+
+        var track = GetStudioAnimationTrack(create: false);
+        var resolution = track is null ? ResolveSelectedStudioAnimationTarget() : ResolveStudioAnimationTrack(track);
+        if (resolution.Target?.Kind != AnimationTargetKind.JsonModelElement || resolution.Target.ElementIndex is not int selectedIndex ||
+            selectedIndex < 0 || selectedIndex >= _studioEditableBlockModel.Elements.Count)
         {
             _studioAnimationViewport.SetTextureOverrides(_studioTextureOverrides);
             _studioAnimationViewport.SetModel(_repoRoot, _studioEditableBlockModel, _studioEditableBlockstateXRotation, _studioEditableBlockstateYRotation);
+            if (track is not null && resolution.State == AnimationTargetResolutionState.Unresolved)
+                SetStudioAnimationStatus($"{resolution.Message} Keyframes were preserved.", "#D8B26A");
             return;
         }
 
-        var frame = EvaluateStudioAnimationFrame(GetStudioAnimationTrack(create: false), time);
+        var frame = EvaluateStudioAnimationFrame(track, time);
         var preview = CloneStudioBlockModel(_studioEditableBlockModel);
         if (!frame.Visible)
         {
@@ -951,11 +979,14 @@ public partial class MainWindow
         if (frame.Visible)
             _studioAnimationViewport.SelectElement(selectedIndex);
 
-        var tokens = new List<string> { frame.MachineState.ToString() };
+        var tokens = new List<string> { frame.MachineState.ToString(), resolution.Target.TargetId.Value };
         if (!string.IsNullOrWhiteSpace(frame.TextureState)) tokens.Add($"state={frame.TextureState}");
         if (!string.IsNullOrWhiteSpace(frame.LightStatus)) tokens.Add($"light={frame.LightStatus}");
         if (!string.IsNullOrWhiteSpace(frame.SpecialEffect)) tokens.Add($"fx={frame.SpecialEffect}");
-        SetStudioAnimationStatus($"Preview {time:0.00}s · {string.Join(" · ", tokens)}", "#74C99A");
+        var health = DescribeStudioAnimationTargetHealth();
+        SetStudioAnimationStatus(
+            $"Preview {time:0.00}s · {string.Join(" · ", tokens)}{health}",
+            health.Contains("TARGET WARNING", StringComparison.Ordinal) ? "#D8B26A" : "#74C99A");
     }
 
     private static StudioBlockAnimationKeyframe EvaluateStudioAnimationFrame(StudioBlockAnimationTrack? track, double time)
