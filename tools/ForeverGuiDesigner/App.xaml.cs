@@ -26,6 +26,7 @@ public partial class App : Application
         window.EnableForeverTextureCanvasStability();
         window.EnableForeverAdvancedTextureEditor();
         window.EnableForeverItemTextureStudio();
+        window.EnableForeverStudioUxQoL();
         MainWindow = window;
         window.Show();
 
