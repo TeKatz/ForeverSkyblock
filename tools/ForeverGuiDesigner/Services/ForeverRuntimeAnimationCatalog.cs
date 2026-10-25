@@ -35,9 +35,9 @@ internal sealed record ForeverRuntimeAnimationProfile(
 }
 
 /// <summary>
-/// Source-derived catalog of the runtime animations that already exist in the mod.  The catalog is
+/// Source-derived catalog of the runtime animations that already exist in the mod. The catalog is
 /// deliberately read-only: it describes Java renderer behavior without converting procedural curves
-/// into fake Studio keyframes.  Studio-authored animation remains a separate override layer.
+/// into fake Studio keyframes. Studio-authored animation remains a separate override layer.
 /// </summary>
 internal static class ForeverRuntimeAnimationCatalog
 {
@@ -98,22 +98,45 @@ internal static class ForeverRuntimeAnimationCatalog
             T("dust1", "Process dust 2", "condenser_dust_1", "MachineAnimation.dust(phase,1)", "MachineAnimation.java", ForeverRuntimeAnimationKind.Effect,
                 p => Dust(p,1), "Second bounded process-particle path."),
             T("dust2", "Process dust 3", "condenser_dust_2", "MachineAnimation.dust(phase,2)", "MachineAnimation.java", ForeverRuntimeAnimationKind.Effect,
-                p => Dust(p,2), "Third bounded process-particle path.")
+                p => Dust(p,2), "Third bounded process-particle path."),
+            T("status", "Status progress segments", "condenser_status", "phase < (segment+1)/6", "CondenserRenderer.java", ForeverRuntimeAnimationKind.Procedural,
+                p => p, "Six front status segments fill against recipe phase."),
+            T("mixer-rotor", "Mixing / cultivating rotor", "condenser_mixer", "phase * 1080", "CondenserRenderer.java", ForeverRuntimeAnimationKind.Rotation,
+                p => p*1080, "Mixing and cultivating rotate the internal mixer three turns per cycle."),
+            T("compost-rotor", "Composting rotor", "condenser_mixer", "phase * 720", "CondenserRenderer.java", ForeverRuntimeAnimationKind.Rotation,
+                p => p*720, "Composting uses the slower two-turn mixer path."),
+            T("mixing-orbit", "Mixing input orbit", "condenser_input", "cos(angle)*1.7*smooth(.16,.32,phase)", "CondenserRenderer.java", ForeverRuntimeAnimationKind.Translation,
+                p => Math.Cos(p*1080*Math.PI/180d)*1.7*Smooth(.16,.32,p), "Primary ingredient orbits the mixing shaft while feeding."),
+            T("secondary-intake", "Second input intake", "condenser_secondary", "MachineAnimation.intake(phase-.035)", "CondenserRenderer.java", ForeverRuntimeAnimationKind.Translation,
+                p => Smooth(.02,.30,p-.035), "Mixing/cultivating second ingredient enters with the renderer's .035 phase delay."),
+            T("secondary-ingredient", "Second input consume / scale", "condenser_secondary", "MachineAnimation.ingredient(phase-.035)", "CondenserRenderer.java", ForeverRuntimeAnimationKind.Scale,
+                p => Smooth(0,.06,p-.035)*(1-Smooth(.38,.62,p-.035)), "Delayed second ingredient consumption."),
+            T("garden-scan", "Garden attachment scan", "condenser_garden_scan", "MachineAnimation.growth", "CondenserRenderer.java", ForeverRuntimeAnimationKind.Translation,
+                p => Smooth(.04,.84,p), "Attached Garden chamber scan travels across the controller recess."),
+            T("garden-harvest", "Garden attachment harvest", "condenser_garden_harvest", "MachineAnimation.harvest", "CondenserRenderer.java", ForeverRuntimeAnimationKind.Translation,
+                p => Smooth(.86,1,p), "Attached Garden late-cycle harvest sweep.")
+        };
+        var condenserComponents = new[]
+        {
+            "condenser_press", "condenser_roller_left", "condenser_roller_right", "condenser_mixer",
+            "condenser_input", "condenser_secondary", "condenser_result", "condenser_status",
+            "condenser_dust_0", "condenser_dust_1", "condenser_dust_2",
+            "condenser_garden_scan", "condenser_garden_harvest", "condenser_freezing_fill"
         };
 
         result["condenser_mark_i"] = new(
             "condenser_mark_i", "Condenser Mark I", "CondenserRenderer.java",
-            ["condenser_press", "condenser_input", "condenser_result", "condenser_dust_0", "condenser_dust_1", "condenser_dust_2"],
+            condenserComponents,
             [
                 T("press", "Press stroke", "condenser_press", "MachineAnimation.press", "MachineAnimation.java", ForeverRuntimeAnimationKind.Translation,
                     Press, "Mark I ram compression stroke; renderer travel is 2.6 model units."),
                 .. condenserCommon
             ],
-            "Source: CondenserRenderer process path for tier I plus MachineAnimation shared curves.");
+            "Source: every CondenserRenderer tier-I/process/attachment branch plus MachineAnimation shared curves. Freezing fill is a registered target driven by separate freezing progress, not recipe phase.");
 
         result["condenser_mark_ii"] = new(
             "condenser_mark_ii", "Condenser Mark II", "CondenserRenderer.java",
-            ["condenser_roller_left", "condenser_roller_right", "condenser_input", "condenser_result", "condenser_dust_0", "condenser_dust_1", "condenser_dust_2"],
+            condenserComponents,
             [
                 T("roller-left", "Left roller", "condenser_roller_left", "phase * 720/1440", "CondenserRenderer.java", ForeverRuntimeAnimationKind.Rotation,
                     p => p * 720, "Normal Mark II cycle rotates 720°; milling uses 1440°."),
@@ -121,7 +144,7 @@ internal static class ForeverRuntimeAnimationCatalog
                     p => -p * 720, "Counter-rotating roller; milling doubles the angle."),
                 .. condenserCommon
             ],
-            "Source: CondenserRenderer tier-II roller path plus MachineAnimation shared curves.");
+            "Source: every CondenserRenderer tier-II/process/attachment branch plus MachineAnimation shared curves. Freezing fill is a registered target driven by separate freezing progress, not recipe phase.");
 
         result["ascension_chamber"] = new(
             "ascension_chamber", "Ascension Chamber", "AscensionRenderer.java",
