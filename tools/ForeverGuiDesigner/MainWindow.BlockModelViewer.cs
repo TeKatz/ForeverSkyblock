@@ -19,7 +19,7 @@ public partial class MainWindow
     private TextBlock? _studioBlockParentText;
     private TextBlock? _studioBlockElementCountText;
     private TextBlock? _studioBlockFaceCountText;
-    private TextBlock? _studioBlockTextureCountText;
+    private TextBlock? _studioBlockModelTextureCountText;
     private TextBlock? _studioBlockVariantText;
     private TextBlock? _studioBlockViewerStatusText;
     private MinecraftBlockModelViewport? _studioBlockViewport;
@@ -31,9 +31,7 @@ public partial class MainWindow
             return;
         _studioBlockViewerInitialized = true;
 
-        var page = blockWorkspace.Children
-            .OfType<Grid>()
-            .FirstOrDefault(grid => grid.RowDefinitions.Count == 3);
+        var page = blockWorkspace.Children.OfType<Grid>().FirstOrDefault(grid => grid.RowDefinitions.Count == 3);
         if (page is null)
             return;
 
@@ -155,7 +153,7 @@ public partial class MainWindow
         _studioBlockParentText = BlockViewerInfo(inspector, "Parent");
         _studioBlockElementCountText = BlockViewerInfo(inspector, "Elements");
         _studioBlockFaceCountText = BlockViewerInfo(inspector, "Faces rendered");
-        _studioBlockTextureCountText = BlockViewerInfo(inspector, "Texture slots");
+        _studioBlockModelTextureCountText = BlockViewerInfo(inspector, "Texture slots");
 
         inspector.Children.Add(BlockViewerSeparator());
         _studioBlockViewerStatusText = new TextBlock
@@ -229,9 +227,8 @@ public partial class MainWindow
 
     private void StudioBlockMachine_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_studioBlockSelectorUpdate)
-            return;
-        PopulateStudioBlockSelectors();
+        if (!_studioBlockSelectorUpdate)
+            PopulateStudioBlockSelectors();
     }
 
     private void PopulateStudioBlockSelectors()
@@ -334,7 +331,7 @@ public partial class MainWindow
             SetBlockViewerText(_studioBlockParentText, model.ParentReference ?? "—");
             SetBlockViewerText(_studioBlockElementCountText, model.Elements.Count.ToString());
             SetBlockViewerText(_studioBlockFaceCountText, (_studioBlockViewport?.RenderedFaceCount ?? 0).ToString());
-            SetBlockViewerText(_studioBlockTextureCountText, model.Textures.Count.ToString());
+            SetBlockViewerText(_studioBlockModelTextureCountText, model.Textures.Count.ToString());
 
             if (_studioBlockViewerStatusText is not null)
             {
