@@ -67,27 +67,24 @@ public partial class MainWindow
         _studioElementList.SelectionChanged += StudioElementList_SelectionChanged;
         inspector.Children.Add(_studioElementList);
 
-        var commandRow = new Grid { Margin = new Thickness(0, 9, 0, 14) };
-        commandRow.ColumnDefinitions.Add(new ColumnDefinition());
-        commandRow.ColumnDefinitions.Add(new ColumnDefinition());
-        commandRow.ColumnDefinitions.Add(new ColumnDefinition());
+        var commandRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 9, 0, 14)
+        };
 
-        var duplicate = StudioButton("Duplicate", 0);
-        duplicate.Margin = new Thickness(0, 0, 5, 0);
+        var duplicate = StudioButton("Duplicate", 105);
+        duplicate.Margin = new Thickness(0, 0, 7, 0);
         duplicate.Click += (_, _) => DuplicateStudioBlockElement();
-        Grid.SetColumn(duplicate, 0);
         commandRow.Children.Add(duplicate);
 
-        var delete = StudioButton("Delete", 0);
-        delete.Margin = new Thickness(5, 0, 5, 0);
+        var delete = StudioButton("Delete", 90);
+        delete.Margin = new Thickness(0, 0, 7, 0);
         delete.Click += (_, _) => DeleteStudioBlockElement();
-        Grid.SetColumn(delete, 1);
         commandRow.Children.Add(delete);
 
-        var reset = StudioButton("Reset model", 0);
-        reset.Margin = new Thickness(5, 0, 0, 0);
+        var reset = StudioButton("Reset model", 120);
         reset.Click += (_, _) => ResetStudioBlockModelEdits();
-        Grid.SetColumn(reset, 2);
         commandRow.Children.Add(reset);
         inspector.Children.Add(commandRow);
 
@@ -504,7 +501,7 @@ public partial class MainWindow
             ParentReference = source.ParentReference,
             AmbientOcclusion = source.AmbientOcclusion,
             Textures = new Dictionary<string, string>(source.Textures, StringComparer.OrdinalIgnoreCase),
-            Elements = source.Elements.Select(CloneStudioBlockElement).ToList()
+            Elements = source.Elements.Select(element => CloneStudioBlockElement(element)).ToList()
         };
 
     private static MinecraftModelElement CloneStudioBlockElement(
