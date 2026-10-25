@@ -85,7 +85,7 @@ The combined Condenser Mark I preview reuses the real Mixing recipe/process path
 
 Washing mirrors the real `WashingScreen` / `MachineScreen` / `MachineProcessEffects.washing` presentation with runtime states, water status, animated water/process effects, timing, meters, recipe summary and hints.
 
-The **SCENE** controls are shown only for Washing Basin; all other machine previews use the runtime owner without a redundant scene selector. The source header is normalized to `Washing` beside the machine icon.
+The **SCENE** controls are shown only for Washing Basin; all other machine previews use the runtime owner without a redundant scene selector. The source header is normalized to `Washing Basin` beside the machine icon.
 
 ### Phase 8 — True WYSIWYG
 
