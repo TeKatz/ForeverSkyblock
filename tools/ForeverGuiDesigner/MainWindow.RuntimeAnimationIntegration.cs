@@ -343,14 +343,15 @@ public partial class MainWindow
                 !element.Faces.Values.All(face => IsStudioGardenGlassReference(model, face.Texture)))
                 continue;
 
-            var center = new[]
-            {
-                (element.From[0] + element.To[0]) / 2.0,
-                (element.From[1] + element.To[1]) / 2.0,
-                (element.From[2] + element.To[2]) / 2.0
-            };
-            element.From = [.. center];
-            element.To = [.. center];
+            var centerX = (element.From[0] + element.To[0]) / 2.0;
+            var centerY = (element.From[1] + element.To[1]) / 2.0;
+            var centerZ = (element.From[2] + element.To[2]) / 2.0;
+            element.From[0] = centerX;
+            element.From[1] = centerY;
+            element.From[2] = centerZ;
+            element.To[0] = centerX;
+            element.To[1] = centerY;
+            element.To[2] = centerZ;
         }
     }
 
