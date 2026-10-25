@@ -920,10 +920,18 @@ public partial class MainWindow
             }
             else if (source.Rotation is not null && source.Rotation.Axis.Equals(frame.RotationAxis, StringComparison.OrdinalIgnoreCase))
             {
-                rotation = CloneStudioBlockRotation(source.Rotation);
-                rotation.Angle += frame.RotationDegrees;
-                for (var i = 0; i < 3; i++)
-                    rotation.Origin[i] += frame.Position[i];
+                rotation = new MinecraftModelElementRotation
+                {
+                    Origin =
+                    [
+                        source.Rotation.Origin[0] + frame.Position[0],
+                        source.Rotation.Origin[1] + frame.Position[1],
+                        source.Rotation.Origin[2] + frame.Position[2]
+                    ],
+                    Axis = source.Rotation.Axis,
+                    Angle = source.Rotation.Angle + frame.RotationDegrees,
+                    Rescale = source.Rotation.Rescale
+                };
             }
             else
             {
