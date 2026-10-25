@@ -27,7 +27,7 @@ internal sealed record ForeverRuntimeStateProfile(
 
 /// <summary>
 /// Phase 17C.1 semantic runtime-state catalog. This intentionally models only states that exist in
-/// Forever Skyblock's current renderers; it does not create a universal state system for every asset.
+/// Forever Skyblock's current renderers/block entities; it does not create a universal state system.
 /// The catalog is read-only and drives Studio preview composition only.
 /// </summary>
 internal static class ForeverRuntimeStateCatalog
@@ -66,13 +66,13 @@ internal static class ForeverRuntimeStateCatalog
         ForeverRuntimeStateAxis condenserStatus = A(
             "status", "Machine status", "running",
             "CondenserBlockEntity visualStatus; controls running-only effects and the six process status segments.",
-            O("idle", "Idle", "Neutral status lights; timeline represents the held visual progress."),
+            O("idle", "Idle", "Neutral status lights; timeline represents held visual progress."),
             O("running", "Running", "Timeline phase advances the active recipe presentation."),
-            O("blocked", "Blocked", "Blocked status lights; timeline represents the held visual progress."));
+            O("blocked", "Blocked", "Blocked status lights; timeline represents held visual progress."));
 
         ForeverRuntimeStateAxis condenserJob = A(
             "job", "Resolved job", "crushing",
-            "CondenserJob from the resolved recipe. This selects the real renderer branch instead of using Runtime curve as a branch selector.",
+            "CondenserJob from the resolved recipe. This selects the renderer branch instead of abusing Runtime curve as a branch selector.",
             O("idle", "Idle", "No resolved recipe job."),
             O("crushing", "Crushing", "Standard press/roller processing path."),
             O("milling", "Milling", "Mark II rollers use the 1440° milling path."),
@@ -82,7 +82,7 @@ internal static class ForeverRuntimeStateCatalog
 
         ForeverRuntimeStateAxis condenserAttachment = A(
             "attachment", "Attachment state", "none",
-            "Renderer predicates from CondenserBlockEntity.hasGardenChamber()/hasFreezingChamber(). Garden replaces the process branch; Freezing adds its independent gauge.",
+            "Renderer predicates from hasGardenChamber()/hasFreezingChamber(). Garden replaces the process branch; Freezing adds its independent gauge.",
             O("none", "None", "Normal process renderer."),
             O("garden", "Garden Chamber", "Use the Garden attachment renderer branch."),
             O("freezing", "Freezing Chamber", "Normal process branch plus freezing-progress column."),
@@ -90,24 +90,24 @@ internal static class ForeverRuntimeStateCatalog
 
         ForeverRuntimeStateAxis condenserSpecimen = A(
             "specimen", "Garden specimen", "oak",
-            "Presence of the Condenser GARDEN_SPECIMEN slot. The state is source-backed; the controller's miniature specimen remains a simplified Studio proxy in 17C.1.",
+            "Presence of the Condenser GARDEN_SPECIMEN slot. The state is source-backed; the controller miniature remains a simplified Studio proxy in 17C.1.",
             O("none", "Empty", "Garden attachment contains no specimen."),
             O("oak", "Oak specimen", "Represent a present oak specimen in the Garden attachment."));
 
         ForeverRuntimeStateAxis freezingStatus = A(
             "freezing-status", "Freezing status", "running",
-            "CondenserBlockEntity visualFreezingStatus; separate from the main/Garden process status.",
-            O("idle", "Idle", "Freezing gauge uses its neutral state."),
-            O("running", "Running", "Freezing gauge uses the active frost material."),
-            O("blocked", "Blocked", "Freezing gauge uses the blocked material."));
+            "CondenserBlockEntity visualFreezingStatus. IDLE and RUNNING intentionally share the same frost material in CondenserRenderer; BLOCKED uses the warning material.",
+            O("idle", "Idle", "Source status IDLE; same frost material as RUNNING."),
+            O("running", "Running", "Source status RUNNING; same frost material as IDLE."),
+            O("blocked", "Blocked", "Source status BLOCKED; warning frost material."));
 
         ForeverRuntimeStateAxis freezingProgress = A(
             "freezing-progress", "Freezing progress", "16",
-            "visualFreezingProgress out of CondenserBlockEntity.FREEZING_REQUIRED_ITEMS = 32; independent from recipe phase.",
+            "visualFreezingProgress out of FREEZING_REQUIRED_ITEMS = 32; independent from recipe phase.",
             O("0", "0 / 32", "Empty freezing column."),
-            O("8", "8 / 32", "Quarter progress."),
-            O("16", "16 / 32", "Half progress."),
-            O("24", "24 / 32", "Three-quarter progress."),
+            O("8", "8 / 32", "Quarter progress sample."),
+            O("16", "16 / 32", "Half progress sample."),
+            O("24", "24 / 32", "Three-quarter progress sample."),
             O("32", "32 / 32", "Required item count reached."));
 
         var condenserAxes = new[]
@@ -152,12 +152,13 @@ internal static class ForeverRuntimeStateCatalog
             "Refining Condenser",
             [
                 A("status", "Machine status", "running",
-                    "RefiningRenderer reads MachineVisualState.status separately from phase and maps it to neutral, running or blocked glow materials.",
+                    "RefiningChamberBlockEntity defines IDLE/RUNNING/BLOCKED/NO_POWER. RefiningRenderer reads status separately from phase; BLOCKED and NO_POWER share warning glow.",
                     O("idle", "Idle", "Neutral glow; timeline represents held phase."),
                     O("running", "Running", "Active glow; timeline phase represents processing progress."),
-                    O("blocked", "Blocked", "Blocked glow; timeline represents held phase."))
+                    O("blocked", "Blocked", "Blocked-output warning glow; timeline represents held phase."),
+                    O("no-power", "No Power", "Power-loss warning glow; timeline represents held phase."))
             ],
-            "Source: RefiningRenderer.java + MachineVisualState. Status and phase are intentionally separate controls.");
+            "Source: RefiningRenderer.java + RefiningChamberBlockEntity.java + MachineVisualState. Status and phase are intentionally separate controls.");
 
         result["garden_chamber_mark_i"] = new(
             "garden_chamber_mark_i",
@@ -188,11 +189,13 @@ internal static class ForeverRuntimeStateCatalog
                     O("dry", "0 · Dry", "No runtime water surface or rings."),
                     O("present", "> 0 · Present", "Render the source water surface and circulation rings.")),
                 A("status", "Wash status", "running",
-                    "WashingRenderer uses running phase rings or three fixed idle rings.",
+                    "WashingBasinBlockEntity defines IDLE/RUNNING/BLOCKED/NO_WATER. WashingRenderer animates only RUNNING; all other statuses use the fixed idle rings.",
                     O("idle", "Idle", "Three static circulation rings."),
-                    O("running", "Running", "Circulation rings animate with timeline phase."))
+                    O("running", "Running", "Circulation rings animate with timeline phase."),
+                    O("blocked", "Blocked", "Blocked-output status; renderer uses static circulation rings."),
+                    O("no-water", "No Water", "Missing-water status; renderer uses static circulation rings."))
             ],
-            "Source: WashingRenderer.java. Amount is intentionally represented only as zero/non-zero because that is the renderer's complete visual branch.");
+            "Source: WashingRenderer.java + WashingBasinBlockEntity.java. Amount is intentionally represented only as zero/non-zero because that is the renderer's complete visual branch.");
 
         result["crucible"] = new(
             "crucible",
