@@ -294,6 +294,8 @@ public partial class MainWindow
 
     private static void AddStudioRuntimeGarden(MinecraftResolvedBlockModel model, double phase)
     {
+        PrepareStudioRuntimeGardenVisibility(model);
+
         var growth = RuntimeSmooth(.04, .84, phase);
         var z = 3.1 + 9.4 * growth;
         AddRuntimeBox(model,3,2.1,13.4,z,13.9,13.95,z+.4,0,[8,13.6,z]);
@@ -325,6 +327,47 @@ public partial class MainWindow
             AddRuntimeBox(model,7,8,sweep,2.775,8,sweep,2.775,0,[8,sweep,2.775]);
             AddRuntimeBox(model,7,8,sweep,13.225,8,sweep,13.225,0,[8,sweep,13.225]);
         }
+    }
+
+    private static void PrepareStudioRuntimeGardenVisibility(MinecraftResolvedBlockModel model)
+    {
+        // WPF 3D writes transparent materials into the depth buffer. The Garden Chamber is the only
+        // runtime-animated machine whose moving renderer parts live almost completely behind a closed
+        // glass shell, so drawing the JSON glass first can hide every subsequently appended runtime
+        // element. Keep the source model untouched and collapse only glass-only elements in this
+        // cloned Animation-Studio preview. Element/face counts remain stable, so the incremental
+        // animation path keeps its no-rebuild performance characteristics.
+        foreach (var element in model.Elements)
+        {
+            if (element.Faces.Count == 0 ||
+                !element.Faces.Values.All(face => IsStudioGardenGlassReference(model, face.Texture)))
+                continue;
+
+            var center = new[]
+            {
+                (element.From[0] + element.To[0]) / 2.0,
+                (element.From[1] + element.To[1]) / 2.0,
+                (element.From[2] + element.To[2]) / 2.0
+            };
+            element.From = [.. center];
+            element.To = [.. center];
+        }
+    }
+
+    private static bool IsStudioGardenGlassReference(MinecraftResolvedBlockModel model, string textureReference)
+    {
+        var resolved = textureReference;
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        while (resolved.StartsWith('#'))
+        {
+            var key = resolved[1..];
+            if (!visited.Add(key) || !model.Textures.TryGetValue(key, out var next) || string.IsNullOrWhiteSpace(next))
+                break;
+            resolved = next;
+        }
+
+        return resolved.Contains("garden_glass", StringComparison.OrdinalIgnoreCase) ||
+               resolved.EndsWith("/glass", StringComparison.OrdinalIgnoreCase);
     }
 
     private static void AddStudioRuntimeWashing(MinecraftResolvedBlockModel model, double phase)
