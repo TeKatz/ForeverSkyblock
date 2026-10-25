@@ -160,6 +160,7 @@ public partial class MainWindow
         {
             _studioAnimationSelectedKeyframeTargetId = selectedTargetId;
             _studioAnimationSelectedKeyframeTime = keyframes[selectedIndex].TimeSeconds;
+            PopulateStudioAnimationFields(keyframes[selectedIndex]);
         }
         else if (!string.Equals(selectedTargetId, _studioAnimationSelectedKeyframeTargetId, StringComparison.Ordinal))
         {
@@ -303,7 +304,7 @@ public partial class MainWindow
 
     private void MoveSelectedStudioAnimationKeyframeToEditorTime()
     {
-        if (!TryGetSelectedStudioAnimationKeyframe(out var track, out var keyframe, out _ ) || track is null)
+        if (!TryGetSelectedStudioAnimationKeyframe(out var track, out var keyframe, out _) || track is null)
         {
             SetStudioAnimationStatus("Select a keyframe before moving it.", "#D8B26A");
             return;
