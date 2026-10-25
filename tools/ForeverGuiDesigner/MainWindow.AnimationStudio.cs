@@ -10,8 +10,8 @@ namespace ForeverGuiDesigner;
 
 /// <summary>
 /// Phase 17 block animation authoring surface. Phase 17A routes target identity through the shared
-/// AnimationTargetRegistry so model reordering cannot silently detach or delete authored tracks.
-/// The Minecraft runtime MachineAnimation class remains the source of truth for machine curves.
+/// AnimationTargetRegistry. Phase 17B stabilizes transform evaluation, keyframe selection/editing,
+/// scrubbing and transport while keeping the Minecraft runtime curves as read-only source parity.
 /// </summary>
 public partial class MainWindow
 {
@@ -144,6 +144,8 @@ public partial class MainWindow
             _studioBlockFacingCombo.SelectionChanged += (_, _) => QueueStudioAnimationSourceRefresh();
         if (_studioElementList is not null)
             _studioElementList.SelectionChanged += (_, _) => QueueStudioAnimationSourceRefresh(syncSelectionOnly: true);
+
+        EnableForeverAnimationTimelineStability();
     }
 
     private FrameworkElement BuildStudioAnimationSurface()
@@ -171,7 +173,7 @@ public partial class MainWindow
             IsHitTestVisible = false,
             Child = new TextBlock
             {
-                Text = "BLOCK ANIMATION · PHASE 17A",
+                Text = "BLOCK ANIMATION · PHASE 17B",
                 Foreground = Brush("#7ED9DB"),
                 FontSize = 11,
                 FontWeight = FontWeights.SemiBold
@@ -220,7 +222,7 @@ public partial class MainWindow
         inspector.Children.Add(StudioSectionLabel("BLOCK ANIMATION STUDIO"));
         inspector.Children.Add(new TextBlock
         {
-            Text = "A dedicated block timeline. GUI animation remains a separate system. Phase 17A resolves every authored element through a stable TargetId; tracks are still preview-only and are not written to project files.",
+            Text = "Phase 17B stabilizes Position / Rotation / Scale authoring on the Phase 17A TargetId foundation: persistent keyframe selection, copy/move/delete, deterministic interpolation, scrubbing and transport. Tracks remain preview-only and are not written to project files.",
             Foreground = Brush("#8FA1AA"),
             FontSize = 12,
             TextWrapping = TextWrapping.Wrap,
@@ -592,25 +594,7 @@ public partial class MainWindow
     }
 
     private void RefreshStudioAnimationTrackUi()
-    {
-        var track = GetStudioAnimationTrack(create: false);
-        var keyframes = track?.Keyframes.OrderBy(keyframe => keyframe.TimeSeconds).ToList() ?? [];
-        if (_studioAnimationKeyframeList is not null)
-        {
-            _studioAnimationUiUpdating = true;
-            try
-            {
-                _studioAnimationKeyframeList.ItemsSource = null;
-                _studioAnimationKeyframeList.ItemsSource = keyframes.Select(DescribeStudioAnimationKeyframe).ToList();
-                _studioAnimationKeyframeList.SelectedIndex = -1;
-            }
-            finally
-            {
-                _studioAnimationUiUpdating = false;
-            }
-        }
-        RenderStudioAnimationFrame(_studioAnimationTimeline?.Value ?? 0);
-    }
+        => RefreshStudioAnimationTrackUiStable();
 
     private StudioBlockAnimationTrack? GetStudioAnimationTrack(bool create)
     {
@@ -646,7 +630,7 @@ public partial class MainWindow
         if (!TryReadStudioAnimationFrameFields(out var keyframe))
             return;
 
-        var existing = track.Keyframes.FirstOrDefault(candidate => Math.Abs(candidate.TimeSeconds - keyframe.TimeSeconds) < 0.0001);
+        var existing = track.Keyframes.FirstOrDefault(candidate => Math.Abs(candidate.TimeSeconds - keyframe.TimeSeconds) < StudioAnimationTimeEpsilon);
         if (existing is null)
             track.Keyframes.Add(keyframe);
         else
@@ -657,8 +641,10 @@ public partial class MainWindow
         track.Keyframes.Sort((a, b) => a.TimeSeconds.CompareTo(b.TimeSeconds));
         if (keyframe.TimeSeconds > _studioAnimationDurationSeconds)
             SetStudioAnimationDuration(keyframe.TimeSeconds);
-        RefreshStudioAnimationTrackUi();
+        RememberStudioAnimationKeyframeSelection(keyframe);
         SetStudioAnimationTimelineTime(keyframe.TimeSeconds);
+        RefreshStudioAnimationTrackUi();
+        SelectStudioAnimationKeyframeAtTime(keyframe.TimeSeconds);
         var resolution = ResolveStudioAnimationTrack(track);
         SetStudioAnimationStatus(
             $"Keyframe stored at {keyframe.TimeSeconds:0.###}s for {DescribeStudioAnimationTarget(resolution.Target)}.{DescribeStudioAnimationTargetHealth()}",
@@ -709,18 +695,7 @@ public partial class MainWindow
     }
 
     private void DeleteStudioAnimationKeyframe()
-    {
-        var track = GetStudioAnimationTrack(create: false);
-        if (track is null || _studioAnimationKeyframeList is null || _studioAnimationKeyframeList.SelectedIndex < 0)
-            return;
-        var ordered = track.Keyframes.OrderBy(keyframe => keyframe.TimeSeconds).ToList();
-        var selected = _studioAnimationKeyframeList.SelectedIndex;
-        if (selected >= ordered.Count)
-            return;
-        track.Keyframes.Remove(ordered[selected]);
-        RefreshStudioAnimationTrackUi();
-        SetStudioAnimationStatus("Keyframe removed from the in-memory track.", "#74C99A");
-    }
+        => DeleteSelectedStudioAnimationKeyframeStable();
 
     private void ClearStudioAnimationTrack()
     {
@@ -728,6 +703,7 @@ public partial class MainWindow
         if (track is null)
             return;
         track.Keyframes.Clear();
+        ForgetStudioAnimationKeyframeSelection();
         RefreshStudioAnimationTrackUi();
         SetStudioAnimationStatus("Animation track cleared. Source files are unchanged.", "#74C99A");
     }
@@ -744,6 +720,7 @@ public partial class MainWindow
         if (index >= ordered.Count)
             return;
         var keyframe = ordered[index];
+        RememberStudioAnimationKeyframeSelection(keyframe);
         PopulateStudioAnimationFields(keyframe);
         SetStudioAnimationTimelineTime(keyframe.TimeSeconds);
     }
@@ -898,7 +875,10 @@ public partial class MainWindow
         if (_studioAnimationPlayButton is not null)
             _studioAnimationPlayButton.Content = "Play";
         if (resetTime)
+        {
             SetStudioAnimationTimelineTime(0);
+            RestoreStudioAnimationBasePose();
+        }
     }
 
     private void RenderStudioAnimationFrame(double time)
@@ -990,47 +970,7 @@ public partial class MainWindow
     }
 
     private static StudioBlockAnimationKeyframe EvaluateStudioAnimationFrame(StudioBlockAnimationTrack? track, double time)
-    {
-        if (track is null || track.Keyframes.Count == 0)
-            return new StudioBlockAnimationKeyframe { TimeSeconds = time };
-        var ordered = track.Keyframes.OrderBy(keyframe => keyframe.TimeSeconds).ToList();
-        if (time <= ordered[0].TimeSeconds)
-            return ordered[0].Clone();
-        if (time >= ordered[^1].TimeSeconds)
-            return ordered[^1].Clone();
-
-        var rightIndex = ordered.FindIndex(keyframe => keyframe.TimeSeconds >= time);
-        if (rightIndex <= 0)
-            return ordered[0].Clone();
-        var left = ordered[rightIndex - 1];
-        var right = ordered[rightIndex];
-        var span = Math.Max(0.000001, right.TimeSeconds - left.TimeSeconds);
-        var raw = Math.Clamp((time - left.TimeSeconds) / span, 0, 1);
-        var amount = left.Interpolation switch
-        {
-            StudioAnimationInterpolation.Step => 0,
-            StudioAnimationInterpolation.Linear => raw,
-            _ => raw * raw * (3 - 2 * raw)
-        };
-        var result = left.Clone();
-        result.TimeSeconds = time;
-        for (var i = 0; i < 3; i++)
-        {
-            result.Position[i] = Lerp(left.Position[i], right.Position[i], amount);
-            result.Scale[i] = Lerp(left.Scale[i], right.Scale[i], amount);
-        }
-        result.RotationDegrees = Lerp(left.RotationDegrees, right.RotationDegrees, amount);
-        if (raw >= 1)
-        {
-            result.RotationAxis = right.RotationAxis;
-            result.Visible = right.Visible;
-            result.TextureState = right.TextureState;
-            result.LightStatus = right.LightStatus;
-            result.SpecialEffect = right.SpecialEffect;
-            result.MachineState = right.MachineState;
-        }
-        return result;
-    }
+        => EvaluateStudioAnimationTransformTimeline(track, time);
 
     private static double Lerp(double from, double to, double amount) => from + (to - from) * amount;
 
