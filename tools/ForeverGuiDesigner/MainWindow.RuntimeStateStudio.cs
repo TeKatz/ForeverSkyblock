@@ -89,7 +89,7 @@ public partial class MainWindow
         root.Children.Add(StudioSectionLabel("RUNTIME STATE · PHASE 17C.1"));
         root.Children.Add(new TextBlock
         {
-            Text = "Source-backed machine state. These controls select real renderer predicates; Runtime curve below/above remains read-only inspection and no longer chooses the renderer branch.",
+            Text = "Source-backed machine state. These controls select real renderer predicates; Runtime curve remains read-only inspection and no longer chooses the renderer branch.",
             Foreground = Brush("#8FA1AA"),
             FontSize = 11,
             TextWrapping = TextWrapping.Wrap,
@@ -309,8 +309,7 @@ public partial class MainWindow
                 AddStudioRuntimeAscensionState(model, phase);
                 break;
             case "refining_chamber":
-                AddStudioRuntimeRefining(model,
-                    GetStudioRuntimeState(assetId, "activity", "running") == "running" ? phase : 0);
+                AddStudioRuntimeRefiningState(model, phase);
                 break;
             case "garden_chamber_mark_i":
                 AddStudioRuntimeGardenState(model, phase);
@@ -356,7 +355,7 @@ public partial class MainWindow
 
         if (mixing || organic)
         {
-            AddStudioRuntimeCondenserMixing(model, phase, composting: organic);
+            AddStudioRuntimeCondenserMixerState(model, phase, job);
         }
         else if (tier >= 2)
         {
@@ -402,6 +401,39 @@ public partial class MainWindow
                 AddRuntimeBox(model, material, x,y,1.4,x+size,y+size,1.4+size,0,[x,y,1.4]);
             }
         }
+    }
+
+    private static void AddStudioRuntimeCondenserMixerState(
+        MinecraftResolvedBlockModel model,
+        double phase,
+        string job)
+    {
+        var composting = job == "composting";
+        var cultivating = job == "cultivating";
+        AddRuntimeBox(model, 3, 4.8,5.3,1.3,11.2,5.9,3.8,0,[8,7.1,2.5]);
+        var angle = phase * (composting ? 720 : 1080);
+        AddRuntimeBox(model, 2, 7.78,6.0,2.28,8.22,10.4,2.72, angle, [8,7.1,2.5]);
+        AddRuntimeBox(model, 3, 5.7,6.55,2.22,10.3,7.0,2.78, angle, [8,7.1,2.5]);
+
+        var intake = RuntimeSmooth(.02,.30,phase);
+        var ingredient = RuntimeSmooth(0,.06,phase) * (1-RuntimeSmooth(.38,.62,phase));
+        var orbit = angle * Math.PI / 180d;
+        var dx = Math.Cos(orbit) * 1.7 * RuntimeSmooth(.16,.32,phase);
+        var feedY = 11.8 - 4.4 * intake;
+        var s = Math.Max(.06, .5 * ingredient);
+        AddRuntimeBox(model,5,8-dx-s,feedY-s,1.5-s,8-dx+s,feedY+s,1.5+s,0,[8-dx,feedY,1.5]);
+
+        if (!composting)
+        {
+            var delayed = phase - .035;
+            var intake2 = RuntimeSmooth(.02,.30,delayed);
+            var ingredient2 = RuntimeSmooth(0,.06,delayed) * (1-RuntimeSmooth(.38,.62,delayed));
+            var y2 = 11.8 - 4.4 * intake2;
+            var s2 = Math.Max(.06, .5 * ingredient2);
+            AddRuntimeBox(model,5,8+dx-s2,y2-s2,1.5-s2,8+dx+s2,y2+s2,1.5+s2,0,[8+dx,y2,1.5]);
+        }
+
+        AddStudioRuntimeCondenserStateProduct(model, phase, cultivating);
     }
 
     private static void AddStudioRuntimeCondenserStateProduct(
@@ -469,9 +501,10 @@ public partial class MainWindow
         if (!hasFreezing)
             return;
 
-        var progressId = GetStudioRuntimeState(assetId, "freezing-progress", "50");
-        var fill = double.TryParse(progressId, out var percent) ? Math.Clamp(percent / 100d, 0, 1) : .5;
-        var frost = status == "blocked" ? 10 : 6;
+        var progressId = GetStudioRuntimeState(assetId, "freezing-progress", "16");
+        var fill = double.TryParse(progressId, out var itemCount) ? Math.Clamp(itemCount / 32d, 0, 1) : .5;
+        var freezingStatus = GetStudioRuntimeState(assetId, "freezing-status", "running");
+        var frost = freezingStatus == "blocked" ? 10 : 6;
         AddRuntimeBox(model,4,.85,6,.9,1.25,10.3,1.2,0,[1.05,8.15,1.05]);
         var top = 6 + 4.3 * fill;
         if (fill > 0)
@@ -508,6 +541,33 @@ public partial class MainWindow
         }
     }
 
+    private void AddStudioRuntimeRefiningState(MinecraftResolvedBlockModel model, double phase)
+    {
+        var status = GetStudioRuntimeState("refining_chamber", "status", "running");
+        var glow = status == "blocked" ? 10 : status == "running" ? 7 : 4;
+        var core = status == "running" ? 7 : 4;
+        AddStudioRuntimeRefiningStateSide(model, 2.15, false, phase, glow, core);
+        AddStudioRuntimeRefiningStateSide(model, 13.85, true, phase, glow, core);
+    }
+
+    private static void AddStudioRuntimeRefiningStateSide(
+        MinecraftResolvedBlockModel model,
+        double z,
+        bool back,
+        double phase,
+        int glowMaterial,
+        int coreMaterial)
+    {
+        var outer = phase * 720 * (back ? -1 : 1);
+        for (var i = 0; i < 4; i++)
+        {
+            var rotation = outer + i * 90 * (back ? -1 : 1);
+            AddRuntimeBox(model,34,5,5,z-.3,11,5.3,z+.3,rotation,[8,8,z]);
+            AddRuntimeBox(model,glowMaterial,6.2,4.94,z-.36,9.8,5.04,z-.31,rotation,[8,8,z]);
+        }
+        AddRuntimeBox(model,coreMaterial,7.1,7.1,z-.5,8.9,8.9,z+.5,(back ? -45 : 45) - phase*360*(back ? -1 : 1),[8,8,z]);
+    }
+
     private void AddStudioRuntimeGardenState(MinecraftResolvedBlockModel model, double phase)
     {
         var linked = GetStudioRuntimeState("garden_chamber_mark_i", "link", "linked") == "linked";
@@ -518,10 +578,9 @@ public partial class MainWindow
         var specimen = GetStudioRuntimeState("garden_chamber_mark_i", "specimen", "oak");
         var specimenPresent = specimen != "none";
         var running = status == "running" && specimenPresent;
-        var p = running ? phase : 0;
 
         PrepareStudioRuntimeGardenVisibility(model);
-        var growth = RuntimeSmooth(.04, .84, p);
+        var growth = RuntimeSmooth(.04, .84, phase);
         var z = 3.1 + 9.4 * growth;
         AddRuntimeBox(model,3,2.1,13.4,z,13.9,13.95,z+.4,0,[8,13.6,z]);
         AddRuntimeBox(model,running ? 7 : 4,3.1,13.15,z+.05,12.9,13.4,z+.35,0,[8,13.3,z]);
@@ -573,7 +632,7 @@ public partial class MainWindow
 
     private void AddStudioRuntimeWashingState(MinecraftResolvedBlockModel model, double phase)
     {
-        var amount = GetStudioRuntimeState("washing_basin", "amount", "full");
+        var amount = GetStudioRuntimeState("washing_basin", "amount", "present");
         if (amount == "dry")
             return;
 
@@ -596,11 +655,11 @@ public partial class MainWindow
 
     private void AddStudioRuntimeCrucibleState(MinecraftResolvedBlockModel model, double phase)
     {
-        var fillId = GetStudioRuntimeState("crucible", "fill", "2");
+        var fillId = GetStudioRuntimeState("crucible", "fill", "4");
         if (!int.TryParse(fillId, out var fill) || fill <= 0)
             return;
 
-        fill = Math.Clamp(fill, 1, 4);
+        fill = Math.Clamp(fill, 1, 8);
         var top = 4.35 + fill * 1.05;
         AddRuntimeBox(model,6,3.1,4.15,3.1,12.9,top,12.9,0,[8,top,8]);
         AddRuntimeBox(model,7,2.95,top,2.95,13.05,top+.14,13.05,0,[8,top,8]);
