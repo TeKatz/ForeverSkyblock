@@ -128,6 +128,29 @@ jobs:
             '.\artifacts\update-manifest.json#update-manifest.json' `
             --clobber
 
+          # Development is a rolling channel, not an archive. Keep a small rollback
+          # window of immutable builds and remove older commit-specific executables.
+          # Stable is intentionally excluded from this cleanup.
+          if ($channel -eq 'development') {
+            $release = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag" | ConvertFrom-Json
+            $immutableAssets = @(
+              $release.assets |
+                Where-Object { $_.name -match '^ForeverGuiDesigner-[0-9a-fA-F]{40}\.exe$' } |
+                Sort-Object { [DateTimeOffset]$_.created_at } -Descending
+            )
+
+            $assetsToDelete = @($immutableAssets | Select-Object -Skip 5)
+            foreach ($asset in $assetsToDelete) {
+              Write-Host "Deleting old development release asset: $($asset.name)"
+              gh api --method DELETE "repos/$env:GITHUB_REPOSITORY/releases/assets/$($asset.id)"
+              if ($LASTEXITCODE -ne 0) {
+                throw "Failed to delete old development release asset '$($asset.name)'."
+              }
+            }
+
+            Write-Host "Development release cleanup complete. Kept $([Math]::Min(5, $immutableAssets.Count)) immutable build(s); removed $($assetsToDelete.Count)."
+          }
+
           # The release body is the channel pointer consumed by the API path. Move
           # it only after every asset for this build is present and verified by GH.
           gh release edit $tag --title $title --notes $notes
