@@ -544,7 +544,7 @@ public partial class MainWindow
     private void AddStudioRuntimeRefiningState(MinecraftResolvedBlockModel model, double phase)
     {
         var status = GetStudioRuntimeState("refining_chamber", "status", "running");
-        var glow = status == "blocked" ? 10 : status == "running" ? 7 : 4;
+        var glow = status is "blocked" or "no-power" ? 10 : status == "running" ? 7 : 4;
         var core = status == "running" ? 7 : 4;
         AddStudioRuntimeRefiningStateSide(model, 2.15, false, phase, glow, core);
         AddStudioRuntimeRefiningStateSide(model, 13.85, true, phase, glow, core);
@@ -561,11 +561,11 @@ public partial class MainWindow
         var outer = phase * 720 * (back ? -1 : 1);
         for (var i = 0; i < 4; i++)
         {
-            var rotation = outer + i * 90 * (back ? -1 : 1);
+            var rotation = outer + i * 90;
             AddRuntimeBox(model,34,5,5,z-.3,11,5.3,z+.3,rotation,[8,8,z]);
             AddRuntimeBox(model,glowMaterial,6.2,4.94,z-.36,9.8,5.04,z-.31,rotation,[8,8,z]);
         }
-        AddRuntimeBox(model,coreMaterial,7.1,7.1,z-.5,8.9,8.9,z+.5,(back ? -45 : 45) - phase*360*(back ? -1 : 1),[8,8,z]);
+        AddRuntimeBox(model,coreMaterial,7.1,7.1,z-.5,8.9,8.9,z+.5,(back ? -45 : 45) - phase*360,[8,8,z]);
     }
 
     private void AddStudioRuntimeGardenState(MinecraftResolvedBlockModel model, double phase)
