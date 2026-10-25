@@ -36,6 +36,7 @@ public partial class App : Application
         window.EnableForeverRuntimeAnimationIntegration();
         window.EnableForeverRuntimeAnimationVariants();
         window.EnableStudioRuntimeAnimationProfileBindingFix();
+        window.EnableStudioGardenAnimationParityFix();
         MainWindow = window;
         window.Show();
 
