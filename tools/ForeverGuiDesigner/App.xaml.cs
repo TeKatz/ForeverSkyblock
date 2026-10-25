@@ -23,6 +23,7 @@ public partial class App : Application
         window.EnableForeverUvTextureEditor();
         window.EnableForeverItemStudio();
         window.EnableForeverBlockDirectEditing();
+        window.EnableForeverTextureCanvasStability();
         window.EnableForeverAdvancedTextureEditor();
         window.EnableForeverItemTextureStudio();
         MainWindow = window;
