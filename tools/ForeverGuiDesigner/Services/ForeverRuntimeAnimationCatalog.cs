@@ -77,7 +77,7 @@ internal static class ForeverRuntimeAnimationCatalog
                 "No registered runtime renderer", [], [], "No existing Forever runtime animation was found for this asset.");
     }
 
-    public static IReadOnlyCollection<ForeverRuntimeAnimationProfile> All => Profiles.Values;
+    public static IEnumerable<ForeverRuntimeAnimationProfile> All => Profiles.Values;
 
     private static IReadOnlyDictionary<string, ForeverRuntimeAnimationProfile> BuildProfiles()
     {
