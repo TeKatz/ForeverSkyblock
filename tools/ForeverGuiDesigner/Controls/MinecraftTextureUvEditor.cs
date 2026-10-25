@@ -1,4 +1,3 @@
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -65,7 +64,7 @@ public sealed class MinecraftTextureUvEditor : Grid
             Fill = new SolidColorBrush(Color.FromArgb(34, 83, 216, 222)),
             Stroke = new SolidColorBrush(Color.FromRgb(126, 227, 232)),
             StrokeThickness = 1.5,
-            StrokeDashArray = [4, 2],
+            StrokeDashArray = new DoubleCollection { 4, 2 },
             Cursor = Cursors.SizeAll
         };
         _uvRect.MouseLeftButtonDown += UvRect_MouseLeftButtonDown;
@@ -74,13 +73,13 @@ public sealed class MinecraftTextureUvEditor : Grid
         Panel.SetZIndex(_uvRect, 10);
         _surface.Children.Add(_uvRect);
 
-        _handles = new[]
-        {
+        _handles =
+        [
             CreateHandle("nw", Cursors.SizeNWSE),
             CreateHandle("ne", Cursors.SizeNESW),
             CreateHandle("se", Cursors.SizeNWSE),
             CreateHandle("sw", Cursors.SizeNESW)
-        };
+        ];
         foreach (var handle in _handles)
             _surface.Children.Add(handle);
 
@@ -167,14 +166,10 @@ public sealed class MinecraftTextureUvEditor : Grid
         }
         catch (IOException)
         {
-            _bitmap = null;
-            _image.Source = null;
             _baseScale = 1;
         }
         catch (NotSupportedException)
         {
-            _bitmap = null;
-            _image.Source = null;
             _baseScale = 1;
         }
 
@@ -186,7 +181,7 @@ public sealed class MinecraftTextureUvEditor : Grid
     {
         if (string.IsNullOrWhiteSpace(TexturePath))
             return;
-        var uv = [.. _uv];
+        double[] uv = [.. _uv];
         LoadTexture(TexturePath, null, uv);
         HasTextureChanges = false;
     }
@@ -246,21 +241,15 @@ public sealed class MinecraftTextureUvEditor : Grid
     {
         if (_surface.Width <= 0 || _surface.Height <= 0)
             return;
-
-        var leftUv = Math.Min(_uv[0], _uv[2]);
-        var rightUv = Math.Max(_uv[0], _uv[2]);
-        var topUv = Math.Min(_uv[1], _uv[3]);
-        var bottomUv = Math.Max(_uv[1], _uv[3]);
-        var left = leftUv / 16.0 * _surface.Width;
-        var right = rightUv / 16.0 * _surface.Width;
-        var top = topUv / 16.0 * _surface.Height;
-        var bottom = bottomUv / 16.0 * _surface.Height;
+        var left = Math.Min(_uv[0], _uv[2]) / 16.0 * _surface.Width;
+        var right = Math.Max(_uv[0], _uv[2]) / 16.0 * _surface.Width;
+        var top = Math.Min(_uv[1], _uv[3]) / 16.0 * _surface.Height;
+        var bottom = Math.Max(_uv[1], _uv[3]) / 16.0 * _surface.Height;
 
         Canvas.SetLeft(_uvRect, left);
         Canvas.SetTop(_uvRect, top);
         _uvRect.Width = Math.Max(1, right - left);
         _uvRect.Height = Math.Max(1, bottom - top);
-
         PositionHandle(_handles[0], left, top);
         PositionHandle(_handles[1], right, top);
         PositionHandle(_handles[2], right, bottom);
@@ -289,17 +278,10 @@ public sealed class MinecraftTextureUvEditor : Grid
         if (!_movingUv || e.LeftButton != MouseButtonState.Pressed)
             return;
         var current = e.GetPosition(_surface);
-        var du = (current.X - _uvMoveStart.X) / _surface.Width * 16.0;
-        var dv = (current.Y - _uvMoveStart.Y) / _surface.Height * 16.0;
-        du = Snap(du);
-        dv = Snap(dv);
-
-        var minU = Math.Min(_uvMoveOrigin[0], _uvMoveOrigin[2]);
-        var maxU = Math.Max(_uvMoveOrigin[0], _uvMoveOrigin[2]);
-        var minV = Math.Min(_uvMoveOrigin[1], _uvMoveOrigin[3]);
-        var maxV = Math.Max(_uvMoveOrigin[1], _uvMoveOrigin[3]);
-        du = Math.Clamp(du, -minU, 16 - maxU);
-        dv = Math.Clamp(dv, -minV, 16 - maxV);
+        var du = Snap((current.X - _uvMoveStart.X) / _surface.Width * 16.0);
+        var dv = Snap((current.Y - _uvMoveStart.Y) / _surface.Height * 16.0);
+        du = Math.Clamp(du, -Math.Min(_uvMoveOrigin[0], _uvMoveOrigin[2]), 16 - Math.Max(_uvMoveOrigin[0], _uvMoveOrigin[2]));
+        dv = Math.Clamp(dv, -Math.Min(_uvMoveOrigin[1], _uvMoveOrigin[3]), 16 - Math.Max(_uvMoveOrigin[1], _uvMoveOrigin[3]));
         _uv = [_uvMoveOrigin[0] + du, _uvMoveOrigin[1] + dv, _uvMoveOrigin[2] + du, _uvMoveOrigin[3] + dv];
         UpdateUvVisuals();
         RaiseUvChanged();
@@ -318,23 +300,16 @@ public sealed class MinecraftTextureUvEditor : Grid
     {
         if (sender is not Thumb handle || handle.Tag is not string tag || _surface.Width <= 0 || _surface.Height <= 0)
             return;
-
         var du = Snap(e.HorizontalChange / _surface.Width * 16.0);
         var dv = Snap(e.VerticalChange / _surface.Height * 16.0);
-        var leftIndex = _uv[0] <= _uv[2] ? 0 : 2;
-        var rightIndex = leftIndex == 0 ? 2 : 0;
-        var topIndex = _uv[1] <= _uv[3] ? 1 : 3;
-        var bottomIndex = topIndex == 1 ? 3 : 1;
-
-        if (tag.Contains('w'))
-            _uv[leftIndex] = Math.Clamp(Snap(_uv[leftIndex] + du), 0, 16);
-        if (tag.Contains('e'))
-            _uv[rightIndex] = Math.Clamp(Snap(_uv[rightIndex] + du), 0, 16);
-        if (tag.Contains('n'))
-            _uv[topIndex] = Math.Clamp(Snap(_uv[topIndex] + dv), 0, 16);
-        if (tag.Contains('s'))
-            _uv[bottomIndex] = Math.Clamp(Snap(_uv[bottomIndex] + dv), 0, 16);
-
+        var left = _uv[0] <= _uv[2] ? 0 : 2;
+        var right = left == 0 ? 2 : 0;
+        var top = _uv[1] <= _uv[3] ? 1 : 3;
+        var bottom = top == 1 ? 3 : 1;
+        if (tag.Contains('w')) _uv[left] = Math.Clamp(Snap(_uv[left] + du), 0, 16);
+        if (tag.Contains('e')) _uv[right] = Math.Clamp(Snap(_uv[right] + du), 0, 16);
+        if (tag.Contains('n')) _uv[top] = Math.Clamp(Snap(_uv[top] + dv), 0, 16);
+        if (tag.Contains('s')) _uv[bottom] = Math.Clamp(Snap(_uv[bottom] + dv), 0, 16);
         UpdateUvVisuals();
         RaiseUvChanged();
     }
@@ -372,7 +347,6 @@ public sealed class MinecraftTextureUvEditor : Grid
     {
         if (_bitmap is null || _surface.Width <= 0 || _surface.Height <= 0)
             return;
-
         var x = Math.Clamp((int)Math.Floor(position.X / _surface.Width * _bitmap.PixelWidth), 0, _bitmap.PixelWidth - 1);
         var y = Math.Clamp((int)Math.Floor(position.Y / _surface.Height * _bitmap.PixelHeight), 0, _bitmap.PixelHeight - 1);
         if (_lastPaintPixel.X == x && _lastPaintPixel.Y == y && _painting)
@@ -425,11 +399,11 @@ public sealed class MinecraftTextureUvEditor : Grid
         var stride = width * 4;
         var pixels = new byte[stride * height];
         _bitmap.CopyPixels(pixels, stride, 0);
-        var startIndex = startY * stride + startX * 4;
-        var targetB = pixels[startIndex];
-        var targetG = pixels[startIndex + 1];
-        var targetR = pixels[startIndex + 2];
-        var targetA = pixels[startIndex + 3];
+        var start = startY * stride + startX * 4;
+        var targetB = pixels[start];
+        var targetG = pixels[start + 1];
+        var targetR = pixels[start + 2];
+        var targetA = pixels[start + 3];
         if (targetB == replacement.B && targetG == replacement.G && targetR == replacement.R && targetA == replacement.A)
             return;
 
@@ -466,9 +440,5 @@ public sealed class MinecraftTextureUvEditor : Grid
     private void RaiseUvChanged() => UvChanged?.Invoke([.. _uv]);
 
     private double Snap(double value)
-    {
-        if (UvSnap <= 0)
-            return value;
-        return Math.Round(value / UvSnap, MidpointRounding.AwayFromZero) * UvSnap;
-    }
+        => UvSnap <= 0 ? value : Math.Round(value / UvSnap, MidpointRounding.AwayFromZero) * UvSnap;
 }
