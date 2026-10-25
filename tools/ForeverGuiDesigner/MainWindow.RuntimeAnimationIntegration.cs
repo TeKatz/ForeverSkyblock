@@ -204,7 +204,8 @@ public partial class MainWindow
                 _repoRoot,
                 preview,
                 _studioEditableBlockstateXRotation,
-                _studioEditableBlockstateYRotation);
+                _studioEditableBlockstateYRotation,
+                forceRebuild: true);
         }
 
         if (selectedTarget?.Kind == AnimationTargetKind.JsonModelElement && selectedTarget.ElementIndex is int selectedIndex)
