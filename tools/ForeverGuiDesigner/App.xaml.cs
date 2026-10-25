@@ -20,6 +20,7 @@ public partial class App : Application
         window.PrepareStartupPresentation();
         window.EnableForeverStudioFoundation();
         window.EnableForeverBlockModelViewer();
+        window.EnableForeverUvTextureEditor();
         MainWindow = window;
         window.Show();
 
