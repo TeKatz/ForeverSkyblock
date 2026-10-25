@@ -30,6 +30,7 @@ public sealed class MinecraftBlockModelViewport : Grid
     private readonly Dictionary<string, BitmapSource> _textureCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<TextureSliceKey, BitmapSource> _faceTextureCache = new();
     private readonly Dictionary<Model3D, FaceHitInfo> _faceHitMap = new();
+    private readonly Dictionary<string, GeometryModel3D> _faceModels = new(StringComparer.OrdinalIgnoreCase);
     private IReadOnlyDictionary<string, BitmapSource> _textureOverrides = new Dictionary<string, BitmapSource>(StringComparer.OrdinalIgnoreCase);
     private MinecraftResolvedBlockModel? _currentModel;
     private Point _lastMouse;
@@ -108,6 +109,7 @@ public sealed class MinecraftBlockModelViewport : Grid
         _currentModel = model;
         _content.Children.Clear();
         _faceHitMap.Clear();
+        _faceModels.Clear();
         RenderedFaceCount = 0;
         MissingTextureCount = 0;
         _blockstateXRotation = blockstateXRotation;
@@ -130,6 +132,7 @@ public sealed class MinecraftBlockModelViewport : Grid
                     BackMaterial = material
                 };
                 _faceHitMap[geometryModel] = new FaceHitInfo(elementIndex, direction);
+                _faceModels[FaceModelKey(elementIndex, direction)] = geometryModel;
                 elementGroup.Children.Add(geometryModel);
                 RenderedFaceCount++;
             }
@@ -147,6 +150,81 @@ public sealed class MinecraftBlockModelViewport : Grid
         }
 
         UpdateContentTransform();
+    }
+
+    /// <summary>
+    /// High-frequency animation path. Reuses the existing WPF 3D scene, materials and texture slices
+    /// and only replaces geometry/element transforms. A topology change returns false so the caller
+    /// can perform one full SetModel rebuild, after which following frames stay incremental again.
+    /// </summary>
+    public bool TryUpdateAnimatedModel(
+        string repoRoot,
+        MinecraftResolvedBlockModel model,
+        int blockstateXRotation,
+        int blockstateYRotation)
+    {
+        if (_currentModel is null ||
+            _currentModel.Elements.Count != model.Elements.Count ||
+            _content.Children.Count != model.Elements.Count)
+            return false;
+
+        // Validate topology before touching the live scene. This prevents half-updated frames when a
+        // conditional runtime branch changes its element/face composition.
+        for (var elementIndex = 0; elementIndex < model.Elements.Count; elementIndex++)
+        {
+            if (_content.Children[elementIndex] is not Model3DGroup group ||
+                group.Children.Count != model.Elements[elementIndex].Faces.Count)
+                return false;
+
+            foreach (var direction in model.Elements[elementIndex].Faces.Keys)
+            {
+                if (!_faceModels.ContainsKey(FaceModelKey(elementIndex, direction)))
+                    return false;
+            }
+        }
+
+        for (var elementIndex = 0; elementIndex < model.Elements.Count; elementIndex++)
+        {
+            var element = model.Elements[elementIndex];
+            var previousElement = _currentModel.Elements[elementIndex];
+            var elementGroup = (Model3DGroup)_content.Children[elementIndex];
+
+            foreach (var (direction, face) in element.Faces)
+            {
+                var geometryModel = _faceModels[FaceModelKey(elementIndex, direction)];
+                var uv = face.Uv ?? GetDefaultUv(direction, element);
+                var geometry = CreateFaceGeometry(direction, element, uv, face.Rotation);
+                if (geometry is null)
+                    return false;
+
+                geometryModel.Geometry = geometry;
+
+                // Runtime box dimensions alter UV extents every frame. Re-cropping those atlas slices
+                // would recreate bitmaps/materials continuously and was the main source of texture
+                // jitter. Keep the existing material while the texture slot stays the same; refresh it
+                // only when a real source texture/material changes (for example a status light).
+                if (!previousElement.Faces.TryGetValue(direction, out var previousFace) ||
+                    !string.Equals(previousFace.Texture, face.Texture, StringComparison.OrdinalIgnoreCase))
+                {
+                    var material = CreateMaterial(repoRoot, model, face.Texture, uv);
+                    geometryModel.Material = material;
+                    geometryModel.BackMaterial = material;
+                }
+            }
+
+            elementGroup.Transform = element.Rotation is not null && Math.Abs(element.Rotation.Angle) > 0.0001
+                ? CreateElementRotation(element.Rotation)
+                : Transform3D.Identity;
+        }
+
+        var contentTransformChanged = _blockstateXRotation != blockstateXRotation ||
+                                      _blockstateYRotation != blockstateYRotation;
+        _blockstateXRotation = blockstateXRotation;
+        _blockstateYRotation = blockstateYRotation;
+        _currentModel = model;
+        if (contentTransformChanged)
+            UpdateContentTransform();
+        return true;
     }
 
     public void SetTextureOverrides(IReadOnlyDictionary<string, BitmapSource>? overrides)
@@ -180,6 +258,7 @@ public sealed class MinecraftBlockModelViewport : Grid
         _currentModel = null;
         _content.Children.Clear();
         _faceHitMap.Clear();
+        _faceModels.Clear();
         _selectedElementIndex = -1;
         _selectedFaceDirection = null;
         RenderedFaceCount = 0;
@@ -194,6 +273,9 @@ public sealed class MinecraftBlockModelViewport : Grid
         _target = new Point3D(8, 8, 8);
         UpdateCamera();
     }
+
+    private static string FaceModelKey(int elementIndex, string direction)
+        => $"{elementIndex}:{direction}";
 
     private Material CreateMaterial(
         string repoRoot,
