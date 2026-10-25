@@ -22,6 +22,7 @@ public partial class App : Application
         window.EnableForeverBlockModelViewer();
         window.EnableForeverUvTextureEditor();
         window.EnableForeverItemStudio();
+        window.EnableForeverStudioCompletenessPass();
         MainWindow = window;
         window.Show();
 

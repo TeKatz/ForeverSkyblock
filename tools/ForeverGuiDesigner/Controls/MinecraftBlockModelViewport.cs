@@ -9,21 +9,38 @@ using ForeverGuiDesigner.Services;
 
 namespace ForeverGuiDesigner.Controls;
 
+public enum MinecraftViewportEditMode
+{
+    None,
+    Move,
+    Scale
+}
+
 public sealed class MinecraftBlockModelViewport : Grid
 {
     private const int FaceTextureTargetPixels = 256;
     private const int FaceTextureMaxScale = 16;
 
     private readonly PerspectiveCamera _camera = new();
+    private readonly Viewport3D _viewport;
     private readonly Model3DGroup _scene = new();
     private readonly Model3DGroup _content = new();
     private readonly Dictionary<string, BitmapSource> _textureCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<TextureSliceKey, BitmapSource> _faceTextureCache = new();
+    private readonly Dictionary<Model3D, int> _elementHitMap = new();
+    private IReadOnlyDictionary<string, BitmapSource> _textureOverrides = new Dictionary<string, BitmapSource>(StringComparer.OrdinalIgnoreCase);
     private Point _lastMouse;
     private bool _orbiting;
+    private bool _panning;
+    private bool _editingElement;
     private double _yaw = -35;
     private double _pitch = 24;
     private double _distance = 34;
+    private Point3D _target = new(8, 8, 8);
+    private int _selectedElementIndex = -1;
+    private int _blockstateXRotation;
+    private int _blockstateYRotation;
+    private MinecraftItemDisplayTransform? _displayTransform;
 
     public MinecraftBlockModelViewport()
     {
@@ -38,26 +55,43 @@ public sealed class MinecraftBlockModelViewport : Grid
         _scene.Children.Add(new AmbientLight(Color.FromRgb(145, 145, 145)));
         _scene.Children.Add(new DirectionalLight(Color.FromRgb(230, 230, 230), new Vector3D(-1, -1.2, -1)));
         _scene.Children.Add(new DirectionalLight(Color.FromRgb(110, 125, 135), new Vector3D(1, 0.4, 0.8)));
+        _scene.Children.Add(BuildGroundGrid());
         _scene.Children.Add(_content);
 
-        var viewport = new Viewport3D
+        _viewport = new Viewport3D
         {
             Camera = _camera,
             ClipToBounds = true
         };
-        RenderOptions.SetBitmapScalingMode(viewport, BitmapScalingMode.NearestNeighbor);
-        viewport.Children.Add(new ModelVisual3D { Content = _scene });
-        Children.Add(viewport);
+        RenderOptions.SetBitmapScalingMode(_viewport, BitmapScalingMode.NearestNeighbor);
+        _viewport.Children.Add(new ModelVisual3D { Content = _scene });
+        Children.Add(_viewport);
 
         MouseLeftButtonDown += OnMouseLeftButtonDown;
         MouseLeftButtonUp += OnMouseLeftButtonUp;
+        MouseRightButtonDown += OnPanMouseButtonDown;
+        MouseRightButtonUp += OnPanMouseButtonUp;
+        MouseDown += OnAuxiliaryMouseDown;
+        MouseUp += OnAuxiliaryMouseUp;
         MouseMove += OnMouseMove;
         MouseWheel += OnMouseWheel;
-        LostMouseCapture += (_, _) => _orbiting = false;
+        LostMouseCapture += (_, _) =>
+        {
+            _orbiting = false;
+            _panning = false;
+            _editingElement = false;
+            Cursor = Cursors.Arrow;
+        };
     }
+
+    public event Action<int>? ElementSelected;
+    public event Action<int, string, double, MinecraftViewportEditMode>? ElementDragDelta;
 
     public int RenderedFaceCount { get; private set; }
     public int MissingTextureCount { get; private set; }
+    public MinecraftViewportEditMode EditMode { get; set; }
+    public string EditAxis { get; set; } = "x";
+    public int SelectedElementIndex => _selectedElementIndex;
 
     public void SetModel(
         string repoRoot,
@@ -66,11 +100,15 @@ public sealed class MinecraftBlockModelViewport : Grid
         int blockstateYRotation)
     {
         _content.Children.Clear();
+        _elementHitMap.Clear();
         RenderedFaceCount = 0;
         MissingTextureCount = 0;
+        _blockstateXRotation = blockstateXRotation;
+        _blockstateYRotation = blockstateYRotation;
 
-        foreach (var element in model.Elements)
+        for (var elementIndex = 0; elementIndex < model.Elements.Count; elementIndex++)
         {
+            var element = model.Elements[elementIndex];
             var elementGroup = new Model3DGroup();
             foreach (var (direction, face) in element.Faces)
             {
@@ -84,6 +122,7 @@ public sealed class MinecraftBlockModelViewport : Grid
                 {
                     BackMaterial = material
                 };
+                _elementHitMap[geometryModel] = elementIndex;
                 elementGroup.Children.Add(geometryModel);
                 RenderedFaceCount++;
             }
@@ -94,12 +133,38 @@ public sealed class MinecraftBlockModelViewport : Grid
             _content.Children.Add(elementGroup);
         }
 
-        _content.Transform = CreateBlockstateRotation(blockstateXRotation, blockstateYRotation);
+        UpdateContentTransform();
+    }
+
+    public void SetTextureOverrides(IReadOnlyDictionary<string, BitmapSource>? overrides)
+    {
+        _textureOverrides = overrides ?? new Dictionary<string, BitmapSource>(StringComparer.OrdinalIgnoreCase);
+        _faceTextureCache.Clear();
+    }
+
+    public void SetDisplayTransform(MinecraftItemDisplayTransform? transform)
+    {
+        _displayTransform = transform is null
+            ? null
+            : new MinecraftItemDisplayTransform
+            {
+                Rotation = [.. transform.Rotation],
+                Translation = [.. transform.Translation],
+                Scale = [.. transform.Scale]
+            };
+        UpdateContentTransform();
+    }
+
+    public void SelectElement(int index)
+    {
+        _selectedElementIndex = index;
     }
 
     public void ClearModel()
     {
         _content.Children.Clear();
+        _elementHitMap.Clear();
+        _selectedElementIndex = -1;
         RenderedFaceCount = 0;
         MissingTextureCount = 0;
     }
@@ -109,6 +174,7 @@ public sealed class MinecraftBlockModelViewport : Grid
         _yaw = -35;
         _pitch = 24;
         _distance = 34;
+        _target = new Point3D(8, 8, 8);
         UpdateCamera();
     }
 
@@ -125,7 +191,12 @@ public sealed class MinecraftBlockModelViewport : Grid
             return new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(184, 74, 184)));
         }
 
-        if (!_textureCache.TryGetValue(path, out var source))
+        BitmapSource? source = null;
+        if (_textureOverrides.TryGetValue(path, out var inMemory))
+        {
+            source = inMemory;
+        }
+        else if (!_textureCache.TryGetValue(path, out source))
         {
             try
             {
@@ -149,6 +220,12 @@ public sealed class MinecraftBlockModelViewport : Grid
                 MissingTextureCount++;
                 return new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(184, 74, 184)));
             }
+        }
+
+        if (source is null)
+        {
+            MissingTextureCount++;
+            return new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(184, 74, 184)));
         }
 
         var faceTexture = GetPixelSharpFaceTexture(path, source, uv);
@@ -306,7 +383,6 @@ public sealed class MinecraftBlockModelViewport : Grid
             return null;
 
         var textureCoordinates = BuildTextureCoordinates(uv, textureRotation, direction);
-
         var mesh = new MeshGeometry3D();
         foreach (var point in vertices)
             mesh.Positions.Add(point);
@@ -332,7 +408,6 @@ public sealed class MinecraftBlockModelViewport : Grid
         var vTop = v2 >= v1 ? 0.0 : 1.0;
         var vBottom = v2 >= v1 ? 1.0 : 0.0;
 
-        // Semantic corners as seen from outside the face: top-left, top-right, bottom-right, bottom-left.
         var semantic = new[]
         {
             new Point(uLeft, vTop),
@@ -358,7 +433,6 @@ public sealed class MinecraftBlockModelViewport : Grid
 
         return direction.ToLowerInvariant() switch
         {
-            // Side geometry is wound top-right -> top-left -> bottom-left -> bottom-right.
             "north" or "south" or "west" or "east" =>
             [semantic[1], semantic[0], semantic[3], semantic[2]],
             _ => semantic
@@ -414,9 +488,47 @@ public sealed class MinecraftBlockModelViewport : Grid
         return group;
     }
 
+    private void UpdateContentTransform()
+    {
+        var group = new Transform3DGroup();
+        if (_blockstateXRotation != 0 || _blockstateYRotation != 0)
+            group.Children.Add(CreateBlockstateRotation(_blockstateXRotation, _blockstateYRotation));
+
+        if (_displayTransform is { } display)
+        {
+            var rotation = display.Rotation;
+            var translation = display.Translation;
+            var scale = display.Scale;
+            var sx = SafeScale(scale.ElementAtOrDefault(0));
+            var sy = SafeScale(scale.ElementAtOrDefault(1));
+            var sz = SafeScale(scale.ElementAtOrDefault(2));
+
+            group.Children.Add(new TranslateTransform3D(-8, -8, -8));
+            group.Children.Add(new ScaleTransform3D(sx, sy, sz));
+            if (Math.Abs(rotation.ElementAtOrDefault(0)) > 0.0001)
+                group.Children.Add(new RotateTransform3D(new AxisAngleRotation3D(new Vector3D(1, 0, 0), rotation[0])));
+            if (Math.Abs(rotation.ElementAtOrDefault(1)) > 0.0001)
+                group.Children.Add(new RotateTransform3D(new AxisAngleRotation3D(new Vector3D(0, 1, 0), -rotation[1])));
+            if (Math.Abs(rotation.ElementAtOrDefault(2)) > 0.0001)
+                group.Children.Add(new RotateTransform3D(new AxisAngleRotation3D(new Vector3D(0, 0, 1), rotation[2])));
+            group.Children.Add(new TranslateTransform3D(
+                8 + translation.ElementAtOrDefault(0),
+                8 + translation.ElementAtOrDefault(1),
+                8 + translation.ElementAtOrDefault(2)));
+        }
+
+        _content.Transform = group.Children.Count == 0 ? Transform3D.Identity : group;
+    }
+
+    private static double SafeScale(double value)
+    {
+        var clamped = Math.Clamp(value, -8, 8);
+        return Math.Abs(clamped) < 0.0001 ? 0.0001 : clamped;
+    }
+
     private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ClickCount >= 2)
+        if (e.ClickCount >= 2 && EditMode == MinecraftViewportEditMode.None)
         {
             ResetView();
             e.Handled = true;
@@ -424,6 +536,17 @@ public sealed class MinecraftBlockModelViewport : Grid
         }
 
         _lastMouse = e.GetPosition(this);
+        if (EditMode != MinecraftViewportEditMode.None && TryPickElement(_lastMouse, out var elementIndex))
+        {
+            _selectedElementIndex = elementIndex;
+            ElementSelected?.Invoke(elementIndex);
+            _editingElement = true;
+            CaptureMouse();
+            Cursor = Cursors.SizeAll;
+            e.Handled = true;
+            return;
+        }
+
         _orbiting = true;
         CaptureMouse();
         Cursor = Cursors.Hand;
@@ -432,9 +555,51 @@ public sealed class MinecraftBlockModelViewport : Grid
 
     private void OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (!_orbiting)
+        if (!_orbiting && !_editingElement)
             return;
         _orbiting = false;
+        _editingElement = false;
+        ReleaseMouseCapture();
+        Cursor = Cursors.Arrow;
+        e.Handled = true;
+    }
+
+    private void OnPanMouseButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        BeginPan(e);
+    }
+
+    private void OnPanMouseButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        EndPan(e);
+    }
+
+    private void OnAuxiliaryMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton == MouseButton.Middle)
+            BeginPan(e);
+    }
+
+    private void OnAuxiliaryMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton == MouseButton.Middle)
+            EndPan(e);
+    }
+
+    private void BeginPan(MouseButtonEventArgs e)
+    {
+        _lastMouse = e.GetPosition(this);
+        _panning = true;
+        CaptureMouse();
+        Cursor = Cursors.ScrollAll;
+        e.Handled = true;
+    }
+
+    private void EndPan(MouseButtonEventArgs e)
+    {
+        if (!_panning)
+            return;
+        _panning = false;
         ReleaseMouseCapture();
         Cursor = Cursors.Arrow;
         e.Handled = true;
@@ -442,11 +607,28 @@ public sealed class MinecraftBlockModelViewport : Grid
 
     private void OnMouseMove(object sender, MouseEventArgs e)
     {
+        var current = e.GetPosition(this);
+        var delta = current - _lastMouse;
+
+        if (_editingElement && e.LeftButton == MouseButtonState.Pressed && _selectedElementIndex >= 0)
+        {
+            _lastMouse = current;
+            var amount = (delta.X - delta.Y) * 0.06;
+            if (Math.Abs(amount) > 0.0001)
+                ElementDragDelta?.Invoke(_selectedElementIndex, EditAxis, amount, EditMode);
+            return;
+        }
+
+        if (_panning && (e.RightButton == MouseButtonState.Pressed || e.MiddleButton == MouseButtonState.Pressed))
+        {
+            _lastMouse = current;
+            PanCamera(delta);
+            return;
+        }
+
         if (!_orbiting || e.LeftButton != MouseButtonState.Pressed)
             return;
 
-        var current = e.GetPosition(this);
-        var delta = current - _lastMouse;
         _lastMouse = current;
         _yaw += delta.X * 0.45;
         _pitch = Math.Clamp(_pitch - delta.Y * 0.45, -82, 82);
@@ -456,27 +638,86 @@ public sealed class MinecraftBlockModelViewport : Grid
     private void OnMouseWheel(object sender, MouseWheelEventArgs e)
     {
         _distance *= e.Delta > 0 ? 0.88 : 1.14;
-        _distance = Math.Clamp(_distance, 12, 90);
+        _distance = Math.Clamp(_distance, 8, 120);
         UpdateCamera();
         e.Handled = true;
     }
 
+    private void PanCamera(Vector delta)
+    {
+        var look = _camera.LookDirection;
+        if (look.LengthSquared < 0.0001)
+            return;
+        look.Normalize();
+        var right = Vector3D.CrossProduct(look, _camera.UpDirection);
+        if (right.LengthSquared < 0.0001)
+            return;
+        right.Normalize();
+        var up = Vector3D.CrossProduct(right, look);
+        up.Normalize();
+        var factor = _distance * 0.0025;
+        var offset = (-delta.X * factor * right) + (delta.Y * factor * up);
+        _target += offset;
+        UpdateCamera();
+    }
+
+    private bool TryPickElement(Point point, out int elementIndex)
+    {
+        elementIndex = -1;
+        var result = VisualTreeHelper.HitTest(_viewport, point);
+        if (result is not RayMeshGeometry3DHitTestResult mesh || mesh.ModelHit is null)
+            return false;
+        return _elementHitMap.TryGetValue(mesh.ModelHit, out elementIndex);
+    }
+
     private void UpdateCamera()
     {
-        var center = new Point3D(8, 8, 8);
         var yaw = _yaw * Math.PI / 180.0;
         var pitch = _pitch * Math.PI / 180.0;
         var horizontal = _distance * Math.Cos(pitch);
         var position = new Point3D(
-            center.X + horizontal * Math.Sin(yaw),
-            center.Y + _distance * Math.Sin(pitch),
-            center.Z + horizontal * Math.Cos(yaw));
+            _target.X + horizontal * Math.Sin(yaw),
+            _target.Y + _distance * Math.Sin(pitch),
+            _target.Z + horizontal * Math.Cos(yaw));
 
         _camera.Position = position;
-        _camera.LookDirection = center - position;
+        _camera.LookDirection = _target - position;
         _camera.UpDirection = new Vector3D(0, 1, 0);
         _camera.NearPlaneDistance = 0.1;
         _camera.FarPlaneDistance = 500;
+    }
+
+    private static Model3D BuildGroundGrid()
+    {
+        var group = new Model3DGroup();
+        var materialGroup = new MaterialGroup();
+        materialGroup.Children.Add(new DiffuseMaterial(new SolidColorBrush(Color.FromRgb(32, 42, 47))));
+        materialGroup.Children.Add(new EmissiveMaterial(new SolidColorBrush(Color.FromRgb(20, 28, 32))));
+        for (var i = -16; i <= 32; i++)
+        {
+            group.Children.Add(CreateGridStrip(i, -16, i, 32, materialGroup));
+            group.Children.Add(CreateGridStrip(-16, i, 32, i, materialGroup));
+        }
+        return group;
+    }
+
+    private static GeometryModel3D CreateGridStrip(double x1, double z1, double x2, double z2, Material material)
+    {
+        const double half = 0.012;
+        const double y = -0.035;
+        var dx = x2 - x1;
+        var dz = z2 - z1;
+        var length = Math.Sqrt(dx * dx + dz * dz);
+        var nx = length <= 0 ? 0 : -dz / length * half;
+        var nz = length <= 0 ? 0 : dx / length * half;
+        var mesh = new MeshGeometry3D();
+        mesh.Positions.Add(new Point3D(x1 + nx, y, z1 + nz));
+        mesh.Positions.Add(new Point3D(x2 + nx, y, z2 + nz));
+        mesh.Positions.Add(new Point3D(x2 - nx, y, z2 - nz));
+        mesh.Positions.Add(new Point3D(x1 - nx, y, z1 - nz));
+        mesh.TriangleIndices.Add(0); mesh.TriangleIndices.Add(1); mesh.TriangleIndices.Add(2);
+        mesh.TriangleIndices.Add(0); mesh.TriangleIndices.Add(2); mesh.TriangleIndices.Add(3);
+        return new GeometryModel3D(mesh, material) { BackMaterial = material };
     }
 
     private readonly record struct TextureSliceKey(
