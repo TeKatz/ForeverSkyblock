@@ -28,6 +28,7 @@ public partial class App : Application
         window.EnableForeverItemTextureStudio();
         window.EnableForeverStudioUxQoL();
         window.EnableForeverMachineBlockEntityPreviewParity();
+        window.EnableForeverBlockstateEditor();
         MainWindow = window;
         window.Show();
 
