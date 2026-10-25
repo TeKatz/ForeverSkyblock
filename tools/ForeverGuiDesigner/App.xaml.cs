@@ -31,6 +31,7 @@ public partial class App : Application
         window.EnableForeverBlockstateEditor();
         window.EnableForeverReviewValidationApply();
         window.EnableForeverAnimationStudio();
+        window.EnableForeverAnimationStudioInteraction();
         MainWindow = window;
         window.Show();
 
