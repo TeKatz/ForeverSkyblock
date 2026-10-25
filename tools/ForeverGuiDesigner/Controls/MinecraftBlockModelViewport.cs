@@ -48,7 +48,6 @@ public sealed class MinecraftBlockModelViewport : Grid
         MouseLeftButtonUp += OnMouseLeftButtonUp;
         MouseMove += OnMouseMove;
         MouseWheel += OnMouseWheel;
-        MouseDoubleClick += (_, _) => ResetView();
         LostMouseCapture += (_, _) => _orbiting = false;
     }
 
@@ -291,6 +290,13 @@ public sealed class MinecraftBlockModelViewport : Grid
 
     private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (e.ClickCount >= 2)
+        {
+            ResetView();
+            e.Handled = true;
+            return;
+        }
+
         _lastMouse = e.GetPosition(this);
         _orbiting = true;
         CaptureMouse();
