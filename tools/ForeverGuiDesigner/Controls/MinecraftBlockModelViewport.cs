@@ -104,8 +104,16 @@ public sealed class MinecraftBlockModelViewport : Grid
         string repoRoot,
         MinecraftResolvedBlockModel model,
         int blockstateXRotation,
-        int blockstateYRotation)
+        int blockstateYRotation,
+        bool forceRebuild = false)
     {
+        // Animation Studio owns one viewport for both the legacy 17B JSON preview and the runtime
+        // overlay. Once runtime components have been appended, the older base-frame renderer must
+        // update only that JSON prefix instead of clearing the whole scene and removing the runtime
+        // tail. Real machine/state/topology changes still fall through to a full rebuild.
+        if (!forceRebuild && TryUpdateAnimatedModelPrefix(repoRoot, model, blockstateXRotation, blockstateYRotation))
+            return;
+
         _currentModel = model;
         _content.Children.Clear();
         _faceHitMap.Clear();
@@ -168,6 +176,9 @@ public sealed class MinecraftBlockModelViewport : Grid
             _content.Children.Count != model.Elements.Count)
             return false;
 
+        if (!HasCompatibleTextureBindings(model))
+            return false;
+
         // Validate topology before touching the live scene. This prevents half-updated frames when a
         // conditional runtime branch changes its element/face composition.
         for (var elementIndex = 0; elementIndex < model.Elements.Count; elementIndex++)
@@ -183,10 +194,88 @@ public sealed class MinecraftBlockModelViewport : Grid
             }
         }
 
-        for (var elementIndex = 0; elementIndex < model.Elements.Count; elementIndex++)
+        UpdateAnimatedElementRange(repoRoot, model, model.Elements.Count);
+
+        var contentTransformChanged = _blockstateXRotation != blockstateXRotation ||
+                                      _blockstateYRotation != blockstateYRotation;
+        _blockstateXRotation = blockstateXRotation;
+        _blockstateYRotation = blockstateYRotation;
+        _currentModel = model;
+        if (contentTransformChanged)
+            UpdateContentTransform();
+        return true;
+    }
+
+    /// <summary>
+    /// Updates the JSON/base prefix of a scene that currently also contains appended runtime
+    /// renderer components. This specifically prevents the legacy 17B preview from alternating the
+    /// viewport between "base only" and "base + runtime" on every playback tick.
+    /// </summary>
+    private bool TryUpdateAnimatedModelPrefix(
+        string repoRoot,
+        MinecraftResolvedBlockModel model,
+        int blockstateXRotation,
+        int blockstateYRotation)
+    {
+        if (_currentModel is null ||
+            model.Elements.Count <= 0 ||
+            model.Elements.Count >= _currentModel.Elements.Count ||
+            _content.Children.Count != _currentModel.Elements.Count ||
+            !string.Equals(_currentModel.SourcePath, model.SourcePath, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(_currentModel.ModelReference, model.ModelReference, StringComparison.OrdinalIgnoreCase) ||
+            !HasCompatibleTextureBindings(model))
+            return false;
+
+        var prefixCount = model.Elements.Count;
+        for (var elementIndex = 0; elementIndex < prefixCount; elementIndex++)
+        {
+            if (_content.Children[elementIndex] is not Model3DGroup group ||
+                group.Children.Count != model.Elements[elementIndex].Faces.Count)
+                return false;
+
+            foreach (var direction in model.Elements[elementIndex].Faces.Keys)
+            {
+                if (!_faceModels.ContainsKey(FaceModelKey(elementIndex, direction)))
+                    return false;
+            }
+        }
+
+        UpdateAnimatedElementRange(repoRoot, model, prefixCount);
+
+        // Keep runtime texture bindings and appended runtime elements, but replace the current JSON
+        // prefix with the newest authored/base pose so the following runtime pass composes onto it.
+        for (var elementIndex = 0; elementIndex < prefixCount; elementIndex++)
+            _currentModel.Elements[elementIndex] = model.Elements[elementIndex];
+
+        var contentTransformChanged = _blockstateXRotation != blockstateXRotation ||
+                                      _blockstateYRotation != blockstateYRotation;
+        _blockstateXRotation = blockstateXRotation;
+        _blockstateYRotation = blockstateYRotation;
+        if (contentTransformChanged)
+            UpdateContentTransform();
+        return true;
+    }
+
+    private bool HasCompatibleTextureBindings(MinecraftResolvedBlockModel model)
+    {
+        if (_currentModel is null)
+            return false;
+
+        foreach (var (key, value) in model.Textures)
+        {
+            if (!_currentModel.Textures.TryGetValue(key, out var current) ||
+                !string.Equals(current, value, StringComparison.OrdinalIgnoreCase))
+                return false;
+        }
+        return true;
+    }
+
+    private void UpdateAnimatedElementRange(string repoRoot, MinecraftResolvedBlockModel model, int count)
+    {
+        for (var elementIndex = 0; elementIndex < count; elementIndex++)
         {
             var element = model.Elements[elementIndex];
-            var previousElement = _currentModel.Elements[elementIndex];
+            var previousElement = _currentModel!.Elements[elementIndex];
             var elementGroup = (Model3DGroup)_content.Children[elementIndex];
 
             foreach (var (direction, face) in element.Faces)
@@ -195,7 +284,7 @@ public sealed class MinecraftBlockModelViewport : Grid
                 var uv = face.Uv ?? GetDefaultUv(direction, element);
                 var geometry = CreateFaceGeometry(direction, element, uv, face.Rotation);
                 if (geometry is null)
-                    return false;
+                    continue;
 
                 geometryModel.Geometry = geometry;
 
@@ -216,15 +305,6 @@ public sealed class MinecraftBlockModelViewport : Grid
                 ? CreateElementRotation(element.Rotation)
                 : Transform3D.Identity;
         }
-
-        var contentTransformChanged = _blockstateXRotation != blockstateXRotation ||
-                                      _blockstateYRotation != blockstateYRotation;
-        _blockstateXRotation = blockstateXRotation;
-        _blockstateYRotation = blockstateYRotation;
-        _currentModel = model;
-        if (contentTransformChanged)
-            UpdateContentTransform();
-        return true;
     }
 
     public void SetTextureOverrides(IReadOnlyDictionary<string, BitmapSource>? overrides)
