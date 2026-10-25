@@ -1,5 +1,3 @@
-using System.Windows;
-using System.Windows.Threading;
 using ForeverGuiDesigner.Services;
 
 namespace ForeverGuiDesigner;
@@ -15,57 +13,43 @@ public partial class MainWindow
 
     public void EnableForeverRuntimeAnimationVariants()
     {
-        if (_studioRuntimeAnimationVariantsInitialized || _studioAnimationRuntimeCurveCombo is null)
+        if (_studioRuntimeAnimationVariantsInitialized)
             return;
         _studioRuntimeAnimationVariantsInitialized = true;
 
-        _studioAnimationRuntimeCurveCombo.SelectionChanged += (_, _) => QueueStudioRuntimeVariantPreview();
-        if (_studioAnimationTimeline is not null)
-            _studioAnimationTimeline.ValueChanged += (_, _) => QueueStudioRuntimeVariantPreview();
+        // Phase 17B performance note: conditional paths no longer own a second Timeline/Selection
+        // render loop. MainWindow.RuntimeAnimationIntegration composes the selected branch inside the
+        // single coalesced runtime frame, preventing two complete preview renders per Condenser tick.
     }
 
-    private void QueueStudioRuntimeVariantPreview()
-        => Dispatcher.BeginInvoke(() =>
-        {
-            if (_studioAnimationSurface?.Visibility == Visibility.Visible)
-                RenderStudioRuntimeVariantPreview(_studioAnimationTimeline?.Value ?? 0);
-        }, DispatcherPriority.ContextIdle);
-
-    private void RenderStudioRuntimeVariantPreview(double time)
+    private static bool AddStudioRuntimeCondenserVariant(
+        MinecraftResolvedBlockModel model,
+        double phase,
+        string? mode)
     {
-        if (_studioRuntimeAnimationProfile is null ||
-            _studioRuntimeAnimationProfile.AssetId is not ("condenser_mark_i" or "condenser_mark_ii") ||
-            _studioAnimationRuntimeCurveCombo?.SelectedItem is not ForeverRuntimeAnimationTrack track ||
-            _studioAnimationViewport is null || _studioEditableBlockModel is null || string.IsNullOrWhiteSpace(_repoRoot))
-            return;
-
-        var mode = track.Id;
         var mixing = mode is "mixer-rotor" or "compost-rotor" or "mixing-orbit" or "secondary-intake" or "secondary-ingredient";
         var garden = mode is "garden-scan" or "garden-harvest";
         var status = mode == "status";
-        if (!mixing && !garden && !status)
-            return;
-
-        var phase = Math.Clamp(time / Math.Max(.0001, _studioAnimationDurationSeconds), 0, 1);
-        var preview = CloneStudioBlockModel(_studioEditableBlockModel);
-        var selectedTarget = GetSelectedStudioAnimationTarget();
-        if (selectedTarget?.Kind == AnimationTargetKind.JsonModelElement && selectedTarget.ElementIndex is int elementIndex)
-        {
-            var authoredTrack = FindStudioAnimationTrackForTarget(selectedTarget);
-            ApplyStudioAnimationInteractionFrameToElement(preview, elementIndex, EvaluateStudioAnimationFrame(authoredTrack, time));
-        }
 
         if (mixing)
-            AddStudioRuntimeCondenserMixing(preview, phase, composting: mode == "compost-rotor");
-        else if (garden)
-            AddStudioRuntimeCondenserGardenAttachment(preview, phase);
-        else
-            AddStudioRuntimeCondenserStatus(preview, phase);
+        {
+            AddStudioRuntimeCondenserMixing(model, phase, composting: mode == "compost-rotor");
+            return true;
+        }
 
-        _studioAnimationViewport.SetTextureOverrides(_studioTextureOverrides);
-        _studioAnimationViewport.SetModel(_repoRoot, preview, _studioEditableBlockstateXRotation, _studioEditableBlockstateYRotation);
-        if (selectedTarget?.Kind == AnimationTargetKind.JsonModelElement && selectedTarget.ElementIndex is int selectedIndex)
-            _studioAnimationViewport.SelectElement(selectedIndex);
+        if (garden)
+        {
+            AddStudioRuntimeCondenserGardenAttachment(model, phase);
+            return true;
+        }
+
+        if (status)
+        {
+            AddStudioRuntimeCondenserStatus(model, phase);
+            return true;
+        }
+
+        return false;
     }
 
     private static void AddStudioRuntimeCondenserMixing(MinecraftResolvedBlockModel model, double phase, bool composting)
@@ -103,9 +87,13 @@ public partial class MainWindow
         var growth = RuntimeSmooth(.04,.84,phase);
         var scan = 5 + 5.6 * growth;
         AddRuntimeBox(model,7,scan,10.7,1.35,scan+.35,11.25,3.65,0,[scan,11,2.5]);
+
         var harvest = RuntimeSmooth(.86,1,phase);
+        var harvestY = 5.9 + harvest * 4.5;
         if (harvest > 0)
-            AddRuntimeBox(model,7,5.4,5.9+harvest*4.5,1.1,10.6,6.05+harvest*4.5,1.3,0,[8,6+harvest*4.5,1.2]);
+            AddRuntimeBox(model,7,5.4,harvestY,1.1,10.6,harvestY+.15,1.3,0,[8,harvestY+.075,1.2]);
+        else
+            AddRuntimeBox(model,7,8,harvestY,1.2,8,harvestY,1.2,0,[8,harvestY,1.2]);
     }
 
     private static void AddStudioRuntimeCondenserStatus(MinecraftResolvedBlockModel model, double phase)
