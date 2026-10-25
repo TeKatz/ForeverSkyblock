@@ -29,6 +29,7 @@ public partial class App : Application
         window.EnableForeverStudioUxQoL();
         window.EnableForeverMachineBlockEntityPreviewParity();
         window.EnableForeverBlockstateEditor();
+        window.EnableForeverReviewValidationApply();
         MainWindow = window;
         window.Show();
 
