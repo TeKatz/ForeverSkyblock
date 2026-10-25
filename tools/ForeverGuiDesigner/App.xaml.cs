@@ -32,6 +32,8 @@ public partial class App : Application
         window.EnableForeverReviewValidationApply();
         window.EnableForeverAnimationStudio();
         window.EnableForeverAnimationStudioInteraction();
+        window.EnableForeverAnimationTimelineStability();
+        window.EnableForeverRuntimeAnimationIntegration();
         MainWindow = window;
         window.Show();
 
