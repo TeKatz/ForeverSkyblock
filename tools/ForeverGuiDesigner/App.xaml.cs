@@ -26,7 +26,7 @@ public partial class App : Application
         MainWindow = window;
         window.Show();
 
-        Dispatcher.BeginInvoke(() =>
+        _ = Dispatcher.BeginInvoke(() =>
         {
             window.EnablePersonalWorkspaceQoL();
             window.EnableForeverSkyblockTools();

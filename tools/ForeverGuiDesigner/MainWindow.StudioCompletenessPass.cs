@@ -136,8 +136,8 @@ public partial class MainWindow
 
         _studioSelectedElementIndex = index;
         var source = _studioEditableBlockModel.Elements[index];
-        var from = [.. source.From];
-        var to = [.. source.To];
+        double[] from = [.. source.From];
+        double[] to = [.. source.To];
         if (mode == MinecraftViewportEditMode.Move)
         {
             from[axisIndex] = SnapStudioModelNumber(from[axisIndex] + amount, snap);
