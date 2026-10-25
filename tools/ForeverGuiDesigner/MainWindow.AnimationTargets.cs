@@ -72,6 +72,22 @@ public partial class MainWindow
     private void SyncStudioAnimationRuntimeTargets()
     {
         _studioAnimationTargetRegistry.ClearRuntimeTargets();
+
+        // Runtime source catalog is available even when the legacy WPF machine-preview canvas has
+        // not been opened.  That makes the Block Animation Studio independent from GUI-preview state.
+        var assetId = (_studioBlockMachineCombo?.SelectedItem as MinecraftBlockAssetDescriptor)?.Id ?? string.Empty;
+        var profile = ForeverRuntimeAnimationCatalog.ForAsset(assetId);
+        foreach (var componentKey in profile.ComponentKeys.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            _studioAnimationTargetRegistry.RegisterRuntimeComponent(
+                profile.AssetId,
+                componentKey,
+                profile,
+                $"Runtime · {profile.DisplayName} · {componentKey}");
+        }
+
+        // Keep the established live WPF runtime components registered as well. These are useful for
+        // the legacy machine-preview workspace and deliberately use their historic screen scope.
         if (_nonWashingStableAnimationParts.Count == 0)
             return;
 
