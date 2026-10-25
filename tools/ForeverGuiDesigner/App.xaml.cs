@@ -34,6 +34,7 @@ public partial class App : Application
         window.EnableForeverAnimationStudioInteraction();
         window.EnableForeverAnimationTimelineStability();
         window.EnableForeverRuntimeAnimationIntegration();
+        window.EnableForeverRuntimeAnimationVariants();
         MainWindow = window;
         window.Show();
 
