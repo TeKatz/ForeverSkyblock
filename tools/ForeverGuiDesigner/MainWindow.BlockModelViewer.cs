@@ -54,7 +54,7 @@ public partial class MainWindow
     {
         var content = new Grid();
         content.ColumnDefinitions.Add(new ColumnDefinition());
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(340) });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(470) });
 
         var viewportCard = StudioCard();
         viewportCard.Margin = new Thickness(0, 0, 20, 0);
@@ -62,7 +62,7 @@ public partial class MainWindow
         _studioBlockViewport = new MinecraftBlockModelViewport();
         viewportGrid.Children.Add(_studioBlockViewport);
 
-        var readOnlyBadge = new Border
+        var editorBadge = new Border
         {
             Background = Brush("#16262B"),
             BorderBrush = Brush("#3E6E73"),
@@ -75,14 +75,14 @@ public partial class MainWindow
             IsHitTestVisible = false,
             Child = new TextBlock
             {
-                Text = "READ-ONLY MODEL VIEWER",
+                Text = "IN-MEMORY MODEL EDITOR",
                 Foreground = Brush("#7ED9DB"),
                 FontSize = 11,
                 FontWeight = FontWeights.SemiBold
             }
         };
-        Panel.SetZIndex(readOnlyBadge, 10);
-        viewportGrid.Children.Add(readOnlyBadge);
+        Panel.SetZIndex(editorBadge, 10);
+        viewportGrid.Children.Add(editorBadge);
 
         var controls = new StackPanel
         {
@@ -126,10 +126,10 @@ public partial class MainWindow
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
         var inspector = new StackPanel { Margin = new Thickness(22) };
-        inspector.Children.Add(StudioSectionLabel("MODEL PREVIEW"));
+        inspector.Children.Add(StudioSectionLabel("MODEL"));
         inspector.Children.Add(new TextBlock
         {
-            Text = "Minecraft blockstate and model JSON are loaded directly from the selected repository. Editing remains disabled in this phase.",
+            Text = "Minecraft blockstate and model JSON are loaded directly from the selected repository. Element edits update only the in-memory preview until the later Review / Apply phase.",
             Foreground = Brush("#8FA1AA"),
             FontSize = 12,
             TextWrapping = TextWrapping.Wrap,
@@ -154,6 +154,8 @@ public partial class MainWindow
         _studioBlockElementCountText = BlockViewerInfo(inspector, "Elements");
         _studioBlockFaceCountText = BlockViewerInfo(inspector, "Faces rendered");
         _studioBlockModelTextureCountText = BlockViewerInfo(inspector, "Texture slots");
+
+        BuildStudioBlockModelEditor(inspector);
 
         inspector.Children.Add(BlockViewerSeparator());
         _studioBlockViewerStatusText = new TextBlock
@@ -237,6 +239,7 @@ public partial class MainWindow
             _studioBlockStateCombo is null || _studioBlockFacingCombo is null)
         {
             _studioBlockViewport?.ClearModel();
+            ClearStudioBlockEditorModel();
             return;
         }
 
@@ -317,13 +320,14 @@ public partial class MainWindow
         if (variant is null)
         {
             _studioBlockViewport?.ClearModel();
+            ClearStudioBlockEditorModel();
             return;
         }
 
         try
         {
             var model = MinecraftBlockModelPreviewService.LoadResolvedModel(_repoRoot, variant.ModelReference);
-            _studioBlockViewport?.SetModel(_repoRoot, model, variant.XRotation, variant.YRotation);
+            LoadStudioBlockEditorModel(model, variant.XRotation, variant.YRotation);
 
             SetBlockViewerText(_studioBlockVariantText, variant.Key);
             SetBlockViewerText(_studioBlockModelText, model.ModelReference);
@@ -340,7 +344,7 @@ public partial class MainWindow
                     ? "native orientation"
                     : $"blockstate rotation X {variant.XRotation}° / Y {variant.YRotation}°";
                 _studioBlockViewerStatusText.Text = missing == 0
-                    ? $"Loaded {asset.DisplayName} · {rotation}. All rendered face textures resolved locally."
+                    ? $"Loaded {asset.DisplayName} · {rotation}. Select an element to edit its preview geometry."
                     : $"Loaded {asset.DisplayName} · {rotation}. {missing} face texture reference(s) could not be resolved locally and use the fallback material.";
                 _studioBlockViewerStatusText.Foreground = missing == 0 ? Brush("#74C99A") : Brush("#D8B26A");
             }
@@ -348,6 +352,7 @@ public partial class MainWindow
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidDataException)
         {
             _studioBlockViewport?.ClearModel();
+            ClearStudioBlockEditorModel();
             if (_studioBlockViewerStatusText is not null)
             {
                 _studioBlockViewerStatusText.Text = $"Could not load model: {ex.Message}";
