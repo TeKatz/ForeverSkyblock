@@ -520,7 +520,7 @@ public partial class MainWindow
         if (model is null)
             return;
 
-        model.Content = "Washing";
+        model.Content = "Washing Basin";
         if (!_visuals.TryGetValue(model, out var visual) || visual is not Border border)
             return;
 
@@ -529,11 +529,11 @@ public partial class MainWindow
         border.BorderThickness = new Thickness(0);
         if (border.Child is MinecraftPixelText pixelText)
         {
-            pixelText.Text = "Washing";
+            pixelText.Text = "Washing Basin";
         }
         else
         {
-            border.Child = new MinecraftPixelText("Washing", Brush("#E6EEE9"), false, 1.05, "left");
+            border.Child = new MinecraftPixelText("Washing Basin", Brush("#E6EEE9"), false, 1.05, "left");
         }
     }
 
