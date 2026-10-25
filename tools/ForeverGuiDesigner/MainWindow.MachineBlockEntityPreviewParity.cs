@@ -226,6 +226,14 @@ public partial class MainWindow
         double rotationAngle,
         double[] rotationOrigin)
     {
+        if (TryExpandStudioGardenRuntimeGeometry(
+                model, material,
+                x0, y0, z0,
+                x1, y1, z1,
+                rotationAngle,
+                rotationOrigin))
+            return;
+
         var palette = material / 16;
         var slot = material % 16;
         var glow = slot >= 6;
