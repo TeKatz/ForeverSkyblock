@@ -78,7 +78,6 @@ public partial class MainWindow
             var growth = Math.Clamp((proxyHeight - 0.6) / 5.5, 0, 1);
             var phase = ResolveStudioGardenPhaseFromGrowth(growth);
             AddStudioGardenTreeShape(model, phase);
-            AddStudioGardenStatusStrips(model);
             return true;
         }
 
@@ -169,7 +168,8 @@ public partial class MainWindow
 
     private static void AddStudioGardenStatusStrips(MinecraftResolvedBlockModel model)
     {
-        // GardenChamberRenderer renders the running status strip on all four inner walls.
+        // Legacy helper retained for compatibility with older preview paths. Phase 17C.1 now owns
+        // semantic status material selection and therefore does not call this fixed-running helper.
         AddRuntimeBox(model, 7, 5.8, 1.05, 0.03, 10.2, 1.40, 0.13, 0, [8, 1.2, 0.08]);
         AddRuntimeBox(model, 7, 5.8, 1.05, 15.87, 10.2, 1.40, 15.97, 0, [8, 1.2, 15.92]);
         AddRuntimeBox(model, 7, 0.03, 1.05, 5.8, 0.13, 1.40, 10.2, 0, [0.08, 1.2, 8]);
