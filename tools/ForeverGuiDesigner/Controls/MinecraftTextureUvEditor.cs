@@ -23,6 +23,9 @@ public enum MinecraftTextureEditTool
 
 public sealed class MinecraftTextureUvEditor : Grid
 {
+    private const double BaseCanvasLongestEdge = 256.0;
+    private const double MaxCanvasDimension = 4096.0;
+
     private readonly ScrollViewer _scroll;
     private readonly Canvas _surface;
     private readonly Image _image;
@@ -30,6 +33,7 @@ public sealed class MinecraftTextureUvEditor : Grid
     private readonly Rectangle _uvRect;
     private readonly Rectangle _selectionRect;
     private readonly Thumb[] _handles;
+
     private WriteableBitmap? _bitmap;
     private double[] _uv = [0, 0, 16, 16];
     private double _zoom = 1;
@@ -62,6 +66,7 @@ public sealed class MinecraftTextureUvEditor : Grid
         _surface.MouseLeftButtonDown += Surface_MouseLeftButtonDown;
         _surface.MouseMove += Surface_MouseMove;
         _surface.MouseLeftButtonUp += Surface_MouseLeftButtonUp;
+        _surface.LostMouseCapture += (_, _) => ResetGestureFlags();
 
         _image = new Image
         {
@@ -91,6 +96,7 @@ public sealed class MinecraftTextureUvEditor : Grid
         _uvRect.MouseLeftButtonDown += UvRect_MouseLeftButtonDown;
         _uvRect.MouseMove += UvRect_MouseMove;
         _uvRect.MouseLeftButtonUp += UvRect_MouseLeftButtonUp;
+        _uvRect.LostMouseCapture += (_, _) => _movingUv = false;
         Panel.SetZIndex(_uvRect, 10);
         _surface.Children.Add(_uvRect);
 
@@ -146,6 +152,9 @@ public sealed class MinecraftTextureUvEditor : Grid
 
     public void SetTool(MinecraftTextureEditTool tool)
     {
+        if (Tool == tool)
+            return;
+        CancelActiveGesture();
         Tool = tool;
         UpdateInteractionState();
     }
@@ -154,7 +163,13 @@ public sealed class MinecraftTextureUvEditor : Grid
 
     public void SetZoom(double zoom)
     {
-        _zoom = Math.Clamp(zoom, 0.5, 16);
+        if (double.IsNaN(zoom) || double.IsInfinity(zoom))
+            return;
+        var nextZoom = Math.Clamp(zoom, 0.5, 16);
+        if (Math.Abs(nextZoom - _zoom) < 0.0001)
+            return;
+        CancelActiveGesture();
+        _zoom = nextZoom;
         UpdateSurfaceSize();
     }
 
@@ -168,11 +183,13 @@ public sealed class MinecraftTextureUvEditor : Grid
 
     public void LoadTexture(string? path, BitmapSource? inMemorySource, double[] uv)
     {
+        CancelActiveGesture();
         TexturePath = path;
         HasTextureChanges = inMemorySource is not null;
         _bitmap = null;
         _image.Source = null;
         _selectionPixels = Int32Rect.Empty;
+        _selectionClipboard = null;
 
         try
         {
@@ -195,7 +212,7 @@ public sealed class MinecraftTextureUvEditor : Grid
                 _bitmap = new WriteableBitmap(source);
                 _image.Source = _bitmap;
                 var largest = Math.Max(_bitmap.PixelWidth, _bitmap.PixelHeight);
-                _baseScale = largest <= 0 ? 1 : Math.Max(1, 256.0 / largest);
+                _baseScale = largest <= 0 ? 1 : BaseCanvasLongestEdge / largest;
             }
             else
             {
@@ -301,8 +318,8 @@ public sealed class MinecraftTextureUvEditor : Grid
         var rect = selectionOnly && !_selectionPixels.IsEmpty
             ? _selectionPixels
             : new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight);
-        var stride = rect.Width * 4;
-        var pixels = new byte[stride * rect.Height];
+        var stride = checked(rect.Width * 4);
+        var pixels = new byte[checked(stride * rect.Height)];
         _bitmap.CopyPixels(rect, pixels, stride, 0);
         var changed = 0;
         for (var i = 0; i < pixels.Length; i += 4)
@@ -329,8 +346,8 @@ public sealed class MinecraftTextureUvEditor : Grid
         var rect = _selectionPixels.IsEmpty
             ? new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight)
             : _selectionPixels;
-        var stride = rect.Width * 4;
-        var pixels = new byte[stride * rect.Height];
+        var stride = checked(rect.Width * 4);
+        var pixels = new byte[checked(stride * rect.Height)];
         _bitmap.CopyPixels(rect, pixels, stride, 0);
         for (var i = 3; i < pixels.Length; i += 4)
             pixels[i] = alpha;
@@ -354,6 +371,25 @@ public sealed class MinecraftTextureUvEditor : Grid
         handle.DragDelta += Handle_DragDelta;
         Panel.SetZIndex(handle, 11);
         return handle;
+    }
+
+    private void CancelActiveGesture()
+    {
+        ResetGestureFlags();
+        if (_surface.IsMouseCaptured)
+            _surface.ReleaseMouseCapture();
+        if (_uvRect.IsMouseCaptured)
+            _uvRect.ReleaseMouseCapture();
+    }
+
+    private void ResetGestureFlags()
+    {
+        _movingUv = false;
+        _painting = false;
+        _selecting = false;
+        _movingSelection = false;
+        _lastPaintPixel = new Point(-1, -1);
+        _gestureStartPixel = new Point(-1, -1);
     }
 
     private void UpdateInteractionState()
@@ -384,11 +420,15 @@ public sealed class MinecraftTextureUvEditor : Grid
 
     private void UpdateSurfaceSize()
     {
-        var width = _bitmap?.PixelWidth ?? 256;
-        var height = _bitmap?.PixelHeight ?? 256;
-        var scale = _baseScale * _zoom;
-        _surface.Width = Math.Max(64, width * scale);
-        _surface.Height = Math.Max(64, height * scale);
+        var width = Math.Max(1, _bitmap?.PixelWidth ?? 256);
+        var height = Math.Max(1, _bitmap?.PixelHeight ?? 256);
+        var scale = Math.Max(0.0001, _baseScale * _zoom);
+        var requestedMax = Math.Max(width * scale, height * scale);
+        if (requestedMax > MaxCanvasDimension)
+            scale *= MaxCanvasDimension / requestedMax;
+
+        _surface.Width = Math.Max(1, width * scale);
+        _surface.Height = Math.Max(1, height * scale);
         _image.Width = _surface.Width;
         _image.Height = _surface.Height;
         Canvas.SetLeft(_image, 0);
@@ -405,29 +445,40 @@ public sealed class MinecraftTextureUvEditor : Grid
 
     private void UpdatePixelGrid()
     {
-        if (_bitmap is null)
+        if (_bitmap is null || _bitmap.PixelWidth <= 0 || _bitmap.PixelHeight <= 0)
         {
             _pixelGrid.Visibility = Visibility.Collapsed;
+            _pixelGrid.Fill = null;
             return;
         }
+
         var cellWidth = _surface.Width / _bitmap.PixelWidth;
         var cellHeight = _surface.Height / _bitmap.PixelHeight;
         if (Math.Min(cellWidth, cellHeight) < 8)
         {
             _pixelGrid.Visibility = Visibility.Collapsed;
+            _pixelGrid.Fill = null;
             return;
         }
+
         var pen = new Pen(new SolidColorBrush(Color.FromArgb(80, 115, 135, 145)), 0.6);
+        if (pen.CanFreeze)
+            pen.Freeze();
         var drawing = new DrawingGroup();
         drawing.Children.Add(new GeometryDrawing(null, pen, new LineGeometry(new Point(0, 0), new Point(0, cellHeight))));
         drawing.Children.Add(new GeometryDrawing(null, pen, new LineGeometry(new Point(0, 0), new Point(cellWidth, 0))));
-        _pixelGrid.Fill = new DrawingBrush(drawing)
+        if (drawing.CanFreeze)
+            drawing.Freeze();
+        var brush = new DrawingBrush(drawing)
         {
             Viewport = new Rect(0, 0, cellWidth, cellHeight),
             ViewportUnits = BrushMappingMode.Absolute,
             TileMode = TileMode.Tile,
             Stretch = Stretch.None
         };
+        if (brush.CanFreeze)
+            brush.Freeze();
+        _pixelGrid.Fill = brush;
         _pixelGrid.Visibility = Visibility.Visible;
     }
 
@@ -476,6 +527,7 @@ public sealed class MinecraftTextureUvEditor : Grid
     {
         if (Tool != MinecraftTextureEditTool.Uv)
             return;
+        CancelActiveGesture();
         _movingUv = true;
         _uvMoveStart = e.GetPosition(_surface);
         _uvMoveOrigin = [.. _uv];
@@ -485,7 +537,7 @@ public sealed class MinecraftTextureUvEditor : Grid
 
     private void UvRect_MouseMove(object sender, MouseEventArgs e)
     {
-        if (!_movingUv || e.LeftButton != MouseButtonState.Pressed)
+        if (!_movingUv || e.LeftButton != MouseButtonState.Pressed || _surface.Width <= 0 || _surface.Height <= 0)
             return;
         var current = e.GetPosition(_surface);
         var du = Snap((current.X - _uvMoveStart.X) / _surface.Width * 16.0);
@@ -502,7 +554,8 @@ public sealed class MinecraftTextureUvEditor : Grid
         if (!_movingUv)
             return;
         _movingUv = false;
-        _uvRect.ReleaseMouseCapture();
+        if (_uvRect.IsMouseCaptured)
+            _uvRect.ReleaseMouseCapture();
         e.Handled = true;
     }
 
@@ -528,6 +581,7 @@ public sealed class MinecraftTextureUvEditor : Grid
     {
         if (Tool == MinecraftTextureEditTool.Uv || _bitmap is null)
             return;
+        ResetGestureFlags();
         var pixel = SurfaceToPixel(e.GetPosition(_surface));
         _lastPaintPixel = new Point(-1, -1);
         _gestureStartPixel = pixel;
@@ -591,13 +645,17 @@ public sealed class MinecraftTextureUvEditor : Grid
     private void Surface_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (_bitmap is null)
+        {
+            CancelActiveGesture();
             return;
+        }
         var pixel = SurfaceToPixel(e.GetPosition(_surface));
         if (_selecting)
         {
             _selecting = false;
             _selectionPixels = RectFromPoints(_gestureStartPixel, pixel, _bitmap.PixelWidth, _bitmap.PixelHeight);
-            _surface.ReleaseMouseCapture();
+            if (_surface.IsMouseCaptured)
+                _surface.ReleaseMouseCapture();
             UpdateSelectionVisuals();
             SelectionChanged?.Invoke(_selectionPixels);
             e.Handled = true;
@@ -609,7 +667,8 @@ public sealed class MinecraftTextureUvEditor : Grid
             var destination = _selectionPixels;
             _selectionPixels = _selectionMoveOrigin;
             MoveSelectionTo(destination.X, destination.Y);
-            _surface.ReleaseMouseCapture();
+            if (_surface.IsMouseCaptured)
+                _surface.ReleaseMouseCapture();
             e.Handled = true;
             return;
         }
@@ -626,7 +685,8 @@ public sealed class MinecraftTextureUvEditor : Grid
             NotifyTextureChanged();
         }
         _painting = false;
-        _surface.ReleaseMouseCapture();
+        if (_surface.IsMouseCaptured)
+            _surface.ReleaseMouseCapture();
         e.Handled = true;
     }
 
@@ -700,8 +760,16 @@ public sealed class MinecraftTextureUvEditor : Grid
             if (x0 == x1 && y0 == y1)
                 break;
             var twice = 2 * error;
-            if (twice >= dy) { error += dy; x0 += sx; }
-            if (twice <= dx) { error += dx; y0 += sy; }
+            if (twice >= dy)
+            {
+                error += dy;
+                x0 += sx;
+            }
+            if (twice <= dx)
+            {
+                error += dx;
+                y0 += sy;
+            }
         }
     }
 
@@ -723,8 +791,8 @@ public sealed class MinecraftTextureUvEditor : Grid
             return;
         var width = _bitmap.PixelWidth;
         var height = _bitmap.PixelHeight;
-        var stride = width * 4;
-        var pixels = new byte[stride * height];
+        var stride = checked(width * 4);
+        var pixels = new byte[checked(stride * height)];
         _bitmap.CopyPixels(pixels, stride, 0);
         var start = startY * stride + startX * 4;
         var targetB = pixels[start];
@@ -734,26 +802,45 @@ public sealed class MinecraftTextureUvEditor : Grid
         if (targetB == replacement.B && targetG == replacement.G && targetR == replacement.R && targetA == replacement.A)
             return;
 
+        var visited = new bool[checked(width * height)];
         var queue = new Queue<(int X, int Y)>();
         queue.Enqueue((startX, startY));
+        visited[startY * width + startX] = true;
         while (queue.Count > 0)
         {
             var (x, y) = queue.Dequeue();
-            if (x < 0 || x >= width || y < 0 || y >= height)
-                continue;
             var index = y * stride + x * 4;
             if (pixels[index] != targetB || pixels[index + 1] != targetG || pixels[index + 2] != targetR || pixels[index + 3] != targetA)
                 continue;
+
             pixels[index] = replacement.B;
             pixels[index + 1] = replacement.G;
             pixels[index + 2] = replacement.R;
             pixels[index + 3] = replacement.A;
-            queue.Enqueue((x - 1, y));
-            queue.Enqueue((x + 1, y));
-            queue.Enqueue((x, y - 1));
-            queue.Enqueue((x, y + 1));
+
+            EnqueueFillNeighbor(x - 1, y, width, height, visited, queue);
+            EnqueueFillNeighbor(x + 1, y, width, height, visited, queue);
+            EnqueueFillNeighbor(x, y - 1, width, height, visited, queue);
+            EnqueueFillNeighbor(x, y + 1, width, height, visited, queue);
         }
         _bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, stride, 0);
+    }
+
+    private static void EnqueueFillNeighbor(
+        int x,
+        int y,
+        int width,
+        int height,
+        bool[] visited,
+        Queue<(int X, int Y)> queue)
+    {
+        if (x < 0 || x >= width || y < 0 || y >= height)
+            return;
+        var index = y * width + x;
+        if (visited[index])
+            return;
+        visited[index] = true;
+        queue.Enqueue((x, y));
     }
 
     private bool MoveSelectionTo(int x, int y)
@@ -780,8 +867,8 @@ public sealed class MinecraftTextureUvEditor : Grid
         if (_bitmap is null || _selectionPixels.IsEmpty)
             return false;
         var sourceRect = _selectionPixels;
-        var stride = sourceRect.Width * 4;
-        var pixels = new byte[stride * sourceRect.Height];
+        var stride = checked(sourceRect.Width * 4);
+        var pixels = new byte[checked(stride * sourceRect.Height)];
         _bitmap.CopyPixels(sourceRect, pixels, stride, 0);
         var transformed = transform(pixels, sourceRect.Width, sourceRect.Height);
         ClearRegion(sourceRect);
@@ -793,7 +880,9 @@ public sealed class MinecraftTextureUvEditor : Grid
             PixelFormats.Bgra32,
             null,
             transformed.Pixels,
-            transformed.Width * 4);
+            checked(transformed.Width * 4));
+        if (bitmap.CanFreeze)
+            bitmap.Freeze();
         var destination = BlitBitmap(bitmap, sourceRect.X, sourceRect.Y);
         _selectionPixels = destination;
         UpdateSelectionVisuals();
@@ -832,8 +921,8 @@ public sealed class MinecraftTextureUvEditor : Grid
         var sourceX = destination.X - x;
         var sourceY = destination.Y - y;
         var sourceRect = new Int32Rect(sourceX, sourceY, destination.Width, destination.Height);
-        var stride = destination.Width * 4;
-        var pixels = new byte[stride * destination.Height];
+        var stride = checked(destination.Width * 4);
+        var pixels = new byte[checked(stride * destination.Height)];
         normalized.CopyPixels(sourceRect, pixels, stride, 0);
         _bitmap.WritePixels(destination, pixels, stride, 0);
         return destination;
@@ -846,8 +935,8 @@ public sealed class MinecraftTextureUvEditor : Grid
         var clipped = ClampRect(rect, _bitmap.PixelWidth, _bitmap.PixelHeight, preserveSize: false);
         if (clipped.IsEmpty)
             return;
-        var stride = clipped.Width * 4;
-        _bitmap.WritePixels(clipped, new byte[stride * clipped.Height], stride, 0);
+        var stride = checked(clipped.Width * 4);
+        _bitmap.WritePixels(clipped, new byte[checked(stride * clipped.Height)], stride, 0);
     }
 
     private static void CopyPixel(byte[] source, int sourceIndex, byte[] target, int targetIndex)
@@ -863,6 +952,8 @@ public sealed class MinecraftTextureUvEditor : Grid
 
     private static Int32Rect RectFromPoints(Point a, Point b, int width, int height)
     {
+        if (width <= 0 || height <= 0)
+            return Int32Rect.Empty;
         var x1 = Math.Clamp(Math.Min((int)a.X, (int)b.X), 0, width - 1);
         var y1 = Math.Clamp(Math.Min((int)a.Y, (int)b.Y), 0, height - 1);
         var x2 = Math.Clamp(Math.Max((int)a.X, (int)b.X), 0, width - 1);
