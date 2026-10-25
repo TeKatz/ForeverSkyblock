@@ -228,7 +228,6 @@ public static class ForeverStudioReviewApplyService
         if (duplicate is not null)
             throw new InvalidOperationException($"More than one staged change targets '{duplicate.Key}'.");
 
-        // Preflight the entire set first. If any source changed after Review, nothing is written.
         foreach (var change in changes)
         {
             var currentHash = File.Exists(change.FullPath) ? HashFile(change.FullPath) : MissingHash;
@@ -241,6 +240,7 @@ public static class ForeverStudioReviewApplyService
 
         var staged = new List<StagedFile>();
         var applied = new List<StagedFile>();
+        var preserveBackups = false;
         try
         {
             foreach (var change in changes)
@@ -282,7 +282,7 @@ public static class ForeverStudioReviewApplyService
                 }
                 catch
                 {
-                    // Preserve the original exception. Backups are left in place if rollback itself fails.
+                    preserveBackups = true;
                 }
             }
             throw;
@@ -292,7 +292,8 @@ public static class ForeverStudioReviewApplyService
             foreach (var file in staged)
             {
                 TryDelete(file.TempPath);
-                TryDelete(file.BackupPath);
+                if (!preserveBackups)
+                    TryDelete(file.BackupPath);
             }
         }
     }
@@ -357,20 +358,19 @@ public static class ForeverStudioReviewApplyService
     {
         var map = Enumerable.Repeat(-1, editable.Count).ToArray();
         var used = new bool[source.Count];
-        if (source.Count == editable.Count)
+
+        for (var i = 0; i < Math.Min(source.Count, editable.Count); i++)
         {
-            for (var i = 0; i < editable.Count; i++)
-            {
-                map[i] = i;
-                used[i] = true;
-            }
-            return map;
+            if (!KnownElementEquivalent(source[i], editable[i]))
+                continue;
+            map[i] = i;
+            used[i] = true;
         }
 
-        // First preserve exact unchanged elements. This handles insert/delete operations without
-        // moving unknown JSON metadata to a neighboring element.
         for (var e = 0; e < editable.Count; e++)
         {
+            if (map[e] >= 0)
+                continue;
             for (var s = 0; s < source.Count; s++)
             {
                 if (used[s] || !KnownElementEquivalent(source[s], editable[e]))
@@ -381,8 +381,6 @@ public static class ForeverStudioReviewApplyService
             }
         }
 
-        // Remaining elements are edited/new. Pair edited elements with the nearest unused source
-        // by structural similarity; excess editable elements are treated as newly inserted.
         for (var e = 0; e < editable.Count; e++)
         {
             if (map[e] >= 0)
@@ -540,7 +538,7 @@ public static class ForeverStudioReviewApplyService
                     }
                 }
                 if (firstObjectIndex >= 0)
-                    clone[firstObjectIndex] = PatchVariantObject((JsonObject)clone[firstObjectIndex]!, edited);
+                    PatchVariantObject((JsonObject)clone[firstObjectIndex]!, edited);
                 else
                     clone.Add(PatchVariantObject(new JsonObject(), edited));
                 variants[propertyName] = clone;
