@@ -13,6 +13,8 @@ namespace ForeverGuiDesigner;
 public partial class MainWindow
 {
     private bool _studioRuntimeAnimationIntegrationInitialized;
+    private bool _studioRuntimeAnimationPreviewQueued;
+    private double _studioRuntimeAnimationPreviewTime;
     private ForeverRuntimeAnimationProfile? _studioRuntimeAnimationProfile;
 
     public void EnableForeverRuntimeAnimationIntegration()
@@ -127,17 +129,27 @@ public partial class MainWindow
     {
         if (!_studioRuntimeAnimationIntegrationInitialized)
             return;
-        Dispatcher.BeginInvoke(() =>
+
+        // Keep only the newest requested timeline time. Previously every slider/playback tick queued a
+        // separate full model rebuild, allowing the Dispatcher backlog to grow faster than WPF could
+        // render it. That caused the entire application to stall and old/new frames to alternate.
+        _studioRuntimeAnimationPreviewTime = _studioAnimationTimeline?.Value ?? 0;
+        if (_studioRuntimeAnimationPreviewQueued)
+            return;
+
+        _studioRuntimeAnimationPreviewQueued = true;
+        _ = Dispatcher.BeginInvoke(() =>
         {
+            _studioRuntimeAnimationPreviewQueued = false;
             if (_studioAnimationSurface?.Visibility == Visibility.Visible)
-                RenderStudioRuntimeAnimationPreview(_studioAnimationTimeline?.Value ?? 0);
-        }, DispatcherPriority.Background);
+                RenderStudioRuntimeAnimationPreview(_studioRuntimeAnimationPreviewTime);
+        }, DispatcherPriority.Render);
     }
 
     private void RenderStudioRuntimeAnimationPreview(double time)
     {
-        if (_studioRuntimeAnimationProfile is null || !_studioRuntimeAnimationProfile.HasRuntimeAnimation ||
-            _studioAnimationViewport is null || _studioEditableBlockModel is null || string.IsNullOrWhiteSpace(_repoRoot))
+        if (_studioRuntimeAnimationProfile is null || _studioAnimationViewport is null ||
+            _studioEditableBlockModel is null || string.IsNullOrWhiteSpace(_repoRoot))
             return;
 
         var phase = Math.Clamp(time / Math.Max(.0001, _studioAnimationDurationSeconds), 0, 1);
@@ -152,19 +164,49 @@ public partial class MainWindow
             ApplyStudioAnimationInteractionFrameToElement(preview, elementIndex, frame);
         }
 
-        switch (_studioRuntimeAnimationProfile.AssetId)
+        if (_studioRuntimeAnimationProfile.HasRuntimeAnimation)
         {
-            case "condenser_mark_i": AddStudioRuntimeCondenserMarkI(preview, phase); break;
-            case "condenser_mark_ii": AddStudioRuntimeCondenserMarkII(preview, phase); break;
-            case "ascension_chamber": AddStudioRuntimeAscension(preview, phase); break;
-            case "refining_chamber": AddStudioRuntimeRefining(preview, phase); break;
-            case "garden_chamber_mark_i": AddStudioRuntimeGarden(preview, phase); break;
-            case "washing_basin": AddStudioRuntimeWashing(preview, phase); break;
-            case "crucible": AddStudioRuntimeCrucible(preview, phase); break;
+            // Runtime boxes use the same atlas resources as the actual BlockEntityRenderer geometry.
+            // These slots were previously only injected by the static parity preview, which left
+            // Garden/runtime overlays without resolvable materials in the animation viewport.
+            AddRuntimeTextureSlots(preview);
+
+            var selectedRuntimeTrack = _studioAnimationRuntimeCurveCombo?.SelectedItem as ForeverRuntimeAnimationTrack;
+            switch (_studioRuntimeAnimationProfile.AssetId)
+            {
+                case "condenser_mark_i":
+                    if (!AddStudioRuntimeCondenserVariant(preview, phase, selectedRuntimeTrack?.Id))
+                        AddStudioRuntimeCondenserMarkI(preview, phase);
+                    break;
+                case "condenser_mark_ii":
+                    if (!AddStudioRuntimeCondenserVariant(preview, phase, selectedRuntimeTrack?.Id))
+                        AddStudioRuntimeCondenserMarkII(preview, phase);
+                    break;
+                case "ascension_chamber": AddStudioRuntimeAscension(preview, phase); break;
+                case "refining_chamber": AddStudioRuntimeRefining(preview, phase); break;
+                case "garden_chamber_mark_i": AddStudioRuntimeGarden(preview, phase); break;
+                case "washing_basin": AddStudioRuntimeWashing(preview, phase); break;
+                case "crucible": AddStudioRuntimeCrucible(preview, phase); break;
+            }
         }
 
-        _studioAnimationViewport.SetTextureOverrides(_studioTextureOverrides);
-        _studioAnimationViewport.SetModel(_repoRoot, preview, _studioEditableBlockstateXRotation, _studioEditableBlockstateYRotation);
+        // Animation playback now keeps the existing scene/material graph alive. A full rebuild is
+        // performed only when topology actually changes (machine/track/state switch); all following
+        // frames update only mesh coordinates and transforms.
+        if (!_studioAnimationViewport.TryUpdateAnimatedModel(
+                _repoRoot,
+                preview,
+                _studioEditableBlockstateXRotation,
+                _studioEditableBlockstateYRotation))
+        {
+            _studioAnimationViewport.SetTextureOverrides(_studioTextureOverrides);
+            _studioAnimationViewport.SetModel(
+                _repoRoot,
+                preview,
+                _studioEditableBlockstateXRotation,
+                _studioEditableBlockstateYRotation);
+        }
+
         if (selectedTarget?.Kind == AnimationTargetKind.JsonModelElement && selectedTarget.ElementIndex is int selectedIndex)
             _studioAnimationViewport.SelectElement(selectedIndex);
     }
@@ -212,9 +254,11 @@ public partial class MainWindow
         var exit = RuntimeSmooth(.84, 1, phase);
         var y = 5.8 + (1.85 - 5.8) * exit;
         var z = 1.35 + 1.35 * exit;
-        var s = Math.Max(.05, .55 * product);
-        if (product > .001)
-            AddRuntimeBox(model, 7, 8-s,y-s,z-s,8+s,y+s,z+s,0,[8,y,z]);
+        var s = .55 * product;
+
+        // Keep topology stable across the whole cycle. At zero product the box collapses to one point
+        // instead of being removed, allowing the viewport to keep the same GeometryModel3D objects.
+        AddRuntimeBox(model, 7, 8-s,y-s,z-s,8+s,y+s,z+s,0,[8,y,z]);
     }
 
     private static void AddStudioRuntimeAscension(MinecraftResolvedBlockModel model, double phase)
@@ -265,12 +309,20 @@ public partial class MainWindow
             var y = 12.7 - fall * 8.6;
             AddRuntimeBox(model,7,x,y,zz,x+.12,y+.3,zz+.12,0,[x,y,zz]);
         }
+
         var harvest = RuntimeSmooth(.86,1,phase);
+        var sweep = 3.4 + harvest * 8.8;
         if (harvest > 0)
         {
-            var sweep = 3.4 + harvest * 8.8;
             AddRuntimeBox(model,7,2.7,sweep,2.7,13.3,sweep+.12,2.85,0,[8,sweep,2.8]);
             AddRuntimeBox(model,7,2.7,sweep,13.15,13.3,sweep+.12,13.3,0,[8,sweep,13.2]);
+        }
+        else
+        {
+            // Preserve both harvest elements before the source condition becomes active. A fully
+            // collapsed box is invisible but keeps the per-frame mesh topology constant.
+            AddRuntimeBox(model,7,8,sweep,2.775,8,sweep,2.775,0,[8,sweep,2.775]);
+            AddRuntimeBox(model,7,8,sweep,13.225,8,sweep,13.225,0,[8,sweep,13.225]);
         }
     }
 
