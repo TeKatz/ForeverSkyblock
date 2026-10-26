@@ -28,6 +28,8 @@ public partial class App : Application
         window.EnableForeverMachineBuilderFoundation();
         window.EnableForeverMachineBuilderLibraryPhase2();
         window.EnableForeverMachineBuilderLibraryPhase2EntryFix();
+        window.EnableForeverMachineBuilderVisualDesignPhase3();
+        window.EnableForeverMachineBuilderVisualDirectManipulationPhase3();
         window.EnableForeverBlockModelViewer();
         window.EnableForeverBlockEditorRepositoryReloadFix();
         window.EnableForeverUvTextureEditor();
