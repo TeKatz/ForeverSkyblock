@@ -27,7 +27,7 @@ public partial class MainWindow
             {
                 if (!text.Text.StartsWith("Phase 17C.3", StringComparison.Ordinal))
                     continue;
-                text.Text = "Phase 17D.2 keeps the complete Phase 17A–17C authoring model in the versioned project format introduced by 17D.1 and adds the matching NeoForge server-data runtime loader. Datapack reloads validate and atomically register animation documents by asset while existing Java renderers remain authoritative until the explicit client sync / TargetId binding step in Phase 17D.3.";
+                text.Text = "Phase 17D.2 keeps the complete Phase 17A–17C authoring model in the versioned project format introduced by 17D.1 and adds the matching NeoForge server-data runtime loader. Datapack reloads validate and atomically register animation documents by asset; the dedicated-server GameTest path verifies real resource loading. Existing Java renderers remain authoritative until the explicit client sync / TargetId binding step in Phase 17D.3.";
                 break;
             }
         }
