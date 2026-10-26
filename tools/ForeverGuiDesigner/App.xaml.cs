@@ -39,6 +39,7 @@ public partial class App : Application
         window.EnableForeverRuntimeStateStudio();
         window.EnableForeverRuntimeStateGardenFinalizer();
         window.EnableForeverRuntimeStateEditorFinalizer();
+        window.EnableForeverAnimationDiscreteChannels();
         window.EnableForeverAnimationPhase17CLabels();
         MainWindow = window;
         window.Show();
