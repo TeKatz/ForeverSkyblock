@@ -9,6 +9,8 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 
 /** Shows the stored lava as a rising, visible fill inside the open crucible model. */
 public final class CrucibleRenderer implements BlockEntityRenderer<CrucibleBlockEntity> {
+    private static final String ASSET="crucible";
+
     public CrucibleRenderer(BlockEntityRendererProvider.Context context) { }
 
     @Override public void render(CrucibleBlockEntity crucible, float partialTick, PoseStack poses,
@@ -17,17 +19,24 @@ public final class CrucibleRenderer implements BlockEntityRenderer<CrucibleBlock
         int fill = crucible.getBlockState().getValue(CrucibleBlock.FILL);
         if (fill <= 0) return;
         float top = 4.35F + fill * 1.05F;
+        float time=crucible.getLevel()==null?0:crucible.getLevel().getGameTime()+(net.minecraft.client.Minecraft.getInstance().isPaused()?0:partialTick);
+        double studioPhase=ForeverStudioRendererBinding.elapsedPhase(ASSET,time/20D);
         poses.pushPose();
         poses.scale(1 / 16F, 1 / 16F, 1 / 16F);
-        MachineGeometry.plantBox(poses, buffers, 0xFF6A18, 3.1F, 4.15F, 3.1F, 12.9F, top, 12.9F, light, overlay);
-        MachineGeometry.plantBox(poses, buffers, 0xFF9A2E, 2.95F, top, 2.95F, 13.05F, top + .14F, 13.05F, 15728880, overlay);
-        float time=crucible.getLevel()==null?0:crucible.getLevel().getGameTime()+(net.minecraft.client.Minecraft.getInstance().isPaused()?0:partialTick);
+        ForeverStudioRendererBinding.component(poses,ASSET,"crucible_lava_surface",studioPhase,8,(4.15F+top)/2F,8,()->{
+            MachineGeometry.plantBox(poses, buffers, 0xFF6A18, 3.1F, 4.15F, 3.1F, 12.9F, top, 12.9F, light, overlay);
+            MachineGeometry.plantBox(poses, buffers, 0xFF9A2E, 2.95F, top, 2.95F, 13.05F, top + .14F, 13.05F, 15728880, overlay);
+        });
         // Thermal convection is tied to stored hot lava, independent of recipe activity.
-        for(int i=0;i<4;i++) {
-            float drift=(time/90F+i*.25F)%1;
-            float size=.12F+.28F*(float)Math.sin(Math.PI*drift);
-            float x=4.2F+i*2.2F,z=6+(float)Math.sin(i*2.4F+drift*6.28F)*2;
-            MachineGeometry.plantBox(poses,buffers,0xFFD28A,x-size,top+.15F,z-size,x+size,top+.18F,z+size,15728880,overlay);
+        if(ForeverStudioRendererBinding.effect(ASSET,"thermal-convection",studioPhase,true)) {
+            for(int i=0;i<4;i++) {
+                int index=i;
+                float drift=(time/90F+i*.25F)%1;
+                float size=.12F+.28F*(float)Math.sin(Math.PI*drift);
+                float x=4.2F+i*2.2F,z=6+(float)Math.sin(i*2.4F+drift*6.28F)*2;
+                ForeverStudioRendererBinding.component(poses,ASSET,"crucible_convection_"+index,studioPhase,x,top+.165F,z,
+                        ()->MachineGeometry.plantBox(poses,buffers,0xFFD28A,x-size,top+.15F,z-size,x+size,top+.18F,z+size,15728880,overlay));
+            }
         }
         poses.popPose();
     }

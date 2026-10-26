@@ -18,10 +18,47 @@ public partial class App : Application
 
         var window = new MainWindow();
         window.PrepareStartupPresentation();
+        window.EnableForeverStudioFoundation();
+        window.EnableForeverBlockModelViewer();
+        window.EnableForeverUvTextureEditor();
+        window.EnableForeverItemStudio();
+        window.EnableForeverBlockDirectEditing();
+        window.EnableForeverTextureCanvasStability();
+        window.EnableForeverAdvancedTextureEditor();
+        window.EnableForeverItemTextureStudio();
+        window.EnableForeverStudioUxQoL();
+        window.EnableForeverMachineBlockEntityPreviewParity();
+        window.EnableForeverBlockstateEditor();
+        window.EnableForeverReviewValidationApply();
+        window.EnableForeverAnimationStudio();
+        window.EnableForeverAnimationStudioInteraction();
+        window.EnableForeverAnimationTimelineStability();
+        window.EnableForeverRuntimeAnimationIntegration();
+        window.EnableForeverRuntimeAnimationVariants();
+        window.EnableStudioRuntimeAnimationProfileBindingFix();
+        window.EnableForeverRuntimeStateStudio();
+        window.EnableForeverRuntimeStateGardenFinalizer();
+        window.EnableForeverRuntimeStateEditorFinalizer();
+        window.EnableForeverAnimationDiscreteChannels();
+        window.EnableForeverAnimationMaterialEffects();
+        window.EnableForeverAnimationMaterialResolver();
+        window.EnableForeverAnimationPhase17CLabels();
+        window.EnableForeverAnimationPersistence();
+        window.EnableForeverAnimationPersistenceDirtyTracking();
+        window.EnableForeverAnimationPersistenceDirtySignals();
+        window.EnableForeverAnimationRuntimeTargetAuthoring();
+        window.EnableForeverAnimationRuntimeTargetPreview();
+        window.EnableForeverAnimationRuntimeTargetRefresh();
+        window.EnableForeverAnimationPhase17DLabels();
+        window.EnableForeverAnimationPhase17Q();
+        window.EnableForeverAnimationPhase17QWorkflowPolish();
+        window.EnableForeverAnimationPhase17QLayoutTuning();
+        window.EnableForeverAnimationPhase17QDensityFix();
+        window.EnableForeverAnimationPhase17R();
         MainWindow = window;
         window.Show();
 
-        Dispatcher.BeginInvoke(() =>
+        _ = Dispatcher.BeginInvoke(() =>
         {
             window.EnablePersonalWorkspaceQoL();
             window.EnableForeverSkyblockTools();

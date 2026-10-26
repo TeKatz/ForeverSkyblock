@@ -1,0 +1,65 @@
+{
+  "formatVersion": 1,
+  "assetId": "runtime_loader_fixture",
+  "sourceModel": "test:runtime_loader_fixture",
+  "animation": {
+    "id": "default",
+    "displayName": "Runtime Loader Fixture",
+    "durationSeconds": 2.0,
+    "loop": true,
+    "tracks": [
+      {
+        "targetId": "runtime:runtime_loader_fixture:test_component",
+        "modelKey": "",
+        "elementIndex": -1,
+        "keyframes": [
+          {
+            "timeSeconds": 0.0,
+            "position": [0.0, 0.0, 0.0],
+            "rotationAxis": "y",
+            "rotationDegrees": 0.0,
+            "scale": [1.0, 1.0, 1.0],
+            "visible": true,
+            "textureState": "",
+            "lightStatus": "",
+            "specialEffect": "",
+            "machineState": "Idle",
+            "interpolation": "Smooth"
+          },
+          {
+            "timeSeconds": 1.0,
+            "position": [1.0, 0.0, 0.0],
+            "rotationAxis": "y",
+            "rotationDegrees": 45.0,
+            "scale": [1.0, 1.0, 1.0],
+            "visible": true,
+            "textureState": "",
+            "lightStatus": "",
+            "specialEffect": "",
+            "machineState": "Idle",
+            "interpolation": "Linear"
+          }
+        ]
+      }
+    ],
+    "runtimeStateBase": {
+      "status": "idle"
+    },
+    "statusTracks": [
+      {
+        "axisId": "status",
+        "keyframes": [
+          { "timeSeconds": 0.5, "optionId": "running" }
+        ]
+      }
+    ],
+    "effectTracks": [
+      {
+        "effectId": "test-effect",
+        "keyframes": [
+          { "timeSeconds": 0.75, "mode": "suppressed" }
+        ]
+      }
+    ]
+  }
+}

@@ -8,6 +8,8 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.*;
 
 public final class AscensionRenderer implements BlockEntityRenderer<AscensionChamberBlockEntity> {
+    private static final String ASSET = "ascension_chamber";
+
     public AscensionRenderer(BlockEntityRendererProvider.Context context) { }
     @Override public void render(AscensionChamberBlockEntity machine,float partialTick,PoseStack p,MultiBufferSource buffers,int light,int overlay) {
         p.pushPose();p.translate(.5,0,.5);
@@ -15,23 +17,36 @@ public final class AscensionRenderer implements BlockEntityRenderer<AscensionCha
         p.translate(-.5,0,-.5);p.scale(1/16F,1/16F,1/16F);
         boolean active=machine.getBlockState().getValue(AscensionChamberBlock.ACTIVE);
         float phase=active?machine.visualProgress(partialTick)/AscensionChamberBlockEntity.DURATION:0;
-        ring(p,buffers,4.5F,2.8F,active?phase*180:0,active,light,overlay);
-        ring(p,buffers,3.15F,1.6F,active?-phase*360:0,active,light,overlay);
+        boolean visualActive="active".equalsIgnoreCase(ForeverStudioRendererBinding.status(ASSET,"activity",phase,active?"active":"idle"));
+
+        ForeverStudioRendererBinding.component(p,ASSET,"ascension_outer_ring",phase,8,8,2.8,
+                ()->ring(p,buffers,4.5F,2.8F,active?phase*180:0,visualActive,light,overlay));
+        ForeverStudioRendererBinding.component(p,ASSET,"ascension_inner_ring",phase,8,8,1.6,
+                ()->ring(p,buffers,3.15F,1.6F,active?-phase*360:0,visualActive,light,overlay));
+
         if(!machine.inventory().getStackInSlot(0).isEmpty()) {
-            p.pushPose();p.translate(8,8+(active?Math.sin(phase*Math.PI*4)*.18:0),2.5);
-            if(active)p.mulPose(Axis.ZP.rotationDegrees((float)Math.sin(phase*Math.PI*2)*9));
-            MachineGeometry.box(p,buffers,32,-1.4F,-1.4F,-1.0F,1.4F,1.4F,.9F,light,overlay);
-            for(float x:new float[]{-1.15F,.75F}) for(float y:new float[]{-1.15F,.75F})
-                MachineGeometry.box(p,buffers,37,x,y,-1.12F,x+.4F,y+.4F,-1.04F,light,overlay);
-            p.mulPose(Axis.ZP.rotationDegrees(45));
-            MachineGeometry.box(p,buffers,7,-.65F,-.65F,-1.15F,.65F,.65F,-1.13F,light,overlay);
-            MachineGeometry.box(p,buffers,8,-.25F,-.25F,-1.18F,.25F,.25F,-1.16F,light,overlay);
-            p.popPose();
+            float bob=active?(float)Math.sin(phase*Math.PI*4)*.18F:0;
+            ForeverStudioRendererBinding.component(p,ASSET,"ascension_core",phase,8,8+bob,2.5,()->{
+                p.pushPose();p.translate(8,8+bob,2.5);
+                if(active)p.mulPose(Axis.ZP.rotationDegrees((float)Math.sin(phase*Math.PI*2)*9));
+                MachineGeometry.box(p,buffers,32,-1.4F,-1.4F,-1.0F,1.4F,1.4F,.9F,light,overlay);
+                for(float x:new float[]{-1.15F,.75F}) for(float y:new float[]{-1.15F,.75F})
+                    MachineGeometry.box(p,buffers,37,x,y,-1.12F,x+.4F,y+.4F,-1.04F,light,overlay);
+                p.mulPose(Axis.ZP.rotationDegrees(45));
+                MachineGeometry.box(p,buffers,7,-.65F,-.65F,-1.15F,.65F,.65F,-1.13F,light,overlay);
+                MachineGeometry.box(p,buffers,8,-.25F,-.25F,-1.18F,.25F,.25F,-1.16F,light,overlay);
+                p.popPose();
+            });
         }
-        if(active)for(int i=0;i<6;i++) {
-            double angle=phase*Math.PI*4+i*Math.PI/3;
-            float x=8+(float)Math.cos(angle)*2.3F,y=8+(float)Math.sin(angle)*2.3F;
-            MachineGeometry.box(p,buffers,7,x,y,2.1F,x+.13F,y+.13F,2.25F,light,overlay);
+
+        if(ForeverStudioRendererBinding.effect(ASSET,"orbit-particles",phase,active)) {
+            ForeverStudioRendererBinding.component(p,ASSET,"ascension_particles",phase,8,8,2.5,()->{
+                for(int i=0;i<6;i++) {
+                    double angle=phase*Math.PI*4+i*Math.PI/3;
+                    float x=8+(float)Math.cos(angle)*2.3F,y=8+(float)Math.sin(angle)*2.3F;
+                    MachineGeometry.box(p,buffers,7,x,y,2.1F,x+.13F,y+.13F,2.25F,light,overlay);
+                }
+            });
         }
         p.popPose();
     }
