@@ -272,9 +272,9 @@ public partial class MainWindow
     private static Style CreateStudioDarkComboBoxItemStyle()
     {
         var style = new Style(typeof(ComboBoxItem));
-        style.SetValue(Control.ForegroundProperty, Brush("#DDE8EB"));
-        style.SetValue(Control.PaddingProperty, new Thickness(10, 7, 10, 7));
-        style.SetValue(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch);
+        style.Setters.Add(new Setter(Control.ForegroundProperty, Brush("#DDE8EB")));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(10, 7, 10, 7)));
+        style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
 
         var template = new ControlTemplate(typeof(ComboBoxItem));
         var border = new FrameworkElementFactory(typeof(Border));
@@ -307,7 +307,7 @@ public partial class MainWindow
                 new Setter(Control.ForegroundProperty, Brush("#7CDBD8"))
             }
         });
-        style.SetValue(Control.TemplateProperty, template);
+        style.Setters.Add(new Setter(Control.TemplateProperty, template));
         return style;
     }
 
