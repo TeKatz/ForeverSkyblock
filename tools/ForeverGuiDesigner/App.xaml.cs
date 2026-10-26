@@ -19,6 +19,7 @@ public partial class App : Application
         var window = new MainWindow();
         window.PrepareStartupPresentation();
         window.EnableForeverStudioFoundation();
+        window.EnableForeverStudioStartScreenPolish();
         window.EnableForeverBlockModelViewer();
         window.EnableForeverUvTextureEditor();
         window.EnableForeverItemStudio();
