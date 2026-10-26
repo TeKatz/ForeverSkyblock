@@ -1025,7 +1025,8 @@ public partial class MainWindow
         Border header,
         MouseEventArgs e)
     {
-        if (!header.IsMouseCaptured || !_machineBuilderFunctionDraggingNodeId?.Equals(node.Id, StringComparison.OrdinalIgnoreCase) == true)
+        if (!header.IsMouseCaptured ||
+            !string.Equals(_machineBuilderFunctionDraggingNodeId, node.Id, StringComparison.OrdinalIgnoreCase))
             return;
         var current = e.GetPosition(_machineBuilderFunctionCanvas);
         var x = Math.Clamp(_machineBuilderFunctionDragNodeX + current.X - _machineBuilderFunctionDragStart.X,
