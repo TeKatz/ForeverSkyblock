@@ -8,7 +8,7 @@ on:
   push:
     branches:
       - main
-      - feature/forever-studio-start-screen-polish
+      - feature/forever-studio-machine-builder
     paths:
       - 'tools/ForeverGuiDesigner/**'
       - '.github/workflows/gui-designer.yml'
@@ -77,7 +77,7 @@ jobs:
             size = $item.Length
             builtAt = (Get-Date).ToUniversalTime().ToString('o')
             notes = if ($channel -eq 'development') {
-              'Latest development build from feature/forever-studio-start-screen-polish.'
+              'Latest development build from feature/forever-studio-machine-builder.'
             } else {
               'Latest stable build from main.'
             }
