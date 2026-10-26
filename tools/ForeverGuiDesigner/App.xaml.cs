@@ -43,6 +43,7 @@ public partial class App : Application
         window.EnableForeverAnimationMaterialEffects();
         window.EnableForeverAnimationMaterialResolver();
         window.EnableForeverAnimationPhase17CLabels();
+        window.EnableForeverAnimationPersistence();
         MainWindow = window;
         window.Show();
 
