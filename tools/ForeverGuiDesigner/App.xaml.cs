@@ -40,6 +40,8 @@ public partial class App : Application
         window.EnableForeverRuntimeStateGardenFinalizer();
         window.EnableForeverRuntimeStateEditorFinalizer();
         window.EnableForeverAnimationDiscreteChannels();
+        window.EnableForeverAnimationMaterialEffects();
+        window.EnableForeverAnimationMaterialResolver();
         window.EnableForeverAnimationPhase17CLabels();
         MainWindow = window;
         window.Show();
