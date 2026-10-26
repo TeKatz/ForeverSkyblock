@@ -37,7 +37,12 @@ final class ForeverStudioClientAnimationsTest {
         assertEquals("x", exact.rotationAxis());
         assertEquals(180, exact.rotationDegrees(), .000001);
         assertTrue(exact.visible());
-        assertEquals(exact, ForeverStudioClientAnimations.evaluate(track, 9));
+        var held = ForeverStudioClientAnimations.evaluate(track, 9);
+        assertArrayEquals(exact.position(), held.position(), .000001);
+        assertArrayEquals(exact.scale(), held.scale(), .000001);
+        assertEquals(exact.rotationAxis(), held.rotationAxis());
+        assertEquals(exact.rotationDegrees(), held.rotationDegrees(), .000001);
+        assertEquals(exact.visible(), held.visible());
     }
 
     @Test void stepInterpolationHoldsLeftTransform() {
