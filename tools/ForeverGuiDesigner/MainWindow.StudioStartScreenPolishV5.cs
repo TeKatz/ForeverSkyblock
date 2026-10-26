@@ -102,7 +102,7 @@ public partial class MainWindow
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         var development = CreateStudioChannelSegmentButton("Development", leftSide: true);
-        development.Click += (_, _) => source.SelectedIndex = 0;
+        development.Button.Click += (_, _) => source.SelectedIndex = 0;
         Grid.SetColumn(development.Button, 0);
         grid.Children.Add(development.Button);
 
@@ -118,7 +118,7 @@ public partial class MainWindow
         grid.Children.Add(divider);
 
         var stable = CreateStudioChannelSegmentButton("Stable", leftSide: false);
-        stable.Click += (_, _) => source.SelectedIndex = 1;
+        stable.Button.Click += (_, _) => source.SelectedIndex = 1;
         Grid.SetColumn(stable.Button, 2);
         grid.Children.Add(stable.Button);
 
