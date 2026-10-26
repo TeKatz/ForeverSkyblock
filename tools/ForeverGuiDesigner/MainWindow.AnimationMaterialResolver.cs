@@ -1,3 +1,5 @@
+using ForeverGuiDesigner.Services;
+
 namespace ForeverGuiDesigner;
 
 /// <summary>
@@ -24,11 +26,19 @@ public partial class MainWindow
             return sourceTexture;
 
         var target = GetSelectedStudioAnimationTarget();
-        if (target?.Kind != Services.AnimationTargetKind.JsonModelElement ||
+        if (target?.Kind != AnimationTargetKind.JsonModelElement ||
             target.ElementIndex is not int targetIndex || targetIndex != elementIndex)
             return sourceTexture;
 
-        var keyedTexture = ResolveStudioMaterialTextureState(_studioAnimationTimeline?.Value ?? 0);
+        // A hidden target is physically removed from the preview list. Never apply its material to
+        // the next element that shifts into the same numeric index after that removal.
+        var time = _studioAnimationTimeline?.Value ?? 0;
+        var track = FindStudioAnimationTrackForTarget(target);
+        var frame = EvaluateStudioAnimationFrame(track, time);
+        if (!frame.Visible)
+            return sourceTexture;
+
+        var keyedTexture = frame.TextureState?.Trim() ?? string.Empty;
         return IsValidStudioMaterialTextureReference(_studioEditableBlockModel, keyedTexture)
             ? keyedTexture
             : sourceTexture;
