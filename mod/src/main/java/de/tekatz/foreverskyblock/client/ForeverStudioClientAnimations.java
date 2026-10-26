@@ -2,7 +2,6 @@ package de.tekatz.foreverskyblock.client;
 
 import de.tekatz.foreverskyblock.animation.ForeverStudioAnimationDocument;
 import de.tekatz.foreverskyblock.animation.ForeverStudioAnimationWire;
-import de.tekatz.foreverskyblock.network.ForeverStudioAnimationNetwork;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -25,14 +24,16 @@ public final class ForeverStudioClientAnimations {
 
     private ForeverStudioClientAnimations() { }
 
-    public static synchronized void accept(ForeverStudioAnimationNetwork.SyncChunk chunk) {
-        if (chunk.index() == 0 || receiving == null || receiving.generation != chunk.generation())
-            receiving = new Receiving(chunk.generation(), chunk.total());
-        if (receiving.generation != chunk.generation() || receiving.parts.length != chunk.total())
+    public static synchronized void accept(long generation, int index, int total, String data) {
+        if (generation < 0 || index < 0 || total < 1 || index >= total || data == null)
+            throw new IllegalArgumentException("Invalid Forever Studio animation client chunk");
+        if (index == 0 || receiving == null || receiving.generation != generation)
+            receiving = new Receiving(generation, total);
+        if (receiving.generation != generation || receiving.parts.length != total)
             return;
-        if (!receiving.received[chunk.index()]) {
-            receiving.parts[chunk.index()] = chunk.data();
-            receiving.received[chunk.index()] = true;
+        if (!receiving.received[index]) {
+            receiving.parts[index] = data;
+            receiving.received[index] = true;
             receiving.count++;
         }
         if (receiving.count != receiving.parts.length)
@@ -171,7 +172,7 @@ public final class ForeverStudioClientAnimations {
         }
         boolean sameAxis = left.rotationAxis.equalsIgnoreCase(right.rotationAxis);
         return new Frame(position,
-                sameAxis ? left.rotationAxis : left.rotationAxis,
+                left.rotationAxis,
                 sameAxis ? lerp(left.rotationDegrees, right.rotationDegrees, amount) : left.rotationDegrees,
                 scale, left.visible);
     }
@@ -197,7 +198,7 @@ public final class ForeverStudioClientAnimations {
                 previousDash = true;
             }
         }
-        while (!result.isEmpty() && result.charAt(result.length() - 1) == '-') result.deleteCharAt(result.length() - 1);
+        while (result.length() > 0 && result.charAt(result.length() - 1) == '-') result.deleteCharAt(result.length() - 1);
         return result.toString();
     }
 
