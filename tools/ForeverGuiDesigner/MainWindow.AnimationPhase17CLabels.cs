@@ -17,7 +17,7 @@ public partial class MainWindow
             foreach (var border in viewportGrid.Children.OfType<Border>())
             {
                 if (border.Child is TextBlock text && text.Text.StartsWith("BLOCK ANIMATION · PHASE 17", StringComparison.Ordinal))
-                    text.Text = "BLOCK ANIMATION · PHASE 17C";
+                    text.Text = "BLOCK ANIMATION · PHASE 17C.2";
             }
         }
 
@@ -28,7 +28,7 @@ public partial class MainWindow
                 if (!text.Text.StartsWith("Phase 17B stabilizes", StringComparison.Ordinal))
                     continue;
 
-                text.Text = "Phase 17C.1 adds source-backed machine/runtime state on top of the stable Phase 17A TargetId and Phase 17B transform timeline. Runtime states are preview-only and select real Forever Skyblock renderer predicates; source Java and project files remain unchanged.";
+                text.Text = "Phase 17C.2 separates three animation concerns on the stable Phase 17A TargetId foundation: interpolated Position / Rotation / Scale, target-local Visibility with discrete Step/Hold behavior, and machine-wide source-backed Light / Status state with its own Step/Hold timeline. Phase 17C.1 runtime-state controls remain the base state; all animation data is still preview-only and source Java/project files remain unchanged.";
                 break;
             }
         }
