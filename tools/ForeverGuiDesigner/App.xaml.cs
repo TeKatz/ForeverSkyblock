@@ -50,6 +50,7 @@ public partial class App : Application
         window.EnableForeverAnimationRuntimeTargetPreview();
         window.EnableForeverAnimationRuntimeTargetRefresh();
         window.EnableForeverAnimationPhase17DLabels();
+        window.EnableForeverAnimationPhase17Q();
         MainWindow = window;
         window.Show();
 
