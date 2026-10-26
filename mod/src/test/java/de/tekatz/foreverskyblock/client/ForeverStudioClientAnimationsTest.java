@@ -2,7 +2,6 @@ package de.tekatz.foreverskyblock.client;
 
 import de.tekatz.foreverskyblock.animation.ForeverStudioAnimationDocument;
 import de.tekatz.foreverskyblock.animation.ForeverStudioAnimationWire;
-import de.tekatz.foreverskyblock.network.ForeverStudioAnimationNetwork;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -58,7 +57,7 @@ final class ForeverStudioClientAnimationsTest {
     @Test void wireSnapshotInstallsAtomicallyAndUsesCanonicalRuntimeIds() {
         var document = document();
         String json = ForeverStudioAnimationWire.encodeSnapshot(List.of(document));
-        ForeverStudioClientAnimations.accept(new ForeverStudioAnimationNetwork.SyncChunk(7,0,1,json));
+        ForeverStudioClientAnimations.accept(7,0,1,json);
 
         assertEquals(7, ForeverStudioClientAnimations.generation());
         assertEquals(1, ForeverStudioClientAnimations.size());
@@ -73,17 +72,17 @@ final class ForeverStudioClientAnimationsTest {
     @Test void incompleteChunksNeverReplaceTheInstalledSnapshot() {
         String json = ForeverStudioAnimationWire.encodeSnapshot(List.of(document()));
         int split = json.length()/2;
-        ForeverStudioClientAnimations.accept(new ForeverStudioAnimationNetwork.SyncChunk(8,0,2,json.substring(0,split)));
+        ForeverStudioClientAnimations.accept(8,0,2,json.substring(0,split));
         assertEquals(-1, ForeverStudioClientAnimations.generation());
         assertEquals(0, ForeverStudioClientAnimations.size());
-        ForeverStudioClientAnimations.accept(new ForeverStudioAnimationNetwork.SyncChunk(8,1,2,json.substring(split)));
+        ForeverStudioClientAnimations.accept(8,1,2,json.substring(split));
         assertEquals(8, ForeverStudioClientAnimations.generation());
         assertEquals(1, ForeverStudioClientAnimations.size());
     }
 
     @Test void statusIsSourceBackedBeforeFirstKeyAndEffectsCanOnlySuppress() {
         String json = ForeverStudioAnimationWire.encodeSnapshot(List.of(document()));
-        ForeverStudioClientAnimations.accept(new ForeverStudioAnimationNetwork.SyncChunk(9,0,1,json));
+        ForeverStudioClientAnimations.accept(9,0,1,json);
 
         assertEquals("idle", ForeverStudioClientAnimations.statusOption("demo","status",.1,"idle"));
         assertEquals("running", ForeverStudioClientAnimations.statusOption("demo","status",.5,"idle"));
@@ -95,8 +94,16 @@ final class ForeverStudioClientAnimationsTest {
 
     @Test void elapsedSourceIndependentTimelineRespectsLoopFlag() {
         String json = ForeverStudioAnimationWire.encodeSnapshot(List.of(document()));
-        ForeverStudioClientAnimations.accept(new ForeverStudioAnimationNetwork.SyncChunk(10,0,1,json));
+        ForeverStudioClientAnimations.accept(10,0,1,json);
         assertEquals(.25, ForeverStudioClientAnimations.elapsedTimelinePhase("demo",5), .000001);
+    }
+
+    @Test void missingStudioSnapshotIsACompleteSourceNoOp() {
+        var frame=ForeverStudioClientAnimations.evaluateRuntime("missing","arm",.5);
+        assertTrue(frame.isIdentity());
+        assertEquals("blocked",ForeverStudioClientAnimations.statusOption("missing","status",.5,"blocked"));
+        assertTrue(ForeverStudioClientAnimations.effectEnabled("missing","sparks",.5,true));
+        assertFalse(ForeverStudioClientAnimations.effectEnabled("missing","sparks",.5,false));
     }
 
     private static ForeverStudioAnimationDocument document() {
