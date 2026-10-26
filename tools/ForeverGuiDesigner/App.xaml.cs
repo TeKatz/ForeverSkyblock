@@ -53,6 +53,7 @@ public partial class App : Application
         window.EnableForeverAnimationPhase17Q();
         window.EnableForeverAnimationPhase17QWorkflowPolish();
         window.EnableForeverAnimationPhase17QLayoutTuning();
+        window.EnableForeverAnimationPhase17QDensityFix();
         MainWindow = window;
         window.Show();
 
