@@ -20,6 +20,8 @@ public partial class App : Application
         window.PrepareStartupPresentation();
         window.EnableForeverStudioFoundation();
         window.EnableForeverStudioStartScreenPolish();
+        window.EnableSelfUpdater();
+        window.EnableForeverStudioStartScreenPolishV2();
         window.EnableForeverBlockModelViewer();
         window.EnableForeverUvTextureEditor();
         window.EnableForeverItemStudio();
@@ -84,7 +86,6 @@ public partial class App : Application
             window.EnableNonWashingStableAnimation();
             window.EnableRuntimeSelectionStabilityFix();
             window.EnableNonWashingButtonWashingParity();
-            window.EnableSelfUpdater();
             window.EnableCompactContextMenus();
             window.EnableContextMenuVisualPolish();
             window.EnableRuntimeContextSelectionFix();
