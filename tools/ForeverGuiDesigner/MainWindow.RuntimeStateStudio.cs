@@ -6,7 +6,7 @@ using ForeverGuiDesigner.Services;
 namespace ForeverGuiDesigner;
 
 /// <summary>
-/// Phase 17C.1 runtime-state inspector and preview composer. Runtime states are source-backed and
+/// Phase 17C runtime-state inspector and preview composer. Runtime states are source-backed and
 /// preview-only; they do not mutate Java, blockstate JSON or Studio animation keyframes.
 /// </summary>
 public partial class MainWindow
@@ -335,19 +335,20 @@ public partial class MainWindow
         var hasFreezing = attachment is "freezing" or "garden+freezing";
 
         if (hasGarden)
-            AddStudioRuntimeCondenserGardenState(model, phase, running, specimen != "none");
+            AddStudioRuntimeCondenserGardenState(model, phase, running, specimen != "none", assetId);
         else
-            AddStudioRuntimeCondenserProcessState(model, phase, running, job, tier);
+            AddStudioRuntimeCondenserProcessState(model, phase, running, job, tier, assetId);
 
         AddStudioRuntimeCondenserStatusState(model, phase, status, hasGarden, hasFreezing, assetId);
     }
 
-    private static void AddStudioRuntimeCondenserProcessState(
+    private void AddStudioRuntimeCondenserProcessState(
         MinecraftResolvedBlockModel model,
         double phase,
         bool running,
         string job,
-        int tier)
+        int tier,
+        string assetId)
     {
         var hasJob = job != "idle";
         var mixing = job is "mixing" or "cultivating";
@@ -385,9 +386,9 @@ public partial class MainWindow
                 AddStudioRuntimeCondenserStateProduct(model, phase, cultivating: false);
         }
 
-        // Dust exists only while RUNNING in the Java renderer. Keep four elements stable during a
-        // running cycle by collapsing inactive particles instead of changing topology at thresholds.
-        if (running)
+        // Dust exists only while RUNNING in the Java renderer. 17C.3 can suppress this real effect,
+        // but never force it past the source RUNNING predicate.
+        if (IsStudioRuntimeEffectEnabled(assetId, "process-dust", running))
         {
             for (var i = 0; i < 4; i++)
             {
@@ -453,11 +454,12 @@ public partial class MainWindow
         AddRuntimeBox(model, 7, 8-s,y-s,z-s,8+s,y+s,z+s,0,[8,y,z]);
     }
 
-    private static void AddStudioRuntimeCondenserGardenState(
+    private void AddStudioRuntimeCondenserGardenState(
         MinecraftResolvedBlockModel model,
         double phase,
         bool running,
-        bool specimenPresent)
+        bool specimenPresent,
+        string assetId)
     {
         AddRuntimeBox(model,3,4.7,11.3,1.3,11.3,12,3.7,0,[8,11.6,2.5]);
         AddRuntimeBox(model,5,5.2,5.3,1.3,10.8,5.8,3.7,0,[8,5.5,2.5]);
@@ -472,14 +474,21 @@ public partial class MainWindow
         if (!running)
             return;
 
-        var scan = 5 + 5.6 * RuntimeSmooth(.04,.84,phase);
-        AddRuntimeBox(model,7,scan,10.7,1.35,scan+.35,11.25,3.65,0,[scan,11,2.5]);
-        var harvest = RuntimeSmooth(.86,1,phase);
-        var harvestY = 5.9 + harvest * 4.5;
-        if (harvest > 0)
-            AddRuntimeBox(model,7,5.4,harvestY,1.1,10.6,harvestY+.15,1.3,0,[8,harvestY+.075,1.2]);
-        else
-            AddRuntimeBox(model,7,8,harvestY,1.2,8,harvestY,1.2,0,[8,harvestY,1.2]);
+        if (IsStudioRuntimeEffectEnabled(assetId, "garden-scan", sourcePredicate: true))
+        {
+            var scan = 5 + 5.6 * RuntimeSmooth(.04,.84,phase);
+            AddRuntimeBox(model,7,scan,10.7,1.35,scan+.35,11.25,3.65,0,[scan,11,2.5]);
+        }
+
+        if (IsStudioRuntimeEffectEnabled(assetId, "garden-harvest", sourcePredicate: true))
+        {
+            var harvest = RuntimeSmooth(.86,1,phase);
+            var harvestY = 5.9 + harvest * 4.5;
+            if (harvest > 0)
+                AddRuntimeBox(model,7,5.4,harvestY,1.1,10.6,harvestY+.15,1.3,0,[8,harvestY+.075,1.2]);
+            else
+                AddRuntimeBox(model,7,8,harvestY,1.2,8,harvestY,1.2,0,[8,harvestY,1.2]);
+        }
     }
 
     private void AddStudioRuntimeCondenserStatusState(
@@ -529,7 +538,7 @@ public partial class MainWindow
             AddRuntimeBox(model,32,6.6,6.6+bob,1.5,9.4,9.4+bob,3.4,tilt,[8,8+bob,2.5]);
         }
 
-        if (active)
+        if (IsStudioRuntimeEffectEnabled("ascension_chamber", "orbit-particles", active))
         {
             for (var i = 0; i < 6; i++)
             {
@@ -599,26 +608,32 @@ public partial class MainWindow
         if (!running)
             return;
 
-        for (var i = 0; i < 4; i++)
+        if (IsStudioRuntimeEffectEnabled("garden_chamber_mark_i", "irrigation-drops", sourcePredicate: true))
         {
-            var fall = ((phase * 12 + i * .25) % 1 + 1) % 1;
-            var x = i % 2 == 0 ? 3.5 : 12.2;
-            var zz = i < 2 ? 3.5 : 12.2;
-            var y = 12.7 - fall * 8.6;
-            AddRuntimeBox(model,7,x,y,zz,x+.12,y+.3,zz+.12,0,[x,y,zz]);
+            for (var i = 0; i < 4; i++)
+            {
+                var fall = ((phase * 12 + i * .25) % 1 + 1) % 1;
+                var x = i % 2 == 0 ? 3.5 : 12.2;
+                var zz = i < 2 ? 3.5 : 12.2;
+                var y = 12.7 - fall * 8.6;
+                AddRuntimeBox(model,7,x,y,zz,x+.12,y+.3,zz+.12,0,[x,y,zz]);
+            }
         }
 
-        var harvest = RuntimeSmooth(.86,1,phase);
-        var sweep = 3.4 + harvest * 8.8;
-        if (harvest > 0)
+        if (IsStudioRuntimeEffectEnabled("garden_chamber_mark_i", "harvest-sweep", sourcePredicate: true))
         {
-            AddRuntimeBox(model,7,2.7,sweep,2.7,13.3,sweep+.12,2.85,0,[8,sweep,2.8]);
-            AddRuntimeBox(model,7,2.7,sweep,13.15,13.3,sweep+.12,13.3,0,[8,sweep,13.2]);
-        }
-        else
-        {
-            AddRuntimeBox(model,7,8,sweep,2.775,8,sweep,2.775,0,[8,sweep,2.775]);
-            AddRuntimeBox(model,7,8,sweep,13.225,8,sweep,13.225,0,[8,sweep,13.225]);
+            var harvest = RuntimeSmooth(.86,1,phase);
+            var sweep = 3.4 + harvest * 8.8;
+            if (harvest > 0)
+            {
+                AddRuntimeBox(model,7,2.7,sweep,2.7,13.3,sweep+.12,2.85,0,[8,sweep,2.8]);
+                AddRuntimeBox(model,7,2.7,sweep,13.15,13.3,sweep+.12,13.3,0,[8,sweep,13.2]);
+            }
+            else
+            {
+                AddRuntimeBox(model,7,8,sweep,2.775,8,sweep,2.775,0,[8,sweep,2.775]);
+                AddRuntimeBox(model,7,8,sweep,13.225,8,sweep,13.225,0,[8,sweep,13.225]);
+            }
         }
     }
 
@@ -638,6 +653,9 @@ public partial class MainWindow
 
         var running = GetStudioRuntimeState("washing_basin", "status", "running") == "running";
         AddRuntimeBox(model,4,3.05,9.1,3.05,12.95,9.2,12.95,0,[8,9.15,8]);
+        if (!IsStudioRuntimeEffectEnabled("washing_basin", "circulation-rings", sourcePredicate: true))
+            return;
+
         for (var i = 0; i < 3; i++)
         {
             var wave = running
@@ -663,6 +681,9 @@ public partial class MainWindow
         var top = 4.35 + fill * 1.05;
         AddRuntimeBox(model,6,3.1,4.15,3.1,12.9,top,12.9,0,[8,top,8]);
         AddRuntimeBox(model,7,2.95,top,2.95,13.05,top+.14,13.05,0,[8,top,8]);
+        if (!IsStudioRuntimeEffectEnabled("crucible", "thermal-convection", sourcePredicate: true))
+            return;
+
         for (var i = 0; i < 4; i++)
         {
             var drift = ((phase + i * .25) % 1 + 1) % 1;
