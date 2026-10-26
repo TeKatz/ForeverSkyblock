@@ -44,6 +44,8 @@ public partial class App : Application
         window.EnableForeverAnimationMaterialResolver();
         window.EnableForeverAnimationPhase17CLabels();
         window.EnableForeverAnimationPersistence();
+        window.EnableForeverAnimationPersistenceDirtyTracking();
+        window.EnableForeverAnimationPhase17DLabels();
         MainWindow = window;
         window.Show();
 
