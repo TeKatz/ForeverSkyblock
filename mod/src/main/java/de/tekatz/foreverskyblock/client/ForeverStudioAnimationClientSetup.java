@@ -14,6 +14,7 @@ public final class ForeverStudioAnimationClientSetup {
 
     @SubscribeEvent
     public static void setup(FMLClientSetupEvent event) {
-        event.enqueueWork(() -> ForeverStudioAnimationNetwork.setClientReceiver(ForeverStudioClientAnimations::accept));
+        event.enqueueWork(() -> ForeverStudioAnimationNetwork.setClientReceiver(chunk ->
+                ForeverStudioClientAnimations.accept(chunk.generation(), chunk.index(), chunk.total(), chunk.data())));
     }
 }
