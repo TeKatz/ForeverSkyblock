@@ -17,7 +17,7 @@ public partial class MainWindow
             foreach (var border in viewportGrid.Children.OfType<Border>())
             {
                 if (border.Child is TextBlock text && text.Text.StartsWith("BLOCK ANIMATION · PHASE 17", StringComparison.Ordinal))
-                    text.Text = "BLOCK ANIMATION · PHASE 17D.1";
+                    text.Text = "BLOCK ANIMATION · PHASE 17D.2";
             }
         }
 
@@ -27,7 +27,7 @@ public partial class MainWindow
             {
                 if (!text.Text.StartsWith("Phase 17C.3", StringComparison.Ordinal))
                     continue;
-                text.Text = "Phase 17D.1 persists the complete Phase 17A–17C authoring model as versioned project animation data: stable TargetIds, transforms, Visibility, Material, source-backed Runtime State, Light / Status and Special Effects. Save uses Review / Validate / Apply, unresolved and legacy targets are preserved diagnostically, and Java renderer/runtime source remains unchanged.";
+                text.Text = "Phase 17D.2 keeps the complete Phase 17A–17C authoring model in the versioned project format introduced by 17D.1 and adds the matching NeoForge server-data runtime loader. Datapack reloads validate and atomically register animation documents by asset while existing Java renderers remain authoritative until the explicit client sync / TargetId binding step in Phase 17D.3.";
                 break;
             }
         }
