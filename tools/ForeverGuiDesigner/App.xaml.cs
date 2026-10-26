@@ -62,6 +62,7 @@ public partial class App : Application
         window.EnableForeverAnimationPhase17QLayoutTuning();
         window.EnableForeverAnimationPhase17QDensityFix();
         window.EnableForeverAnimationPhase17R();
+        window.EnableForeverFutureProofRuntimeMetadata();
         MainWindow = window;
         window.Show();
 
