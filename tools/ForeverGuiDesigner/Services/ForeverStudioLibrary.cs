@@ -43,10 +43,16 @@ public sealed class ForeverStudioLibraryItem
     public string DisplayName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string GeneratorKey { get; set; } = string.Empty;
+    public string PreviewKey { get; set; } = string.Empty;
+    public bool Composite { get; set; }
     public List<string> Tags { get; set; } = [];
     public List<string> Capabilities { get; set; } = [];
+    public List<string> RecommendedFor { get; set; } = [];
     public List<ForeverStudioLibraryPort> Ports { get; set; } = [];
     public List<ForeverStudioLibraryDependency> Dependencies { get; set; } = [];
+
+    [JsonIgnore]
+    public string Source { get; internal set; } = string.Empty;
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? ExtensionData { get; set; }
@@ -69,9 +75,9 @@ public sealed record ForeverStudioLibraryLoadResult(
     IReadOnlyList<string> Warnings);
 
 /// <summary>
-/// Versioned registry for reusable Machine Builder building blocks. Phase 1 intentionally ships only
-/// a very small core set; Phase 2 can grow the library through data packs without changing the graph
-/// or machine-document contracts established here.
+/// Versioned registry for reusable Machine Builder building blocks. Phase 2 ships a broad production
+/// catalog in code while keeping the same contract open to project-owned JSON packs. Machines pin an
+/// exact item ID/version so future library expansion cannot silently mutate existing projects.
 /// </summary>
 public sealed class ForeverStudioLibraryCatalog
 {
@@ -84,6 +90,9 @@ public sealed class ForeverStudioLibraryCatalog
     private const int MaxItemsPerPack = 512;
     private const int MaxPortsPerItem = 64;
     private const int MaxDependenciesPerItem = 64;
+    private const int MaxTagsPerItem = 64;
+    private const int MaxCapabilitiesPerItem = 64;
+    private const int MaxRecommendedForPerItem = 64;
 
     private readonly Dictionary<string, SortedDictionary<int, ForeverStudioLibraryItem>> _items =
         new(StringComparer.OrdinalIgnoreCase);
@@ -106,31 +115,52 @@ public sealed class ForeverStudioLibraryCatalog
             .ThenBy(item => item.Version)
             .ToList();
 
+    public IReadOnlyList<ForeverStudioLibraryItem> LatestItems
+        => _items.Values
+            .Where(versions => versions.Count > 0)
+            .Select(versions => versions.Values.Last())
+            .OrderBy(item => item.Kind)
+            .ThenBy(item => item.Category, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
     public static ForeverStudioLibraryLoadResult Load(string? repoRoot)
     {
         var catalog = new ForeverStudioLibraryCatalog();
         var warnings = new List<string>();
+
         foreach (var item in CreateCoreItems())
             catalog.Register(item, "built-in core", warnings);
+        foreach (var item in ForeverStudioProductionLibrary.CreateItems())
+            catalog.Register(item, "built-in production", warnings);
 
         if (string.IsNullOrWhiteSpace(repoRoot))
+        {
+            catalog.ValidateDependencies(warnings);
             return new ForeverStudioLibraryLoadResult(catalog, warnings);
+        }
 
+        string repositoryRoot;
         string root;
         try
         {
+            repositoryRoot = Path.GetFullPath(repoRoot.Trim());
             root = Path.Combine(
-                Path.GetFullPath(repoRoot.Trim()),
+                repositoryRoot,
                 RelativeLibraryDirectory.Replace('/', Path.DirectorySeparatorChar));
         }
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
         {
             warnings.Add($"Library path is invalid: {ex.Message}");
+            catalog.ValidateDependencies(warnings);
             return new ForeverStudioLibraryLoadResult(catalog, warnings);
         }
 
         if (!Directory.Exists(root))
+        {
+            catalog.ValidateDependencies(warnings);
             return new ForeverStudioLibraryLoadResult(catalog, warnings);
+        }
 
         List<string> files;
         try
@@ -143,6 +173,7 @@ public sealed class ForeverStudioLibraryCatalog
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             warnings.Add($"Project library cannot be read: {ex.Message}");
+            catalog.ValidateDependencies(warnings);
             return new ForeverStudioLibraryLoadResult(catalog, warnings);
         }
 
@@ -154,7 +185,7 @@ public sealed class ForeverStudioLibraryCatalog
 
         foreach (var file in files)
         {
-            var relative = Path.GetRelativePath(repoRoot, file).Replace('\\', '/');
+            var relative = Path.GetRelativePath(repositoryRoot, file).Replace('\\', '/');
             try
             {
                 if (new FileInfo(file).Length > MaxPackBytes)
@@ -219,21 +250,32 @@ public sealed class ForeverStudioLibraryCatalog
         var terms = (query ?? string.Empty)
             .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        return AllItems
+        return LatestItems
             .Where(item => kind is null || item.Kind == kind)
             .Where(item => terms.Length == 0 || terms.All(term =>
                 item.Id.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                 item.DisplayName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                 item.Category.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                item.Tags.Any(tag => tag.Contains(term, StringComparison.OrdinalIgnoreCase))))
+                item.Description.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                item.Tags.Any(tag => tag.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                item.Capabilities.Any(capability => capability.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                item.RecommendedFor.Any(value => value.Contains(term, StringComparison.OrdinalIgnoreCase))))
             .ToList();
     }
+
+    public IReadOnlyList<string> Categories(ForeverStudioLibraryItemKind? kind = null)
+        => LatestItems
+            .Where(item => kind is null || item.Kind == kind)
+            .Select(item => item.Category)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
     public IReadOnlyDictionary<ForeverStudioLibraryItemKind, int> LatestItemCounts()
         => Enum.GetValues<ForeverStudioLibraryItemKind>()
             .ToDictionary(
                 kind => kind,
-                kind => _items.Values.Count(versions => versions.Count > 0 && versions.Values.Last().Kind == kind));
+                kind => LatestItems.Count(item => item.Kind == kind));
 
     public bool ArePortsCompatible(ForeverStudioLibraryPort output, ForeverStudioLibraryPort input)
     {
@@ -266,6 +308,8 @@ public sealed class ForeverStudioLibraryCatalog
             warnings.Add($"{source}: duplicate library item '{item.Id}' v{item.Version} was ignored.");
             return;
         }
+
+        item.Source = source;
         versions[item.Version] = item;
     }
 
@@ -297,7 +341,24 @@ public sealed class ForeverStudioLibraryCatalog
             issue = $"library item '{item.Id}' requires a display name up to 128 characters.";
             return false;
         }
-        if (item.Ports.Count > MaxPortsPerItem || item.Dependencies.Count > MaxDependenciesPerItem)
+        if (item.Category.Length > 128 || item.Description.Length > 2048)
+        {
+            issue = $"library item '{item.Id}' has oversized presentation metadata.";
+            return false;
+        }
+        if (!string.IsNullOrWhiteSpace(item.GeneratorKey) && !IsSafeId(item.GeneratorKey))
+        {
+            issue = $"library item '{item.Id}' has an invalid generatorKey.";
+            return false;
+        }
+        if (!string.IsNullOrWhiteSpace(item.PreviewKey) && !IsSafeId(item.PreviewKey))
+        {
+            issue = $"library item '{item.Id}' has an invalid previewKey.";
+            return false;
+        }
+        if (item.Ports.Count > MaxPortsPerItem || item.Dependencies.Count > MaxDependenciesPerItem ||
+            item.Tags.Count > MaxTagsPerItem || item.Capabilities.Count > MaxCapabilitiesPerItem ||
+            item.RecommendedFor.Count > MaxRecommendedForPerItem)
         {
             issue = $"library item '{item.Id}' exceeds a collection safety limit.";
             return false;
@@ -333,8 +394,10 @@ public sealed class ForeverStudioLibraryCatalog
         item.DisplayName = item.DisplayName?.Trim() ?? string.Empty;
         item.Description = item.Description?.Trim() ?? string.Empty;
         item.GeneratorKey = NormalizeId(item.GeneratorKey);
-        item.Tags = (item.Tags ?? []).Select(NormalizeId).Where(IsSafeId).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        item.Capabilities = (item.Capabilities ?? []).Select(NormalizeId).Where(IsSafeId).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        item.PreviewKey = NormalizeId(item.PreviewKey);
+        item.Tags = NormalizeIdList(item.Tags);
+        item.Capabilities = NormalizeIdList(item.Capabilities);
+        item.RecommendedFor = NormalizeIdList(item.RecommendedFor);
         item.Ports ??= [];
         item.Dependencies ??= [];
 
@@ -347,6 +410,13 @@ public sealed class ForeverStudioLibraryCatalog
         foreach (var dependency in item.Dependencies)
             dependency.ItemId = NormalizeId(dependency.ItemId);
     }
+
+    private static List<string> NormalizeIdList(IEnumerable<string>? values)
+        => (values ?? [])
+            .Select(NormalizeId)
+            .Where(IsSafeId)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
     private static IEnumerable<ForeverStudioLibraryItem> CreateCoreItems()
     {
@@ -369,7 +439,7 @@ public sealed class ForeverStudioLibraryCatalog
             Kind = ForeverStudioLibraryItemKind.Function,
             Category = "Core / Flow",
             DisplayName = "Machine Entry",
-            Description = "Typed behavior-graph entry point. Rich event nodes arrive with the Phase 2 library.",
+            Description = "Typed behavior-graph entry point.",
             GeneratorKey = "core.machine-entry",
             Tags = ["core", "flow", "event"],
             Ports =
@@ -412,7 +482,7 @@ public sealed class ForeverStudioLibraryCatalog
             Kind = ForeverStudioLibraryItemKind.Template,
             Category = "Core / Templates",
             DisplayName = "Blank Machine",
-            Description = "Minimal safe machine project used by the Phase 1 Create New Machine flow.",
+            Description = "Minimal safe machine project used by Create New Machine.",
             GeneratorKey = "core.blank-machine",
             Tags = ["core", "template", "blank"],
             Dependencies =
