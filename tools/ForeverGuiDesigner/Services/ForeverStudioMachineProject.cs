@@ -6,39 +6,24 @@ using System.Text.Json.Serialization;
 
 namespace ForeverGuiDesigner.Services;
 
-public enum StudioValidationSeverity
-{
-    Info,
-    Warning,
-    Error
-}
-
-public sealed record StudioValidationIssue(StudioValidationSeverity Severity, string Code, string Message)
-{
-    public override string ToString() => $"{Severity.ToString().ToUpperInvariant()} · {Code} · {Message}";
-}
-
 public sealed class ForeverStudioMachineDocument
 {
     public int FormatVersion { get; set; } = ForeverStudioMachineProjectService.CurrentFormatVersion;
     public string AssetId { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public List<ForeverStudioMachineLibraryReference> LibraryManifest { get; set; } = [];
+    public string Namespace { get; set; } = "forever_skyblock";
+    public string MachineType { get; set; } = "custom";
     public List<ForeverStudioMachineComponent> Components { get; set; } = [];
     public List<ForeverStudioMachineState> States { get; set; } = [];
     public ForeverStudioMachineBehaviorGraph Behavior { get; set; } = new();
+    public List<ForeverStudioMachineRecipeBinding> Recipes { get; set; } = [];
     public ForeverStudioMachineGuiDefinition Gui { get; set; } = new();
     public List<ForeverStudioMachineAnimationBinding> Animations { get; set; } = [];
+    public ForeverStudioMachineLibraryManifest Library { get; set; } = new();
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? ExtensionData { get; set; }
-}
-
-public sealed class ForeverStudioMachineLibraryReference
-{
-    public string ItemId { get; set; } = string.Empty;
-    public int Version { get; set; } = 1;
 }
 
 public sealed class ForeverStudioMachineComponent
@@ -55,6 +40,7 @@ public sealed class ForeverStudioMachineState
 {
     public string Id { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
+    public bool IsInitial { get; set; }
     public Dictionary<string, JsonElement> Properties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
@@ -83,18 +69,26 @@ public sealed class ForeverStudioMachineBehaviorConnection
     public string ToPortId { get; set; } = string.Empty;
 }
 
+public sealed class ForeverStudioMachineRecipeBinding
+{
+    public string Id { get; set; } = string.Empty;
+    public string RecipeTypeId { get; set; } = string.Empty;
+    public Dictionary<string, JsonElement> Properties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
 public sealed class ForeverStudioMachineGuiDefinition
 {
-    public string? ScreenId { get; set; }
+    public string ScreenId { get; set; } = string.Empty;
     public List<ForeverStudioMachineGuiBinding> Bindings { get; set; } = [];
 }
 
 public sealed class ForeverStudioMachineGuiBinding
 {
     public string Id { get; set; } = string.Empty;
+    public string LibraryItemId { get; set; } = string.Empty;
+    public int LibraryItemVersion { get; set; } = 1;
     public string SourceId { get; set; } = string.Empty;
-    public string TargetId { get; set; } = string.Empty;
-    public string DataType { get; set; } = "any";
+    public Dictionary<string, JsonElement> Properties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 public sealed class ForeverStudioMachineAnimationBinding
@@ -103,61 +97,84 @@ public sealed class ForeverStudioMachineAnimationBinding
     public string LibraryItemId { get; set; } = string.Empty;
     public int LibraryItemVersion { get; set; } = 1;
     public string TargetComponentId { get; set; } = string.Empty;
-    public string? SourceNodeId { get; set; }
-    public string? SourcePortId { get; set; }
     public Dictionary<string, JsonElement> Properties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
+public sealed class ForeverStudioMachineLibraryManifest
+{
+    public int ContractVersion { get; set; } = ForeverStudioLibraryCatalog.CurrentContractVersion;
+    public List<ForeverStudioMachineLibraryReference> References { get; set; } = [];
+}
+
+public sealed class ForeverStudioMachineLibraryReference
+{
+    public string ItemId { get; set; } = string.Empty;
+    public int Version { get; set; } = 1;
 }
 
 public sealed record ForeverStudioMachineProjectLoadResult(
     string RelativePath,
     ForeverStudioMachineDocument? Document,
     string SourceHash,
-    IReadOnlyList<StudioValidationIssue> Issues);
+    IReadOnlyList<StudioValidationIssue> Issues)
+{
+    public bool HasErrors => Issues.Any(issue => issue.Severity == StudioValidationSeverity.Error);
+}
 
 public sealed record ForeverStudioMachineProjectScanResult(
     IReadOnlyList<ForeverStudioMachineProjectLoadResult> Projects,
     IReadOnlyList<string> Warnings);
 
+public sealed record ForeverStudioMachineProjectSaveResult(
+    string RelativePath,
+    string FullPath,
+    string SourceHash,
+    string Json,
+    IReadOnlyList<StudioValidationIssue> Issues);
+
 /// <summary>
-/// Canonical, versioned Machine Builder source format. This document is intentionally the authoring
-/// source of truth; later phases project it into previews and finally generated Java/assets instead
-/// of teaching every editor to mutate game files independently.
+/// Canonical Phase-1 machine-project persistence. The project document is intentionally independent
+/// from generated Java/resource files: later phases can compile this stable authoring model into the
+/// mod while keeping the user's source machine definition versioned and reviewable.
 /// </summary>
 public static class ForeverStudioMachineProjectService
 {
     public const int CurrentFormatVersion = 1;
-    public const string RelativeProjectDirectory =
+    public const string RelativeDirectory =
         "mod/src/main/resources/data/forever_skyblock/forever_studio/machines";
     public const string MissingHash = "<missing>";
 
-    private const long MaxProjectBytes = 2 * 1024 * 1024;
-    private const int MaxProjectFiles = 256;
+    private const long MaxProjectBytes = 1024 * 1024;
+    private const int MaxProjectFiles = 512;
     private const int MaxComponents = 512;
-    private const int MaxStates = 256;
+    private const int MaxStates = 128;
     private const int MaxBehaviorNodes = 1024;
     private const int MaxBehaviorConnections = 4096;
-    private const int MaxGuiBindings = 1024;
-    private const int MaxAnimationBindings = 1024;
-    private const int MaxPropertyCount = 256;
+    private const int MaxRecipes = 256;
+    private const int MaxGuiBindings = 512;
+    private const int MaxAnimationBindings = 512;
+    private const int MaxLibraryReferences = 2048;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
         PropertyNameCaseInsensitive = true,
         AllowTrailingCommas = false,
         ReadCommentHandling = JsonCommentHandling.Disallow,
-        MaxDepth = 64,
-        Converters = { new JsonStringEnumConverter() }
+        MaxDepth = 64
     };
 
     public static ForeverStudioMachineDocument CreateBlank(string assetId, string displayName)
     {
-        var safeAssetId = NormalizeId(assetId);
-        return new ForeverStudioMachineDocument
+        var safeId = SanitizeAssetId(assetId);
+        var name = string.IsNullOrWhiteSpace(displayName) ? Humanize(safeId) : displayName.Trim();
+        var document = new ForeverStudioMachineDocument
         {
-            AssetId = safeAssetId,
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? Humanize(safeAssetId) : displayName.Trim(),
-            Description = "Machine Builder project",
+            AssetId = safeId,
+            DisplayName = name,
+            Description = "",
+            MachineType = "custom",
             Components =
             [
                 new ForeverStudioMachineComponent
@@ -170,8 +187,12 @@ public static class ForeverStudioMachineProjectService
             ],
             States =
             [
-                new ForeverStudioMachineState { Id = "idle", DisplayName = "Idle" },
-                new ForeverStudioMachineState { Id = "active", DisplayName = "Active" }
+                new ForeverStudioMachineState
+                {
+                    Id = "idle",
+                    DisplayName = "Idle",
+                    IsInitial = true
+                }
             ],
             Behavior = new ForeverStudioMachineBehaviorGraph
             {
@@ -188,93 +209,169 @@ public static class ForeverStudioMachineProjectService
                 ]
             }
         };
+        Normalize(document);
+        RebuildLibraryManifest(document);
+        return document;
     }
 
     public static string RelativePathForAsset(string assetId)
-        => $"{RelativeProjectDirectory}/{NormalizeId(assetId)}.json";
+        => $"{RelativeDirectory}/{SanitizeAssetId(assetId)}.json";
 
     public static string Serialize(ForeverStudioMachineDocument document)
     {
         Normalize(document);
         RebuildLibraryManifest(document);
-        return JsonSerializer.Serialize(document, JsonOptions) + "\n";
+        return JsonSerializer.Serialize(document, JsonOptions) + Environment.NewLine;
     }
 
-    public static ForeverStudioMachineProjectLoadResult Load(
+    public static ForeverStudioMachineProjectScanResult Scan(
         string repoRoot,
-        string relativePath,
         ForeverStudioLibraryCatalog catalog)
     {
-        var issues = new List<StudioValidationIssue>();
-        if (!TryResolveInside(repoRoot, relativePath, out var fullPath))
-        {
-            issues.Add(Error("path", "Project path escapes the repository or is invalid."));
-            return new ForeverStudioMachineProjectLoadResult(relativePath, null, MissingHash, issues);
-        }
-
-        if (!File.Exists(fullPath))
-        {
-            issues.Add(Error("missing", "Machine project file does not exist."));
-            return new ForeverStudioMachineProjectLoadResult(relativePath, null, MissingHash, issues);
-        }
-
-        try
-        {
-            if (new FileInfo(fullPath).Length > MaxProjectBytes)
-            {
-                issues.Add(Error("size", $"Machine project exceeds the {MaxProjectBytes / 1024} KiB safety limit."));
-                return new ForeverStudioMachineProjectLoadResult(relativePath, null, MissingHash, issues);
-            }
-
-            var text = File.ReadAllText(fullPath);
-            var document = JsonSerializer.Deserialize<ForeverStudioMachineDocument>(text, JsonOptions);
-            if (document is null)
-            {
-                issues.Add(Error("json", "Machine project is empty."));
-                return new ForeverStudioMachineProjectLoadResult(relativePath, null, Hash(text), issues);
-            }
-            Normalize(document);
-            issues.AddRange(Validate(document, catalog));
-            return new ForeverStudioMachineProjectLoadResult(relativePath, document, Hash(text), issues);
-        }
-        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
-        {
-            issues.Add(Error("load", ex.Message));
-            return new ForeverStudioMachineProjectLoadResult(relativePath, null, MissingHash, issues);
-        }
-    }
-
-    public static ForeverStudioMachineProjectScanResult Scan(string repoRoot, ForeverStudioLibraryCatalog catalog)
-    {
+        var projects = new List<ForeverStudioMachineProjectLoadResult>();
         var warnings = new List<string>();
-        if (!TryResolveInside(repoRoot, RelativeProjectDirectory, out var directory))
-            return new ForeverStudioMachineProjectScanResult([], ["Machine project directory is invalid."]);
-        if (!Directory.Exists(directory))
-            return new ForeverStudioMachineProjectScanResult([], []);
+        var root = ResolveRepoPath(repoRoot, RelativeDirectory);
+        if (!Directory.Exists(root))
+            return new ForeverStudioMachineProjectScanResult(projects, warnings);
 
         List<string> files;
         try
         {
-            files = Directory.EnumerateFiles(directory, "*.json", SearchOption.AllDirectories)
+            files = Directory.EnumerateFiles(root, "*.json", SearchOption.TopDirectoryOnly)
                 .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                 .Take(MaxProjectFiles + 1)
                 .ToList();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return new ForeverStudioMachineProjectScanResult([], [$"Machine project scan failed: {ex.Message}"]);
+            warnings.Add($"Machine project directory cannot be read: {ex.Message}");
+            return new ForeverStudioMachineProjectScanResult(projects, warnings);
         }
+
         if (files.Count > MaxProjectFiles)
         {
-            warnings.Add($"Machine project directory contains more than {MaxProjectFiles} files; only the first {MaxProjectFiles} are scanned.");
+            warnings.Add($"Machine project directory contains more than {MaxProjectFiles} files. Only the first {MaxProjectFiles} are indexed.");
             files = files.Take(MaxProjectFiles).ToList();
         }
 
-        var projects = files
-            .Select(path => Path.GetRelativePath(repoRoot, path).Replace('\\', '/'))
-            .Select(relative => Load(repoRoot, relative, catalog))
-            .ToList();
+        foreach (var file in files)
+        {
+            var relative = Path.GetRelativePath(repoRoot, file).Replace('\\', '/');
+            try
+            {
+                if (new FileInfo(file).Length > MaxProjectBytes)
+                {
+                    projects.Add(new ForeverStudioMachineProjectLoadResult(
+                        relative,
+                        null,
+                        HashFile(file),
+                        [new StudioValidationIssue(
+                            StudioValidationSeverity.Error,
+                            $"Machine project exceeds the {MaxProjectBytes / 1024} KiB safety limit.")]));
+                    continue;
+                }
+
+                projects.Add(LoadFile(repoRoot, file, catalog));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                warnings.Add($"{relative}: {ex.Message}");
+            }
+        }
+
         return new ForeverStudioMachineProjectScanResult(projects, warnings);
+    }
+
+    public static ForeverStudioMachineProjectLoadResult Load(
+        string repoRoot,
+        string assetId,
+        ForeverStudioLibraryCatalog catalog)
+    {
+        var fullPath = ResolveRepoPath(repoRoot, RelativePathForAsset(assetId));
+        if (!File.Exists(fullPath))
+        {
+            return new ForeverStudioMachineProjectLoadResult(
+                RelativePathForAsset(assetId),
+                null,
+                MissingHash,
+                [new StudioValidationIssue(StudioValidationSeverity.Info, "Machine project does not exist yet.")]);
+        }
+        return LoadFile(repoRoot, fullPath, catalog);
+    }
+
+    public static ForeverStudioMachineProjectSaveResult Save(
+        string repoRoot,
+        ForeverStudioMachineDocument document,
+        ForeverStudioLibraryCatalog catalog,
+        string expectedSourceHash)
+    {
+        Normalize(document);
+        RebuildLibraryManifest(document);
+        var issues = Validate(document, catalog);
+        if (issues.Any(issue => issue.Severity == StudioValidationSeverity.Error))
+            throw new InvalidOperationException("Machine project cannot be saved while validation errors remain.");
+
+        var json = JsonSerializer.Serialize(document, JsonOptions) + Environment.NewLine;
+        if (Encoding.UTF8.GetByteCount(json) > MaxProjectBytes)
+            throw new InvalidOperationException($"Machine project exceeds the {MaxProjectBytes / 1024} KiB safety limit.");
+
+        var relative = RelativePathForAsset(document.AssetId);
+        var fullPath = ResolveRepoPath(repoRoot, relative);
+        var currentHash = File.Exists(fullPath) ? HashFile(fullPath) : MissingHash;
+        if (!string.Equals(currentHash, expectedSourceHash, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new IOException(
+                $"'{relative}' changed on disk after it was loaded. Reopen the project before saving to avoid overwriting external changes.");
+        }
+
+        var directory = Path.GetDirectoryName(fullPath)
+                        ?? throw new IOException("Machine project target directory is unavailable.");
+        Directory.CreateDirectory(directory);
+
+        var token = Guid.NewGuid().ToString("N");
+        var tempPath = Path.Combine(directory, $".{Path.GetFileName(fullPath)}.foreverstudio-{token}.tmp");
+        var backupPath = Path.Combine(directory, $".{Path.GetFileName(fullPath)}.foreverstudio-{token}.bak");
+        var existed = File.Exists(fullPath);
+
+        try
+        {
+            File.WriteAllText(tempPath, json, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            if (existed)
+                File.Copy(fullPath, backupPath, overwrite: true);
+
+            File.Move(tempPath, fullPath, overwrite: true);
+            var writtenHash = HashFile(fullPath);
+            if (writtenHash == MissingHash)
+                throw new IOException("Machine project was not present after the atomic move.");
+
+            if (File.Exists(backupPath))
+                File.Delete(backupPath);
+
+            return new ForeverStudioMachineProjectSaveResult(relative, fullPath, writtenHash, json, issues);
+        }
+        catch
+        {
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+                if (File.Exists(backupPath))
+                {
+                    File.Copy(backupPath, fullPath, overwrite: true);
+                    File.Delete(backupPath);
+                }
+                else if (!existed && File.Exists(fullPath))
+                {
+                    File.Delete(fullPath);
+                }
+            }
+            catch
+            {
+                // Preserve the original exception. A leftover .bak/.tmp file is intentionally visible
+                // for manual recovery instead of hiding a failed restore behind another exception.
+            }
+            throw;
+        }
     }
 
     public static IReadOnlyList<StudioValidationIssue> Validate(
@@ -282,30 +379,201 @@ public static class ForeverStudioMachineProjectService
         ForeverStudioLibraryCatalog catalog)
     {
         var issues = new List<StudioValidationIssue>();
-        Normalize(document);
-
         if (document.FormatVersion != CurrentFormatVersion)
-            issues.Add(Error("format", $"Unsupported formatVersion {document.FormatVersion}; expected {CurrentFormatVersion}."));
-        if (!IsSafeId(document.AssetId))
-            issues.Add(Error("asset-id", "assetId must use lowercase letters, digits, '_', '-' or '.' and be at most 128 characters."));
-        if (string.IsNullOrWhiteSpace(document.DisplayName) || document.DisplayName.Length > 128)
-            issues.Add(Error("display-name", "displayName is required and must be at most 128 characters."));
-        if (document.Description.Length > 2048)
-            issues.Add(Error("description", "description must be at most 2048 characters."));
-        if (document.Components.Count > MaxComponents || document.States.Count > MaxStates ||
-            document.Behavior.Nodes.Count > MaxBehaviorNodes || document.Behavior.Connections.Count > MaxBehaviorConnections ||
-            document.Gui.Bindings.Count > MaxGuiBindings || document.Animations.Count > MaxAnimationBindings)
         {
-            issues.Add(Error("limits", "Machine project exceeds a collection safety limit."));
+            issues.Add(new StudioValidationIssue(
+                StudioValidationSeverity.Error,
+                $"Unsupported machine formatVersion {document.FormatVersion}; this Studio supports {CurrentFormatVersion}."));
+            return issues;
+        }
+
+        if (!IsSafeAssetId(document.AssetId))
+            issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, "Asset ID must use lowercase a-z, 0-9, '_', '-' or '.'."));
+        if (!IsSafeNamespace(document.Namespace))
+            issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, "Namespace must use lowercase resource-location characters."));
+        if (string.IsNullOrWhiteSpace(document.DisplayName) || document.DisplayName.Length > 128)
+            issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, "Display name is required and may contain at most 128 characters."));
+        if (document.Description.Length > 4096)
+            issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, "Description may contain at most 4096 characters."));
+
+        if (document.Components.Count is < 1 or > MaxComponents)
+            issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"A machine needs 1..{MaxComponents} components."));
+        if (document.States.Count is < 1 or > MaxStates)
+            issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"A machine needs 1..{MaxStates} states."));
+        if (document.Behavior.Nodes.Count > MaxBehaviorNodes || document.Behavior.Connections.Count > MaxBehaviorConnections ||
+            document.Recipes.Count > MaxRecipes || document.Gui.Bindings.Count > MaxGuiBindings ||
+            document.Animations.Count > MaxAnimationBindings || document.Library.References.Count > MaxLibraryReferences)
+        {
+            issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, "Machine project exceeds a collection safety limit."));
         }
 
         ValidateComponents(document, catalog, issues);
         ValidateStates(document, issues);
         ValidateBehavior(document, catalog, issues);
-        ValidateGui(document, issues);
-        ValidateAnimations(document, catalog, issues);
-        ValidateManifest(document, catalog, issues);
+        ValidateBindings(document, catalog, issues);
+        ValidateLibraryManifest(document, catalog, issues);
+
+        if (!issues.Any(issue => issue.Severity == StudioValidationSeverity.Error))
+        {
+            issues.Add(new StudioValidationIssue(
+                StudioValidationSeverity.Info,
+                "Machine project structure, identities, graph references and library versions are valid."));
+        }
         return issues;
+    }
+
+    public static string SanitizeAssetId(string? value)
+    {
+        var source = (value ?? string.Empty).Trim().ToLowerInvariant();
+        var builder = new StringBuilder(source.Length);
+        var previousUnderscore = false;
+        foreach (var ch in source)
+        {
+            var normalized = char.IsLetterOrDigit(ch) ? ch : ch is '-' or '.' ? ch : '_';
+            if (normalized == '_' && previousUnderscore)
+                continue;
+            builder.Append(normalized);
+            previousUnderscore = normalized == '_';
+        }
+        var result = builder.ToString().Trim('_', '-', '.');
+        return string.IsNullOrWhiteSpace(result) ? "new_machine" : result;
+    }
+
+    private static ForeverStudioMachineProjectLoadResult LoadFile(
+        string repoRoot,
+        string fullPath,
+        ForeverStudioLibraryCatalog catalog)
+    {
+        var relative = Path.GetRelativePath(repoRoot, fullPath).Replace('\\', '/');
+        var hash = HashFile(fullPath);
+        ForeverStudioMachineDocument? document;
+        try
+        {
+            document = JsonSerializer.Deserialize<ForeverStudioMachineDocument>(File.ReadAllText(fullPath), JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            return new ForeverStudioMachineProjectLoadResult(
+                relative,
+                null,
+                hash,
+                [new StudioValidationIssue(StudioValidationSeverity.Error, $"Machine JSON is invalid: {ex.Message}")]);
+        }
+
+        if (document is null)
+        {
+            return new ForeverStudioMachineProjectLoadResult(
+                relative,
+                null,
+                hash,
+                [new StudioValidationIssue(StudioValidationSeverity.Error, "Machine JSON is empty.")]);
+        }
+
+        Normalize(document);
+        var issues = Validate(document, catalog);
+        return new ForeverStudioMachineProjectLoadResult(relative, document, hash, issues);
+    }
+
+    private static void Normalize(ForeverStudioMachineDocument document)
+    {
+        document.AssetId = (document.AssetId ?? string.Empty).Trim().ToLowerInvariant();
+        document.DisplayName = document.DisplayName?.Trim() ?? string.Empty;
+        document.Description = document.Description?.Trim() ?? string.Empty;
+        document.Namespace = string.IsNullOrWhiteSpace(document.Namespace)
+            ? "forever_skyblock"
+            : document.Namespace.Trim().ToLowerInvariant();
+        document.MachineType = string.IsNullOrWhiteSpace(document.MachineType)
+            ? "custom"
+            : document.MachineType.Trim().ToLowerInvariant();
+        document.Components ??= [];
+        document.States ??= [];
+        document.Behavior ??= new ForeverStudioMachineBehaviorGraph();
+        document.Behavior.Nodes ??= [];
+        document.Behavior.Connections ??= [];
+        document.Recipes ??= [];
+        document.Gui ??= new ForeverStudioMachineGuiDefinition();
+        document.Gui.Bindings ??= [];
+        document.Animations ??= [];
+        document.Library ??= new ForeverStudioMachineLibraryManifest();
+        document.Library.ContractVersion = ForeverStudioLibraryCatalog.CurrentContractVersion;
+        document.Library.References ??= [];
+
+        foreach (var component in document.Components)
+        {
+            component.Id = NormalizeLocalId(component.Id);
+            component.DisplayName = string.IsNullOrWhiteSpace(component.DisplayName) ? Humanize(component.Id) : component.DisplayName.Trim();
+            component.LibraryItemId = ForeverStudioLibraryCatalog.NormalizeId(component.LibraryItemId);
+            component.ParentId = string.IsNullOrWhiteSpace(component.ParentId) ? null : NormalizeLocalId(component.ParentId);
+            component.Properties ??= new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+        }
+        foreach (var state in document.States)
+        {
+            state.Id = NormalizeLocalId(state.Id);
+            state.DisplayName = string.IsNullOrWhiteSpace(state.DisplayName) ? Humanize(state.Id) : state.DisplayName.Trim();
+            state.Properties ??= new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+        }
+        foreach (var node in document.Behavior.Nodes)
+        {
+            node.Id = NormalizeLocalId(node.Id);
+            node.LibraryItemId = ForeverStudioLibraryCatalog.NormalizeId(node.LibraryItemId);
+            node.Properties ??= new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+        }
+        foreach (var connection in document.Behavior.Connections)
+        {
+            connection.Id = NormalizeLocalId(connection.Id);
+            connection.FromNodeId = NormalizeLocalId(connection.FromNodeId);
+            connection.FromPortId = NormalizeLocalId(connection.FromPortId);
+            connection.ToNodeId = NormalizeLocalId(connection.ToNodeId);
+            connection.ToPortId = NormalizeLocalId(connection.ToPortId);
+        }
+        foreach (var recipe in document.Recipes)
+        {
+            recipe.Id = NormalizeLocalId(recipe.Id);
+            recipe.RecipeTypeId = recipe.RecipeTypeId?.Trim().ToLowerInvariant() ?? string.Empty;
+            recipe.Properties ??= new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+        }
+        document.Gui.ScreenId = NormalizeLocalId(document.Gui.ScreenId);
+        foreach (var binding in document.Gui.Bindings)
+        {
+            binding.Id = NormalizeLocalId(binding.Id);
+            binding.LibraryItemId = ForeverStudioLibraryCatalog.NormalizeId(binding.LibraryItemId);
+            binding.SourceId = NormalizeLocalId(binding.SourceId);
+            binding.Properties ??= new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+        }
+        foreach (var animation in document.Animations)
+        {
+            animation.Id = NormalizeLocalId(animation.Id);
+            animation.LibraryItemId = ForeverStudioLibraryCatalog.NormalizeId(animation.LibraryItemId);
+            animation.TargetComponentId = NormalizeLocalId(animation.TargetComponentId);
+            animation.Properties ??= new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    private static void RebuildLibraryManifest(ForeverStudioMachineDocument document)
+    {
+        var references = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        void Add(string id, int version)
+        {
+            if (string.IsNullOrWhiteSpace(id) || version < 1)
+                return;
+            if (!references.TryGetValue(id, out var existing) || version > existing)
+                references[id] = version;
+        }
+
+        foreach (var component in document.Components)
+            Add(component.LibraryItemId, component.LibraryItemVersion);
+        foreach (var node in document.Behavior.Nodes)
+            Add(node.LibraryItemId, node.LibraryItemVersion);
+        foreach (var binding in document.Gui.Bindings)
+            Add(binding.LibraryItemId, binding.LibraryItemVersion);
+        foreach (var animation in document.Animations)
+            Add(animation.LibraryItemId, animation.LibraryItemVersion);
+
+        document.Library.ContractVersion = ForeverStudioLibraryCatalog.CurrentContractVersion;
+        document.Library.References = references
+            .OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(pair => new ForeverStudioMachineLibraryReference { ItemId = pair.Key, Version = pair.Value })
+            .ToList();
     }
 
     private static void ValidateComponents(
@@ -316,18 +584,35 @@ public static class ForeverStudioMachineProjectService
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var component in document.Components)
         {
-            if (!IsSafeId(component.Id) || !ids.Add(component.Id))
-                issues.Add(Error("component-id", $"Component '{component.Id}' has an invalid or duplicate ID."));
-            if (component.Properties.Count > MaxPropertyCount)
-                issues.Add(Error("component-properties", $"Component '{component.Id}' has too many properties."));
-            if (!string.IsNullOrWhiteSpace(component.ParentId) && !document.Components.Any(candidate =>
-                    candidate.Id.Equals(component.ParentId, StringComparison.OrdinalIgnoreCase)))
+            if (!IsSafeLocalId(component.Id) || !ids.Add(component.Id))
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, "Component IDs must be unique safe IDs."));
+            if (catalog.Find(component.LibraryItemId, component.LibraryItemVersion) is not { Kind: ForeverStudioLibraryItemKind.Asset })
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"Component '{component.Id}' references unavailable asset '{component.LibraryItemId}' v{component.LibraryItemVersion}."));
+        }
+
+        foreach (var component in document.Components)
+        {
+            if (component.ParentId is not null && !ids.Contains(component.ParentId))
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"Component '{component.Id}' references missing parent '{component.ParentId}'."));
+            if (component.ParentId is not null && component.ParentId.Equals(component.Id, StringComparison.OrdinalIgnoreCase))
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"Component '{component.Id}' cannot parent itself."));
+        }
+
+        foreach (var component in document.Components)
+        {
+            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var current = component;
+            while (current.ParentId is { } parentId)
             {
-                issues.Add(Error("component-parent", $"Component '{component.Id}' references missing parent '{component.ParentId}'."));
+                if (!visited.Add(current.Id))
+                {
+                    issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"Component hierarchy contains a cycle at '{component.Id}'."));
+                    break;
+                }
+                current = document.Components.FirstOrDefault(candidate => candidate.Id.Equals(parentId, StringComparison.OrdinalIgnoreCase))!;
+                if (current is null)
+                    break;
             }
-            var item = catalog.Find(component.LibraryItemId, component.LibraryItemVersion);
-            if (item is null || item.Kind != ForeverStudioLibraryItemKind.Asset)
-                issues.Add(Error("component-library", $"Component '{component.Id}' references unavailable Asset '{component.LibraryItemId}' v{component.LibraryItemVersion}."));
         }
     }
 
@@ -336,13 +621,13 @@ public static class ForeverStudioMachineProjectService
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var state in document.States)
         {
-            if (!IsSafeId(state.Id) || !ids.Add(state.Id))
-                issues.Add(Error("state-id", $"State '{state.Id}' has an invalid or duplicate ID."));
-            if (state.Properties.Count > MaxPropertyCount)
-                issues.Add(Error("state-properties", $"State '{state.Id}' has too many properties."));
+            if (!IsSafeLocalId(state.Id) || !ids.Add(state.Id))
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, "State IDs must be unique safe IDs."));
         }
-        if (!document.States.Any(state => state.Id.Equals("idle", StringComparison.OrdinalIgnoreCase)))
-            issues.Add(Warning("state-idle", "No 'idle' state is declared; production generators will require an explicit default state."));
+
+        var initialCount = document.States.Count(state => state.IsInitial);
+        if (initialCount != 1)
+            issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, "Exactly one machine state must be marked as the initial state."));
     }
 
     private static void ValidateBehavior(
@@ -350,23 +635,18 @@ public static class ForeverStudioMachineProjectService
         ForeverStudioLibraryCatalog catalog,
         List<StudioValidationIssue> issues)
     {
-        var nodeIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var nodeItems = new Dictionary<string, ForeverStudioLibraryItem>(StringComparer.OrdinalIgnoreCase);
+        var nodes = new Dictionary<string, ForeverStudioMachineBehaviorNode>(StringComparer.OrdinalIgnoreCase);
         foreach (var node in document.Behavior.Nodes)
         {
-            if (!IsSafeId(node.Id) || !nodeIds.Add(node.Id))
-                issues.Add(Error("behavior-node-id", $"Behavior node '{node.Id}' has an invalid or duplicate ID."));
-            if (!double.IsFinite(node.X) || !double.IsFinite(node.Y))
-                issues.Add(Error("behavior-node-position", $"Behavior node '{node.Id}' has a non-finite canvas position."));
-            if (node.Properties.Count > MaxPropertyCount)
-                issues.Add(Error("behavior-node-properties", $"Behavior node '{node.Id}' has too many properties."));
-            var item = catalog.Find(node.LibraryItemId, node.LibraryItemVersion);
-            if (item is null || item.Kind != ForeverStudioLibraryItemKind.Function)
+            if (!IsSafeLocalId(node.Id) || !nodes.TryAdd(node.Id, node))
             {
-                issues.Add(Error("behavior-node-library", $"Behavior node '{node.Id}' references unavailable Function '{node.LibraryItemId}' v{node.LibraryItemVersion}."));
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, "Behavior node IDs must be unique safe IDs."));
                 continue;
             }
-            nodeItems[node.Id] = item;
+            if (!double.IsFinite(node.X) || !double.IsFinite(node.Y) || Math.Abs(node.X) > 100000 || Math.Abs(node.Y) > 100000)
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"Behavior node '{node.Id}' has invalid canvas coordinates."));
+            if (catalog.Find(node.LibraryItemId, node.LibraryItemVersion) is not { Kind: ForeverStudioLibraryItemKind.Function })
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"Behavior node '{node.Id}' references unavailable function '{node.LibraryItemId}' v{node.LibraryItemVersion}."));
         }
 
         var connectionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -374,34 +654,38 @@ public static class ForeverStudioMachineProjectService
         var incomingCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         foreach (var connection in document.Behavior.Connections)
         {
-            if (!IsSafeId(connection.Id) || !connectionIds.Add(connection.Id))
-                issues.Add(Error("behavior-connection-id", $"Connection '{connection.Id}' has an invalid or duplicate ID."));
+            if (!IsSafeLocalId(connection.Id) || !connectionIds.Add(connection.Id))
+            {
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, "Behavior connection IDs must be unique safe IDs."));
+                continue;
+            }
 
             var semanticKey = $"{connection.FromNodeId}\n{connection.FromPortId}\n{connection.ToNodeId}\n{connection.ToPortId}";
             if (!semanticConnections.Add(semanticKey))
-                issues.Add(Error("behavior-connection-duplicate", $"Connection '{connection.Id}' duplicates an existing graph edge."));
-
-            var fromNode = document.Behavior.Nodes.FirstOrDefault(node =>
-                node.Id.Equals(connection.FromNodeId, StringComparison.OrdinalIgnoreCase));
-            var toNode = document.Behavior.Nodes.FirstOrDefault(node =>
-                node.Id.Equals(connection.ToNodeId, StringComparison.OrdinalIgnoreCase));
-            if (fromNode is null || toNode is null)
             {
-                issues.Add(Error("behavior-connection-node", $"Connection '{connection.Id}' references a missing node."));
+                issues.Add(new StudioValidationIssue(
+                    StudioValidationSeverity.Error,
+                    $"Connection '{connection.Id}' duplicates an existing graph edge."));
+            }
+
+            if (!nodes.TryGetValue(connection.FromNodeId, out var fromNode) || !nodes.TryGetValue(connection.ToNodeId, out var toNode))
+            {
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"Connection '{connection.Id}' references a missing node."));
                 continue;
             }
-            if (!nodeItems.TryGetValue(fromNode.Id, out var fromItem) || !nodeItems.TryGetValue(toNode.Id, out var toItem))
-                continue;
 
-            var output = fromItem.Ports.FirstOrDefault(port =>
+            var fromItem = catalog.Find(fromNode.LibraryItemId, fromNode.LibraryItemVersion);
+            var toItem = catalog.Find(toNode.LibraryItemId, toNode.LibraryItemVersion);
+            var output = fromItem?.Ports.FirstOrDefault(port =>
                 port.Id.Equals(connection.FromPortId, StringComparison.OrdinalIgnoreCase) &&
                 port.Direction == ForeverStudioLibraryPortDirection.Output);
-            var input = toItem.Ports.FirstOrDefault(port =>
+            var input = toItem?.Ports.FirstOrDefault(port =>
                 port.Id.Equals(connection.ToPortId, StringComparison.OrdinalIgnoreCase) &&
                 port.Direction == ForeverStudioLibraryPortDirection.Input);
+
             if (output is null || input is null || !catalog.ArePortsCompatible(output, input))
             {
-                issues.Add(Error("behavior-connection-port", $"Connection '{connection.Id}' has missing or incompatible typed ports."));
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"Connection '{connection.Id}' has missing or incompatible typed ports."));
                 continue;
             }
 
@@ -409,223 +693,107 @@ public static class ForeverStudioMachineProjectService
             incomingCounts[inputKey] = incomingCounts.GetValueOrDefault(inputKey) + 1;
             if (!input.Multiple && incomingCounts[inputKey] > 1)
             {
-                issues.Add(Error(
-                    "behavior-input-cardinality",
-                    $"Input '{toNode.Id}.{input.Id}' accepts one connection but has {incomingCounts[inputKey]}."));
+                issues.Add(new StudioValidationIssue(
+                    StudioValidationSeverity.Error,
+                    $"Input '{toNode.Id}.{input.Id}' accepts a single connection but has {incomingCounts[inputKey]}."));
             }
         }
 
         foreach (var node in document.Behavior.Nodes)
         {
-            if (!nodeItems.TryGetValue(node.Id, out var item))
+            var item = catalog.Find(node.LibraryItemId, node.LibraryItemVersion);
+            if (item is not { Kind: ForeverStudioLibraryItemKind.Function })
                 continue;
             foreach (var input in item.Ports.Where(port =>
                          port.Direction == ForeverStudioLibraryPortDirection.Input && port.Required))
             {
-                var key = $"{node.Id}\n{input.Id}";
-                if (incomingCounts.GetValueOrDefault(key) == 0)
+                var inputKey = $"{node.Id}\n{input.Id}";
+                if (incomingCounts.GetValueOrDefault(inputKey) == 0)
                 {
-                    issues.Add(Warning(
-                        "behavior-required-input",
+                    issues.Add(new StudioValidationIssue(
+                        StudioValidationSeverity.Warning,
                         $"Required input '{node.Id}.{input.Id}' is not connected yet."));
                 }
             }
         }
     }
 
-    private static void ValidateGui(ForeverStudioMachineDocument document, List<StudioValidationIssue> issues)
-    {
-        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var binding in document.Gui.Bindings)
-        {
-            if (!IsSafeId(binding.Id) || !ids.Add(binding.Id))
-                issues.Add(Error("gui-binding-id", $"GUI binding '{binding.Id}' has an invalid or duplicate ID."));
-            if (string.IsNullOrWhiteSpace(binding.SourceId) || string.IsNullOrWhiteSpace(binding.TargetId))
-                issues.Add(Error("gui-binding-target", $"GUI binding '{binding.Id}' requires sourceId and targetId."));
-        }
-    }
-
-    private static void ValidateAnimations(
+    private static void ValidateBindings(
         ForeverStudioMachineDocument document,
         ForeverStudioLibraryCatalog catalog,
         List<StudioValidationIssue> issues)
     {
-        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var componentIds = document.Components.Select(component => component.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var guiIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var binding in document.Gui.Bindings)
+        {
+            if (!IsSafeLocalId(binding.Id) || !guiIds.Add(binding.Id))
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, "GUI binding IDs must be unique safe IDs."));
+            if (catalog.Find(binding.LibraryItemId, binding.LibraryItemVersion) is not { Kind: ForeverStudioLibraryItemKind.Asset })
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"GUI binding '{binding.Id}' references an unavailable asset library item."));
+        }
+
+        var animationIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var binding in document.Animations)
         {
-            if (!IsSafeId(binding.Id) || !ids.Add(binding.Id))
-                issues.Add(Error("animation-binding-id", $"Animation binding '{binding.Id}' has an invalid or duplicate ID."));
-            if (binding.Properties.Count > MaxPropertyCount)
-                issues.Add(Error("animation-properties", $"Animation binding '{binding.Id}' has too many properties."));
-            var item = catalog.Find(binding.LibraryItemId, binding.LibraryItemVersion);
-            if (item is null || item.Kind != ForeverStudioLibraryItemKind.Animation)
-                issues.Add(Error("animation-library", $"Animation binding '{binding.Id}' references unavailable Animation '{binding.LibraryItemId}' v{binding.LibraryItemVersion}."));
-            if (!document.Components.Any(component => component.Id.Equals(binding.TargetComponentId, StringComparison.OrdinalIgnoreCase)))
-                issues.Add(Error("animation-target", $"Animation binding '{binding.Id}' references missing component '{binding.TargetComponentId}'."));
+            if (!IsSafeLocalId(binding.Id) || !animationIds.Add(binding.Id))
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, "Animation binding IDs must be unique safe IDs."));
+            if (!componentIds.Contains(binding.TargetComponentId))
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"Animation binding '{binding.Id}' targets missing component '{binding.TargetComponentId}'."));
+            if (catalog.Find(binding.LibraryItemId, binding.LibraryItemVersion) is not { Kind: ForeverStudioLibraryItemKind.Animation })
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"Animation binding '{binding.Id}' references an unavailable animation library item."));
         }
     }
 
-    private static void ValidateManifest(
+    private static void ValidateLibraryManifest(
         ForeverStudioMachineDocument document,
         ForeverStudioLibraryCatalog catalog,
         List<StudioValidationIssue> issues)
     {
-        var expected = ReferencedLibraryItems(document)
-            .Distinct()
-            .OrderBy(reference => reference.ItemId, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(reference => reference.Version)
-            .ToList();
-        var actual = document.LibraryManifest
-            .DistinctBy(reference => (reference.ItemId.ToLowerInvariant(), reference.Version))
-            .OrderBy(reference => reference.ItemId, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(reference => reference.Version)
-            .ToList();
+        if (document.Library.ContractVersion != ForeverStudioLibraryCatalog.CurrentContractVersion)
+            issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, "Machine library contractVersion does not match the installed Studio contract."));
 
-        foreach (var reference in expected)
+        var manifestKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var reference in document.Library.References)
         {
+            var key = $"{reference.ItemId}@{reference.Version}";
+            if (!manifestKeys.Add(key))
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"Duplicate library reference '{key}'."));
             if (catalog.Find(reference.ItemId, reference.Version) is null)
-                issues.Add(Error("manifest-library", $"Referenced library item '{reference.ItemId}' v{reference.Version} is unavailable."));
+                issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error, $"Library reference '{key}' is unavailable."));
         }
-
-        if (!SameReferences(expected, actual))
-            issues.Add(Info("manifest-refresh", "libraryManifest will be refreshed from canonical project references on save."));
     }
 
-    private static bool SameReferences(
-        IReadOnlyList<ForeverStudioMachineLibraryReference> left,
-        IReadOnlyList<ForeverStudioMachineLibraryReference> right)
+    private static string ResolveRepoPath(string repoRoot, string relativePath)
     {
-        if (left.Count != right.Count)
-            return false;
-        for (var i = 0; i < left.Count; i++)
-        {
-            if (!left[i].ItemId.Equals(right[i].ItemId, StringComparison.OrdinalIgnoreCase) ||
-                left[i].Version != right[i].Version)
-                return false;
-        }
-        return true;
+        var root = Path.GetFullPath(repoRoot.Trim()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var full = Path.GetFullPath(Path.Combine(root, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+        var prefix = root + Path.DirectorySeparatorChar;
+        if (!full.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Resolved Machine Builder path escaped the selected repository.");
+        return full;
     }
 
-    private static void RebuildLibraryManifest(ForeverStudioMachineDocument document)
+    private static string HashFile(string path)
     {
-        document.LibraryManifest = ReferencedLibraryItems(document)
-            .DistinctBy(reference => (reference.ItemId.ToLowerInvariant(), reference.Version))
-            .OrderBy(reference => reference.ItemId, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(reference => reference.Version)
-            .ToList();
+        using var stream = File.OpenRead(path);
+        return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
     }
 
-    private static IEnumerable<ForeverStudioMachineLibraryReference> ReferencedLibraryItems(
-        ForeverStudioMachineDocument document)
-    {
-        foreach (var component in document.Components)
-            yield return new ForeverStudioMachineLibraryReference { ItemId = component.LibraryItemId, Version = component.LibraryItemVersion };
-        foreach (var node in document.Behavior.Nodes)
-            yield return new ForeverStudioMachineLibraryReference { ItemId = node.LibraryItemId, Version = node.LibraryItemVersion };
-        foreach (var animation in document.Animations)
-            yield return new ForeverStudioMachineLibraryReference { ItemId = animation.LibraryItemId, Version = animation.LibraryItemVersion };
-    }
-
-    private static void Normalize(ForeverStudioMachineDocument document)
-    {
-        document.AssetId = NormalizeId(document.AssetId);
-        document.DisplayName = document.DisplayName?.Trim() ?? string.Empty;
-        document.Description = document.Description?.Trim() ?? string.Empty;
-        document.LibraryManifest ??= [];
-        document.Components ??= [];
-        document.States ??= [];
-        document.Behavior ??= new ForeverStudioMachineBehaviorGraph();
-        document.Gui ??= new ForeverStudioMachineGuiDefinition();
-        document.Animations ??= [];
-        document.Behavior.Nodes ??= [];
-        document.Behavior.Connections ??= [];
-        document.Gui.Bindings ??= [];
-
-        foreach (var reference in document.LibraryManifest)
-            reference.ItemId = NormalizeId(reference.ItemId);
-        foreach (var component in document.Components)
-        {
-            component.Id = NormalizeId(component.Id);
-            component.DisplayName = component.DisplayName?.Trim() ?? string.Empty;
-            component.LibraryItemId = NormalizeId(component.LibraryItemId);
-            component.ParentId = string.IsNullOrWhiteSpace(component.ParentId) ? null : NormalizeId(component.ParentId);
-            component.Properties ??= new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
-        }
-        foreach (var state in document.States)
-        {
-            state.Id = NormalizeId(state.Id);
-            state.DisplayName = state.DisplayName?.Trim() ?? string.Empty;
-            state.Properties ??= new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
-        }
-        foreach (var node in document.Behavior.Nodes)
-        {
-            node.Id = NormalizeId(node.Id);
-            node.LibraryItemId = NormalizeId(node.LibraryItemId);
-            node.Properties ??= new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
-        }
-        foreach (var connection in document.Behavior.Connections)
-        {
-            connection.Id = NormalizeId(connection.Id);
-            connection.FromNodeId = NormalizeId(connection.FromNodeId);
-            connection.FromPortId = NormalizeId(connection.FromPortId);
-            connection.ToNodeId = NormalizeId(connection.ToNodeId);
-            connection.ToPortId = NormalizeId(connection.ToPortId);
-        }
-        foreach (var binding in document.Gui.Bindings)
-        {
-            binding.Id = NormalizeId(binding.Id);
-            binding.SourceId = NormalizeId(binding.SourceId);
-            binding.TargetId = NormalizeId(binding.TargetId);
-            binding.DataType = string.IsNullOrWhiteSpace(binding.DataType) ? "any" : binding.DataType.Trim().ToLowerInvariant();
-        }
-        foreach (var animation in document.Animations)
-        {
-            animation.Id = NormalizeId(animation.Id);
-            animation.LibraryItemId = NormalizeId(animation.LibraryItemId);
-            animation.TargetComponentId = NormalizeId(animation.TargetComponentId);
-            animation.SourceNodeId = string.IsNullOrWhiteSpace(animation.SourceNodeId) ? null : NormalizeId(animation.SourceNodeId);
-            animation.SourcePortId = string.IsNullOrWhiteSpace(animation.SourcePortId) ? null : NormalizeId(animation.SourcePortId);
-            animation.Properties ??= new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
-        }
-    }
-
-    private static bool TryResolveInside(string repoRoot, string relativePath, out string fullPath)
-    {
-        fullPath = string.Empty;
-        try
-        {
-            var root = Path.GetFullPath(repoRoot.Trim()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
-            fullPath = Path.GetFullPath(Path.Combine(root, relativePath.Replace('/', Path.DirectorySeparatorChar)));
-            return fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase);
-        }
-        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
-        {
-            fullPath = string.Empty;
-            return false;
-        }
-    }
-
-    public static string ComputeHash(string? text)
-        => Hash(text ?? string.Empty);
-
-    private static string Hash(string value)
-        => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
-
-    internal static string NormalizeId(string? value)
+    private static string NormalizeLocalId(string? value)
         => (value ?? string.Empty).Trim().ToLowerInvariant();
 
-    internal static bool IsSafeId(string value)
+    private static bool IsSafeLocalId(string value)
         => value.Length is > 0 and <= 128 &&
            value.All(character => char.IsLetterOrDigit(character) || character is '_' or '-' or '.');
 
-    private static StudioValidationIssue Error(string code, string message)
-        => new(StudioValidationSeverity.Error, code, message);
+    private static bool IsSafeAssetId(string value)
+        => IsSafeLocalId(value) && value.All(character => !char.IsLetter(character) || char.IsLower(character));
 
-    private static StudioValidationIssue Warning(string code, string message)
-        => new(StudioValidationSeverity.Warning, code, message);
-
-    private static StudioValidationIssue Info(string code, string message)
-        => new(StudioValidationSeverity.Info, code, message);
+    private static bool IsSafeNamespace(string value)
+        => value.Length is > 0 and <= 64 &&
+           value.All(character => char.IsLower(character) || char.IsDigit(character) || character is '_' or '-' or '.');
 
     private static string Humanize(string value)
         => string.Join(' ', value.Split(['_', '-', '.'], StringSplitOptions.RemoveEmptyEntries)
