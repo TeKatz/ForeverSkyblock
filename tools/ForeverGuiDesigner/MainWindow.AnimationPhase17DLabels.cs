@@ -17,7 +17,7 @@ public partial class MainWindow
             foreach (var border in viewportGrid.Children.OfType<Border>())
             {
                 if (border.Child is TextBlock text && text.Text.StartsWith("BLOCK ANIMATION · PHASE 17", StringComparison.Ordinal))
-                    text.Text = "BLOCK ANIMATION · PHASE 17D.2";
+                    text.Text = "BLOCK ANIMATION · PHASE 17D.3";
             }
         }
 
@@ -27,7 +27,7 @@ public partial class MainWindow
             {
                 if (!text.Text.StartsWith("Phase 17C.3", StringComparison.Ordinal))
                     continue;
-                text.Text = "Phase 17D.2 keeps the complete Phase 17A–17C authoring model in the versioned project format introduced by 17D.1 and adds the matching NeoForge server-data runtime loader. Datapack reloads validate and atomically register animation documents by asset; the dedicated-server GameTest path verifies real resource loading. Existing Java renderers remain authoritative until the explicit client sync / TargetId binding step in Phase 17D.3.";
+                text.Text = "Phase 17D.3 synchronizes the validated server-data animation snapshot to clients and binds persisted runtime:{asset}:{component} TargetIds directly to the matching source renderer components. Existing Light / Status and Special Effect timelines are now consumed in game, while runtime Transform / Visibility tracks are evaluated with the same Step / Linear / Smooth rules as Studio. Machine logic and source predicates remain authoritative: Studio may transform or hide an existing component, visually override a status presentation, or suppress a real effect, but it cannot invent missing source behavior. Direct runtime-target transform authoring and parity preview inside Studio remain the next Phase 17D integration step.";
                 break;
             }
         }
