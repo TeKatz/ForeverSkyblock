@@ -193,7 +193,7 @@ internal static class ForeverRuntimeAnimationCatalog
             [
                 T("lamp", "Travelling grow lamp", "garden_lamp", "MachineAnimation.growth", "MachineAnimation.java", ForeverRuntimeAnimationKind.Translation, p => Smooth(.04,.84,p), "Lamp travels across the chamber."),
                 T("plant-growth", "Specimen growth", "garden_plant", "GardenPlantRenderer.plant", "GardenPlantRenderer.java", ForeverRuntimeAnimationKind.Procedural, p => Smooth(.04,.84,p), "Crop/tree geometry grows from the linked specimen."),
-                T("irrigation", "Irrigation drops", "(phase*12+i*.25)%1", "GardenChamberRenderer.java", "GardenChamberRenderer.java", ForeverRuntimeAnimationKind.Effect, p => PositiveModulo(p*12,1), "Four bounded falling drops while running."),
+                T("irrigation", "Irrigation drops", "garden_drops", "(phase*12+i*.25)%1", "GardenChamberRenderer.java", ForeverRuntimeAnimationKind.Effect, p => PositiveModulo(p*12,1), "Four bounded falling drops while running."),
                 T("harvest", "Harvest sweep", "garden_harvest", "MachineAnimation.harvest", "MachineAnimation.java", ForeverRuntimeAnimationKind.Translation, p => Smooth(.86,1,p), "Late-cycle harvest sweep.")
             ],
             "Source: GardenChamberRenderer + GardenPlantRenderer + MachineAnimation.");
