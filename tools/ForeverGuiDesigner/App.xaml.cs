@@ -30,6 +30,7 @@ public partial class App : Application
         window.EnableForeverMachineBuilderLibraryPhase2EntryFix();
         window.EnableForeverMachineBuilderVisualDesignPhase3();
         window.EnableForeverMachineBuilderVisualDirectManipulationPhase3();
+        window.EnableForeverMachineBuilderAssetExpansionPhase3();
         window.EnableForeverMachineBuilderAssetBrowserPhase3();
         window.EnableForeverBlockModelViewer();
         window.EnableForeverBlockEditorRepositoryReloadFix();
