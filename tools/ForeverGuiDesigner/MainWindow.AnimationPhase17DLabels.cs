@@ -17,7 +17,7 @@ public partial class MainWindow
             foreach (var border in viewportGrid.Children.OfType<Border>())
             {
                 if (border.Child is TextBlock text && text.Text.StartsWith("BLOCK ANIMATION · PHASE 17", StringComparison.Ordinal))
-                    text.Text = "BLOCK ANIMATION · PHASE 17D.3";
+                    text.Text = "BLOCK ANIMATION · PHASE 17D.4";
             }
         }
 
@@ -27,7 +27,7 @@ public partial class MainWindow
             {
                 if (!text.Text.StartsWith("Phase 17C.3", StringComparison.Ordinal))
                     continue;
-                text.Text = "Phase 17D.3 synchronizes the validated server-data animation snapshot to clients and binds persisted runtime:{asset}:{component} TargetIds directly to the matching source renderer components. Existing Light / Status and Special Effect timelines are now consumed in game, while runtime Transform / Visibility tracks are evaluated with the same Step / Linear / Smooth rules as Studio. Machine logic and source predicates remain authoritative: Studio may transform or hide an existing component, visually override a status presentation, or suppress a real effect, but it cannot invent missing source behavior. Direct runtime-target transform authoring and parity preview inside Studio remain the next Phase 17D integration step.";
+                text.Text = "Phase 17D.4 closes the authoring side of the runtime binding introduced in 17D.3. Current-asset runtime:{asset}:{component} targets from the Phase-17A registry are selectable beside JSON elements and use the same persisted transform / visibility tracks, interpolation, keyframe editing and dirty/review workflow. Preview first composes the source-backed renderer state, then applies authored transforms around the same component pivots used by the Java binder; missing source components remain absent. JSON tracks are composed together without destructive visibility index shifts, and target-local material resolution now follows each stable JSON target instead of only the currently selected one. Machine state, status and special-effect source predicates remain authoritative.";
                 break;
             }
         }
