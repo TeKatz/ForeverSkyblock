@@ -50,7 +50,7 @@
         "previewModel": {
           "type": "string",
           "maxLength": 512,
-          "pattern": "^(forever_skyblock:)?block/[A-Za-z0-9_./-]+$"
+          "pattern": "^(?!.*\\.\\.)(forever_skyblock:)?block/[A-Za-z0-9_./-]+$"
         },
         "pivot": { "$ref": "#/$defs/vector3" },
         "visibleWhen": {
@@ -99,7 +99,7 @@
       "required": ["phase", "value"],
       "properties": {
         "phase": { "type": "number", "minimum": 0, "maximum": 1 },
-        "value": { "type": "number" }
+        "value": { "type": "number", "minimum": -100000, "maximum": 100000 }
       }
     },
     "sourceTrack": {
