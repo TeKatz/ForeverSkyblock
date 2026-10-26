@@ -74,16 +74,24 @@ final class ForeverStudioAnimationParserTest {
         assertTrue(error.getMessage().contains("Duplicate stable targetId"));
     }
 
-    @Test void rejectsInvalidEffectModesAndOutOfRangeTimes() {
-        var root = JsonParser.parseString(VALID).getAsJsonObject();
-        root.getAsJsonObject("animation").getAsJsonArray("effectTracks").get(0).getAsJsonObject()
+    @Test void rejectsInvalidEffectModesAndNegativeTimes() {
+        var invalidEffect = JsonParser.parseString(VALID).getAsJsonObject();
+        invalidEffect.getAsJsonObject("animation").getAsJsonArray("effectTracks").get(0).getAsJsonObject()
                 .getAsJsonArray("keyframes").get(0).getAsJsonObject().addProperty("mode", "forced");
-        assertThrows(IllegalArgumentException.class, () -> ForeverStudioAnimationParser.parse(root));
+        assertThrows(IllegalArgumentException.class, () -> ForeverStudioAnimationParser.parse(invalidEffect));
 
-        root = JsonParser.parseString(VALID).getAsJsonObject();
+        var invalidTime = JsonParser.parseString(VALID).getAsJsonObject();
+        invalidTime.getAsJsonObject("animation").getAsJsonArray("tracks").get(0).getAsJsonObject()
+                .getAsJsonArray("keyframes").get(1).getAsJsonObject().addProperty("timeSeconds", -0.25D);
+        assertThrows(IllegalArgumentException.class, () -> ForeverStudioAnimationParser.parse(invalidTime));
+    }
+
+    @Test void preservesStudioWarningKeysBeyondDurationInsteadOfRejectingTheDocument() {
+        var root = JsonParser.parseString(VALID).getAsJsonObject();
         root.getAsJsonObject("animation").getAsJsonArray("tracks").get(0).getAsJsonObject()
                 .getAsJsonArray("keyframes").get(1).getAsJsonObject().addProperty("timeSeconds", 7.0D);
-        assertThrows(IllegalArgumentException.class, () -> ForeverStudioAnimationParser.parse(root));
+        var document = assertDoesNotThrow(() -> ForeverStudioAnimationParser.parse(root));
+        assertEquals(7.0D, document.animation().tracks().getFirst().keyframes().get(1).timeSeconds());
     }
 
     @Test void registryReplacesSnapshotsAtomicallyAndExposesStableLookups() {
