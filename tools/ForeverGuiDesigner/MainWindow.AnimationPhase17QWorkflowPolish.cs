@@ -22,8 +22,25 @@ public partial class MainWindow
             return;
 
         _studioAnimationPhase17QWorkflowPolishInitialized = true;
+        CollapseStudioPhase17QLegacyDescription();
         PromoteStudioPhase17QMoveToTime(commandRow);
         PromoteStudioPhase17QInterpolation(commandRow);
+    }
+
+    private void CollapseStudioPhase17QLegacyDescription()
+    {
+        if (_studioAnimationStatusText?.Parent is not StackPanel inspector)
+            return;
+
+        foreach (var text in inspector.Children.OfType<TextBlock>())
+        {
+            if (text.Text.StartsWith("Phase 17B stabilizes", StringComparison.Ordinal) ||
+                text.Text.StartsWith("Phase 17D.4 closes", StringComparison.Ordinal))
+            {
+                text.Visibility = Visibility.Collapsed;
+                return;
+            }
+        }
     }
 
     private void PromoteStudioPhase17QMoveToTime(WrapPanel commandRow)
