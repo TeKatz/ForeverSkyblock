@@ -6,6 +6,7 @@ on:
       - feature/forever-studio-foundation
     paths:
       - 'mod/**'
+      - 'tools/ForeverGuiDesigner/MainWindow.AnimationPhase17DLabels.cs'
       - '.github/workflows/forever-runtime-feature.yml'
   workflow_dispatch:
 
@@ -32,6 +33,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Compile and test mod runtime
         run: ./gradlew build compileGameTestJava --no-daemon
+      - name: Boot dedicated GameTest server
+        run: ./gradlew runGameTestServer -PcondenserTests --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: ForeverSkyblock-Feature-Runtime
