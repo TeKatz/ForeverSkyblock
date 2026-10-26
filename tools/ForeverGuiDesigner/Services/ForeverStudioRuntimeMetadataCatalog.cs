@@ -80,6 +80,7 @@ internal static class ForeverStudioRuntimeMetadataCatalog
     private const int MaxOptionsPerState = 128;
     private const int MaxTracks = 128;
     private const int MaxKeyframesPerTrack = 256;
+    private const double MaxCurveMagnitude = 100000d;
 
     private static readonly object Gate = new();
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -489,9 +490,10 @@ internal static class ForeverStudioRuntimeMetadataCatalog
 
             foreach (var point in track.Keyframes)
             {
-                if (!double.IsFinite(point.Phase) || !double.IsFinite(point.Value) || point.Phase < 0 || point.Phase > 1)
+                if (!double.IsFinite(point.Phase) || !double.IsFinite(point.Value) ||
+                    point.Phase < 0 || point.Phase > 1 || Math.Abs(point.Value) > MaxCurveMagnitude)
                 {
-                    warnings.Add($"{relativePath}: source track '{track.Id}' contains a non-finite value or phase outside 0..1.");
+                    warnings.Add($"{relativePath}: source track '{track.Id}' contains a non-finite/out-of-range value or phase outside 0..1.");
                     return false;
                 }
             }
