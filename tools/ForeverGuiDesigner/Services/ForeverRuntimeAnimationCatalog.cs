@@ -35,9 +35,10 @@ internal sealed record ForeverRuntimeAnimationProfile(
 }
 
 /// <summary>
-/// Source-derived catalog of the runtime animations that already exist in the mod. The catalog is
-/// deliberately read-only: it describes Java renderer behavior without converting procedural curves
-/// into fake Studio keyframes. Studio-authored animation remains a separate override layer.
+/// Source-derived catalog of the runtime animations that already exist in the mod. Project runtime
+/// metadata v1 takes precedence so future blocks can describe their runtime components/curves without
+/// requiring a Studio code change. The built-in source-derived profiles remain the compatibility
+/// fallback for existing machines.
 /// </summary>
 internal static class ForeverRuntimeAnimationCatalog
 {
@@ -71,13 +72,30 @@ internal static class ForeverRuntimeAnimationCatalog
     public static ForeverRuntimeAnimationProfile ForAsset(string? assetId)
     {
         var key = (assetId ?? string.Empty).Trim().ToLowerInvariant();
+        if (ForeverStudioRuntimeMetadataCatalog.TryGetRuntimeAnimationProfile(key, out var projectProfile))
+            return projectProfile;
+
         return Profiles.TryGetValue(key, out var profile)
             ? profile
             : new ForeverRuntimeAnimationProfile(key, string.IsNullOrWhiteSpace(key) ? "Unknown" : key,
                 "No registered runtime renderer", [], [], "No existing Forever runtime animation was found for this asset.");
     }
 
-    public static IEnumerable<ForeverRuntimeAnimationProfile> All => Profiles.Values;
+    public static IEnumerable<ForeverRuntimeAnimationProfile> All
+    {
+        get
+        {
+            var project = new List<ForeverRuntimeAnimationProfile>();
+            foreach (var block in ForeverStudioRuntimeMetadataCatalog.AllBlocks)
+            {
+                if (ForeverStudioRuntimeMetadataCatalog.TryGetRuntimeAnimationProfile(block.AssetId, out var profile))
+                    project.Add(profile);
+            }
+
+            var projectIds = project.Select(profile => profile.AssetId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            return project.Concat(Profiles.Values.Where(profile => !projectIds.Contains(profile.AssetId))).ToList();
+        }
+    }
 
     private static IReadOnlyDictionary<string, ForeverRuntimeAnimationProfile> BuildProfiles()
     {
@@ -175,7 +193,7 @@ internal static class ForeverRuntimeAnimationCatalog
             [
                 T("lamp", "Travelling grow lamp", "garden_lamp", "MachineAnimation.growth", "MachineAnimation.java", ForeverRuntimeAnimationKind.Translation, p => Smooth(.04,.84,p), "Lamp travels across the chamber."),
                 T("plant-growth", "Specimen growth", "garden_plant", "GardenPlantRenderer.plant", "GardenPlantRenderer.java", ForeverRuntimeAnimationKind.Procedural, p => Smooth(.04,.84,p), "Crop/tree geometry grows from the linked specimen."),
-                T("irrigation", "Irrigation drops", "garden_drops", "(phase*12+i*.25)%1", "GardenChamberRenderer.java", ForeverRuntimeAnimationKind.Effect, p => PositiveModulo(p*12,1), "Four bounded falling drops while running."),
+                T("irrigation", "Irrigation drops", "(phase*12+i*.25)%1", "GardenChamberRenderer.java", "GardenChamberRenderer.java", ForeverRuntimeAnimationKind.Effect, p => PositiveModulo(p*12,1), "Four bounded falling drops while running."),
                 T("harvest", "Harvest sweep", "garden_harvest", "MachineAnimation.harvest", "MachineAnimation.java", ForeverRuntimeAnimationKind.Translation, p => Smooth(.86,1,p), "Late-cycle harvest sweep.")
             ],
             "Source: GardenChamberRenderer + GardenPlantRenderer + MachineAnimation.");
