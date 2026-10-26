@@ -26,9 +26,9 @@ internal sealed record ForeverRuntimeStateProfile(
 }
 
 /// <summary>
-/// Phase 17C.1 semantic runtime-state catalog. This intentionally models only states that exist in
-/// Forever Skyblock's current renderers/block entities; it does not create a universal state system.
-/// The catalog is read-only and drives Studio preview composition only.
+/// Semantic runtime-state catalog. Project runtime metadata v1 takes precedence so new blocks can
+/// publish their renderer predicates without a Studio code change; the built-in source-backed
+/// profiles remain the compatibility fallback for current Forever Skyblock machines.
 /// </summary>
 internal static class ForeverRuntimeStateCatalog
 {
@@ -48,6 +48,9 @@ internal static class ForeverRuntimeStateCatalog
     public static ForeverRuntimeStateProfile ForAsset(string? assetId)
     {
         var key = (assetId ?? string.Empty).Trim().ToLowerInvariant();
+        if (ForeverStudioRuntimeMetadataCatalog.TryGetRuntimeStateProfile(key, out var projectProfile))
+            return projectProfile;
+
         return Profiles.TryGetValue(key, out var profile)
             ? profile
             : new ForeverRuntimeStateProfile(
@@ -57,7 +60,21 @@ internal static class ForeverRuntimeStateCatalog
                 "No source-backed runtime-state controls are required for this asset.");
     }
 
-    public static IEnumerable<ForeverRuntimeStateProfile> All => Profiles.Values;
+    public static IEnumerable<ForeverRuntimeStateProfile> All
+    {
+        get
+        {
+            var project = new List<ForeverRuntimeStateProfile>();
+            foreach (var block in ForeverStudioRuntimeMetadataCatalog.AllBlocks)
+            {
+                if (ForeverStudioRuntimeMetadataCatalog.TryGetRuntimeStateProfile(block.AssetId, out var profile))
+                    project.Add(profile);
+            }
+
+            var projectIds = project.Select(profile => profile.AssetId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            return project.Concat(Profiles.Values.Where(profile => !projectIds.Contains(profile.AssetId))).ToList();
+        }
+    }
 
     private static IReadOnlyDictionary<string, ForeverRuntimeStateProfile> BuildProfiles()
     {

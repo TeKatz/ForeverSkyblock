@@ -19,7 +19,14 @@ public partial class App : Application
         var window = new MainWindow();
         window.PrepareStartupPresentation();
         window.EnableForeverStudioFoundation();
+        window.EnableForeverStudioStartScreenPolish();
+        window.EnableSelfUpdater();
+        window.EnableForeverStudioStartScreenPolishV2();
+        window.EnableForeverStudioStartScreenPolishV3();
+        window.EnableForeverStudioStartScreenPolishV4();
+        window.EnableForeverStudioStartScreenPolishV5();
         window.EnableForeverBlockModelViewer();
+        window.EnableForeverBlockEditorRepositoryReloadFix();
         window.EnableForeverUvTextureEditor();
         window.EnableForeverItemStudio();
         window.EnableForeverBlockDirectEditing();
@@ -55,6 +62,7 @@ public partial class App : Application
         window.EnableForeverAnimationPhase17QLayoutTuning();
         window.EnableForeverAnimationPhase17QDensityFix();
         window.EnableForeverAnimationPhase17R();
+        window.EnableForeverFutureProofRuntimeMetadata();
         MainWindow = window;
         window.Show();
 
@@ -83,7 +91,6 @@ public partial class App : Application
             window.EnableNonWashingStableAnimation();
             window.EnableRuntimeSelectionStabilityFix();
             window.EnableNonWashingButtonWashingParity();
-            window.EnableSelfUpdater();
             window.EnableCompactContextMenus();
             window.EnableContextMenuVisualPolish();
             window.EnableRuntimeContextSelectionFix();
