@@ -46,6 +46,8 @@ public partial class App : Application
         window.EnableForeverAnimationPersistence();
         window.EnableForeverAnimationPersistenceDirtyTracking();
         window.EnableForeverAnimationPersistenceDirtySignals();
+        window.EnableForeverAnimationRuntimeTargetAuthoring();
+        window.EnableForeverAnimationRuntimeTargetPreview();
         window.EnableForeverAnimationPhase17DLabels();
         MainWindow = window;
         window.Show();
