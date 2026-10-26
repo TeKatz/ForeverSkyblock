@@ -23,6 +23,7 @@ public partial class App : Application
         window.EnableSelfUpdater();
         window.EnableForeverStudioStartScreenPolishV2();
         window.EnableForeverStudioStartScreenPolishV3();
+        window.EnableForeverStudioStartScreenPolishV4();
         window.EnableForeverBlockModelViewer();
         window.EnableForeverUvTextureEditor();
         window.EnableForeverItemStudio();
