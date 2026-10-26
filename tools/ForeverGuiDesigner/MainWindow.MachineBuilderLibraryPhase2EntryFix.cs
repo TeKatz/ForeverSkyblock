@@ -5,10 +5,9 @@ using System.Windows.Threading;
 namespace ForeverGuiDesigner;
 
 /// <summary>
-/// Makes the Phase-2 production-library entry resilient to WPF startup timing. The Machine Builder
-/// workspace is constructed before Window.Show(), so visual-tree enumeration may not yet expose the
-/// nested library StackPanel. Resolve it through the heading's logical parent and retry once the
-/// workspace has loaded.
+/// Makes the Phase-2 production-library entry deterministic. Phase 1 already keeps a direct
+/// reference to the library summary TextBlock, so its logical parent is the exact library-card
+/// StackPanel. No visual-tree discovery is required.
 /// </summary>
 public partial class MainWindow
 {
@@ -20,39 +19,24 @@ public partial class MainWindow
             return;
         _machineBuilderLibraryPhase2EntryFixInitialized = true;
 
-        InstallMachineBuilderLibraryEntryResilient();
-        _studioMachineBuilderWorkspace.Loaded += (_, _) => InstallMachineBuilderLibraryEntryResilient();
+        InstallMachineBuilderLibraryEntryDirect();
+        _studioMachineBuilderWorkspace.Loaded += (_, _) => InstallMachineBuilderLibraryEntryDirect();
         _ = Dispatcher.BeginInvoke(
-            InstallMachineBuilderLibraryEntryResilient,
+            InstallMachineBuilderLibraryEntryDirect,
             DispatcherPriority.ContextIdle);
     }
 
-    private void InstallMachineBuilderLibraryEntryResilient()
+    private void InstallMachineBuilderLibraryEntryDirect()
     {
-        if (_studioMachineBuilderWorkspace is null)
-            return;
-
-        var heading = FindStudioVisualChildren<TextBlock>(_studioMachineBuilderWorkspace)
-            .FirstOrDefault(text => string.Equals(
-                text.Text,
-                "LIBRARY CONTRACT",
-                StringComparison.Ordinal));
-
-        var libraryPanel = heading?.Parent as StackPanel;
-        libraryPanel ??= FindStudioVisualChildren<StackPanel>(_studioMachineBuilderWorkspace)
-            .FirstOrDefault(panel => panel.Children.OfType<TextBlock>()
-                .Any(text => string.Equals(
-                    text.Text,
-                    "LIBRARY CONTRACT",
-                    StringComparison.Ordinal)));
-
+        var libraryPanel = _machineBuilderLibrarySummaryText?.Parent as StackPanel;
         if (libraryPanel is null)
             return;
 
         var description = libraryPanel.Children.OfType<TextBlock>()
             .FirstOrDefault(text =>
                 text.Text.Contains("Phase 1 establishes", StringComparison.OrdinalIgnoreCase) ||
-                text.Text.Contains("Phase 2 fills", StringComparison.OrdinalIgnoreCase));
+                text.Text.Contains("Phase 2 fills", StringComparison.OrdinalIgnoreCase) ||
+                text.Text.Contains("production building-block catalog", StringComparison.OrdinalIgnoreCase));
         if (description is not null)
         {
             description.Text =
@@ -69,6 +53,7 @@ public partial class MainWindow
         var button = CreateStudioChromeButton("OPEN PRODUCTION LIBRARY", double.NaN, true);
         button.Tag = "machine_builder_library_open";
         button.HorizontalAlignment = HorizontalAlignment.Stretch;
+        button.Height = 38;
         button.Margin = new Thickness(0, 16, 0, 0);
         button.Click += (_, _) => ShowMachineBuilderLibrary();
         libraryPanel.Children.Add(button);
