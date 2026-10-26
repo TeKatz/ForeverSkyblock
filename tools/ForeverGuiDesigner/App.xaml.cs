@@ -25,6 +25,7 @@ public partial class App : Application
         window.EnableForeverStudioStartScreenPolishV3();
         window.EnableForeverStudioStartScreenPolishV4();
         window.EnableForeverStudioStartScreenPolishV5();
+        window.EnableForeverMachineBuilderFoundation();
         window.EnableForeverBlockModelViewer();
         window.EnableForeverBlockEditorRepositoryReloadFix();
         window.EnableForeverUvTextureEditor();
