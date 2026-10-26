@@ -31,6 +31,7 @@ public sealed class MinecraftBlockModelViewport : Grid
     private readonly Dictionary<TextureSliceKey, BitmapSource> _faceTextureCache = new();
     private readonly Dictionary<Model3D, FaceHitInfo> _faceHitMap = new();
     private readonly Dictionary<string, GeometryModel3D> _faceModels = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> _effectiveFaceTextures = new(StringComparer.OrdinalIgnoreCase);
     private IReadOnlyDictionary<string, BitmapSource> _textureOverrides = new Dictionary<string, BitmapSource>(StringComparer.OrdinalIgnoreCase);
     private MinecraftResolvedBlockModel? _currentModel;
     private Point _lastMouse;
@@ -100,6 +101,13 @@ public sealed class MinecraftBlockModelViewport : Grid
     public int SelectedElementIndex => _selectedElementIndex;
     public string? SelectedFaceDirection => _selectedFaceDirection;
 
+    /// <summary>
+    /// Optional high-frequency texture resolver used by the Animation Studio. It receives the
+    /// element index, face direction and source texture reference and may return another texture
+    /// reference already present in the model. The source model itself remains untouched.
+    /// </summary>
+    public Func<int, string, string, string>? FaceTextureResolver { get; set; }
+
     public void SetModel(
         string repoRoot,
         MinecraftResolvedBlockModel model,
@@ -118,6 +126,7 @@ public sealed class MinecraftBlockModelViewport : Grid
         _content.Children.Clear();
         _faceHitMap.Clear();
         _faceModels.Clear();
+        _effectiveFaceTextures.Clear();
         RenderedFaceCount = 0;
         MissingTextureCount = 0;
         _blockstateXRotation = blockstateXRotation;
@@ -134,13 +143,16 @@ public sealed class MinecraftBlockModelViewport : Grid
                 if (geometry is null)
                     continue;
 
-                var material = CreateMaterial(repoRoot, model, face.Texture, uv);
+                var faceKey = FaceModelKey(elementIndex, direction);
+                var effectiveTexture = ResolveEffectiveFaceTexture(elementIndex, direction, face.Texture);
+                var material = CreateMaterial(repoRoot, model, effectiveTexture, uv);
                 var geometryModel = new GeometryModel3D(geometry, material)
                 {
                     BackMaterial = material
                 };
                 _faceHitMap[geometryModel] = new FaceHitInfo(elementIndex, direction);
-                _faceModels[FaceModelKey(elementIndex, direction)] = geometryModel;
+                _faceModels[faceKey] = geometryModel;
+                _effectiveFaceTextures[faceKey] = effectiveTexture;
                 elementGroup.Children.Add(geometryModel);
                 RenderedFaceCount++;
             }
@@ -275,12 +287,12 @@ public sealed class MinecraftBlockModelViewport : Grid
         for (var elementIndex = 0; elementIndex < count; elementIndex++)
         {
             var element = model.Elements[elementIndex];
-            var previousElement = _currentModel!.Elements[elementIndex];
             var elementGroup = (Model3DGroup)_content.Children[elementIndex];
 
             foreach (var (direction, face) in element.Faces)
             {
-                var geometryModel = _faceModels[FaceModelKey(elementIndex, direction)];
+                var faceKey = FaceModelKey(elementIndex, direction);
+                var geometryModel = _faceModels[faceKey];
                 var uv = face.Uv ?? GetDefaultUv(direction, element);
                 var geometry = CreateFaceGeometry(direction, element, uv, face.Rotation);
                 if (geometry is null)
@@ -290,14 +302,16 @@ public sealed class MinecraftBlockModelViewport : Grid
 
                 // Runtime box dimensions alter UV extents every frame. Re-cropping those atlas slices
                 // would recreate bitmaps/materials continuously and was the main source of texture
-                // jitter. Keep the existing material while the texture slot stays the same; refresh it
-                // only when a real source texture/material changes (for example a status light).
-                if (!previousElement.Faces.TryGetValue(direction, out var previousFace) ||
-                    !string.Equals(previousFace.Texture, face.Texture, StringComparison.OrdinalIgnoreCase))
+                // jitter. The effective texture resolver is evaluated every frame, but a material is
+                // recreated only when the effective binding actually changes at a discrete key/state.
+                var effectiveTexture = ResolveEffectiveFaceTexture(elementIndex, direction, face.Texture);
+                if (!_effectiveFaceTextures.TryGetValue(faceKey, out var previousTexture) ||
+                    !string.Equals(previousTexture, effectiveTexture, StringComparison.OrdinalIgnoreCase))
                 {
-                    var material = CreateMaterial(repoRoot, model, face.Texture, uv);
+                    var material = CreateMaterial(repoRoot, model, effectiveTexture, uv);
                     geometryModel.Material = material;
                     geometryModel.BackMaterial = material;
+                    _effectiveFaceTextures[faceKey] = effectiveTexture;
                 }
             }
 
@@ -305,6 +319,12 @@ public sealed class MinecraftBlockModelViewport : Grid
                 ? CreateElementRotation(element.Rotation)
                 : Transform3D.Identity;
         }
+    }
+
+    private string ResolveEffectiveFaceTexture(int elementIndex, string direction, string sourceTexture)
+    {
+        var resolved = FaceTextureResolver?.Invoke(elementIndex, direction, sourceTexture);
+        return string.IsNullOrWhiteSpace(resolved) ? sourceTexture : resolved;
     }
 
     public void SetTextureOverrides(IReadOnlyDictionary<string, BitmapSource>? overrides)
@@ -339,6 +359,7 @@ public sealed class MinecraftBlockModelViewport : Grid
         _content.Children.Clear();
         _faceHitMap.Clear();
         _faceModels.Clear();
+        _effectiveFaceTextures.Clear();
         _selectedElementIndex = -1;
         _selectedFaceDirection = null;
         RenderedFaceCount = 0;
