@@ -7,7 +7,6 @@ import com.google.gson.JsonParser;
 
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,7 +19,6 @@ import static de.tekatz.foreverskyblock.animation.ForeverStudioAnimationDocument
 /** Strict format-v1 parser shared by datapack loading and unit tests. */
 public final class ForeverStudioAnimationParser {
     public static final int CURRENT_FORMAT_VERSION = 1;
-    private static final double TIME_EPSILON = 0.000001D;
 
     private ForeverStudioAnimationParser() { }
 
@@ -87,7 +85,7 @@ public final class ForeverStudioAnimationParser {
         for (int index = 0; index < array.size(); index++) {
             JsonObject object = objectAt(array, index, "keyframes");
             double time = requiredDouble(object, "timeSeconds");
-            validateTime(time, duration, "Track '" + trackLabel + "'");
+            validateTime(time, "Track '" + trackLabel + "'");
             if (!times.add(timeKey(time))) throw invalid("Track '" + trackLabel + "' contains duplicate keyframe times");
 
             double[] position = vector(object, "position", new double[] {0, 0, 0});
@@ -130,7 +128,7 @@ public final class ForeverStudioAnimationParser {
             for (int keyIndex = 0; keyIndex < keys.size(); keyIndex++) {
                 JsonObject key = objectAt(keys, keyIndex, "status keyframes");
                 double time = requiredDouble(key, "timeSeconds");
-                validateTime(time, duration, "Status track '" + axisId + "'");
+                validateTime(time, "Status track '" + axisId + "'");
                 if (!times.add(timeKey(time))) throw invalid("Status track '" + axisId + "' contains duplicate keyframe times");
                 String optionId = requiredString(key, "optionId").trim();
                 if (optionId.isEmpty()) throw invalid("Status track '" + axisId + "' contains an empty optionId");
@@ -156,7 +154,7 @@ public final class ForeverStudioAnimationParser {
             for (int keyIndex = 0; keyIndex < keys.size(); keyIndex++) {
                 JsonObject key = objectAt(keys, keyIndex, "effect keyframes");
                 double time = requiredDouble(key, "timeSeconds");
-                validateTime(time, duration, "Effect track '" + effectId + "'");
+                validateTime(time, "Effect track '" + effectId + "'");
                 if (!times.add(timeKey(time))) throw invalid("Effect track '" + effectId + "' contains duplicate keyframe times");
                 String modeName = requiredString(key, "mode").trim().toUpperCase(Locale.ROOT);
                 EffectMode mode;
@@ -186,9 +184,10 @@ public final class ForeverStudioAnimationParser {
         return Map.copyOf(result);
     }
 
-    private static void validateTime(double time, double duration, String label) {
+    private static void validateTime(double time, String label) {
         if (!Double.isFinite(time) || time < 0D) throw invalid(label + " contains an invalid keyframe time");
-        if (time > duration + TIME_EPSILON) throw invalid(label + " has a keyframe beyond animation duration");
+        // Format v1 deliberately preserves keys beyond duration. Studio reports those as warnings;
+        // runtime loading must not turn a losslessly saved warning into a rejected document.
     }
 
     private static long timeKey(double time) { return Math.round(time * 1_000_000D); }
