@@ -16,6 +16,7 @@ namespace ForeverGuiDesigner;
 public partial class MainWindow
 {
     private const string MachineBuilderUxChromeMarker = "ForeverStudio.MachineBuilder.ContentOnlyButton";
+    private const string MachineBuilderUxInteractionMarker = "ForeverStudio.MachineBuilder.ButtonInteraction";
     private const string MachineBuilderUxCardMarker = "ForeverStudio.MachineBuilder.InteractiveCard";
     private const string MachineBuilderUxLayoutMarker = "ForeverStudio.MachineBuilder.TemplateLayout";
 
@@ -40,7 +41,21 @@ public partial class MainWindow
             {
                 if (sender is Button button)
                     NormalizeMachineBuilderStudioButton(button);
-            }));
+            }),
+            true);
+
+        // Some editor surfaces materialize controls inside already-loaded or collapsed hosts. A
+        // pointer-entry repair is therefore the final guard against the platform template resurfacing.
+        // The normalizer is idempotent and ignores ordinary buttons, so this never becomes a tree scan.
+        EventManager.RegisterClassHandler(
+            typeof(Button),
+            UIElement.MouseEnterEvent,
+            new MouseEventHandler((sender, _) =>
+            {
+                if (sender is Button button)
+                    NormalizeMachineBuilderStudioButton(button);
+            }),
+            true);
 
         PolishMachineBuilderWorkflowSteps();
         PolishFunctionTemplateBrowserLayout();
@@ -77,7 +92,11 @@ public partial class MainWindow
 
     private static void NormalizeMachineBuilderStudioButton(Button button)
     {
-        if (button.Content is not Border || button.Resources.Contains(MachineBuilderUxChromeMarker))
+        if (button.Content is not Border)
+            return;
+
+        if (button.Resources[MachineBuilderUxChromeMarker] is ControlTemplate installedTemplate &&
+            ReferenceEquals(button.Template, installedTemplate))
             return;
 
         var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
@@ -86,17 +105,22 @@ public partial class MainWindow
         presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Stretch);
         presenter.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
 
-        button.Template = new ControlTemplate(typeof(Button))
+        var template = new ControlTemplate(typeof(Button))
         {
             VisualTree = presenter
         };
-        button.Resources[MachineBuilderUxChromeMarker] = true;
+        button.Template = template;
+        button.Resources[MachineBuilderUxChromeMarker] = template;
         button.ApplyTemplate();
 
         // CreateStudioChromeButton already owns a TranslateTransform animation. Other custom
         // border buttons get a tiny scale response here so the interaction language is shared.
-        if (button.RenderTransform is not TranslateTransform)
+        if (button.RenderTransform is not TranslateTransform &&
+            !button.Resources.Contains(MachineBuilderUxInteractionMarker))
+        {
+            button.Resources[MachineBuilderUxInteractionMarker] = true;
             InstallMachineBuilderButtonMicroInteraction(button);
+        }
     }
 
     private static void InstallMachineBuilderButtonMicroInteraction(Button button)
