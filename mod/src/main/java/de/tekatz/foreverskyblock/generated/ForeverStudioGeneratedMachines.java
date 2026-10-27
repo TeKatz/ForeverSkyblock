@@ -1,0 +1,31 @@
+package de.tekatz.foreverskyblock.generated;
+
+import de.tekatz.foreverskyblock.ForeverSkyblock;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
+/**
+ * Studio-owned registration boundary for Machine Builder production output.
+ *
+ * <p>The Phase-6 production compiler replaces this file deterministically when static blocks are built.
+ * Keep hand-written registrations in {@code ForeverSkyblock}; do not add manual content here.</p>
+ */
+public final class ForeverStudioGeneratedMachines {
+    private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(ForeverSkyblock.MOD_ID);
+    private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(ForeverSkyblock.MOD_ID);
+
+    private ForeverStudioGeneratedMachines() {}
+
+    public static void register(IEventBus modBus) {
+        BLOCKS.register(modBus);
+        ITEMS.register(modBus);
+        modBus.addListener(ForeverStudioGeneratedMachines::addCreativeContents);
+    }
+
+    private static void addCreativeContents(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() != CreativeModeTabs.FUNCTIONAL_BLOCKS) return;
+        // Machine Builder-generated block items are inserted here by Forever Studio.
+    }
+}
