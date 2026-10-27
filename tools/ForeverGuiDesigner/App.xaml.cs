@@ -54,6 +54,7 @@ public partial class App : Application
         window.EnableForeverMachineBlockEntityPreviewParity();
         window.EnableForeverBlockstateEditor();
         window.EnableForeverReviewValidationApply();
+        window.EnableForeverBlockBuilderCompletion();
         window.EnableForeverAnimationStudio();
         window.EnableForeverAnimationStudioInteraction();
         window.EnableForeverAnimationTimelineStability();
