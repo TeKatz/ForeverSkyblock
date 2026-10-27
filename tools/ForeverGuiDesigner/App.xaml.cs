@@ -36,6 +36,7 @@ public partial class App : Application
         window.EnableForeverMachineBuilderBindingsPhase5();
         window.EnableForeverMachineBuilderGuiDesignerPhase4();
         window.EnableForeverMachineBuilderFunctionTemplatesPhase3();
+        window.EnableForeverMachineBuilderFunctionToolbarRepair();
         window.EnableForeverMachineBuilderProductionPhase6();
         window.EnableForeverBlockModelViewer();
         window.EnableForeverBlockEditorRepositoryReloadFix();
