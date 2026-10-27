@@ -20,8 +20,6 @@ public partial class MainWindow
     private const string MachineBuilderUxLayoutMarker = "ForeverStudio.MachineBuilder.TemplateLayout";
 
     private bool _machineBuilderUxPolishInitialized;
-    private bool _machineBuilderUxRefreshPending;
-    private DateTime _machineBuilderUxLastRefreshUtc = DateTime.MinValue;
 
     public void EnableForeverMachineBuilderUxPolish()
     {
@@ -29,31 +27,30 @@ public partial class MainWindow
             return;
         _machineBuilderUxPolishInitialized = true;
 
-        ApplyMachineBuilderUxPolish();
-
+        // Normalize controls that already exist, then handle future Studio buttons exactly once when
+        // they enter the visual tree. Do not poll LayoutUpdated: it is raised continuously by WPF and
+        // a full-tree walk from that event becomes an unbounded UI-thread hot path during long sessions.
         if (_studioRoot is not null)
-            _studioRoot.LayoutUpdated += (_, _) => QueueMachineBuilderUxRefresh();
+            NormalizeMachineBuilderStudioButtons(_studioRoot);
 
+        EventManager.RegisterClassHandler(
+            typeof(Button),
+            FrameworkElement.LoadedEvent,
+            new RoutedEventHandler((sender, _) =>
+            {
+                if (sender is Button button)
+                    NormalizeMachineBuilderStudioButton(button);
+            }));
+
+        PolishMachineBuilderWorkflowSteps();
+        PolishFunctionTemplateBrowserLayout();
+        PolishFunctionTemplateCards();
+
+        // One post-startup pass catches controls materialized by initialization code queued at the
+        // same dispatcher turn. This is intentionally one-shot rather than a recurring refresh.
         Dispatcher.BeginInvoke(
             DispatcherPriority.ContextIdle,
             new Action(ApplyMachineBuilderUxPolish));
-    }
-
-    private void QueueMachineBuilderUxRefresh()
-    {
-        if (_machineBuilderUxRefreshPending ||
-            DateTime.UtcNow - _machineBuilderUxLastRefreshUtc < TimeSpan.FromMilliseconds(350))
-            return;
-        _machineBuilderUxRefreshPending = true;
-
-        Dispatcher.BeginInvoke(
-            DispatcherPriority.Background,
-            new Action(() =>
-            {
-                _machineBuilderUxRefreshPending = false;
-                _machineBuilderUxLastRefreshUtc = DateTime.UtcNow;
-                ApplyMachineBuilderUxPolish();
-            }));
     }
 
     private void ApplyMachineBuilderUxPolish()
@@ -71,33 +68,35 @@ public partial class MainWindow
     /// second hover/pressed background behind that surface, which is especially visible on stretched
     /// buttons. Replacing only those custom-border buttons with a content-only template removes the
     /// conflicting platform chrome while preserving each button's existing handlers and animations.
-    /// The throttled LayoutUpdated hook above also applies this rule to controls created later.
     /// </summary>
     private static void NormalizeMachineBuilderStudioButtons(DependencyObject root)
     {
         foreach (var button in FindStudioVisualChildren<Button>(root))
+            NormalizeMachineBuilderStudioButton(button);
+    }
+
+    private static void NormalizeMachineBuilderStudioButton(Button button)
+    {
+        if (button.Content is not Border || button.Resources.Contains(MachineBuilderUxChromeMarker))
+            return;
+
+        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.SetValue(ContentPresenter.ContentSourceProperty, "Content");
+        presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
+        presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Stretch);
+        presenter.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
+
+        button.Template = new ControlTemplate(typeof(Button))
         {
-            if (button.Content is not Border || button.Resources.Contains(MachineBuilderUxChromeMarker))
-                continue;
+            VisualTree = presenter
+        };
+        button.Resources[MachineBuilderUxChromeMarker] = true;
+        button.ApplyTemplate();
 
-            var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
-            presenter.SetValue(ContentPresenter.ContentSourceProperty, "Content");
-            presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
-            presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Stretch);
-            presenter.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
-
-            button.Template = new ControlTemplate(typeof(Button))
-            {
-                VisualTree = presenter
-            };
-            button.Resources[MachineBuilderUxChromeMarker] = true;
-            button.ApplyTemplate();
-
-            // CreateStudioChromeButton already owns a TranslateTransform animation. Other custom
-            // border buttons get a tiny scale response here so the interaction language is shared.
-            if (button.RenderTransform is not TranslateTransform)
-                InstallMachineBuilderButtonMicroInteraction(button);
-        }
+        // CreateStudioChromeButton already owns a TranslateTransform animation. Other custom
+        // border buttons get a tiny scale response here so the interaction language is shared.
+        if (button.RenderTransform is not TranslateTransform)
+            InstallMachineBuilderButtonMicroInteraction(button);
     }
 
     private static void InstallMachineBuilderButtonMicroInteraction(Button button)
