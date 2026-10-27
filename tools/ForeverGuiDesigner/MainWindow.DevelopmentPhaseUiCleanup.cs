@@ -42,6 +42,11 @@ public partial class MainWindow
             new RoutedEventHandler(DevelopmentPhaseUiCleanup_Loaded),
             true);
 
+        // Most Studio workspaces are constructed before Window.Show() and are only switched between
+        // visible/collapsed states later. Loaded handlers cannot reliably see that already-built chrome,
+        // so clean the complete logical tree once after initial construction.
+        CleanForeverDevelopmentPhaseUiNow();
+
         // Only the two status surfaces known to receive late text updates need a change listener.
         // Animation counters and other frequently changing TextBlocks stay completely untouched.
         WatchDevelopmentPhaseStatus(StatusText);
@@ -53,11 +58,29 @@ public partial class MainWindow
         };
     }
 
-    private void DevelopmentPhaseUiCleanup_Loaded(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// Performs an explicit one-shot cleanup of already constructed Studio UI. This is intentionally
+    /// callable after deferred modules are installed and never runs from a timer or layout/render loop.
+    /// </summary>
+    public void CleanForeverDevelopmentPhaseUiNow()
     {
-        if (sender is not FrameworkElement element)
-            return;
+        CleanDevelopmentPhaseTree(_studioRoot ?? (DependencyObject)this);
+    }
 
+    private static void CleanDevelopmentPhaseTree(DependencyObject root)
+    {
+        CleanDevelopmentPhaseElement(root);
+
+        // Materialize first because cleanup may collapse or rewrite children while traversing.
+        var children = LogicalTreeHelper.GetChildren(root)
+            .OfType<DependencyObject>()
+            .ToArray();
+        foreach (var child in children)
+            CleanDevelopmentPhaseTree(child);
+    }
+
+    private static void CleanDevelopmentPhaseElement(DependencyObject element)
+    {
         if (element is TextBlock text)
             CleanDevelopmentPhaseTextBlock(text);
 
@@ -67,8 +90,18 @@ public partial class MainWindow
         if (element is ContentControl contentControl && contentControl.Content is string content)
             contentControl.Content = CleanDevelopmentPhaseControlLabel(content);
 
-        if (element.ToolTip is string tooltip && DevelopmentPhaseToken.IsMatch(tooltip))
-            element.ToolTip = null;
+        if (element is FrameworkElement frameworkElement &&
+            frameworkElement.ToolTip is string tooltip &&
+            DevelopmentPhaseToken.IsMatch(tooltip))
+        {
+            frameworkElement.ToolTip = null;
+        }
+    }
+
+    private void DevelopmentPhaseUiCleanup_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is DependencyObject element)
+            CleanDevelopmentPhaseElement(element);
     }
 
     private static void WatchDevelopmentPhaseStatus(TextBlock? text)
