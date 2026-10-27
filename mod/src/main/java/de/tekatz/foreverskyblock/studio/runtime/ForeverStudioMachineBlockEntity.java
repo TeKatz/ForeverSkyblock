@@ -58,20 +58,29 @@ public final class ForeverStudioMachineBlockEntity extends BlockEntity implement
     };
 
     public ForeverStudioMachineBlockEntity(BlockPos pos, BlockState state) {
+        this(pos, state, machineIdFromState(state));
+    }
+
+    /** Package-private constructor used by GameTests without registering a production test block. */
+    ForeverStudioMachineBlockEntity(BlockPos pos, BlockState state, ResourceLocation machineId) {
         super(ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get(), pos, state);
-        if (!(state.getBlock() instanceof ForeverStudioMachineBlock machineBlock))
-            throw new IllegalStateException("Forever Studio machine BlockEntity created for a non-Studio block.");
-        machineId = machineBlock.machineId();
+        this.machineId = machineId;
         definition = ForeverStudioMachineDefinition.load(machineId);
         inventory = new ItemStackHandler(Math.max(2, definition.slotCount())) {
             @Override public boolean isItemValid(int slot, ItemStack stack) {
-                return slot == definition.inputSlot() && (level == null || acceptsInput(level, machineId, stack));
+                return slot == definition.inputSlot() && (level == null || acceptsInput(level, ForeverStudioMachineBlockEntity.this.machineId, stack));
             }
             @Override protected void onContentsChanged(int slot) { setChanged(); }
         };
         recipeCheck = RecipeManager.createCheck(ForeverStudioGeneratedMachines.MACHINE_RECIPE_TYPE.get());
         automation = new Automation();
         energyAccess = new EnergyAccess();
+    }
+
+    private static ResourceLocation machineIdFromState(BlockState state) {
+        if (state.getBlock() instanceof ForeverStudioMachineBlock machineBlock)
+            return machineBlock.machineId();
+        throw new IllegalStateException("Forever Studio machine BlockEntity created for a non-Studio block.");
     }
 
     public ResourceLocation machineId() { return machineId; }
