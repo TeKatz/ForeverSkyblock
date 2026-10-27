@@ -65,20 +65,19 @@ public partial class App : Application
         window.EnableForeverAnimationDiscreteChannels();
         window.EnableForeverAnimationMaterialEffects();
         window.EnableForeverAnimationMaterialResolver();
-        window.EnableForeverAnimationPhase17CLabels();
         window.EnableForeverAnimationPersistence();
         window.EnableForeverAnimationPersistenceDirtyTracking();
         window.EnableForeverAnimationPersistenceDirtySignals();
         window.EnableForeverAnimationRuntimeTargetAuthoring();
         window.EnableForeverAnimationRuntimeTargetPreview();
         window.EnableForeverAnimationRuntimeTargetRefresh();
-        window.EnableForeverAnimationPhase17DLabels();
         window.EnableForeverAnimationPhase17Q();
         window.EnableForeverAnimationPhase17QWorkflowPolish();
         window.EnableForeverAnimationPhase17QLayoutTuning();
         window.EnableForeverAnimationPhase17QDensityFix();
         window.EnableForeverAnimationPhase17R();
         window.EnableForeverFutureProofRuntimeMetadata();
+        window.EnableForeverDevelopmentPhaseUiCleanup();
         MainWindow = window;
         window.Show();
 
