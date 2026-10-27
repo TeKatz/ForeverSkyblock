@@ -17,9 +17,11 @@ public partial class MainWindow
 {
     private const string MachineBuilderUxChromeMarker = "ForeverStudio.MachineBuilder.ContentOnlyButton";
     private const string MachineBuilderUxCardMarker = "ForeverStudio.MachineBuilder.InteractiveCard";
+    private const string MachineBuilderUxLayoutMarker = "ForeverStudio.MachineBuilder.TemplateLayout";
 
     private bool _machineBuilderUxPolishInitialized;
     private bool _machineBuilderUxRefreshPending;
+    private DateTime _machineBuilderUxLastRefreshUtc = DateTime.MinValue;
 
     public void EnableForeverMachineBuilderUxPolish()
     {
@@ -39,7 +41,8 @@ public partial class MainWindow
 
     private void QueueMachineBuilderUxRefresh()
     {
-        if (_machineBuilderUxRefreshPending)
+        if (_machineBuilderUxRefreshPending ||
+            DateTime.UtcNow - _machineBuilderUxLastRefreshUtc < TimeSpan.FromMilliseconds(350))
             return;
         _machineBuilderUxRefreshPending = true;
 
@@ -48,6 +51,7 @@ public partial class MainWindow
             new Action(() =>
             {
                 _machineBuilderUxRefreshPending = false;
+                _machineBuilderUxLastRefreshUtc = DateTime.UtcNow;
                 ApplyMachineBuilderUxPolish();
             }));
     }
@@ -67,7 +71,7 @@ public partial class MainWindow
     /// second hover/pressed background behind that surface, which is especially visible on stretched
     /// buttons. Replacing only those custom-border buttons with a content-only template removes the
     /// conflicting platform chrome while preserving each button's existing handlers and animations.
-    /// The LayoutUpdated hook above also applies this rule to buttons created by later Studio screens.
+    /// The throttled LayoutUpdated hook above also applies this rule to controls created later.
     /// </summary>
     private static void NormalizeMachineBuilderStudioButtons(DependencyObject root)
     {
@@ -120,9 +124,11 @@ public partial class MainWindow
 
         foreach (var step in panel.Children.OfType<Border>())
         {
-            if (step.Child is not Grid grid || !IsMachineBuilderWorkflowStep(grid))
+            if (step.Child is not Grid grid || !IsMachineBuilderWorkflowStep(grid) ||
+                step.Resources.Contains(MachineBuilderUxCardMarker))
                 continue;
 
+            step.Resources[MachineBuilderUxCardMarker] = true;
             step.CornerRadius = new CornerRadius(8);
             step.Margin = new Thickness(0, 0, 0, 9);
             step.Cursor = Cursors.Hand;
@@ -137,10 +143,6 @@ public partial class MainWindow
                 number.FontWeight = FontWeights.Bold;
             }
 
-            if (step.Resources.Contains(MachineBuilderUxCardMarker))
-                continue;
-
-            step.Resources[MachineBuilderUxCardMarker] = true;
             InstallMachineBuilderCardInteraction(step, translateX: 3.0, hoverScale: 1.008);
         }
     }
@@ -151,30 +153,35 @@ public partial class MainWindow
 
     private void PolishFunctionTemplateBrowserLayout()
     {
-        if (_functionTemplatesOverlay?.Child is not Grid root)
+        if (_functionTemplatesOverlay is null || _functionTemplatesOverlay.Child is not Grid root)
             return;
 
-        var body = root.Children.OfType<Grid>()
-            .FirstOrDefault(grid => Grid.GetRow(grid) == 2 && grid.ColumnDefinitions.Count == 3);
-        if (body is not null)
+        if (!_functionTemplatesOverlay.Resources.Contains(MachineBuilderUxLayoutMarker))
         {
-            // The original fixed 390px browser left the detail panel visually empty on wide screens.
-            // A proportional split gives the growing template library more room while keeping detail
-            // information readable rather than stretched over most of the window.
-            body.ColumnDefinitions[0].Width = new GridLength(0.44, GridUnitType.Star);
-            body.ColumnDefinitions[0].MinWidth = 390;
-            body.ColumnDefinitions[1].Width = new GridLength(16);
-            body.ColumnDefinitions[2].Width = new GridLength(0.56, GridUnitType.Star);
-            body.ColumnDefinitions[2].MinWidth = 470;
+            _functionTemplatesOverlay.Resources[MachineBuilderUxLayoutMarker] = true;
+
+            var body = root.Children.OfType<Grid>()
+                .FirstOrDefault(grid => Grid.GetRow(grid) == 2 && grid.ColumnDefinitions.Count == 3);
+            if (body is not null)
+            {
+                // The original fixed 390px browser left the detail panel visually empty on wide screens.
+                // A proportional split gives the growing template library more room while keeping detail
+                // information readable rather than stretched over most of the window.
+                body.ColumnDefinitions[0].Width = new GridLength(0.44, GridUnitType.Star);
+                body.ColumnDefinitions[0].MinWidth = 390;
+                body.ColumnDefinitions[1].Width = new GridLength(16);
+                body.ColumnDefinitions[2].Width = new GridLength(0.56, GridUnitType.Star);
+                body.ColumnDefinitions[2].MinWidth = 470;
+            }
+
+            if (_functionTemplatesDetail is not null)
+            {
+                _functionTemplatesDetail.Margin = new Thickness(20, 18, 20, 20);
+                _functionTemplatesDetail.HorizontalAlignment = HorizontalAlignment.Stretch;
+            }
         }
 
         RebuildFunctionTemplateFilterGrid();
-
-        if (_functionTemplatesDetail is not null)
-        {
-            _functionTemplatesDetail.Margin = new Thickness(20, 18, 20, 20);
-            _functionTemplatesDetail.HorizontalAlignment = HorizontalAlignment.Stretch;
-        }
     }
 
     private void RebuildFunctionTemplateFilterGrid()
