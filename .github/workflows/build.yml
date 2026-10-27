@@ -92,6 +92,9 @@ jobs:
             mod/menu-visual.log
           if-no-files-found: warn
           retention-days: 14
+      - name: Clean generated Studio QA fixture
+        shell: bash
+        run: rm -f src/main/resources/data/forever_skyblock/forever_studio/runtime/gui_bindings_test.json
       - name: Test dedicated-server regression suite
         run: ./gradlew runGameTestServer -PcondenserTests --no-daemon
       - name: Test full pack-runtime integrations on NeoForge 21.1.264
