@@ -16,6 +16,8 @@ public partial class App : Application
             return;
         }
 
+        StudioCrashDiagnostics.Install(this);
+
         var window = new MainWindow();
         window.PrepareStartupPresentation();
         window.EnableForeverStudioFoundation();
