@@ -518,7 +518,7 @@ public partial class MainWindow
             _foreverTemplates.AddRange(scan.Templates);
             _studioProjectIndex = ForeverStudioProjectIndexer.Build(_repoRoot, scan);
             RefreshStudioProjectHome();
-            RefreshMachineBuilderProjects();
+            RefreshMachineBuilderRepositoryContext();
         }
         catch
         {
