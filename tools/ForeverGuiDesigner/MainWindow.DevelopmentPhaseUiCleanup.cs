@@ -23,13 +23,6 @@ public partial class MainWindow
         @"\s*[·\-–—:]\s*PHASE\s+\d+(?:[A-Z])?(?:\.\d+)?\s*$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
-    private static readonly DependencyProperty DevelopmentPhaseTextWatchProperty =
-        DependencyProperty.RegisterAttached(
-            "DevelopmentPhaseTextWatch",
-            typeof(bool),
-            typeof(MainWindow),
-            new PropertyMetadata(false));
-
     private static readonly DependencyPropertyDescriptor TextBlockTextDescriptor =
         DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock))!;
 
@@ -48,11 +41,16 @@ public partial class MainWindow
             FrameworkElement.LoadedEvent,
             new RoutedEventHandler(DevelopmentPhaseUiCleanup_Loaded),
             true);
-        EventManager.RegisterClassHandler(
-            typeof(FrameworkElement),
-            FrameworkElement.UnloadedEvent,
-            new RoutedEventHandler(DevelopmentPhaseUiCleanup_Unloaded),
-            true);
+
+        // Only the two status surfaces known to receive late text updates need a change listener.
+        // Animation counters and other frequently changing TextBlocks stay completely untouched.
+        WatchDevelopmentPhaseStatus(StatusText);
+        WatchDevelopmentPhaseStatus(_studioAnimationStatusText);
+        Closed += (_, _) =>
+        {
+            UnwatchDevelopmentPhaseStatus(StatusText);
+            UnwatchDevelopmentPhaseStatus(_studioAnimationStatusText);
+        };
     }
 
     private void DevelopmentPhaseUiCleanup_Loaded(object sender, RoutedEventArgs e)
@@ -61,10 +59,7 @@ public partial class MainWindow
             return;
 
         if (element is TextBlock text)
-        {
-            EnsureDevelopmentPhaseTextWatch(text);
             CleanDevelopmentPhaseTextBlock(text);
-        }
 
         if (element is HeaderedContentControl headered && headered.Header is string header)
             headered.Header = CleanDevelopmentPhaseControlLabel(header);
@@ -76,28 +71,37 @@ public partial class MainWindow
             element.ToolTip = null;
     }
 
-    private void DevelopmentPhaseUiCleanup_Unloaded(object sender, RoutedEventArgs e)
+    private static void WatchDevelopmentPhaseStatus(TextBlock? text)
     {
-        if (sender is not TextBlock text || !(bool)text.GetValue(DevelopmentPhaseTextWatchProperty))
-            return;
-
-        TextBlockTextDescriptor.RemoveValueChanged(text, DevelopmentPhaseUiCleanup_TextChanged);
-        text.SetValue(DevelopmentPhaseTextWatchProperty, false);
+        if (text is not null)
+            TextBlockTextDescriptor.AddValueChanged(text, DevelopmentPhaseStatusTextChanged);
     }
 
-    private static void EnsureDevelopmentPhaseTextWatch(TextBlock text)
+    private static void UnwatchDevelopmentPhaseStatus(TextBlock? text)
     {
-        if ((bool)text.GetValue(DevelopmentPhaseTextWatchProperty))
-            return;
-
-        TextBlockTextDescriptor.AddValueChanged(text, DevelopmentPhaseUiCleanup_TextChanged);
-        text.SetValue(DevelopmentPhaseTextWatchProperty, true);
+        if (text is not null)
+            TextBlockTextDescriptor.RemoveValueChanged(text, DevelopmentPhaseStatusTextChanged);
     }
 
-    private static void DevelopmentPhaseUiCleanup_TextChanged(object? sender, EventArgs e)
+    private static void DevelopmentPhaseStatusTextChanged(object? sender, EventArgs e)
     {
-        if (sender is TextBlock text)
-            CleanDevelopmentPhaseTextBlock(text);
+        if (sender is not TextBlock text || string.IsNullOrWhiteSpace(text.Text) || !DevelopmentPhaseToken.IsMatch(text.Text))
+            return;
+
+        var cleaned = Regex.Replace(
+            text.Text,
+            @"\bPHASE\s+\d+(?:[A-Z])?(?:\.\d+)?\s+base state\b",
+            "Base state",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        cleaned = DevelopmentPhaseToken.Replace(cleaned, string.Empty);
+        cleaned = Regex.Replace(cleaned, @"\s{2,}", " ").Trim();
+        cleaned = cleaned.TrimStart('·', '-', '–', '—', ':').TrimStart();
+
+        if (cleaned.Length > 0 && char.IsLower(cleaned[0]))
+            cleaned = char.ToUpperInvariant(cleaned[0]) + cleaned[1..];
+
+        if (!string.Equals(cleaned, text.Text, StringComparison.Ordinal))
+            text.Text = cleaned;
     }
 
     private static void CleanDevelopmentPhaseTextBlock(TextBlock text)
