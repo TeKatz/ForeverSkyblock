@@ -26,6 +26,7 @@ public partial class MainWindow
     private bool _studioBlockBuilderCompletionInitialized;
     private readonly Dictionary<string, StudioBlockModelDocument> _studioBlockModelDocuments =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<Button> _studioBlockstateGuardedButtons = [];
     private StudioBlockModelDocument? _studioBlockModelDocument;
     private TextBlock? _studioBlockstateAuthoringSafetyText;
 
@@ -58,6 +59,11 @@ public partial class MainWindow
                 if (e.NewValue is true)
                     QueueStudioBlockBuilderCompletionRefresh();
             };
+        if (_studioBlockstateRoot is not null)
+        {
+            _studioBlockstateRoot.PreviewMouseUp += (_, _) => QueueStudioBlockBuilderCompletionRefresh();
+            _studioBlockstateRoot.PreviewKeyUp += (_, _) => QueueStudioBlockBuilderCompletionRefresh();
+        }
 
         EnsureStudioBlockstateSafetyBanner();
         AugmentStudioBlockCatalogWithReadOnlyAssets();
@@ -243,9 +249,53 @@ public partial class MainWindow
         };
         foreach (var button in FindStudioVisualChildren<Button>(_studioBlockstateRoot))
         {
-            if (button.Content?.ToString() is { } label && authoringCommands.Contains(label))
-                button.IsEnabled = canAuthor;
+            if (button.Content?.ToString() is not { } label || !authoringCommands.Contains(label))
+                continue;
+            button.IsEnabled = canAuthor;
+            if (!_studioBlockstateGuardedButtons.Add(button))
+                continue;
+            button.PreviewMouseDown += StudioBlockstateAuthoringCommand_PreviewMouseDown;
+            button.PreviewKeyDown += StudioBlockstateAuthoringCommand_PreviewKeyDown;
         }
+    }
+
+    private void StudioBlockstateAuthoringCommand_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (CanAuthorSelectedStudioBlockstate(out var message))
+            return;
+        e.Handled = true;
+        ShowStudioBlockstateReadOnlyMessage(message);
+    }
+
+    private void StudioBlockstateAuthoringCommand_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is not (Key.Enter or Key.Space) || CanAuthorSelectedStudioBlockstate(out var message))
+            return;
+        e.Handled = true;
+        ShowStudioBlockstateReadOnlyMessage(message);
+    }
+
+    private bool CanAuthorSelectedStudioBlockstate(out string message)
+    {
+        message = "Blockstate authoring is unavailable for this asset.";
+        if (string.IsNullOrWhiteSpace(_repoRoot) ||
+            _studioBlockMachineCombo?.SelectedItem is not MinecraftBlockAssetDescriptor asset)
+        {
+            return false;
+        }
+        var support = ForeverStudioBlockBuilderCompletionService.InspectBlockstate(_repoRoot, asset.BlockstatePath);
+        message = support.Message;
+        return support.CanAuthor;
+    }
+
+    private void ShowStudioBlockstateReadOnlyMessage(string message)
+    {
+        EnsureStudioBlockstateSafetyBanner();
+        if (_studioBlockstateAuthoringSafetyText is null)
+            return;
+        _studioBlockstateAuthoringSafetyText.Text = message;
+        _studioBlockstateAuthoringSafetyText.Foreground = Brush("#D8B26A");
+        _studioBlockstateAuthoringSafetyText.Visibility = Visibility.Visible;
     }
 
     private void AugmentStudioBlockCatalogWithReadOnlyAssets()
