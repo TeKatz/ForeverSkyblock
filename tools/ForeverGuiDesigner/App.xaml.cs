@@ -34,6 +34,7 @@ public partial class App : Application
         window.EnableForeverMachineBuilderAssetBrowserPhase3();
         window.EnableForeverMachineBuilderFunctionGraphPhase4();
         window.EnableForeverMachineBuilderBindingsPhase5();
+        window.EnableForeverMachineBuilderProductionPhase6();
         window.EnableForeverBlockModelViewer();
         window.EnableForeverBlockEditorRepositoryReloadFix();
         window.EnableForeverUvTextureEditor();
