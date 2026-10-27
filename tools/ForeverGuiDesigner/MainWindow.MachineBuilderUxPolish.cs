@@ -9,9 +9,9 @@ using System.Windows.Threading;
 namespace ForeverGuiDesigner;
 
 /// <summary>
-/// Shared Machine Builder presentation polish. Keeps custom Studio button chrome independent from
-/// the default WPF Button template, balances the Function template browser and adds restrained
-/// interaction feedback to workflow/template cards without changing authoring behavior.
+/// Shared Machine Builder presentation polish. Keeps Studio chrome buttons independent from the
+/// default WPF Button template without touching unrelated controls, balances the Function template
+/// browser and adds restrained interaction feedback to workflow/template cards.
 /// </summary>
 public partial class MainWindow
 {
@@ -27,11 +27,11 @@ public partial class MainWindow
             return;
         _machineBuilderUxPolishInitialized = true;
 
-        // Normalize controls that already exist, then handle future Studio buttons exactly once when
-        // they enter the visual tree. Do not poll LayoutUpdated: it is raised continuously by WPF and
-        // a full-tree walk from that event becomes an unbounded UI-thread hot path during long sessions.
+        // Studio chrome buttons are recognizable by the exact structure produced by
+        // CreateStudioChromeButton. Normalize only those controls; standard WPF buttons and
+        // specialized updater/segmented controls must retain their own templates and triggers.
         if (_studioRoot is not null)
-            NormalizeMachineBuilderStudioButtons(_studioRoot);
+            NormalizeStudioChromeButtons(_studioRoot);
 
         EventManager.RegisterClassHandler(
             typeof(Button),
@@ -39,7 +39,7 @@ public partial class MainWindow
             new RoutedEventHandler((sender, _) =>
             {
                 if (sender is Button button)
-                    NormalizeMachineBuilderStudioButton(button);
+                    NormalizeStudioChromeButton(button);
             }),
             handledEventsToo: true);
 
@@ -57,7 +57,7 @@ public partial class MainWindow
     private void ApplyMachineBuilderUxPolish()
     {
         if (_studioRoot is not null)
-            NormalizeMachineBuilderStudioButtons(_studioRoot);
+            NormalizeStudioChromeButtons(_studioRoot);
 
         PolishMachineBuilderWorkflowSteps();
         PolishFunctionTemplateBrowserLayout();
@@ -65,51 +65,52 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Studio chrome buttons render their own Border surface. The stock WPF Button template adds a
-    /// second hover/pressed background behind that surface. The content-only template removes that
-    /// platform chrome while keeping the authored Border centered at its natural size, so removing
-    /// the native hover must never turn a compact Studio surface into a full-width one.
+    /// Removes the stock WPF Button chrome only from buttons created by CreateStudioChromeButton.
+    /// The content presenter stays stretched exactly as the factory authored it, so full-width
+    /// actions remain full-width while naturally-sized actions keep their original geometry.
     /// </summary>
-    private static void NormalizeMachineBuilderStudioButtons(DependencyObject root)
+    private static void NormalizeStudioChromeButtons(DependencyObject root)
     {
         foreach (var button in FindStudioVisualChildren<Button>(root))
-            NormalizeMachineBuilderStudioButton(button);
+            NormalizeStudioChromeButton(button);
     }
 
-    private static void NormalizeMachineBuilderStudioButton(Button button)
+    private static void NormalizeStudioChromeButton(Button button)
     {
-        if (button.Content is not Border || button.Resources.Contains(MachineBuilderUxChromeMarker))
+        if (!IsStudioChromeButton(button) || button.Resources.Contains(MachineBuilderUxChromeMarker))
             return;
 
-        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
-        presenter.SetValue(ContentPresenter.ContentSourceProperty, "Content");
-        presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-        presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-        presenter.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
-
-        button.Template = new ControlTemplate(typeof(Button))
-        {
-            VisualTree = presenter
-        };
+        ApplyStudioContentOnlyButtonTemplate(button);
         button.Resources[MachineBuilderUxChromeMarker] = true;
-        button.ApplyTemplate();
 
-        // CreateStudioChromeButton already owns a TranslateTransform animation. Other custom
-        // border buttons get a tiny scale response here so the interaction language is shared.
-        if (button.RenderTransform is not TranslateTransform)
-            InstallMachineBuilderButtonMicroInteraction(button);
+        // This navigation action is intentionally compact and centered. Its previous Stretch
+        // alignment made the invisible WPF hit area span the whole identity panel.
+        if (string.Equals(
+                button.Tag?.ToString(),
+                "machine_builder_visual_continue",
+                StringComparison.Ordinal))
+        {
+            button.HorizontalAlignment = HorizontalAlignment.Center;
+        }
     }
 
-    private static void InstallMachineBuilderButtonMicroInteraction(Button button)
+    private static bool IsStudioChromeButton(Button button)
     {
-        var scale = new ScaleTransform(1, 1);
-        button.RenderTransform = scale;
-        button.RenderTransformOrigin = new Point(0.5, 0.5);
+        if (button.Content is not Border surface ||
+            surface.Child is not TextBlock ||
+            button.RenderTransform is not TranslateTransform ||
+            button.Background is not SolidColorBrush background ||
+            background.Color.A != 0)
+        {
+            return false;
+        }
 
-        button.MouseEnter += (_, _) => AnimateMachineBuilderScale(scale, 1.012, 125);
-        button.MouseLeave += (_, _) => AnimateMachineBuilderScale(scale, 1.0, 145);
-        button.PreviewMouseLeftButtonDown += (_, _) => AnimateMachineBuilderScale(scale, 0.985, 65);
-        button.PreviewMouseLeftButtonUp += (_, _) => AnimateMachineBuilderScale(scale, 1.012, 90);
+        var border = button.BorderThickness;
+        var padding = button.Padding;
+        return border.Left == 0 && border.Top == 0 && border.Right == 0 && border.Bottom == 0 &&
+               padding.Left == 0 && padding.Top == 0 && padding.Right == 0 && padding.Bottom == 0 &&
+               surface.CornerRadius.TopLeft == 6 && surface.CornerRadius.TopRight == 6 &&
+               surface.CornerRadius.BottomRight == 6 && surface.CornerRadius.BottomLeft == 6;
     }
 
     private void PolishMachineBuilderWorkflowSteps()
