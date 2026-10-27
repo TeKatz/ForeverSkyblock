@@ -114,6 +114,7 @@ public partial class App : Application
             window.EnableStartupPresentationHooks();
             window.EnableAttachmentAndResizeFix();
             window.EnableCondenserCombinedAttachmentPolish();
+            window.CleanForeverDevelopmentPhaseUiNow();
         }, DispatcherPriority.ContextIdle);
     }
 }
