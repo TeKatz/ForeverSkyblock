@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "machine": "forever_skyblock:studio_runtime_e2e",
+  "displayName": "Studio Runtime E2E",
+  "processor": {
+    "nodeId": "processor",
+    "kind": "standard",
+    "powered": false
+  },
+  "inventory": [
+    {
+      "nodeId": "input",
+      "role": "input",
+      "slot": 0,
+      "x": 44,
+      "y": 35
+    },
+    {
+      "nodeId": "output",
+      "role": "output",
+      "slot": 1,
+      "x": 116,
+      "y": 35
+    }
+  ],
+  "energy": {
+    "enabled": false,
+    "capacity": 0,
+    "maxReceive": 0
+  },
+  "gui": {
+    "width": 176,
+    "height": 166,
+    "widgets": []
+  }
+}
