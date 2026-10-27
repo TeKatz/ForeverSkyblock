@@ -17,6 +17,7 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.items.IItemHandler;
@@ -58,12 +59,17 @@ public final class ForeverStudioMachineBlockEntity extends BlockEntity implement
     };
 
     public ForeverStudioMachineBlockEntity(BlockPos pos, BlockState state) {
-        this(pos, state, machineIdFromState(state));
+        this(ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get(), pos, state, machineIdFromState(state));
     }
 
-    /** Package-private constructor used by GameTests without registering a production test block. */
+    /** Package-private constructor used by tests that supply an explicit machine id. */
     ForeverStudioMachineBlockEntity(BlockPos pos, BlockState state, ResourceLocation machineId) {
-        super(ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get(), pos, state);
+        this(ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get(), pos, state, machineId);
+    }
+
+    /** Package-private constructor used by GameTests with an isolated, valid test BlockEntityType. */
+    ForeverStudioMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, ResourceLocation machineId) {
+        super(type, pos, state);
         this.machineId = machineId;
         definition = ForeverStudioMachineDefinition.load(machineId);
         inventory = new ItemStackHandler(Math.max(2, definition.slotCount())) {
