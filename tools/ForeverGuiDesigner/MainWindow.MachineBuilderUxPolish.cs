@@ -40,7 +40,8 @@ public partial class MainWindow
             {
                 if (sender is Button button)
                     NormalizeMachineBuilderStudioButton(button);
-            }));
+            }),
+            handledEventsToo: true);
 
         PolishMachineBuilderWorkflowSteps();
         PolishFunctionTemplateBrowserLayout();
@@ -65,9 +66,9 @@ public partial class MainWindow
 
     /// <summary>
     /// Studio chrome buttons render their own Border surface. The stock WPF Button template adds a
-    /// second hover/pressed background behind that surface, which is especially visible on stretched
-    /// buttons. Replacing only those custom-border buttons with a content-only template removes the
-    /// conflicting platform chrome while preserving each button's existing handlers and animations.
+    /// second hover/pressed background behind that surface. The content-only template removes that
+    /// platform chrome while keeping the authored Border centered at its natural size, so removing
+    /// the native hover must never turn a compact Studio surface into a full-width one.
     /// </summary>
     private static void NormalizeMachineBuilderStudioButtons(DependencyObject root)
     {
@@ -82,8 +83,8 @@ public partial class MainWindow
 
         var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
         presenter.SetValue(ContentPresenter.ContentSourceProperty, "Content");
-        presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
-        presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Stretch);
+        presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
         presenter.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
 
         button.Template = new ControlTemplate(typeof(Button))
