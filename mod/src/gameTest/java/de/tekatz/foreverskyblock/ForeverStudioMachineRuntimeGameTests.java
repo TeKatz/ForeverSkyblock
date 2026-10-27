@@ -4,6 +4,7 @@ import de.tekatz.foreverskyblock.ForeverSkyblock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -55,13 +56,14 @@ public final class ForeverStudioMachineRuntimeGameTests {
                 "Studio runtime must not create output before processing completes");
 
         var registries = helper.getLevel().registryAccess();
-        var snapshot = machine.saveWithFullMetadata(registries);
+        var snapshot = new CompoundTag();
+        machine.saveAdditional(snapshot, registries);
         int savedProgress = snapshot.getInt("Progress");
         check(helper, savedProgress == 45,
                 "Studio runtime save data must contain the exact partial progress");
 
         var restored = machine(helper);
-        restored.loadWithComponents(snapshot, registries);
+        restored.loadAdditional(snapshot, registries);
         check(helper, restored.menuData().get(0) == savedProgress,
                 "Studio runtime must restore the exact saved progress");
 
