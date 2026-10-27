@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'tools/ForeverGuiDesigner/**'
+      - 'tools/ForeverGuiDesigner.CompilerTests/**'
       - '.github/workflows/gui-designer.yml'
   push:
     branches:
@@ -11,6 +12,7 @@ on:
       - feature/forever-studio-machine-builder
     paths:
       - 'tools/ForeverGuiDesigner/**'
+      - 'tools/ForeverGuiDesigner.CompilerTests/**'
       - '.github/workflows/gui-designer.yml'
   workflow_dispatch:
 
@@ -39,12 +41,21 @@ jobs:
       - name: Restore
         run: dotnet restore .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
 
+      - name: Restore compiler integration tests
+        run: dotnet restore .\tools\ForeverGuiDesigner.CompilerTests\ForeverGuiDesigner.CompilerTests.csproj
+
       - name: Build
         run: >-
           dotnet build .\tools\ForeverGuiDesigner\ForeverGuiDesigner.csproj
           --configuration Release
           --no-restore
           -p:InformationalVersion=${{ github.sha }}
+
+      - name: Test machine compiler production contract
+        run: >-
+          dotnet run --project .\tools\ForeverGuiDesigner.CompilerTests\ForeverGuiDesigner.CompilerTests.csproj
+          --configuration Release
+          --no-restore
 
       - name: Publish portable Windows app
         run: >-
