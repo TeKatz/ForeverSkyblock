@@ -1,6 +1,7 @@
 package de.tekatz.foreverskyblock.client;
 
 import de.tekatz.foreverskyblock.ForeverSkyblock;
+import de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -37,5 +38,14 @@ public final class ClientEvents {
         event.register(ForeverSkyblock.WASHING_BASIN_MENU.get(), WashingScreen::new);
         event.register(ForeverSkyblock.CRUCIBLE_MENU.get(), CrucibleScreen::new);
         event.register(ForeverSkyblock.REFINING_CHAMBER_MENU.get(), RefiningScreen::new);
+
+        // The generated registry is intentionally absent from the mod bus until the first Machine
+        // Builder production apply installs its bridge. Keep development builds without generated
+        // machines bootable, while registering the generic runtime screen as soon as that bridge exists.
+        try {
+            event.register(ForeverStudioGeneratedMachines.MACHINE_MENU.get(), ForeverStudioMachineScreen::new);
+        } catch (IllegalStateException ignored) {
+            // No generated Machine Builder registry has been attached yet.
+        }
     }
 }
