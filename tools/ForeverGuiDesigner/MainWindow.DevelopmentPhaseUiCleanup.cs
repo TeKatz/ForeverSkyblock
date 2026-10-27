@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -22,6 +23,16 @@ public partial class MainWindow
         @"\s*[·\-–—:]\s*PHASE\s+\d+(?:[A-Z])?(?:\.\d+)?\s*$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
+    private static readonly DependencyProperty DevelopmentPhaseTextWatchProperty =
+        DependencyProperty.RegisterAttached(
+            "DevelopmentPhaseTextWatch",
+            typeof(bool),
+            typeof(MainWindow),
+            new PropertyMetadata(false));
+
+    private static readonly DependencyPropertyDescriptor TextBlockTextDescriptor =
+        DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock))!;
+
     private bool _developmentPhaseUiCleanupInitialized;
 
     public void EnableForeverDevelopmentPhaseUiCleanup()
@@ -37,6 +48,11 @@ public partial class MainWindow
             FrameworkElement.LoadedEvent,
             new RoutedEventHandler(DevelopmentPhaseUiCleanup_Loaded),
             true);
+        EventManager.RegisterClassHandler(
+            typeof(FrameworkElement),
+            FrameworkElement.UnloadedEvent,
+            new RoutedEventHandler(DevelopmentPhaseUiCleanup_Unloaded),
+            true);
     }
 
     private void DevelopmentPhaseUiCleanup_Loaded(object sender, RoutedEventArgs e)
@@ -45,7 +61,10 @@ public partial class MainWindow
             return;
 
         if (element is TextBlock text)
+        {
+            EnsureDevelopmentPhaseTextWatch(text);
             CleanDevelopmentPhaseTextBlock(text);
+        }
 
         if (element is HeaderedContentControl headered && headered.Header is string header)
             headered.Header = CleanDevelopmentPhaseControlLabel(header);
@@ -55,6 +74,30 @@ public partial class MainWindow
 
         if (element.ToolTip is string tooltip && DevelopmentPhaseToken.IsMatch(tooltip))
             element.ToolTip = null;
+    }
+
+    private void DevelopmentPhaseUiCleanup_Unloaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not TextBlock text || !(bool)text.GetValue(DevelopmentPhaseTextWatchProperty))
+            return;
+
+        TextBlockTextDescriptor.RemoveValueChanged(text, DevelopmentPhaseUiCleanup_TextChanged);
+        text.SetValue(DevelopmentPhaseTextWatchProperty, false);
+    }
+
+    private static void EnsureDevelopmentPhaseTextWatch(TextBlock text)
+    {
+        if ((bool)text.GetValue(DevelopmentPhaseTextWatchProperty))
+            return;
+
+        TextBlockTextDescriptor.AddValueChanged(text, DevelopmentPhaseUiCleanup_TextChanged);
+        text.SetValue(DevelopmentPhaseTextWatchProperty, true);
+    }
+
+    private static void DevelopmentPhaseUiCleanup_TextChanged(object? sender, EventArgs e)
+    {
+        if (sender is TextBlock text)
+            CleanDevelopmentPhaseTextBlock(text);
     }
 
     private static void CleanDevelopmentPhaseTextBlock(TextBlock text)
