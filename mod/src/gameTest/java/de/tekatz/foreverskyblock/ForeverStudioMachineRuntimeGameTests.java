@@ -8,7 +8,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -18,6 +19,10 @@ public final class ForeverStudioMachineRuntimeGameTests {
     private static final BlockPos POS = new BlockPos(2, 2, 2);
     private static final ResourceLocation MACHINE_ID =
             ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "studio_runtime_e2e");
+    private static final ForeverStudioMachineBlock TEST_BLOCK =
+            new ForeverStudioMachineBlock(MACHINE_ID, BlockBehaviour.Properties.of());
+    private static final BlockEntityType<ForeverStudioMachineBlockEntity> TEST_BLOCK_ENTITY =
+            BlockEntityType.Builder.<ForeverStudioMachineBlockEntity>of((pos, state) -> null, TEST_BLOCK).build(null);
 
     private static void check(GameTestHelper helper, boolean condition, String message) {
         helper.assertTrue(condition, message);
@@ -25,8 +30,9 @@ public final class ForeverStudioMachineRuntimeGameTests {
 
     private static ForeverStudioMachineBlockEntity machine(GameTestHelper helper) {
         var machine = new ForeverStudioMachineBlockEntity(
+                TEST_BLOCK_ENTITY,
                 helper.absolutePos(POS),
-                Blocks.IRON_BLOCK.defaultBlockState(),
+                TEST_BLOCK.defaultBlockState(),
                 MACHINE_ID);
         machine.setLevel(helper.getLevel());
         return machine;
