@@ -7,8 +7,7 @@ using ForeverGuiDesigner.Services;
 namespace ForeverGuiDesigner;
 
 /// <summary>
-/// Machine Builder Phase 6: cross-phase production review and transactional build/apply.
-/// Review is always reachable so unsupported runtime authoring is visible as an explicit blocker.
+/// Machine Builder Phase 6: cross-phase validation, deterministic compiler review and atomic apply.
 /// </summary>
 public partial class MainWindow
 {
@@ -70,7 +69,7 @@ public partial class MainWindow
                 var copy = grid.Children.OfType<StackPanel>().FirstOrDefault();
                 var description = copy?.Children.OfType<TextBlock>().Skip(1).FirstOrDefault();
                 if (description is not null)
-                    description.Text = "Validate, review generated files and apply atomically";
+                    description.Text = "Validate, compile generated runtime/files and apply atomically";
             }
             _machineBuilderReviewStep.MouseLeftButtonUp += (_, _) => ShowMachineBuilderProductionPhase6();
             StyleMachineBuilderPhase3Step(_machineBuilderReviewStep, active: false, available: true);
@@ -120,7 +119,7 @@ public partial class MainWindow
             if (text.Text.StartsWith("PHASE 5 ·", StringComparison.OrdinalIgnoreCase))
                 text.Text = "PHASE 6 · REVIEW & PRODUCTION";
             else if (text.Text.StartsWith("Phase 5 binds graph data", StringComparison.OrdinalIgnoreCase))
-                text.Text = "Phase 6 closes the guided workflow with cross-phase validation, an exact generated-file review and rollback-capable production apply.";
+                text.Text = "Phase 6 validates the complete Machine Project, compiles supported runtime contracts and applies every generated target atomically.";
         }
     }
 
@@ -155,7 +154,7 @@ public partial class MainWindow
         });
         heading.Children.Add(new TextBlock
         {
-            Text = "Turn a Machine Project into real mod content",
+            Text = "Compile the Machine Project into real mod content",
             Foreground = Brush("#EFF5F6"),
             FontSize = 24,
             FontWeight = FontWeights.SemiBold,
@@ -163,7 +162,7 @@ public partial class MainWindow
         });
         heading.Children.Add(new TextBlock
         {
-            Text = "Nothing is written until the complete plan is valid. Every target is hash-snapshotted and the apply step rolls the whole transaction back if one write fails.",
+            Text = "Nothing is written until validation succeeds. Review shows the exact transaction; Apply rechecks every hash and rolls back the complete write set on failure.",
             Foreground = Brush("#899CA4"),
             FontSize = 11,
             TextWrapping = TextWrapping.Wrap,
@@ -202,7 +201,7 @@ public partial class MainWindow
         var summaryGrid = new Grid { Margin = new Thickness(14, 11, 14, 11) };
         summaryGrid.ColumnDefinitions.Add(new ColumnDefinition());
         summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(18) });
-        summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(360) });
+        summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(390) });
         _machineBuilderPhase6Readiness = new TextBlock
         {
             Text = "REVIEW NOT BUILT",
@@ -233,14 +232,14 @@ public partial class MainWindow
         body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(14) });
         body.ColumnDefinitions.Add(new ColumnDefinition());
 
-        var validationCard = Phase6Card("VALIDATION", "Cross-phase blockers and diagnostics.");
+        var validationCard = Phase6Card("VALIDATION", "Cross-phase compiler blockers and diagnostics.");
         var validationPanel = (StackPanel)validationCard.Child;
         _machineBuilderPhase6IssueList = Phase6ListBox();
         validationPanel.Children.Add(_machineBuilderPhase6IssueList);
         Grid.SetColumn(validationCard, 0);
         body.Children.Add(validationCard);
 
-        var changesCard = Phase6Card("PRODUCTION PLAN", "Exact files that will be created or replaced.");
+        var changesCard = Phase6Card("PRODUCTION PLAN", "Exact files that will be created, replaced or deleted.");
         var changesPanel = (StackPanel)changesCard.Child;
         _machineBuilderPhase6ChangeList = Phase6ListBox();
         _machineBuilderPhase6ChangeList.SelectionChanged += (_, _) => RefreshMachineBuilderPhase6Preview();
@@ -248,7 +247,7 @@ public partial class MainWindow
         Grid.SetColumn(changesCard, 2);
         body.Children.Add(changesCard);
 
-        var previewCard = Phase6Card("GENERATED PREVIEW", "Selected target after generation.");
+        var previewCard = Phase6Card("GENERATED PREVIEW", "Selected transaction target after compilation.");
         var previewPanel = (StackPanel)previewCard.Child;
         _machineBuilderPhase6PreviewTitle = new TextBlock
         {
@@ -277,7 +276,6 @@ public partial class MainWindow
         previewPanel.Children.Add(_machineBuilderPhase6Preview);
         Grid.SetColumn(previewCard, 4);
         body.Children.Add(previewCard);
-
         Grid.SetRow(body, 4);
         shell.Children.Add(body);
 
@@ -286,7 +284,7 @@ public partial class MainWindow
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         footer.Children.Add(new TextBlock
         {
-            Text = "Current production backend: static visual block. Runtime behavior/GUI/recipes/animations fail closed until their compilers are implemented.",
+            Text = "Compiler backends: static visual blocks plus real standard/powered item processors with inventory, FE, recipe runtime and authored GUI layout. Unsupported graph/animation contracts remain fail-closed.",
             Foreground = Brush("#82969E"),
             FontSize = 9.5,
             TextWrapping = TextWrapping.Wrap,
@@ -384,7 +382,7 @@ public partial class MainWindow
         _machineBuilderLibraryLoad ??= ForeverStudioLibraryCatalog.Load(_repoRoot);
         try
         {
-            _machineBuilderProductionPlan = ForeverStudioMachineProductionService.BuildPlan(
+            _machineBuilderProductionPlan = ForeverStudioMachineCompilerService.BuildPlan(
                 _repoRoot,
                 _machineBuilderDocument,
                 _machineBuilderLibraryLoad.Catalog);
@@ -425,6 +423,7 @@ public partial class MainWindow
                 ? "#74C99A"
                 : "#D8B26A";
         var summary =
+            $"{_machineBuilderProductionPlan.ProductionKind} · " +
             $"{_machineBuilderDocument.Components.Count - 1} visual component(s) · " +
             $"{Math.Max(0, _machineBuilderDocument.Behavior.Nodes.Count - 1)} function node(s) · " +
             $"{_machineBuilderDocument.Recipes.Count} recipe(s) · {_machineBuilderDocument.Gui.Bindings.Count} GUI binding(s) · " +
@@ -485,12 +484,12 @@ public partial class MainWindow
 
         try
         {
-            var result = ForeverStudioMachineProductionService.Apply(plan);
+            var result = ForeverStudioMachineCompilerService.Apply(plan);
             RefreshMachineBuilderAfterProductionApply();
             RefreshMachineBuilderProductionReview();
             MessageBox.Show(
                 this,
-                $"Machine '{result.AssetId}' was built successfully.\n\n{result.WrittenPaths.Count} file(s) were written and the Studio project scan was refreshed.",
+                $"Machine '{result.AssetId}' was built successfully.\n\n{result.WrittenPaths.Count} target(s) were applied and the Studio project scan was refreshed.",
                 "Machine build complete",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
