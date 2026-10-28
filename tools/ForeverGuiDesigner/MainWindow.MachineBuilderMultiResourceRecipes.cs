@@ -150,16 +150,25 @@ public partial class MainWindow
             SetGuiDesignerStatus("Recipe ID is required.", "#E18B8B");
             return;
         }
-        if (!TryParseRecipeStacks(_studioRecipeInputsBox?.Text, allowEmpty: false, out var inputs, out var inputError) ||
-            !TryParseRecipeStacks(_studioRecipeOutputsBox?.Text, allowEmpty: true, out var outputs, out var outputError))
+
+        if (!TryParseRecipeStacks(_studioRecipeInputsBox?.Text, allowEmpty: false, out var inputs, out var inputError))
         {
-            SetGuiDesignerStatus(inputError ?? outputError ?? "Invalid item stack list.", "#E18B8B");
+            SetGuiDesignerStatus(inputError ?? "Invalid item input list.", "#E18B8B");
             return;
         }
-        if (!TryParseRecipeFluids(_studioRecipeFluidInputsBox?.Text, out var fluidInputs, out var fluidInputError) ||
-            !TryParseRecipeFluids(_studioRecipeFluidOutputsBox?.Text, out var fluidOutputs, out var fluidOutputError))
+        if (!TryParseRecipeStacks(_studioRecipeOutputsBox?.Text, allowEmpty: true, out var outputs, out var outputError))
         {
-            SetGuiDesignerStatus(fluidInputError ?? fluidOutputError ?? "Invalid fluid list.", "#E18B8B");
+            SetGuiDesignerStatus(outputError ?? "Invalid item output list.", "#E18B8B");
+            return;
+        }
+        if (!TryParseRecipeFluids(_studioRecipeFluidInputsBox?.Text, out var fluidInputs, out var fluidInputError))
+        {
+            SetGuiDesignerStatus(fluidInputError ?? "Invalid fluid input list.", "#E18B8B");
+            return;
+        }
+        if (!TryParseRecipeFluids(_studioRecipeFluidOutputsBox?.Text, out var fluidOutputs, out var fluidOutputError))
+        {
+            SetGuiDesignerStatus(fluidOutputError ?? "Invalid fluid output list.", "#E18B8B");
             return;
         }
         if (!TryGuiDesignerInt(_guiDesignerRecipeDurationBox?.Text, 1, 1_000_000, out var duration) ||
@@ -237,22 +246,21 @@ public partial class MainWindow
 
         MarkMachineBuilderPhase5Dirty();
         RefreshGuiDesignerRecipes();
-        ApplyStudioMultiResourcePreview(recipe, inputs, outputs);
+        ApplyStudioMultiResourcePreview(inputs, outputs);
         SetGuiDesignerStatus($"Recipe '{id}' saved: {inputs.Count} item input(s), {outputs.Count} item output(s), " +
                              $"{fluidInputs.Count} fluid input(s), {fluidOutputs.Count} fluid output(s).", "#74C99A");
     }
 
-    private void ApplyStudioMultiResourcePreview(ForeverStudioMachineRecipeBinding recipe,
-                                                  IReadOnlyList<StudioRecipeStack> inputs,
+    private void ApplyStudioMultiResourcePreview(IReadOnlyList<StudioRecipeStack> inputs,
                                                   IReadOnlyList<StudioRecipeStack> outputs)
     {
         if (_machineBuilderDocument is null)
             return;
         var inputNodes = _machineBuilderDocument.Behavior.Nodes
-            .Where(node => node.LibraryItemId is "function.item-input" or "function.filter-slot" or "function.catalyst-slot" or "function.fuel-slot")
+            .Where(node => node.LibraryItemId is "function.item-input" or "function.fuel-slot")
             .OrderBy(node => node.Y).ThenBy(node => node.X).ThenBy(node => node.Id, StringComparer.OrdinalIgnoreCase).ToList();
         var outputNodes = _machineBuilderDocument.Behavior.Nodes
-            .Where(node => node.LibraryItemId is "function.item-storage" or "function.item-output" or "function.secondary-output" or "function.chance-output")
+            .Where(node => node.LibraryItemId is "function.item-storage" or "function.item-output" or "function.secondary-output")
             .OrderBy(node => node.Y).ThenBy(node => node.X).ThenBy(node => node.Id, StringComparer.OrdinalIgnoreCase).ToList();
         foreach (var binding in _machineBuilderDocument.Gui.Bindings)
         {
@@ -275,7 +283,11 @@ public partial class MainWindow
         result = [];
         error = null;
         var entries = (text ?? string.Empty).Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (entries.Length == 0) return allowEmpty || Fail("At least one item stack is required.", out error);
+        if (entries.Length == 0)
+        {
+            if (allowEmpty) return true;
+            return Fail("At least one item stack is required.", out error);
+        }
         foreach (var entry in entries)
         {
             var parts = entry.Split('*', 2, StringSplitOptions.TrimEntries);
@@ -330,7 +342,7 @@ public partial class MainWindow
         if (properties.TryGetValue(plural, out var fluids) && fluids.ValueKind == JsonValueKind.Array)
             values.AddRange(fluids.EnumerateArray().Select(value => value.Clone()));
         else if (properties.TryGetValue(legacy, out var fluid) && fluid.ValueKind == JsonValueKind.Object)
-            values.Add(fluid);
+            values.Add(fluid.Clone());
         return string.Join("; ", values.Select(value =>
         {
             var tank = value.TryGetProperty("tankNodeId", out var tankJson) ? tankJson.GetString() ?? "tank" : "tank";
