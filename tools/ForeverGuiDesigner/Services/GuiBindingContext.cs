@@ -14,6 +14,7 @@ public interface IGuiBindingContext
 
 public sealed record GuiBindingSource(
     string Id,
+    string Context,
     string Category,
     string DisplayName,
     string SourceId,
@@ -26,13 +27,11 @@ public sealed record GuiBindingSource(
             Id = bindingId,
             ElementId = elementId,
             TargetProperty = targetProperty,
-            Context = IdContext,
+            Context = Context,
             SourceId = SourceId,
             SourcePort = SourcePort,
             DataType = DataType
         };
-
-    internal string IdContext { get; init; } = "standalone";
 }
 
 public sealed class MachineGuiBindingContext : IGuiBindingContext
@@ -68,14 +67,12 @@ public sealed class MachineGuiBindingContext : IGuiBindingContext
             {
                 sources.Add(new GuiBindingSource(
                     $"{node.Id}.{port.Id}",
+                    "machine",
                     category,
                     $"{item.DisplayName} · {port.DisplayName}",
                     node.Id,
                     port.Id,
-                    port.DataType)
-                {
-                    IdContext = "machine"
-                });
+                    port.DataType));
             }
         }
 
@@ -93,15 +90,19 @@ public sealed class MachineGuiBindingContext : IGuiBindingContext
 
     private static string CategoryFor(string libraryItemId)
     {
-        if (libraryItemId.Contains("input", StringComparison.OrdinalIgnoreCase) ||
-            libraryItemId.Contains("slot", StringComparison.OrdinalIgnoreCase) ||
-            libraryItemId.Contains("storage", StringComparison.OrdinalIgnoreCase))
-            return libraryItemId.Contains("output", StringComparison.OrdinalIgnoreCase) ||
-                   libraryItemId.Contains("storage", StringComparison.OrdinalIgnoreCase)
-                ? "Outputs"
-                : "Inputs";
+        if (libraryItemId.Contains("item-output", StringComparison.OrdinalIgnoreCase) ||
+            libraryItemId.Contains("item-storage", StringComparison.OrdinalIgnoreCase) ||
+            libraryItemId.Contains("secondary-output", StringComparison.OrdinalIgnoreCase))
+            return "Outputs";
+        if (libraryItemId.Contains("item-input", StringComparison.OrdinalIgnoreCase) ||
+            libraryItemId.Contains("fuel-slot", StringComparison.OrdinalIgnoreCase) ||
+            libraryItemId.Contains("filter-slot", StringComparison.OrdinalIgnoreCase) ||
+            libraryItemId.Contains("catalyst-slot", StringComparison.OrdinalIgnoreCase) ||
+            libraryItemId.Contains("upgrade-slot", StringComparison.OrdinalIgnoreCase))
+            return "Inputs";
         if (libraryItemId.Contains("processor", StringComparison.OrdinalIgnoreCase) ||
-            libraryItemId.Contains("generator-core", StringComparison.OrdinalIgnoreCase))
+            libraryItemId.Contains("generator-core", StringComparison.OrdinalIgnoreCase) ||
+            libraryItemId.Contains("process-", StringComparison.OrdinalIgnoreCase))
             return "Processor";
         if (libraryItemId.Contains("energy", StringComparison.OrdinalIgnoreCase))
             return "Energy";
