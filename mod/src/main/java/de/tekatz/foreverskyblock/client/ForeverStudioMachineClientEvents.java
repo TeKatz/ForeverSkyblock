@@ -5,6 +5,7 @@ import de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 /** Client bridge kept outside generated source so the runtime compiler owns only data and registrations. */
@@ -16,5 +17,11 @@ public final class ForeverStudioMachineClientEvents {
     public static void registerScreens(RegisterMenuScreensEvent event) {
         if (ForeverStudioGeneratedMachines.MACHINE_MENU.isBound())
             event.register(ForeverStudioGeneratedMachines.MACHINE_MENU.get(), ForeverStudioMachineScreen::new);
+    }
+
+    @SubscribeEvent
+    public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        if (ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.isBound())
+            event.registerBlockEntityRenderer(ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get(), ForeverStudioMachineRenderer::new);
     }
 }
