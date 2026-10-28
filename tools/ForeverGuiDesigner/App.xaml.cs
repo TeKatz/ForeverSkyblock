@@ -37,6 +37,7 @@ public partial class App : Application
         window.EnableForeverMachineBuilderFunctionGraphPhase4();
         window.EnableForeverMachineBuilderBindingsPhase5();
         window.EnableForeverMachineBuilderGuiDesignerPhase4();
+        window.EnableForeverStudioMultiResourceRecipeAuthoring();
         window.EnableForeverMachineBuilderFunctionTemplatesPhase3();
         window.EnableForeverMachineBuilderFunctionToolbarRepair();
         window.EnableForeverMachineBuilderProductionPhase6();
