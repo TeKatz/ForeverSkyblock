@@ -47,6 +47,13 @@ public final class ForeverStudioMachineBlock extends Block implements EntityBloc
         };
     }
 
+    @Override protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
+                                             BlockPos neighborPos, boolean movedByPiston) {
+        if (!level.isClientSide && level.getBlockEntity(pos) instanceof ForeverStudioMachineBlockEntity machine)
+            ForeverStudioGraphSignals.markNeighborChanged(machine);
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+    }
+
     @Override protected InteractionResult useWithoutItem(
             BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
