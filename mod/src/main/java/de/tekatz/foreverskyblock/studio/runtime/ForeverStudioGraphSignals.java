@@ -32,9 +32,8 @@ final class ForeverStudioGraphSignals {
             state.redstoneChanged = redstone != state.redstone;
             state.recipeStarted = status == ForeverStudioMachineBlockEntity.RUNNING
                     && state.status != ForeverStudioMachineBlockEntity.RUNNING
-                    && progress > 0;
-            state.recipeCompleted = status == ForeverStudioMachineBlockEntity.RUNNING
-                    && state.progress > 0 && progress == 0;
+                    && state.progress == 0 && progress > 0;
+            state.recipeCompleted = state.progress > 0 && progress == 0;
             state.stateEntered = !semanticState.equalsIgnoreCase(state.semanticState);
         } else {
             state.redstoneChanged = false;
