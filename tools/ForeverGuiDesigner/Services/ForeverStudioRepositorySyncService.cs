@@ -44,6 +44,8 @@ public static partial class ForeverStudioRepositorySyncService
     private const string GeneratedJavaPrefix = "mod/src/main/java/de/tekatz/foreverskyblock/generated/";
     private const string LanguagePath = "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json";
     private const string StudioDataPrefix = "mod/src/main/resources/data/forever_skyblock/forever_studio/";
+    private const string StudioGeneratedPrefix = StudioDataPrefix + "generated/";
+    private const string StudioRuntimePrefix = StudioDataPrefix + "runtime/";
     private const string StudioRecipePrefix = "mod/src/main/resources/data/forever_skyblock/recipe/forever_studio/";
     private const string StudioAssetPrefix = "mod/src/main/resources/assets/forever_skyblock/forever_studio/";
     private const string StudioComponentModelPrefix = "mod/src/main/resources/assets/forever_skyblock/models/block/forever_studio/";
@@ -293,25 +295,32 @@ public static partial class ForeverStudioRepositorySyncService
         if (!string.IsNullOrWhiteSpace(currentAssetId))
             ids.Add(ForeverStudioMachineProjectService.SanitizeAssetId(currentAssetId));
 
-        var directory = Resolve(root, ForeverStudioMachineProjectService.RelativeDirectory);
+        AddAssetIdsFromDirectory(root, ForeverStudioMachineProjectService.RelativeDirectory, ids);
+        AddAssetIdsFromDirectory(root, StudioGeneratedPrefix.TrimEnd('/'), ids);
+        AddAssetIdsFromDirectory(root, StudioRuntimePrefix.TrimEnd('/'), ids);
+        return ids;
+    }
+
+    private static void AddAssetIdsFromDirectory(string root, string relativeDirectory, HashSet<string> ids)
+    {
+        var directory = Resolve(root, relativeDirectory);
         if (!Directory.Exists(directory))
-            return ids;
+            return;
 
         try
         {
             foreach (var file in Directory.EnumerateFiles(directory, "*.json", SearchOption.TopDirectoryOnly))
             {
                 var id = Path.GetFileNameWithoutExtension(file);
-                if (string.Equals(id, ForeverStudioMachineProjectService.SanitizeAssetId(id), StringComparison.Ordinal))
+                var sanitized = ForeverStudioMachineProjectService.SanitizeAssetId(id);
+                if (string.Equals(id, sanitized, StringComparison.Ordinal))
                     ids.Add(id);
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // The project loader will report the directory problem separately. Keeping only the
-            // active asset here makes sync classification conservative rather than destructive.
+            // Classification stays conservative if an owned directory cannot be enumerated.
         }
-        return ids;
     }
 
     private static IReadOnlyList<ForeverStudioRepositoryChange> ParseStatus(string output, IReadOnlySet<string> assetIds)
@@ -414,14 +423,62 @@ public static partial class ForeverStudioRepositorySyncService
                 if (allowed.Contains(key))
                     continue;
                 if (!before.TryGetValue(key, out var beforeValue) || !after.TryGetValue(key, out var afterValue) ||
-                    !string.Equals(beforeValue.GetRawText(), afterValue.GetRawText(), StringComparison.Ordinal))
+                    !JsonValuesEqual(beforeValue, afterValue))
                     return false;
             }
             return true;
         }
-        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException or ArgumentException)
         {
             return false;
+        }
+    }
+
+    private static bool JsonValuesEqual(JsonElement left, JsonElement right)
+    {
+        if (left.ValueKind != right.ValueKind)
+            return false;
+
+        switch (left.ValueKind)
+        {
+            case JsonValueKind.Object:
+            {
+                var leftProperties = left.EnumerateObject().ToDictionary(property => property.Name, property => property.Value.Clone(), StringComparer.Ordinal);
+                var rightProperties = right.EnumerateObject().ToDictionary(property => property.Name, property => property.Value.Clone(), StringComparer.Ordinal);
+                if (leftProperties.Count != rightProperties.Count)
+                    return false;
+                foreach (var pair in leftProperties)
+                {
+                    if (!rightProperties.TryGetValue(pair.Key, out var value) || !JsonValuesEqual(pair.Value, value))
+                        return false;
+                }
+                return true;
+            }
+            case JsonValueKind.Array:
+            {
+                var leftItems = left.EnumerateArray().ToArray();
+                var rightItems = right.EnumerateArray().ToArray();
+                if (leftItems.Length != rightItems.Length)
+                    return false;
+                for (var index = 0; index < leftItems.Length; index++)
+                    if (!JsonValuesEqual(leftItems[index], rightItems[index]))
+                        return false;
+                return true;
+            }
+            case JsonValueKind.String:
+                return string.Equals(left.GetString(), right.GetString(), StringComparison.Ordinal);
+            case JsonValueKind.Number:
+                if (left.TryGetDecimal(out var leftDecimal) && right.TryGetDecimal(out var rightDecimal))
+                    return leftDecimal == rightDecimal;
+                return string.Equals(left.GetRawText(), right.GetRawText(), StringComparison.Ordinal);
+            case JsonValueKind.True:
+            case JsonValueKind.False:
+                return left.GetBoolean() == right.GetBoolean();
+            case JsonValueKind.Null:
+            case JsonValueKind.Undefined:
+                return true;
+            default:
+                return string.Equals(left.GetRawText(), right.GetRawText(), StringComparison.Ordinal);
         }
     }
 
