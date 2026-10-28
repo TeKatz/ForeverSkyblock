@@ -21,8 +21,6 @@ internal static class ForeverStudioRuntimeSupportPolicy
         "function.item-input",
         "function.item-output",
         "function.item-storage",
-        "function.filter-slot",
-        "function.catalyst-slot",
         "function.fuel-slot",
         "function.upgrade-slot",
         "function.energy-storage",
@@ -44,7 +42,6 @@ internal static class ForeverStudioRuntimeSupportPolicy
         "function.random-chance",
         "function.number",
         "function.boolean",
-        "function.timer",
         "function.clamp",
         "function.map-range",
         "function.set-state",
@@ -64,7 +61,7 @@ internal static class ForeverStudioRuntimeSupportPolicy
             if (ExecutableNodes.Contains(node.LibraryItemId)) continue;
             issues.Add(new StudioValidationIssue(StudioValidationSeverity.Error,
                 $"Function node '{node.Id}' ({node.LibraryItemId}) remains authoring-only. " +
-                "Production is fail-closed because its stateful mutation/event semantics are not yet safe to emit."));
+                "Production is fail-closed because its stateful mutation/transfer semantics are not yet safe to emit."));
         }
         return issues;
     }
