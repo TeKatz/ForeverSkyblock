@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace ForeverGuiDesigner.Models;
 
 public sealed class GuiLayoutModel
@@ -6,6 +9,11 @@ public sealed class GuiLayoutModel
     public int Width { get; set; } = 176;
     public int Height { get; set; } = 166;
     public List<GuiElementModel> Elements { get; set; } = [];
+
+    // Preserve forward-compatible fields when older editor surfaces open and resave a layout.
+    // The unified GUI contract adapter carries these fields through unchanged.
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
 
     public static GuiLayoutModel CreateExample()
     {
