@@ -53,7 +53,7 @@ public final class ForeverSkyblock {
     var housing = catalog.Find("asset.housing", 1) ?? throw new InvalidOperationException("Missing built-in asset.housing.");
 
     // Scenario 1: the production contract must preserve deterministic two-input/two-output
-    // processing, graph state and animation metadata through Review & Build.
+    // processing, graph state, split component geometry and animation metadata through Review & Build.
     var multi = ForeverStudioMachineProjectService.CreateBlank("studio_compiler_e2e", "Studio Compiler E2E");
     var multiHousing = ForeverStudioVisualAssemblyService.CreateComponent(housing, multi.Components);
     multi.Components.Add(multiHousing);
@@ -115,6 +115,7 @@ public final class ForeverSkyblock {
     var recipePath = Path.Combine(root, "mod", "src", "main", "resources", "data", "forever_skyblock", "recipe", "forever_studio", "studio_compiler_e2e.json");
     var registryPath = Path.Combine(root, "mod", "src", "main", "java", "de", "tekatz", "foreverskyblock", "generated", "ForeverStudioGeneratedMachines.java");
     var manifestPath = Path.Combine(root, "mod", "src", "main", "resources", "data", "forever_skyblock", "forever_studio", "generated", "studio_compiler_e2e.json");
+    var componentManifestPath = Path.Combine(root, "mod", "src", "main", "resources", "assets", "forever_skyblock", "forever_studio", "components", "studio_compiler_e2e.json");
 
     using (var runtime = JsonDocument.Parse(File.ReadAllText(runtimePath)))
     {
@@ -141,13 +142,43 @@ public final class ForeverSkyblock {
         Check(recipe.GetProperty("energy_per_tick").GetInt32() == 20, "FE/t must be preserved.");
     }
 
+    using (var components = JsonDocument.Parse(File.ReadAllText(componentManifestPath)))
+    {
+        var entries = components.RootElement.GetProperty("components");
+        Check(entries.GetArrayLength() == 1, "Runtime compiler must emit one independently baked model entry for the authored housing component.");
+        var component = entries[0];
+        Check(component.GetProperty("id").GetString() == multiHousing.Id, "Component manifest must preserve the exact authored component id.");
+        var pivot = component.GetProperty("pivot");
+        Check(pivot.GetArrayLength() == 3 && Math.Abs(pivot[0].GetDouble() - 0.5) < 0.0001
+              && Math.Abs(pivot[1].GetDouble() - 0.5) < 0.0001 && Math.Abs(pivot[2].GetDouble() - 0.5) < 0.0001,
+            "Component manifest must preserve the authored model pivot in block coordinates.");
+        var modelId = component.GetProperty("model").GetString() ?? throw new InvalidOperationException("Component model id missing.");
+        Check(modelId.StartsWith("forever_skyblock:block/forever_studio/components/studio_compiler_e2e/", StringComparison.Ordinal),
+            "Component model id must live under the deterministic Studio component namespace.");
+        var modelPath = modelId[(modelId.IndexOf(':') + 1)..];
+        var componentModelPath = Path.Combine(root, "mod", "src", "main", "resources", "assets", "forever_skyblock", "models",
+            modelPath.Replace('/', Path.DirectorySeparatorChar) + ".json");
+        Check(File.Exists(componentModelPath), "Component manifest must reference a generated standalone baked-model JSON file.");
+        using var componentModel = JsonDocument.Parse(File.ReadAllText(componentModelPath));
+        Check(componentModel.RootElement.GetProperty("elements").GetArrayLength() > 0,
+            "Split component model must retain the component's actual authored geometry.");
+    }
+
     var registry = File.ReadAllText(registryPath);
     Check(registry.Contains("new ForeverStudioMachineBlock", StringComparison.Ordinal), "Generated registry must instantiate the generic runtime block.");
     Check(registry.Contains("Capabilities.FluidHandler.BLOCK", StringComparison.Ordinal), "Generated registry must expose the fluid capability boundary.");
     using (var manifest = JsonDocument.Parse(File.ReadAllText(manifestPath)))
+    {
         Check(manifest.RootElement.GetProperty("schemaVersion").GetInt32() == 3 &&
               manifest.RootElement.GetProperty("productionKind").GetString() == "runtime-machine",
             "Manifest must record schema-3 runtime-machine production.");
+        var owned = manifest.RootElement.GetProperty("generatedFiles").EnumerateArray()
+            .Select(value => value.GetString() ?? string.Empty).ToArray();
+        Check(owned.Any(path => path.EndsWith("assets/forever_skyblock/forever_studio/components/studio_compiler_e2e.json", StringComparison.Ordinal)),
+            "Ownership manifest must include the component-model manifest.");
+        Check(owned.Any(path => path.Contains("models/block/forever_studio/components/studio_compiler_e2e/", StringComparison.Ordinal)),
+            "Ownership manifest must include every split component model.");
+    }
 
     // Scenario 2: item + fluid processing must compile to an explicit tank contract and recipe requirement.
     var fluidMachine = ForeverStudioMachineProjectService.CreateBlank("studio_fluid_e2e", "Studio Fluid E2E");
