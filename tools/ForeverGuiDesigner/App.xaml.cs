@@ -40,6 +40,7 @@ public partial class App : Application
         window.EnableForeverStudioMultiResourceRecipeAuthoring();
         window.EnableForeverUnifiedGuiEditorBridge();
         window.EnableForeverUnifiedGuiBindingInspector();
+        window.EnableForeverUnifiedGuiMachineAssetPalette();
         window.EnableForeverMachineBuilderFunctionTemplatesPhase3();
         window.EnableForeverMachineBuilderFunctionToolbarRepair();
         window.EnableForeverMachineBuilderProductionPhase6();
