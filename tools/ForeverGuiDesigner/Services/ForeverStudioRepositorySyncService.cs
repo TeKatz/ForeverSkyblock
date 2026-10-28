@@ -40,7 +40,7 @@ public sealed record ForeverStudioRepositorySyncResult(
 public static partial class ForeverStudioRepositorySyncService
 {
     public const string StableBranch = "main";
-    public const string DevelopmentBranch = "feature/forever-studio-runtime-production";
+    public const string DevelopmentBranch = "feature/forever-studio-gui-builder-phase2";
 
     private const string MainModPath = "mod/src/main/java/de/tekatz/foreverskyblock/ForeverSkyblock.java";
     private const string GeneratedJavaPrefix = "mod/src/main/java/de/tekatz/foreverskyblock/generated/";
