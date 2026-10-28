@@ -41,6 +41,7 @@ public partial class App : Application
         window.EnableForeverMachineBuilderFunctionTemplatesPhase3();
         window.EnableForeverMachineBuilderFunctionToolbarRepair();
         window.EnableForeverMachineBuilderProductionPhase6();
+        window.EnableForeverMachineBuilderModBuild();
         window.EnableForeverMachineBuilderUxPolish();
         window.EnableForeverMachineBuilderButtonStabilityFix();
         window.EnableForeverBlockModelViewer();
