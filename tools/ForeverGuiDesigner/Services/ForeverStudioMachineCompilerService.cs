@@ -19,23 +19,8 @@ public static class ForeverStudioMachineCompilerService
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(catalog);
 
-        if (!HasRuntimeAuthoring(document))
+        if (!UsesRuntimeBackend(document))
             return ForeverStudioMachineProductionService.BuildPlan(repoRoot, document, catalog);
-
-        var repositoryIssue = ForeverStudioRuntimeRepositoryContract.Validate(repoRoot);
-        if (repositoryIssue is not null)
-        {
-            var issues = ForeverStudioMachineProjectService.Validate(document, catalog)
-                .Where(issue => issue.Severity != StudioValidationSeverity.Info)
-                .ToList();
-            issues.Add(repositoryIssue);
-            return new ForeverStudioMachineProductionPlan(
-                document.AssetId,
-                document.DisplayName,
-                ProductionKindRuntimeMachine,
-                [],
-                issues);
-        }
 
         var runtime = ForeverStudioRuntimeCompiler.BuildPlan(repoRoot, document, catalog);
         var supportIssues = ForeverStudioRuntimeSupportPolicy.Validate(document);
@@ -51,6 +36,12 @@ public static class ForeverStudioMachineCompilerService
 
     public static ForeverStudioMachineProductionApplyResult Apply(ForeverStudioMachineProductionPlan plan)
         => ForeverStudioRuntimeCompiler.Apply(plan);
+
+    public static bool UsesRuntimeBackend(ForeverStudioMachineDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        return HasRuntimeAuthoring(document);
+    }
 
     private static bool HasRuntimeAuthoring(ForeverStudioMachineDocument document)
     {

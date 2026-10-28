@@ -249,6 +249,13 @@ public partial class MainWindow
             return false;
         }
 
+        if (ForeverStudioMachineCompilerService.UsesRuntimeBackend(_machineBuilderDocument) &&
+            ForeverStudioRuntimeRepositoryContract.Validate(_repoRoot) is { } runtimeIssue)
+        {
+            error = runtimeIssue.Message;
+            return false;
+        }
+
         if (_machineBuilderDirty ||
             _machineBuilderSourceHash.Equals(ForeverStudioMachineProjectService.MissingHash, StringComparison.Ordinal))
         {
