@@ -14,11 +14,8 @@ import java.util.Locale;
 /**
  * Generic renderer for Studio-generated machine blocks. Runtime machines use ENTITYBLOCK_ANIMATED,
  * so this renderer owns the real baked block model and authored transforms never double-render it.
- *
- * The current generic Minecraft model is a single baked model. Multiple authored animation bindings
- * therefore compose on that model in deterministic authoring order. The target component id remains
- * in the runtime contract so a later component-split model backend can narrow the exact geometry
- * without changing machine projects or the runtime data format.
+ * The runtime contract retains target component ids; until the model compiler emits split baked
+ * component models, authored transforms compose on the generated machine model as one unit.
  */
 public final class ForeverStudioMachineRenderer implements BlockEntityRenderer<ForeverStudioMachineBlockEntity> {
     private final BlockRenderDispatcher blocks;
@@ -30,11 +27,12 @@ public final class ForeverStudioMachineRenderer implements BlockEntityRenderer<F
     @Override
     public void render(ForeverStudioMachineBlockEntity machine, float partialTick, PoseStack poses,
                        MultiBufferSource buffers, int packedLight, int packedOverlay) {
+        var synced = ForeverStudioMachineClientState.get(machine.getBlockPos()).orElse(null);
         poses.pushPose();
         boolean visible = true;
         for (int index = 0; index < machine.definition().animations().size(); index++) {
             ForeverStudioMachineDefinition.AnimationDefinition animation = machine.definition().animations().get(index);
-            double phase = machine.animationPhase(index);
+            double phase = synced == null ? machine.animationPhase(index) : synced.animationPhase(index);
             if (!apply(poses, animation, phase)) {
                 visible = false;
                 break;
@@ -67,8 +65,7 @@ public final class ForeverStudioMachineRenderer implements BlockEntityRenderer<F
         }
 
         if (preset.contains("shake")) {
-            double amount = Math.sin(clamped * Math.PI * 8.0) * 0.04;
-            translate(poses, axis, amount);
+            translate(poses, axis, Math.sin(clamped * Math.PI * 8.0) * 0.04);
             return true;
         }
 
@@ -76,9 +73,8 @@ public final class ForeverStudioMachineRenderer implements BlockEntityRenderer<F
                 preset.contains("piston") || preset.contains("conveyor") || preset.contains("intake") ||
                 preset.contains("output-eject") || preset.contains("pump") || preset.contains("fluid-flow") ||
                 preset.contains("bob") || preset.contains("oscillate") || preset.contains("spring") ||
-                preset.contains("ping-pong")) {
+                preset.contains("ping-pong"))
             translate(poses, axis, clamped * 0.25);
-        }
         return true;
     }
 
