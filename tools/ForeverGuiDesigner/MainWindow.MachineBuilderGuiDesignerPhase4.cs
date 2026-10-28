@@ -3,29 +3,18 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using ForeverGuiDesigner.Services;
 
 namespace ForeverGuiDesigner;
 
 /// <summary>
-/// Machine Builder GUI phase: presents the behavior authored in Functions as a real screen layout
-/// and owns concrete recipe authoring. It does not create or duplicate behavior topology.
+/// Machine Builder GUI phase after the unified-editor migration. Layout, widgets, bindings,
+/// hierarchy, assets, styles and effects are edited only in the shared Forever GUI Editor.
+/// Machine Builder keeps recipe authoring here because recipes are machine-domain data rather
+/// than GUI-document data.
 /// </summary>
 public partial class MainWindow
 {
-    private sealed record GuiDesignerWidgetPreset(
-        string Key,
-        string Name,
-        string AssetId,
-        string[] AcceptedTypes,
-        double DefaultWidth,
-        double DefaultHeight,
-        string Description)
-    {
-        public override string ToString() => Name;
-    }
-
     private sealed record GuiDesignerProcessNode(string NodeId, string DisplayName, string LibraryItemId)
     {
         public override string ToString() => DisplayName;
@@ -37,40 +26,10 @@ public partial class MainWindow
         public override string ToString() => Recipe.Id;
     }
 
-    private static readonly GuiDesignerWidgetPreset[] GuiDesignerWidgetPresets =
-    [
-        new("item-slot", "Item Slot", "asset.input-tray", ["item"], 18, 18, "Shows an item stack from a Function output."),
-        new("output-slot", "Output Slot", "asset.output-tray", ["item"], 18, 18, "Shows produced/stored output items."),
-        new("progress-bar", "Progress Bar", "asset.screen", ["number"], 24, 16, "Shows normalized processing or timer progress."),
-        new("energy-bar", "Energy Bar", "asset.screen", ["energy", "number"], 12, 52, "Shows energy amount or fill ratio."),
-        new("fluid-gauge", "Fluid Gauge", "asset.fluid-window", ["fluid", "number"], 16, 52, "Shows tank contents or fill ratio."),
-        new("status", "Status Indicator", "asset.status-lamp", ["boolean", "state"], 12, 12, "Shows a boolean/state as a lamp."),
-        new("value", "Value Label", "asset.screen", ["any"], 54, 12, "Shows arbitrary textual or numeric data.")
-    ];
-
-    private const double GuiDesignerScale = 2.0;
-    private const double GuiDesignerLogicalWidth = 176;
-    private const double GuiDesignerLogicalHeight = 166;
-
     private bool _guiDesignerPhase4Initialized;
     private FrameworkElement? _guiDesignerBody;
-    private Canvas? _guiDesignerCanvas;
-    private StackPanel? _guiDesignerInspector;
-    private ListBox? _guiDesignerBindingList;
-    private ComboBox? _guiDesignerSourceCombo;
-    private ComboBox? _guiDesignerWidgetCombo;
-    private TextBox? _guiDesignerLabelBox;
-    private TextBox? _guiDesignerXBox;
-    private TextBox? _guiDesignerYBox;
-    private TextBox? _guiDesignerWidthBox;
-    private TextBox? _guiDesignerHeightBox;
-    private TextBox? _guiDesignerPreviewValueBox;
     private TextBlock? _guiDesignerStatus;
-    private string? _guiDesignerSelectedBindingId;
-    private string? _guiDesignerDraggingBindingId;
-    private Point _guiDesignerDragStart;
-    private double _guiDesignerDragOriginX;
-    private double _guiDesignerDragOriginY;
+    private TextBlock? _guiDesignerSummary;
 
     private ListBox? _guiDesignerRecipeList;
     private TextBox? _guiDesignerRecipeIdBox;
@@ -96,7 +55,7 @@ public partial class MainWindow
                 var copy = grid.Children.OfType<StackPanel>().FirstOrDefault();
                 var description = copy?.Children.OfType<TextBlock>().Skip(1).FirstOrDefault();
                 if (description is not null)
-                    description.Text = "Lay out the machine screen, bind Function outputs and define actual recipes";
+                    description.Text = "Open the shared GUI editor and define the machine's actual recipes";
             }
             _machineBuilderGuiStep.MouseLeftButtonUp += (_, _) => ShowMachineBuilderGuiDesignerPhase4();
         }
@@ -105,7 +64,7 @@ public partial class MainWindow
         {
             var label = FindStudioVisualChildren<TextBlock>(_machineBuilderPhase5GuiTab).FirstOrDefault();
             if (label is not null)
-                label.Text = "GUI DESIGNER";
+                label.Text = "GUI & RECIPES";
             _machineBuilderPhase5GuiTab.Click += (_, _) => ShowMachineBuilderGuiDesignerPhase4();
         }
 
@@ -193,81 +152,96 @@ public partial class MainWindow
     private FrameworkElement BuildMachineBuilderGuiDesignerBody()
     {
         var root = new Grid();
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(300) });
+        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(430) });
         root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(14) });
         root.ColumnDefinitions.Add(new ColumnDefinition());
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(14) });
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(355) });
 
-        var left = BuildGuiDesignerLeftColumn();
-        Grid.SetColumn(left, 0);
-        root.Children.Add(left);
-
-        var preview = BuildGuiDesignerPreviewCard();
-        Grid.SetColumn(preview, 2);
-        root.Children.Add(preview);
-
-        var inspector = BuildGuiDesignerInspectorCard();
-        Grid.SetColumn(inspector, 4);
-        root.Children.Add(inspector);
-        return root;
-    }
-
-    private FrameworkElement BuildGuiDesignerLeftColumn()
-    {
         var scroll = new ScrollViewer
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
         var stack = new StackPanel();
-        stack.Children.Add(BuildGuiDesignerAddWidgetCard());
+        stack.Children.Add(BuildSharedGuiEditorLaunchCard());
         var recipe = BuildGuiDesignerRecipeCard();
         recipe.Margin = new Thickness(0, 12, 0, 0);
         stack.Children.Add(recipe);
         scroll.Content = stack;
-        return scroll;
+        Grid.SetColumn(scroll, 0);
+        root.Children.Add(scroll);
+
+        var info = BuildUnifiedGuiArchitectureCard();
+        Grid.SetColumn(info, 2);
+        root.Children.Add(info);
+        return root;
     }
 
-    private Border BuildGuiDesignerAddWidgetCard()
+    private Border BuildSharedGuiEditorLaunchCard()
     {
         var card = CreateStudioGlassCard(new CornerRadius(8), strongShadow: false);
+        card.Tag = "unified_gui_editor_launch";
         var panel = new StackPanel { Margin = new Thickness(14) };
         panel.Children.Add(GuiDesignerTitle(
-            "GUI WIDGETS",
-            "Pick a typed output from Functions 03, then choose how it should look."));
-
-        panel.Children.Add(MachineBuilderVisualInspectorLabel("Function output", 4));
-        _guiDesignerSourceCombo = Phase5ComboBox();
-        _guiDesignerSourceCombo.SelectionChanged += (_, _) => RefreshGuiDesignerWidgetChoices();
-        panel.Children.Add(_guiDesignerSourceCombo);
-
-        panel.Children.Add(MachineBuilderVisualInspectorLabel("Widget", 10));
-        _guiDesignerWidgetCombo = Phase5ComboBox();
-        panel.Children.Add(_guiDesignerWidgetCombo);
-
-        panel.Children.Add(MachineBuilderVisualInspectorLabel("Label", 10));
-        _guiDesignerLabelBox = MachineBuilderTextBox();
-        _guiDesignerLabelBox.Height = 32;
-        _guiDesignerLabelBox.Text = "Widget";
-        panel.Children.Add(_guiDesignerLabelBox);
-
-        var add = CreateStudioChromeButton("ADD TO GUI", double.NaN, true);
-        add.Height = 36;
-        add.HorizontalAlignment = HorizontalAlignment.Stretch;
-        add.Margin = new Thickness(0, 12, 0, 0);
-        add.Click += (_, _) => AddGuiDesignerBinding();
-        panel.Children.Add(add);
+            "SHARED GUI EDITOR",
+            "There is now one GUI engine for standalone layouts and Machine Builder screens."));
 
         panel.Children.Add(new TextBlock
         {
-            Text = "This screen never creates behavior nodes. It only presents outputs that already exist in Functions 03.",
-            Foreground = Brush("#7C9098"),
-            FontSize = 9,
+            Text = "Layout, widgets, bindings, hierarchy, assets, styles and effects are edited in the established WYSIWYG editor. The retired Phase-04 mini canvas no longer owns GUI geometry.",
+            Foreground = Brush("#82969E"),
+            FontSize = 9.4,
             TextWrapping = TextWrapping.Wrap,
             LineHeight = 14,
-            Margin = new Thickness(0, 12, 0, 0)
+            Margin = new Thickness(0, 2, 0, 10)
         });
+
+        var open = CreateStudioChromeButton("OPEN SHARED GUI EDITOR", double.NaN, true);
+        open.Height = 38;
+        open.HorizontalAlignment = HorizontalAlignment.Stretch;
+        open.Click += (_, _) => OpenMachineGuiInUnifiedEditor();
+        panel.Children.Add(open);
+
+        _guiDesignerStatus = new TextBlock
+        {
+            Text = "GUI authoring is routed through the shared document and editor context.",
+            Foreground = Brush("#74C99A"),
+            FontSize = 9.2,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 10, 0, 0)
+        };
+        panel.Children.Add(_guiDesignerStatus);
+        card.Child = panel;
+        return card;
+    }
+
+    private Border BuildUnifiedGuiArchitectureCard()
+    {
+        var card = CreateStudioGlassCard(new CornerRadius(8), strongShadow: false);
+        var panel = new StackPanel { Margin = new Thickness(18) };
+        panel.Children.Add(new TextBlock
+        {
+            Text = "ONE GUI ENGINE",
+            Foreground = Brush("#72D5D3"),
+            FontSize = 11,
+            FontWeight = FontWeights.Bold
+        });
+        panel.Children.Add(new TextBlock
+        {
+            Text = "Machine Builder now contributes machine-specific binding sources and recipe data to the shared editor instead of maintaining its own canvas, selection model or geometry inspector.\n\nRecipes stay here because they define machine behavior/runtime data, not GUI presentation.",
+            Foreground = Brush("#82969E"),
+            FontSize = 10,
+            TextWrapping = TextWrapping.Wrap,
+            LineHeight = 16,
+            Margin = new Thickness(0, 10, 0, 16)
+        });
+        _guiDesignerSummary = new TextBlock
+        {
+            Foreground = Brush("#DCEBED"),
+            FontSize = 11,
+            FontWeight = FontWeights.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+        panel.Children.Add(_guiDesignerSummary);
         card.Child = panel;
         return card;
     }
@@ -369,596 +343,22 @@ public partial class MainWindow
         return card;
     }
 
-    private Border BuildGuiDesignerPreviewCard()
-    {
-        var card = CreateStudioGlassCard(new CornerRadius(8), strongShadow: false);
-        var root = new Grid { Margin = new Thickness(14) };
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(10) });
-        root.RowDefinitions.Add(new RowDefinition());
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-        root.Children.Add(GuiDesignerTitle(
-            "LIVE GUI PREVIEW",
-            "Drag widgets directly. Coordinates are stored in logical Minecraft GUI pixels."));
-
-        var stage = new Border
-        {
-            Background = Brush("#070B0D"),
-            BorderBrush = Brush("#2A3D45"),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Padding = new Thickness(18)
-        };
-        var frame = new Border
-        {
-            Width = GuiDesignerLogicalWidth * GuiDesignerScale + 2,
-            Height = GuiDesignerLogicalHeight * GuiDesignerScale + 2,
-            Background = Brush("#C6C6C6"),
-            BorderBrush = Brush("#F8F8F8"),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(2)
-        };
-        _guiDesignerCanvas = new Canvas
-        {
-            Width = GuiDesignerLogicalWidth * GuiDesignerScale,
-            Height = GuiDesignerLogicalHeight * GuiDesignerScale,
-            Background = CreateGuiDesignerGridBrush(),
-            ClipToBounds = true,
-            Focusable = true
-        };
-        _guiDesignerCanvas.MouseLeftButtonDown += (_, e) =>
-        {
-            if (ReferenceEquals(e.OriginalSource, _guiDesignerCanvas))
-            {
-                _guiDesignerSelectedBindingId = null;
-                RefreshGuiDesignerInspector();
-                RefreshGuiDesignerCanvas();
-            }
-        };
-        frame.Child = _guiDesignerCanvas;
-        stage.Child = frame;
-        Grid.SetRow(stage, 2);
-        root.Children.Add(stage);
-
-        _guiDesignerStatus = new TextBlock
-        {
-            Foreground = Brush("#82969E"),
-            FontSize = 9.4,
-            TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 10, 0, 0)
-        };
-        Grid.SetRow(_guiDesignerStatus, 3);
-        root.Children.Add(_guiDesignerStatus);
-
-        card.Child = root;
-        return card;
-    }
-
-    private Border BuildGuiDesignerInspectorCard()
-    {
-        var card = CreateStudioGlassCard(new CornerRadius(8), strongShadow: false);
-        var root = new Grid { Margin = new Thickness(14) };
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(8) });
-        root.RowDefinitions.Add(new RowDefinition());
-
-        root.Children.Add(GuiDesignerTitle(
-            "WIDGET INSPECTOR",
-            "Select a widget in the preview to edit binding, geometry and preview data."));
-
-        _guiDesignerInspector = new StackPanel();
-        var scroll = new ScrollViewer
-        {
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            Content = _guiDesignerInspector
-        };
-        Grid.SetRow(scroll, 2);
-        root.Children.Add(scroll);
-        card.Child = root;
-        return card;
-    }
-
-    private static Brush CreateGuiDesignerGridBrush()
-    {
-        var group = new DrawingGroup();
-        group.Children.Add(new GeometryDrawing(Brush("#B8B8B8"), null, new RectangleGeometry(new Rect(0, 0, 16, 16))));
-        var pen = new Pen(Brush("#A7A7A7"), 0.55);
-        group.Children.Add(new GeometryDrawing(null, pen, Geometry.Parse("M 16,0 L 0,0 0,16")));
-        var brush = new DrawingBrush(group)
-        {
-            TileMode = TileMode.Tile,
-            Viewport = new Rect(0, 0, 16, 16),
-            ViewportUnits = BrushMappingMode.Absolute,
-            Stretch = Stretch.None
-        };
-        brush.Freeze();
-        return brush;
-    }
-
     private void RefreshMachineBuilderGuiDesigner()
     {
         if (_machineBuilderDocument is null)
             return;
         _machineBuilderLibraryLoad ??= ForeverStudioLibraryCatalog.Load(_repoRoot);
-        RefreshGuiDesignerSources();
         RefreshGuiDesignerRecipes();
-        RefreshGuiDesignerBindings();
-        RefreshGuiDesignerCanvas();
-        RefreshGuiDesignerInspector();
         RefreshGuiDesignerRecipeProcessChoices();
         RefreshGuiDesignerRecipeType();
-    }
 
-    private void RefreshGuiDesignerSources()
-    {
-        if (_guiDesignerSourceCombo is null)
-            return;
-        _machineBuilderPhase5Sources = BuildMachineBuilderPhase5Sources();
-        var previous = _guiDesignerSourceCombo.SelectedItem as MachineBuilderPhase5Source;
-        _guiDesignerSourceCombo.ItemsSource = null;
-        _guiDesignerSourceCombo.ItemsSource = _machineBuilderPhase5Sources;
-        _guiDesignerSourceCombo.SelectedItem = previous is null
-            ? _machineBuilderPhase5Sources.FirstOrDefault()
-            : _machineBuilderPhase5Sources.FirstOrDefault(source =>
-                source.NodeId.Equals(previous.NodeId, StringComparison.OrdinalIgnoreCase) &&
-                source.PortId.Equals(previous.PortId, StringComparison.OrdinalIgnoreCase))
-              ?? _machineBuilderPhase5Sources.FirstOrDefault();
-        RefreshGuiDesignerWidgetChoices();
-    }
-
-    private void RefreshGuiDesignerWidgetChoices()
-    {
-        if (_guiDesignerWidgetCombo is null)
-            return;
-        var source = _guiDesignerSourceCombo?.SelectedItem as MachineBuilderPhase5Source;
-        var choices = GuiDesignerWidgetPresets
-            .Where(preset => source is null ||
-                preset.AcceptedTypes.Contains("any", StringComparer.OrdinalIgnoreCase) ||
-                preset.AcceptedTypes.Contains(source.DataType, StringComparer.OrdinalIgnoreCase))
-            .ToList();
-        _guiDesignerWidgetCombo.ItemsSource = choices;
-        if (choices.Count > 0)
-            _guiDesignerWidgetCombo.SelectedIndex = 0;
-    }
-
-    private void AddGuiDesignerBinding()
-    {
-        if (_machineBuilderDocument is null ||
-            _guiDesignerSourceCombo?.SelectedItem is not MachineBuilderPhase5Source source ||
-            _guiDesignerWidgetCombo?.SelectedItem is not GuiDesignerWidgetPreset widget)
+        if (_guiDesignerSummary is not null)
         {
-            SetGuiDesignerStatus("Choose a Function output and compatible widget first.", "#D8B26A");
-            return;
+            _guiDesignerSummary.Text =
+                $"Shared GUI bindings: {_machineBuilderDocument.Gui.Bindings.Count}\n" +
+                $"Recipes: {_machineBuilderDocument.Recipes.Count}\n" +
+                $"Screen: {(_machineBuilderDocument.Gui.ScreenId.Length == 0 ? "not assigned yet" : _machineBuilderDocument.Gui.ScreenId)}";
         }
-
-        if (string.IsNullOrWhiteSpace(_machineBuilderDocument.Gui.ScreenId))
-            _machineBuilderDocument.Gui.ScreenId = $"{_machineBuilderDocument.AssetId}_screen";
-
-        var used = _machineBuilderDocument.Gui.Bindings.Select(binding => binding.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var baseId = SanitizeMachineBuilderGraphId($"gui_{widget.Key}_{source.NodeId}_{source.PortId}");
-        var id = baseId;
-        for (var suffix = 2; used.Contains(id); suffix++)
-            id = SanitizeMachineBuilderGraphId($"{baseId}_{suffix}");
-
-        var index = _machineBuilderDocument.Gui.Bindings.Count;
-        var x = 14 + (index % 5) * 30;
-        var y = 28 + (index / 5) * 28;
-        var binding = new ForeverStudioMachineGuiBinding
-        {
-            Id = id,
-            LibraryItemId = widget.AssetId,
-            LibraryItemVersion = 1,
-            SourceId = source.NodeId,
-            Properties = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["widget"] = JsonSerializer.SerializeToElement(widget.Key),
-                ["sourcePortId"] = JsonSerializer.SerializeToElement(source.PortId),
-                ["sourceType"] = JsonSerializer.SerializeToElement(source.DataType),
-                ["label"] = JsonSerializer.SerializeToElement(string.IsNullOrWhiteSpace(_guiDesignerLabelBox?.Text) ? widget.Name : _guiDesignerLabelBox!.Text.Trim()),
-                ["x"] = JsonSerializer.SerializeToElement(x),
-                ["y"] = JsonSerializer.SerializeToElement(y),
-                ["width"] = JsonSerializer.SerializeToElement(widget.DefaultWidth),
-                ["height"] = JsonSerializer.SerializeToElement(widget.DefaultHeight),
-                ["previewValue"] = JsonSerializer.SerializeToElement(DefaultGuiDesignerPreviewValue(widget.Key)),
-                ["order"] = JsonSerializer.SerializeToElement(index)
-            }
-        };
-        _machineBuilderDocument.Gui.Bindings.Add(binding);
-        _guiDesignerSelectedBindingId = binding.Id;
-        MarkMachineBuilderPhase5Dirty();
-        RefreshMachineBuilderGuiDesigner();
-        SetGuiDesignerStatus($"Added {widget.Name} bound to {source.DisplayName}.", "#74C99A");
-    }
-
-    private void RefreshGuiDesignerBindings()
-    {
-        if (_guiDesignerBindingList is null || _machineBuilderDocument is null)
-            return;
-        _guiDesignerBindingList.ItemsSource = _machineBuilderDocument.Gui.Bindings
-            .OrderBy(binding => ReadGuiDesignerNumber(binding.Properties, "order", 0))
-            .Select(binding => binding.Id)
-            .ToList();
-    }
-
-    private void RefreshGuiDesignerCanvas()
-    {
-        if (_guiDesignerCanvas is null || _machineBuilderDocument is null)
-            return;
-        _guiDesignerCanvas.Children.Clear();
-
-        var title = new TextBlock
-        {
-            Text = string.IsNullOrWhiteSpace(_machineBuilderDocument.DisplayName)
-                ? _machineBuilderDocument.AssetId
-                : _machineBuilderDocument.DisplayName,
-            Foreground = Brush("#303030"),
-            FontSize = 11,
-            FontWeight = FontWeights.Bold,
-            IsHitTestVisible = false
-        };
-        Canvas.SetLeft(title, 8 * GuiDesignerScale);
-        Canvas.SetTop(title, 6 * GuiDesignerScale);
-        _guiDesignerCanvas.Children.Add(title);
-
-        foreach (var binding in _machineBuilderDocument.Gui.Bindings
-                     .OrderBy(candidate => ReadGuiDesignerNumber(candidate.Properties, "order", 0)))
-            DrawGuiDesignerBinding(binding);
-
-        SetGuiDesignerStatus(
-            $"{_machineBuilderDocument.Gui.Bindings.Count} widget(s) · {_machineBuilderDocument.Behavior.Nodes.Count} Function node(s) available as data sources · {_machineBuilderDocument.Recipes.Count} recipe(s)",
-            "#82969E");
-    }
-
-    private void DrawGuiDesignerBinding(ForeverStudioMachineGuiBinding binding)
-    {
-        if (_guiDesignerCanvas is null)
-            return;
-
-        var widget = ReadGuiDesignerString(binding.Properties, "widget", "value");
-        var x = ReadGuiDesignerNumber(binding.Properties, "x", 10);
-        var y = ReadGuiDesignerNumber(binding.Properties, "y", 30);
-        var width = Math.Max(6, ReadGuiDesignerNumber(binding.Properties, "width", 18));
-        var height = Math.Max(6, ReadGuiDesignerNumber(binding.Properties, "height", 18));
-        var selected = binding.Id.Equals(_guiDesignerSelectedBindingId, StringComparison.OrdinalIgnoreCase);
-
-        var visual = BuildGuiDesignerWidgetVisual(binding, widget, selected);
-        visual.Width = width * GuiDesignerScale;
-        visual.Height = height * GuiDesignerScale;
-        visual.Tag = binding.Id;
-        visual.Cursor = Cursors.SizeAll;
-        visual.MouseLeftButtonDown += (_, e) => BeginGuiDesignerDrag(binding, visual, e);
-        visual.MouseMove += (_, e) => ContinueGuiDesignerDrag(binding, visual, e);
-        visual.MouseLeftButtonUp += (_, e) => EndGuiDesignerDrag(binding, visual, e);
-        Canvas.SetLeft(visual, Math.Clamp(x, 0, GuiDesignerLogicalWidth - width) * GuiDesignerScale);
-        Canvas.SetTop(visual, Math.Clamp(y, 0, GuiDesignerLogicalHeight - height) * GuiDesignerScale);
-        _guiDesignerCanvas.Children.Add(visual);
-    }
-
-    private Border BuildGuiDesignerWidgetVisual(ForeverStudioMachineGuiBinding binding, string widget, bool selected)
-    {
-        var preview = ReadGuiDesignerString(binding.Properties, "previewValue", DefaultGuiDesignerPreviewValue(widget));
-        var label = ReadGuiDesignerString(binding.Properties, "label", widget);
-        var border = new Border
-        {
-            Background = Brush(widget switch
-            {
-                "item-slot" or "output-slot" => "#8B8B8B",
-                "energy-bar" => "#382E20",
-                "fluid-gauge" => "#203C49",
-                "status" => "#273B2B",
-                _ => "#4B4B4B"
-            }),
-            BorderBrush = Brush(selected ? "#4FE1DB" : "#202020"),
-            BorderThickness = new Thickness(selected ? 2 : 1),
-            CornerRadius = new CornerRadius(widget is "item-slot" or "output-slot" ? 1 : 2),
-            ToolTip = $"{label}\n{binding.SourceId}.{ReadGuiDesignerString(binding.Properties, "sourcePortId", "?")}" 
-        };
-
-        FrameworkElement child = widget switch
-        {
-            "progress-bar" => BuildGuiDesignerProgressVisual(preview, horizontal: true),
-            "energy-bar" => BuildGuiDesignerProgressVisual(preview, horizontal: false),
-            "fluid-gauge" => BuildGuiDesignerProgressVisual(preview, horizontal: false),
-            "status" => BuildGuiDesignerStatusVisual(preview),
-            "item-slot" or "output-slot" => BuildGuiDesignerItemVisual(preview),
-            _ => new TextBlock
-            {
-                Text = preview,
-                Foreground = Brushes.White,
-                FontSize = 9,
-                TextTrimming = TextTrimming.CharacterEllipsis,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(2)
-            }
-        };
-        border.Child = child;
-        return border;
-    }
-
-    private static FrameworkElement BuildGuiDesignerProgressVisual(string preview, bool horizontal)
-    {
-        var value = double.TryParse(preview, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-            ? Math.Clamp(parsed, 0, 1)
-            : 0.65;
-        var grid = new Grid { Background = Brush("#202020"), Margin = new Thickness(2) };
-        var fill = new Border
-        {
-            Background = Brush("#D9D9D9"),
-            HorizontalAlignment = horizontal ? HorizontalAlignment.Left : HorizontalAlignment.Stretch,
-            VerticalAlignment = horizontal ? VerticalAlignment.Stretch : VerticalAlignment.Bottom
-        };
-        if (horizontal)
-            fill.Width = Math.Max(2, 44 * value);
-        else
-            fill.Height = Math.Max(2, 44 * value);
-        grid.Children.Add(fill);
-        return grid;
-    }
-
-    private static FrameworkElement BuildGuiDesignerStatusVisual(string preview)
-        => new TextBlock
-        {
-            Text = preview.Equals("true", StringComparison.OrdinalIgnoreCase) || preview == "1" ? "●" : "○",
-            Foreground = Brushes.White,
-            FontSize = 15,
-            FontWeight = FontWeights.Bold,
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-
-    private static FrameworkElement BuildGuiDesignerItemVisual(string preview)
-    {
-        var parts = preview.Split('|', 2);
-        var item = parts[0];
-        var count = parts.Length > 1 ? parts[1] : "1";
-        var grid = new Grid();
-        grid.Children.Add(new TextBlock
-        {
-            Text = ShortGuiDesignerItemName(item),
-            Foreground = Brush("#F3F3F3"),
-            FontSize = 7,
-            FontWeight = FontWeights.Bold,
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            TextAlignment = TextAlignment.Center,
-            TextWrapping = TextWrapping.Wrap
-        });
-        grid.Children.Add(new TextBlock
-        {
-            Text = count,
-            Foreground = Brushes.White,
-            FontSize = 8,
-            FontWeight = FontWeights.Bold,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Bottom,
-            Margin = new Thickness(0, 0, 1, 0)
-        });
-        return grid;
-    }
-
-    private static string ShortGuiDesignerItemName(string item)
-    {
-        var path = item.Contains(':') ? item[(item.IndexOf(':') + 1)..] : item;
-        var words = path.Split(['_', '/', '-'], StringSplitOptions.RemoveEmptyEntries);
-        if (words.Length == 0)
-            return "ITEM";
-        var abbreviation = string.Concat(words.Select(word => char.ToUpperInvariant(word[0])));
-        return abbreviation.Length <= 3 ? abbreviation : abbreviation[..3];
-    }
-
-    private void BeginGuiDesignerDrag(ForeverStudioMachineGuiBinding binding, FrameworkElement visual, MouseButtonEventArgs e)
-    {
-        _guiDesignerSelectedBindingId = binding.Id;
-        _guiDesignerDraggingBindingId = binding.Id;
-        _guiDesignerDragStart = e.GetPosition(_guiDesignerCanvas);
-        _guiDesignerDragOriginX = Canvas.GetLeft(visual);
-        _guiDesignerDragOriginY = Canvas.GetTop(visual);
-        visual.CaptureMouse();
-        RefreshGuiDesignerInspector();
-        e.Handled = true;
-    }
-
-    private void ContinueGuiDesignerDrag(ForeverStudioMachineGuiBinding binding, FrameworkElement visual, MouseEventArgs e)
-    {
-        if (_guiDesignerDraggingBindingId is null ||
-            !_guiDesignerDraggingBindingId.Equals(binding.Id, StringComparison.OrdinalIgnoreCase) ||
-            e.LeftButton != MouseButtonState.Pressed || _guiDesignerCanvas is null)
-            return;
-        var point = e.GetPosition(_guiDesignerCanvas);
-        var left = Math.Clamp(_guiDesignerDragOriginX + point.X - _guiDesignerDragStart.X, 0, _guiDesignerCanvas.Width - visual.Width);
-        var top = Math.Clamp(_guiDesignerDragOriginY + point.Y - _guiDesignerDragStart.Y, 0, _guiDesignerCanvas.Height - visual.Height);
-        Canvas.SetLeft(visual, left);
-        Canvas.SetTop(visual, top);
-        e.Handled = true;
-    }
-
-    private void EndGuiDesignerDrag(ForeverStudioMachineGuiBinding binding, FrameworkElement visual, MouseButtonEventArgs e)
-    {
-        if (_guiDesignerDraggingBindingId is null ||
-            !_guiDesignerDraggingBindingId.Equals(binding.Id, StringComparison.OrdinalIgnoreCase))
-            return;
-        visual.ReleaseMouseCapture();
-        _guiDesignerDraggingBindingId = null;
-        binding.Properties["x"] = JsonSerializer.SerializeToElement(Math.Round(Canvas.GetLeft(visual) / GuiDesignerScale, 2));
-        binding.Properties["y"] = JsonSerializer.SerializeToElement(Math.Round(Canvas.GetTop(visual) / GuiDesignerScale, 2));
-        MarkMachineBuilderPhase5Dirty();
-        RefreshGuiDesignerInspector();
-        e.Handled = true;
-    }
-
-    private void RefreshGuiDesignerInspector()
-    {
-        if (_guiDesignerInspector is null || _machineBuilderDocument is null)
-            return;
-        _guiDesignerInspector.Children.Clear();
-
-        var binding = _machineBuilderDocument.Gui.Bindings.FirstOrDefault(candidate =>
-            candidate.Id.Equals(_guiDesignerSelectedBindingId, StringComparison.OrdinalIgnoreCase));
-        if (binding is null)
-        {
-            _guiDesignerInspector.Children.Add(new TextBlock
-            {
-                Text = "No widget selected",
-                Foreground = Brush("#EFF5F6"),
-                FontSize = 18,
-                FontWeight = FontWeights.SemiBold,
-                Margin = new Thickness(0, 4, 0, 0)
-            });
-            _guiDesignerInspector.Children.Add(new TextBlock
-            {
-                Text = "Add a Function output on the left or click a widget in the live preview.",
-                Foreground = Brush("#7E929A"),
-                FontSize = 9.5,
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 6, 0, 0)
-            });
-            return;
-        }
-
-        var widgetKey = ReadGuiDesignerString(binding.Properties, "widget", "value");
-        _guiDesignerInspector.Children.Add(new TextBlock
-        {
-            Text = ReadGuiDesignerString(binding.Properties, "label", widgetKey),
-            Foreground = Brush("#EFF5F6"),
-            FontSize = 18,
-            FontWeight = FontWeights.SemiBold,
-            TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 4, 0, 0)
-        });
-        _guiDesignerInspector.Children.Add(new TextBlock
-        {
-            Text = $"{binding.Id}\n{binding.SourceId}.{ReadGuiDesignerString(binding.Properties, "sourcePortId", "?")}",
-            Foreground = Brush("#788D95"),
-            FontSize = 9,
-            FontFamily = new FontFamily("Consolas"),
-            Margin = new Thickness(0, 5, 0, 12)
-        });
-
-        _guiDesignerInspector.Children.Add(MachineBuilderVisualInspectorLabel("Label"));
-        var label = MachineBuilderTextBox();
-        label.Height = 31;
-        label.Text = ReadGuiDesignerString(binding.Properties, "label", widgetKey);
-        _guiDesignerInspector.Children.Add(label);
-
-        _guiDesignerInspector.Children.Add(MachineBuilderVisualInspectorLabel("Preview value", 10));
-        var preview = MachineBuilderTextBox();
-        preview.Height = 31;
-        preview.Text = ReadGuiDesignerString(binding.Properties, "previewValue", DefaultGuiDesignerPreviewValue(widgetKey));
-        preview.ToolTip = widgetKey is "item-slot" or "output-slot" ? "item_id|count, e.g. minecraft:coal|4" : "For bars use 0..1; status accepts true/false.";
-        _guiDesignerInspector.Children.Add(preview);
-
-        _guiDesignerInspector.Children.Add(MachineBuilderVisualInspectorLabel("Position X / Y", 10));
-        var position = new Grid();
-        position.ColumnDefinitions.Add(new ColumnDefinition());
-        position.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(7) });
-        position.ColumnDefinitions.Add(new ColumnDefinition());
-        var x = MachineBuilderTextBox();
-        x.Height = 31;
-        x.Text = ReadGuiDesignerNumber(binding.Properties, "x", 10).ToString("0.##", CultureInfo.InvariantCulture);
-        position.Children.Add(x);
-        var y = MachineBuilderTextBox();
-        y.Height = 31;
-        y.Text = ReadGuiDesignerNumber(binding.Properties, "y", 30).ToString("0.##", CultureInfo.InvariantCulture);
-        Grid.SetColumn(y, 2);
-        position.Children.Add(y);
-        _guiDesignerInspector.Children.Add(position);
-
-        _guiDesignerInspector.Children.Add(MachineBuilderVisualInspectorLabel("Width / Height", 10));
-        var size = new Grid();
-        size.ColumnDefinitions.Add(new ColumnDefinition());
-        size.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(7) });
-        size.ColumnDefinitions.Add(new ColumnDefinition());
-        var width = MachineBuilderTextBox();
-        width.Height = 31;
-        width.Text = ReadGuiDesignerNumber(binding.Properties, "width", 18).ToString("0.##", CultureInfo.InvariantCulture);
-        size.Children.Add(width);
-        var height = MachineBuilderTextBox();
-        height.Height = 31;
-        height.Text = ReadGuiDesignerNumber(binding.Properties, "height", 18).ToString("0.##", CultureInfo.InvariantCulture);
-        Grid.SetColumn(height, 2);
-        size.Children.Add(height);
-        _guiDesignerInspector.Children.Add(size);
-
-        var apply = CreateStudioChromeButton("APPLY WIDGET", double.NaN, true);
-        apply.Height = 34;
-        apply.HorizontalAlignment = HorizontalAlignment.Stretch;
-        apply.Margin = new Thickness(0, 12, 0, 0);
-        apply.Click += (_, _) => ApplyGuiDesignerWidgetEdits(binding, label.Text, preview.Text, x.Text, y.Text, width.Text, height.Text);
-        _guiDesignerInspector.Children.Add(apply);
-
-        var remove = CreateStudioChromeButton("REMOVE WIDGET", double.NaN, false);
-        remove.Height = 34;
-        remove.HorizontalAlignment = HorizontalAlignment.Stretch;
-        remove.Margin = new Thickness(0, 7, 0, 0);
-        remove.Click += (_, _) => RemoveGuiDesignerBinding(binding);
-        _guiDesignerInspector.Children.Add(remove);
-
-        _guiDesignerInspector.Children.Add(new Border
-        {
-            Background = Brush("#101A1E"),
-            BorderBrush = Brush("#2D424A"),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
-            Padding = new Thickness(10),
-            Margin = new Thickness(0, 14, 0, 0),
-            Child = new TextBlock
-            {
-                Text = "The preview value is editor-only presentation data. Runtime values still come from the bound Function output.",
-                Foreground = Brush("#7F939B"),
-                FontSize = 9,
-                TextWrapping = TextWrapping.Wrap
-            }
-        });
-    }
-
-    private void ApplyGuiDesignerWidgetEdits(
-        ForeverStudioMachineGuiBinding binding,
-        string label,
-        string preview,
-        string xText,
-        string yText,
-        string widthText,
-        string heightText)
-    {
-        if (!TryGuiDesignerNumber(xText, out var x) || !TryGuiDesignerNumber(yText, out var y) ||
-            !TryGuiDesignerNumber(widthText, out var width) || !TryGuiDesignerNumber(heightText, out var height))
-        {
-            SetGuiDesignerStatus("Position and size require numeric values.", "#E18B8B");
-            return;
-        }
-        if (width < 4 || height < 4 || width > GuiDesignerLogicalWidth || height > GuiDesignerLogicalHeight)
-        {
-            SetGuiDesignerStatus("Widget width/height must stay within the GUI canvas.", "#E18B8B");
-            return;
-        }
-        x = Math.Clamp(x, 0, GuiDesignerLogicalWidth - width);
-        y = Math.Clamp(y, 0, GuiDesignerLogicalHeight - height);
-        binding.Properties["label"] = JsonSerializer.SerializeToElement(label.Trim());
-        binding.Properties["previewValue"] = JsonSerializer.SerializeToElement(preview.Trim());
-        binding.Properties["x"] = JsonSerializer.SerializeToElement(x);
-        binding.Properties["y"] = JsonSerializer.SerializeToElement(y);
-        binding.Properties["width"] = JsonSerializer.SerializeToElement(width);
-        binding.Properties["height"] = JsonSerializer.SerializeToElement(height);
-        MarkMachineBuilderPhase5Dirty();
-        RefreshGuiDesignerCanvas();
-        RefreshGuiDesignerInspector();
-        SetGuiDesignerStatus($"Updated widget '{binding.Id}'.", "#74C99A");
-    }
-
-    private void RemoveGuiDesignerBinding(ForeverStudioMachineGuiBinding binding)
-    {
-        if (_machineBuilderDocument is null)
-            return;
-        _machineBuilderDocument.Gui.Bindings.Remove(binding);
-        _guiDesignerSelectedBindingId = null;
-        MarkMachineBuilderPhase5Dirty();
-        RefreshMachineBuilderGuiDesigner();
-        SetGuiDesignerStatus($"Removed widget '{binding.Id}'.", "#D8B26A");
     }
 
     private void RefreshGuiDesignerRecipeProcessChoices()
@@ -1017,6 +417,8 @@ public partial class MainWindow
         var items = _machineBuilderDocument.Recipes.Select(recipe => new GuiDesignerRecipeItem { Recipe = recipe }).ToList();
         _guiDesignerRecipeList.ItemsSource = items;
         _guiDesignerRecipeList.SelectedItem = items.FirstOrDefault(item => item.Recipe.Id.Equals(selectedId, StringComparison.OrdinalIgnoreCase));
+        if (_guiDesignerSummary is not null)
+            _guiDesignerSummary.Text = $"Shared GUI bindings: {_machineBuilderDocument.Gui.Bindings.Count}\nRecipes: {items.Count}";
     }
 
     private void LoadSelectedGuiDesignerRecipe()
@@ -1167,23 +569,12 @@ public partial class MainWindow
             else
                 binding.Properties["previewValue"] = JsonSerializer.SerializeToElement($"{inputItem}|{inputCount}");
         }
-        RefreshGuiDesignerCanvas();
+        QueueUnifiedMachinePreviewRefresh();
     }
 
-    private static string DefaultGuiDesignerPreviewValue(string widget)
-        => widget switch
-        {
-            "item-slot" => "minecraft:iron_ingot|1",
-            "output-slot" => "minecraft:gold_ingot|1",
-            "progress-bar" => "0.65",
-            "energy-bar" => "0.72",
-            "fluid-gauge" => "0.55",
-            "status" => "true",
-            _ => "42"
-        };
-
-    private static bool TryGuiDesignerNumber(string? value, out double result)
-        => double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out result) && double.IsFinite(result);
+    // Compatibility hook for the multi-resource recipe authoring partial. The retired compact
+    // canvas no longer renders anything; shared-editor preview decoration is refreshed instead.
+    private void RefreshGuiDesignerCanvas() => QueueUnifiedMachinePreviewRefresh();
 
     private static bool TryGuiDesignerInt(string? value, int min, int max, out int result)
         => int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out result) && result >= min && result <= max;
@@ -1192,9 +583,6 @@ public partial class MainWindow
         => properties.TryGetValue(key, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString() ?? fallback
             : fallback;
-
-    private static double ReadGuiDesignerNumber(Dictionary<string, JsonElement> properties, string key, double fallback)
-        => properties.TryGetValue(key, out var value) && value.TryGetDouble(out var result) ? result : fallback;
 
     private static bool IsGuiDesignerResourceLocation(string value)
     {
