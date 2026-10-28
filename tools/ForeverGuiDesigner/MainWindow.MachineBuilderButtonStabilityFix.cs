@@ -102,15 +102,13 @@ public partial class MainWindow
             "DELETE");
 
         StabilizeMachineBuilderButtonsByText(
-            _guiDesignerSourceCombo?.Parent as DependencyObject,
-            "ADD TO GUI");
-        StabilizeMachineBuilderButtonsByText(
             _guiDesignerRecipeList?.Parent as DependencyObject,
             "ADD / APPLY",
             "REMOVE");
 
         StabilizeMachineBuilderButtonsByText(
             _machineBuilderPhase5ModeHost,
+            "OPEN SHARED GUI EDITOR",
             "ADD ANIMATION BINDING",
             "REMOVE SELECTED");
     }
