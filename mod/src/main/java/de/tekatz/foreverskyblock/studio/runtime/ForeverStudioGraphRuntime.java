@@ -3,7 +3,9 @@ package de.tekatz.foreverskyblock.studio.runtime;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 
 import java.util.HashSet;
@@ -116,11 +118,13 @@ public final class ForeverStudioGraphRuntime {
                 case "function.random-chance" -> randomChance(machine, node);
                 case "function.has-energy" -> machine.energyStored() >= Math.max(0, (int)Math.round(
                         numberInputOrProperty(machine, nodeId, "required", node, 1, visiting, depth + 1)));
-                case "function.has-fluid" -> hasFluid(machine, node);
-                case "function.recipe-available", "function.output-space" -> recipeAvailable(machine);
-                case "function.process-progress" -> port.equals("complete") ? machine.progress() >= machine.duration() : machine.running();
-                case "function.redstone-input", "function.redstone-controller" -> machine.redstoneStrength() > 0;
-                case "function.timer" -> port.equals("elapsed") && number(machine, nodeId, "progress", visiting, depth + 1) >= 0.999;
+                case "function.has-fluid" -> hasFluid(machine, node, visiting, depth + 1);
+                case "function.find-recipe", "function.recipe-available" -> recipeAvailable(machine, false);
+                case "function.output-space" -> recipeAvailable(machine, true);
+                case "function.process-progress" -> port.equals("complete")
+                        ? ForeverStudioGraphSignals.recipeCompleted(machine) : machine.running();
+                case "function.redstone-input" -> machine.redstoneStrength() > 0;
+                case "function.redstone-controller" -> redstoneController(machine, nodeId, node, visiting, depth + 1);
                 default -> isProcessor(node.kind()) && port.equals("running") && machine.running();
             };
         } finally { visiting.remove(key); }
@@ -149,13 +153,12 @@ public final class ForeverStudioGraphRuntime {
                 case "function.map-range" -> map(numberInput(machine, nodeId, "value", visiting, depth + 1),
                         numeric(node.properties(), "fromMin", 0), numeric(node.properties(), "fromMax", 1),
                         numeric(node.properties(), "toMin", 0), numeric(node.properties(), "toMax", 1));
-                case "function.timer" -> timer(machine, node);
                 default -> isProcessor(node.kind()) && port.equals("progress") ? progress(machine) : 0;
             };
         } finally { visiting.remove(key); }
     }
 
-    private static boolean recipeAvailable(ForeverStudioMachineBlockEntity machine) {
+    private static boolean recipeAvailable(ForeverStudioMachineBlockEntity machine, boolean requireOutputSpace) {
         if (machine.getLevel() == null) return false;
         var input = new ForeverStudioMachineInput(machine.machineId(),
                 machine.definition().inputSlots().stream().map(machine.inventory()::getStackInSlot).toList());
@@ -168,10 +171,33 @@ public final class ForeverStudioGraphRuntime {
                 boolean fluids = true;
                 for (var requirement : entry.fluidInputs())
                     if (!machine.hasFluid(requirement.tank(), requirement.fluidId(), requirement.amount())) { fluids = false; break; }
-                if (fluids) return true;
+                if (!fluids) continue;
+                if (!requireOutputSpace || outputsFit(machine, entry)) return true;
             }
         }
         return false;
+    }
+
+    private static boolean outputsFit(ForeverStudioMachineBlockEntity machine, ForeverStudioMachineRecipe.Entry entry) {
+        if (entry.results().size() > machine.definition().outputSlots().size()) return false;
+        for (int i = 0; i < entry.results().size(); i++) {
+            ItemStack result = entry.results().get(i);
+            ItemStack output = machine.inventory().getStackInSlot(machine.definition().outputSlots().get(i));
+            if (!output.isEmpty() && (!ItemStack.isSameItemSameComponents(output, result)
+                    || output.getCount() + result.getCount() > Math.min(64, output.getMaxStackSize()))) return false;
+        }
+
+        var fluidHandler = machine.fluidAutomation(null);
+        for (var result : entry.fluidOutputs()) {
+            if (fluidHandler == null || result.tank() < 0 || result.tank() >= fluidHandler.getTanks()) return false;
+            var existing = fluidHandler.getFluidInTank(result.tank());
+            if (!existing.isEmpty()) {
+                ResourceLocation existingId = BuiltInRegistries.FLUID.getKey(existing.getFluid());
+                if (!result.fluidId().equals(existingId)) return false;
+            }
+            if ((long)existing.getAmount() + result.amount() > fluidHandler.getTankCapacity(result.tank())) return false;
+        }
+        return true;
     }
 
     private static boolean incomingFlow(ForeverStudioMachineBlockEntity machine, String target, Set<String> visiting, int depth) {
@@ -223,21 +249,34 @@ public final class ForeverStudioGraphRuntime {
         seed ^= seed >>> 33; seed *= 0xff51afd7ed558ccdl; seed ^= seed >>> 33;
         return (seed & 0x1fffffffffffffL) / (double)0x1fffffffffffffL < chance;
     }
-    private static boolean hasFluid(ForeverStudioMachineBlockEntity machine, ForeverStudioMachineDefinition.GraphNodeDefinition node) {
-        int tank = (int)Math.round(numeric(node.properties(), "tank", 0));
-        int amount = Math.max(1, (int)Math.round(numeric(node.properties(), "amount", 1)));
-        ResourceLocation id = ResourceLocation.tryParse(string(node.properties(), "fluid", "minecraft:water"));
+    private static boolean hasFluid(ForeverStudioMachineBlockEntity machine,
+                                    ForeverStudioMachineDefinition.GraphNodeDefinition node,
+                                    Set<String> visiting, int depth) {
+        int tank = (int)Math.round(numeric(node.properties(), "tank", -1));
+        var fluidConnection = incoming(machine, node.id(), "fluid");
+        if (fluidConnection != null) {
+            for (var definition : machine.definition().tanks())
+                if (definition.nodeId().equals(fluidConnection.fromNode())) { tank = definition.tank(); break; }
+        }
+        if (tank < 0 || tank >= machine.definition().tanks().size()) return false;
+        int amount = Math.max(1, (int)Math.round(numberInputOrProperty(machine, node.id(), "amount", node, 1, visiting, depth + 1)));
+        String fluidName = string(node.properties(), "fluid", "").trim();
+        if (fluidName.isEmpty()) return machine.fluidAmount(tank) >= amount;
+        ResourceLocation id = ResourceLocation.tryParse(fluidName);
         return id != null && machine.hasFluid(tank, id, amount);
+    }
+    private static boolean redstoneController(ForeverStudioMachineBlockEntity machine, String nodeId,
+                                              ForeverStudioMachineDefinition.GraphNodeDefinition node,
+                                              Set<String> visiting, int depth) {
+        var signal = incoming(machine, nodeId, "signal");
+        double strength = signal == null ? machine.redstoneStrength()
+                : number(machine, signal.fromNode(), signal.fromPort(), visiting, depth + 1);
+        return strength > numeric(node.properties(), "threshold", 0);
     }
     private static double fluidValue(ForeverStudioMachineBlockEntity machine, String nodeId, String port) {
         for (var tank : machine.definition().tanks())
             if (tank.nodeId().equals(nodeId)) return port.equals("ratio") ? machine.fluidRatio(tank.tank()) : machine.fluidAmount(tank.tank());
         return 0;
-    }
-    private static double timer(ForeverStudioMachineBlockEntity machine, ForeverStudioMachineDefinition.GraphNodeDefinition node) {
-        double duration = Math.max(1, numeric(node.properties(), "duration", numeric(node.properties(), "ticks", 20)));
-        long time = machine.getLevel() == null ? 0 : machine.getLevel().getGameTime();
-        return (time % Math.max(1L, Math.round(duration))) / duration;
     }
     private static boolean compare(double a, double b, String op) {
         return switch (op) { case ">" -> a > b; case "<" -> a < b; case "<=" -> a <= b;
@@ -259,6 +298,6 @@ public final class ForeverStudioGraphRuntime {
     private static String string(JsonObject object, String key, String fallback) {
         JsonElement value = object.get(key); return value != null && value.isJsonPrimitive() ? value.getAsString() : fallback;
     }
-    private static boolean isBooleanPort(String port) { return port.equals("running") || port.equals("elapsed") || port.equals("complete") || port.equals("result") || port.equals("powered"); }
+    private static boolean isBooleanPort(String port) { return port.equals("running") || port.equals("elapsed") || port.equals("complete") || port.equals("result") || port.equals("powered") || port.equals("found") || port.equals("enabled"); }
     private static boolean isProcessor(String kind) { return kind.equals("function.standard-processor") || kind.equals("function.powered-processor") || kind.equals("function.fluid-processor") || kind.equals("function.generator-core"); }
 }
