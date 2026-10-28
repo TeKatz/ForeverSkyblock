@@ -112,9 +112,14 @@ public static class ForeverStudioGradleService
         {
             startInfo.FileName = Environment.GetEnvironmentVariable("ComSpec") ?? "cmd.exe";
             startInfo.ArgumentList.Add("/d");
-            startInfo.ArgumentList.Add("/s");
             startInfo.ArgumentList.Add("/c");
-            startInfo.ArgumentList.Add($"call \"{wrapper}\" {task} --console=plain");
+            // Keep command tokens separate. Embedding a quoted batch path inside one ArgumentList
+            // element makes .NET escape quotes for CreateProcess, which cmd.exe does not unescape
+            // using CommandLineToArgvW rules. Separate tokens preserve paths containing spaces.
+            startInfo.ArgumentList.Add("call");
+            startInfo.ArgumentList.Add(wrapper);
+            startInfo.ArgumentList.Add(task);
+            startInfo.ArgumentList.Add("--console=plain");
         }
         else
         {
