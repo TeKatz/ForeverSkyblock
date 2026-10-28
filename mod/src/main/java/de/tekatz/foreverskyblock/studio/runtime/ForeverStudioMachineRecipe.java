@@ -15,36 +15,58 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** One generated recipe book per Studio machine, containing all recipes authored in Phase 04. */
-public record ForeverStudioMachineRecipe(String machine, List<Entry> recipes)
-        implements Recipe<ForeverStudioMachineInput> {
+/** One generated recipe book per Studio machine, supporting deterministic multi-slot item processing. */
+public record ForeverStudioMachineRecipe(String machine, List<Entry> recipes) implements Recipe<ForeverStudioMachineInput> {
+    public record Input(Ingredient ingredient, int count) {
+        private static final Codec<Input> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Ingredient.CODEC.fieldOf("ingredient").forGetter(Input::ingredient),
+                Codec.intRange(1, 64).optionalFieldOf("count", 1).forGetter(Input::count)
+        ).apply(instance, Input::new));
+        public boolean accepts(ItemStack stack) { return !stack.isEmpty() && stack.getCount() >= count && ingredient.test(stack); }
+    }
 
-    public record Entry(Ingredient input, int inputCount, ItemStack output, int processingTime, int energyPerTick) {
+    public record Entry(List<Input> inputs, List<ItemStack> outputs, int processingTime, int energyPerTick) {
         private static final Codec<Entry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Ingredient.CODEC.fieldOf("input").forGetter(Entry::input),
-                Codec.intRange(1, 64).optionalFieldOf("input_count", 1).forGetter(Entry::inputCount),
-                ItemStack.CODEC.fieldOf("result").forGetter(Entry::output),
+                Input.CODEC.listOf().optionalFieldOf("inputs", List.of()).forGetter(Entry::inputs),
+                ItemStack.CODEC.listOf().optionalFieldOf("results", List.of()).forGetter(Entry::outputs),
+                Ingredient.CODEC.optionalFieldOf("input").forGetter(entry -> Optional.empty()),
+                Codec.intRange(1, 64).optionalFieldOf("input_count", 1).forGetter(entry -> 1),
+                ItemStack.CODEC.optionalFieldOf("result").forGetter(entry -> Optional.empty()),
                 Codec.intRange(1, 1_000_000).optionalFieldOf("processing_time", 100).forGetter(Entry::processingTime),
                 Codec.intRange(0, 1_000_000).optionalFieldOf("energy_per_tick", 0).forGetter(Entry::energyPerTick)
-        ).apply(instance, Entry::new));
+        ).apply(instance, (inputs, outputs, legacyInput, legacyCount, legacyOutput, time, energy) -> {
+            List<Input> normalizedInputs = inputs.isEmpty() && legacyInput.isPresent()
+                    ? List.of(new Input(legacyInput.get(), legacyCount)) : inputs;
+            List<ItemStack> normalizedOutputs = outputs.isEmpty() && legacyOutput.isPresent()
+                    ? List.of(legacyOutput.get()) : outputs;
+            return new Entry(normalizedInputs, normalizedOutputs, time, energy);
+        }));
 
         public Entry {
-            if (inputCount < 1 || inputCount > 64) throw new IllegalArgumentException("Invalid input count");
+            inputs = List.copyOf(inputs);
+            outputs = outputs.stream().map(ItemStack::copy).toList();
+            if (inputs.isEmpty() || inputs.size() > 32) throw new IllegalArgumentException("Invalid machine inputs");
+            if (outputs.isEmpty() || outputs.size() > 32) throw new IllegalArgumentException("Invalid machine outputs");
             if (processingTime < 1 || processingTime > 1_000_000) throw new IllegalArgumentException("Invalid processing time");
             if (energyPerTick < 0 || energyPerTick > 1_000_000) throw new IllegalArgumentException("Invalid FE/t");
-            output = output.copy();
-            if (output.isEmpty() || output.getCount() > Math.min(64, output.getMaxStackSize()))
-                throw new IllegalArgumentException("Invalid machine output");
+            for (ItemStack output : outputs)
+                if (output.isEmpty() || output.getCount() > Math.min(64, output.getMaxStackSize())) throw new IllegalArgumentException("Invalid machine output");
         }
 
-        public boolean accepts(ItemStack stack) {
-            return !stack.isEmpty() && stack.getCount() >= inputCount && input.test(stack);
+        public boolean accepts(ForeverStudioMachineInput input) {
+            if (input.size() != inputs.size()) return false;
+            for (int i = 0; i < inputs.size(); i++) if (!inputs.get(i).accepts(input.getItem(i))) return false;
+            return true;
         }
-
-        public ItemStack result() { return output.copy(); }
+        public List<ItemStack> results() { return outputs.stream().map(ItemStack::copy).toList(); }
+        public ItemStack result() { return outputs.getFirst().copy(); }
+        public int inputCount() { return inputs.getFirst().count(); }
+        public Ingredient input() { return inputs.getFirst().ingredient(); }
+        public ItemStack output() { return result(); }
     }
 
     public ForeverStudioMachineRecipe {
@@ -56,17 +78,16 @@ public record ForeverStudioMachineRecipe(String machine, List<Entry> recipes)
 
     public Optional<Entry> find(ForeverStudioMachineInput input) {
         if (!machine.equals(input.machineId().toString())) return Optional.empty();
-        return recipes.stream().filter(entry -> entry.accepts(input.input())).findFirst();
+        return recipes.stream().filter(entry -> entry.accepts(input)).findFirst();
     }
 
-    public boolean acceptsItem(ItemStack stack) {
-        return recipes.stream().anyMatch(entry -> !stack.isEmpty() && entry.input().test(stack));
+    public boolean acceptsItem(int inputIndex, ItemStack stack) {
+        return recipes.stream().anyMatch(entry -> inputIndex >= 0 && inputIndex < entry.inputs().size() && entry.inputs().get(inputIndex).ingredient().test(stack));
     }
+    public boolean acceptsItem(ItemStack stack) { return acceptsItem(0, stack); }
 
     @Override public boolean matches(ForeverStudioMachineInput input, Level level) { return find(input).isPresent(); }
-    @Override public ItemStack assemble(ForeverStudioMachineInput input, HolderLookup.Provider registries) {
-        return find(input).map(Entry::result).orElse(ItemStack.EMPTY);
-    }
+    @Override public ItemStack assemble(ForeverStudioMachineInput input, HolderLookup.Provider registries) { return find(input).map(Entry::result).orElse(ItemStack.EMPTY); }
     @Override public ItemStack getResultItem(HolderLookup.Provider registries) { return recipes.getFirst().result(); }
     @Override public boolean canCraftInDimensions(int width, int height) { return true; }
     @Override public RecipeSerializer<?> getSerializer() { return ForeverStudioGeneratedMachines.MACHINE_RECIPE_SERIALIZER.get(); }
@@ -83,31 +104,33 @@ public record ForeverStudioMachineRecipe(String machine, List<Entry> recipes)
                 String machine = buf.readUtf(256);
                 int count = ByteBufCodecs.VAR_INT.decode(buf);
                 if (count < 1 || count > 256) throw new IllegalArgumentException("Invalid generated recipe count");
-                java.util.ArrayList<Entry> entries = new java.util.ArrayList<>(count);
+                ArrayList<Entry> entries = new ArrayList<>(count);
                 for (int i = 0; i < count; i++) {
-                    Ingredient ingredient = Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
                     int inputCount = ByteBufCodecs.VAR_INT.decode(buf);
-                    ItemStack output = ItemStack.STREAM_CODEC.decode(buf);
-                    int processingTime = ByteBufCodecs.VAR_INT.decode(buf);
-                    int energyPerTick = ByteBufCodecs.VAR_INT.decode(buf);
-                    entries.add(new Entry(ingredient, inputCount, output, processingTime, energyPerTick));
+                    if (inputCount < 1 || inputCount > 32) throw new IllegalArgumentException("Invalid generated input count");
+                    ArrayList<Input> inputs = new ArrayList<>(inputCount);
+                    for (int j = 0; j < inputCount; j++) inputs.add(new Input(Ingredient.CONTENTS_STREAM_CODEC.decode(buf), ByteBufCodecs.VAR_INT.decode(buf)));
+                    int outputCount = ByteBufCodecs.VAR_INT.decode(buf);
+                    if (outputCount < 1 || outputCount > 32) throw new IllegalArgumentException("Invalid generated output count");
+                    ArrayList<ItemStack> outputs = new ArrayList<>(outputCount);
+                    for (int j = 0; j < outputCount; j++) outputs.add(ItemStack.STREAM_CODEC.decode(buf));
+                    entries.add(new Entry(inputs, outputs, ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf)));
                 }
                 return new ForeverStudioMachineRecipe(machine, entries);
             }
-
             @Override public void encode(RegistryFriendlyByteBuf buf, ForeverStudioMachineRecipe recipe) {
                 buf.writeUtf(recipe.machine(), 256);
                 ByteBufCodecs.VAR_INT.encode(buf, recipe.recipes().size());
                 for (Entry entry : recipe.recipes()) {
-                    Ingredient.CONTENTS_STREAM_CODEC.encode(buf, entry.input());
-                    ByteBufCodecs.VAR_INT.encode(buf, entry.inputCount());
-                    ItemStack.STREAM_CODEC.encode(buf, entry.output());
+                    ByteBufCodecs.VAR_INT.encode(buf, entry.inputs().size());
+                    for (Input input : entry.inputs()) { Ingredient.CONTENTS_STREAM_CODEC.encode(buf, input.ingredient()); ByteBufCodecs.VAR_INT.encode(buf, input.count()); }
+                    ByteBufCodecs.VAR_INT.encode(buf, entry.outputs().size());
+                    for (ItemStack output : entry.outputs()) ItemStack.STREAM_CODEC.encode(buf, output);
                     ByteBufCodecs.VAR_INT.encode(buf, entry.processingTime());
                     ByteBufCodecs.VAR_INT.encode(buf, entry.energyPerTick());
                 }
             }
         };
-
         @Override public MapCodec<ForeverStudioMachineRecipe> codec() { return CODEC; }
         @Override public StreamCodec<RegistryFriendlyByteBuf, ForeverStudioMachineRecipe> streamCodec() { return STREAM; }
     }
