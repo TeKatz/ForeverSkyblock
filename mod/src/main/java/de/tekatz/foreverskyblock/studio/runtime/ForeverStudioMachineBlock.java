@@ -43,6 +43,7 @@ public final class ForeverStudioMachineBlock extends Block implements EntityBloc
             BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
                 && level.getBlockEntity(pos) instanceof ForeverStudioMachineBlockEntity machine) {
+            machine.markPlayerUse();
             serverPlayer.openMenu(machine, buffer -> buffer.writeUtf(machine.machineId().toString(), 256));
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
