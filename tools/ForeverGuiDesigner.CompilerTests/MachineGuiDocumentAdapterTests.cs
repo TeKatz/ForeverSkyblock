@@ -32,7 +32,7 @@ internal static class MachineGuiDocumentAdapterTests
             }
         });
 
-        var document = ForeverStudioMachineGuiDocumentAdapter.Capture(machine);
+        var document = ForeverStudioMachineGuiDocumentAdapter.LoadAuthoringDocument(machine);
         Check(document.Elements.Count == 1 && document.Bindings.Count == 1,
             "Legacy Machine GUI binding must project into one shared element and one shared binding.");
         Check(document.Bindings[0].Context == "machine" && document.Bindings[0].SourcePort == "progress",
@@ -52,7 +52,10 @@ internal static class MachineGuiDocumentAdapterTests
             }
         });
 
-        ForeverStudioMachineGuiDocumentAdapter.Apply(machine, document);
+        ForeverStudioMachineGuiDocumentAdapter.PersistAuthoringDocument(machine, document);
+        Check(machine.ExtensionData?.ContainsKey(ForeverStudioMachineGuiDocumentAdapter.ExtensionKey) == true,
+            "Machine Project must persist the shared GUI authoring document.");
+
         var projected = machine.Gui.Bindings.Single();
         Check(projected.Properties["x"].GetInt32() == 72,
             "Shared GUI geometry changes must project back to the legacy runtime binding.");
@@ -63,10 +66,17 @@ internal static class MachineGuiDocumentAdapterTests
               projected.Properties["sourcePortId"].GetString() == "progress",
             "Machine binding identity must remain stable through the adapter.");
 
-        var serialized = GuiDocumentContract.Serialize(document);
-        var restored = GuiDocumentContract.Deserialize(serialized);
+        // Simulate a complete Machine Project JSON round trip. The authoring document, including an
+        // effect the legacy compiler projection does not understand, must remain authoritative.
+        var machineJson = ForeverStudioMachineProjectService.Serialize(machine);
+        using var machineTree = JsonDocument.Parse(machineJson);
+        var restoredMachine = JsonSerializer.Deserialize<ForeverStudioMachineDocument>(machineTree.RootElement.GetRawText(),
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+            ?? throw new InvalidOperationException("Machine Project round trip failed.");
+        var restored = ForeverStudioMachineGuiDocumentAdapter.LoadAuthoringDocument(restoredMachine);
+        Check(restored.Elements[0].X == 72, "Persisted shared GUI geometry must survive Machine Project JSON.");
         Check(restored.Effects.Single().Id == "hover_glow" && restored.Elements[0].EffectIds.Contains("hover_glow"),
-            "Shared effects must survive independently of the legacy runtime projection.");
+            "Shared effects must survive Machine Project round trip even before the legacy runtime projection supports them.");
     }
 
     private static void Check(bool condition, string message)
