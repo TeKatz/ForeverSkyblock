@@ -17,6 +17,7 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.items.IItemHandler;
@@ -58,20 +59,29 @@ public final class ForeverStudioMachineBlockEntity extends BlockEntity implement
     };
 
     public ForeverStudioMachineBlockEntity(BlockPos pos, BlockState state) {
-        super(ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get(), pos, state);
-        if (!(state.getBlock() instanceof ForeverStudioMachineBlock machineBlock))
-            throw new IllegalStateException("Forever Studio machine BlockEntity created for a non-Studio block.");
-        machineId = machineBlock.machineId();
+        this(ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get(), pos, state, machineIdFromState(state));
+    }
+
+    /** Package-private constructor for the registered GameTest fixture. */
+    ForeverStudioMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, ResourceLocation machineId) {
+        super(type, pos, state);
+        this.machineId = machineId;
         definition = ForeverStudioMachineDefinition.load(machineId);
         inventory = new ItemStackHandler(Math.max(2, definition.slotCount())) {
             @Override public boolean isItemValid(int slot, ItemStack stack) {
-                return slot == definition.inputSlot() && (level == null || acceptsInput(level, machineId, stack));
+                return slot == definition.inputSlot() && (level == null || acceptsInput(level, ForeverStudioMachineBlockEntity.this.machineId, stack));
             }
             @Override protected void onContentsChanged(int slot) { setChanged(); }
         };
         recipeCheck = RecipeManager.createCheck(ForeverStudioGeneratedMachines.MACHINE_RECIPE_TYPE.get());
         automation = new Automation();
         energyAccess = new EnergyAccess();
+    }
+
+    private static ResourceLocation machineIdFromState(BlockState state) {
+        if (state.getBlock() instanceof ForeverStudioMachineBlock machineBlock)
+            return machineBlock.machineId();
+        throw new IllegalStateException("Forever Studio machine BlockEntity created for a non-Studio block.");
     }
 
     public ResourceLocation machineId() { return machineId; }

@@ -1,0 +1,18 @@
+{
+  "type": "forever_skyblock:forever_studio_machine",
+  "machine": "forever_skyblock:studio_runtime_e2e",
+  "recipes": [
+    {
+      "input": {
+        "item": "minecraft:cobblestone"
+      },
+      "input_count": 1,
+      "result": {
+        "id": "minecraft:gravel",
+        "count": 1
+      },
+      "processing_time": 100,
+      "energy_per_tick": 0
+    }
+  ]
+}
