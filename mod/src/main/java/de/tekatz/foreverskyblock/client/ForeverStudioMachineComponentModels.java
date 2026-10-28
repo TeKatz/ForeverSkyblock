@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Client-only lookup for Studio component model manifests emitted by the runtime compiler. */
 public final class ForeverStudioMachineComponentModels {
-    public record ComponentModel(String id, ResourceLocation model) { }
+    public record ComponentModel(String id, ResourceLocation model, double pivotX, double pivotY, double pivotZ) { }
 
     private static final Map<ResourceLocation, List<ComponentModel>> CACHE = new ConcurrentHashMap<>();
 
@@ -47,7 +47,17 @@ public final class ForeverStudioMachineComponentModels {
                 if (!component.has("id") || !component.has("model")) continue;
                 String id = component.get("id").getAsString();
                 ResourceLocation model = ResourceLocation.tryParse(component.get("model").getAsString());
-                if (!id.isBlank() && model != null) result.add(new ComponentModel(id, model));
+                double pivotX = 0.5, pivotY = 0.5, pivotZ = 0.5;
+                if (component.has("pivot") && component.get("pivot").isJsonArray()) {
+                    var pivot = component.getAsJsonArray("pivot");
+                    if (pivot.size() >= 3) {
+                        pivotX = pivot.get(0).getAsDouble();
+                        pivotY = pivot.get(1).getAsDouble();
+                        pivotZ = pivot.get(2).getAsDouble();
+                    }
+                }
+                if (!id.isBlank() && model != null && Double.isFinite(pivotX) && Double.isFinite(pivotY) && Double.isFinite(pivotZ))
+                    result.add(new ComponentModel(id, model, pivotX, pivotY, pivotZ));
             }
             return List.copyOf(result);
         } catch (IOException | RuntimeException ignored) {
