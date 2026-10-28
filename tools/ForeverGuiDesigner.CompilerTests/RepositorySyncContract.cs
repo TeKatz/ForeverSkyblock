@@ -58,7 +58,7 @@ public final class ForeverStudioRuntimeContract {
                 "mod/src/main/resources/data/forever_skyblock/forever_studio/machines/redstone.json",
                 "{\"assetId\":\"redstone\",\"local\":true}\n");
             File.AppendAllText(Path.Combine(work, "mod", "src", "main", "java", "de", "tekatz", "foreverskyblock", "ForeverSkyblock.java"),
-                "// Forever Studio generated machines\n");
+                "        de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines.register(modBus); // Forever Studio generated machines\n");
             Write(work, "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json",
                 "{\n  \"item.forever_skyblock.fixture\": \"Fixture\",\n  \"block.forever_skyblock.redstone\": \"Redstone\"\n}\n");
             Write(work, "mod/src/main/resources/assets/forever_skyblock/blockstates/redstone.json", "{\"generated\":true}\n");
