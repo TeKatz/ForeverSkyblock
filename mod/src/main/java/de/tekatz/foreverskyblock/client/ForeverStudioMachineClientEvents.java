@@ -3,11 +3,15 @@ package de.tekatz.foreverskyblock.client;
 import de.tekatz.foreverskyblock.ForeverSkyblock;
 import de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines;
 import de.tekatz.foreverskyblock.network.ForeverStudioMachineNetwork;
+import de.tekatz.foreverskyblock.studio.runtime.ForeverStudioMachineBlock;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 /** Client bridge kept outside generated source so the runtime compiler owns only data and registrations. */
@@ -18,6 +22,16 @@ public final class ForeverStudioMachineClientEvents {
     @SubscribeEvent
     public static void setup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> ForeverStudioMachineNetwork.setClientReceiver(ForeverStudioMachineClientState::accept));
+    }
+
+    @SubscribeEvent
+    public static void registerAdditionalModels(ModelEvent.RegisterAdditional event) {
+        ForeverStudioMachineComponentModels.clearCache();
+        for (var block : BuiltInRegistries.BLOCK) {
+            if (!(block instanceof ForeverStudioMachineBlock machineBlock)) continue;
+            for (var component : ForeverStudioMachineComponentModels.modelsFor(machineBlock.machineId()))
+                event.register(ModelResourceLocation.standalone(component.model()));
+        }
     }
 
     @SubscribeEvent
