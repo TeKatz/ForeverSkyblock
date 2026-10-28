@@ -42,6 +42,7 @@ public partial class App : Application
         window.EnableForeverUnifiedGuiBindingInspector();
         window.EnableForeverUnifiedGuiMachineAssetPalette();
         window.EnableForeverUnifiedMachineGuiPreview();
+        window.EnableForeverUnifiedGuiStyleEffects();
         window.EnableForeverMachineBuilderFunctionTemplatesPhase3();
         window.EnableForeverMachineBuilderFunctionToolbarRepair();
         window.EnableForeverMachineBuilderProductionPhase6();
