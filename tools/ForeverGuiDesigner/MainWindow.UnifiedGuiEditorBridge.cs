@@ -17,6 +17,8 @@ public partial class MainWindow
 {
     private bool _unifiedGuiEditorBridgeInitialized;
     private ForeverGuiEditorSession? _unifiedMachineGuiSession;
+    private ForeverStudioMachineDocument? _unifiedMachineGuiOwner;
+    private ForeverMachineGuiEditorAccess.Identity? _unifiedMachineGuiIdentity;
     private Border? _unifiedGuiContextBar;
     private TextBlock? _unifiedGuiContextText;
     private string? _unifiedPreviousLayoutJson;
@@ -36,13 +38,19 @@ public partial class MainWindow
         EnsureUnifiedGuiContextBar();
 
         void ScheduleInstall() => _ = Dispatcher.BeginInvoke(
-            InstallUnifiedMachineGuiLaunchCard,
+            new Action(() =>
+            {
+                InstallUnifiedMachineGuiLaunchCard();
+                RefreshUnifiedMachineGuiAvailability();
+            }),
             DispatcherPriority.ContextIdle);
 
         if (_machineBuilderGuiStep is not null)
             _machineBuilderGuiStep.MouseLeftButtonUp += (_, _) => ScheduleInstall();
         if (_machineBuilderPhase5GuiTab is not null)
             _machineBuilderPhase5GuiTab.Click += (_, _) => ScheduleInstall();
+        if (_machineBuilderPhase5ScreenIdBox is not null)
+            _machineBuilderPhase5ScreenIdBox.LostKeyboardFocus += (_, _) => ScheduleInstall();
         ScheduleInstall();
     }
 
@@ -52,10 +60,14 @@ public partial class MainWindow
             return;
         var leftScroll = body.Children.OfType<ScrollViewer>()
             .FirstOrDefault(child => Grid.GetColumn(child) == 0);
-        if (leftScroll?.Content is not StackPanel stack ||
-            stack.Children.OfType<FrameworkElement>().Any(child =>
-                string.Equals(child.Tag?.ToString(), "unified_gui_editor_launch", StringComparison.Ordinal)))
+        if (leftScroll?.Content is not StackPanel stack)
             return;
+        if (stack.Children.OfType<FrameworkElement>().Any(child =>
+                string.Equals(child.Tag?.ToString(), "unified_gui_editor_launch", StringComparison.Ordinal)))
+        {
+            RefreshUnifiedMachineGuiAvailability();
+            return;
+        }
 
         var card = CreateStudioGlassCard(new CornerRadius(8), strongShadow: false);
         card.Tag = "unified_gui_editor_launch";
@@ -84,10 +96,44 @@ public partial class MainWindow
         panel.Children.Add(open);
         card.Child = panel;
 
-        // Keep the existing quick widget/recipe authoring card first. The full editor entry follows
-        // it and replaces only the duplicate layout canvas workflow, not the recipe authoring UI.
+        // Compatibility fallback for older layouts that do not yet contain the native launch card.
         stack.Children.Insert(Math.Min(1, stack.Children.Count), card);
+        RefreshUnifiedMachineGuiAvailability();
     }
+
+    private void RefreshUnifiedMachineGuiAvailability()
+    {
+        var identity = ForeverMachineGuiEditorAccess.GetCreatedGui(_machineBuilderDocument);
+        var canOpen = identity is not null && _unifiedMachineGuiSession is null;
+
+        if (_guiDesignerBody is not null)
+        {
+            foreach (var button in FindStudioVisualChildren<Button>(_guiDesignerBody))
+            {
+                var text = ReadUnifiedGuiButtonText(button);
+                if (!text.Equals("OPEN SHARED GUI EDITOR", StringComparison.OrdinalIgnoreCase) &&
+                    !text.Equals("OPEN FULL GUI EDITOR", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                button.IsEnabled = canOpen;
+                button.ToolTip = identity is null
+                    ? "Create/assign this machine's GUI in the preceding Machine Builder flow before opening the advanced editor."
+                    : $"Open only this machine GUI: {identity.ScreenId}";
+            }
+        }
+
+        if (_guiDesignerStatus is not null)
+        {
+            _guiDesignerStatus.Text = identity is null
+                ? "No authored GUI is attached to this Machine Project yet. Complete the preceding GUI creation/binding flow first."
+                : $"Ready to edit this machine's GUI only: {identity.ScreenId}.";
+            _guiDesignerStatus.Foreground = Brush(identity is null ? "#D8B26A" : "#74C99A");
+        }
+    }
+
+    private static string ReadUnifiedGuiButtonText(Button button)
+        => button.Content as string ??
+           FindStudioVisualChildren<TextBlock>(button).FirstOrDefault()?.Text ?? string.Empty;
 
     private void EnsureUnifiedGuiContextBar()
     {
@@ -145,15 +191,24 @@ public partial class MainWindow
     {
         if (_unifiedMachineGuiSession is not null)
             return;
-        if (_machineBuilderDocument is null)
+
+        var owner = _machineBuilderDocument;
+        var identity = ForeverMachineGuiEditorAccess.GetCreatedGui(owner);
+        if (owner is null || identity is null)
         {
-            MessageBox.Show(this, "Open or create a Machine Project first.", "Machine GUI", MessageBoxButton.OK, MessageBoxImage.Information);
+            RefreshUnifiedMachineGuiAvailability();
+            MessageBox.Show(
+                this,
+                "This Machine Project does not have an authored GUI yet. Complete the preceding GUI creation/binding flow before opening the shared editor.",
+                "Machine GUI unavailable",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
             return;
         }
 
         try
         {
-            var session = new ForeverGuiEditorSession(new ForeverMachineGuiContextProvider(_machineBuilderDocument));
+            var session = new ForeverGuiEditorSession(new ForeverMachineGuiContextProvider(owner));
             var legacy = ForeverGuiLegacyEditorProjection.ToLegacyLayout(session.Document);
 
             _unifiedPreviousLayoutJson = SerializeLayout();
@@ -163,6 +218,8 @@ public partial class MainWindow
             _unifiedPreviousTemplate = _activeForeverTemplate;
             _unifiedPreviousStudioWorkspace = _studioWorkspace;
             _unifiedMachineGuiSession = session;
+            _unifiedMachineGuiOwner = owner;
+            _unifiedMachineGuiIdentity = identity;
 
             _activeForeverTemplate = null;
             LoadLayoutIntoEditor(legacy, null, clearHistory: true);
@@ -170,7 +227,7 @@ public partial class MainWindow
             _dirty = false;
 
             if (_unifiedGuiContextText is not null)
-                _unifiedGuiContextText.Text = $"MACHINE GUI · {session.Context.DisplayName} · shared document";
+                _unifiedGuiContextText.Text = $"MACHINE GUI · {session.Context.DisplayName} · {identity.ScreenId}";
             if (_unifiedGuiContextBar is not null)
                 _unifiedGuiContextBar.Visibility = Visibility.Visible;
             DisableUnifiedGuiContextSwitching();
@@ -178,19 +235,36 @@ public partial class MainWindow
             if (_studioMachineBuilderWorkspace is not null)
                 _studioMachineBuilderWorkspace.Visibility = Visibility.Collapsed;
             ShowStudioWorkspace(StudioWorkspace.GuiEditor);
-            StatusText.Text = $"Editing Machine GUI '{session.Context.DisplayName}' in the shared GUI editor.";
+            StatusText.Text = $"Editing Machine GUI '{identity.ScreenId}' for '{session.Context.DisplayName}' in the shared GUI editor.";
         }
         catch (Exception ex) when (ex is InvalidDataException or InvalidOperationException or JsonException)
         {
             _unifiedMachineGuiSession = null;
+            _unifiedMachineGuiOwner = null;
+            _unifiedMachineGuiIdentity = null;
+            RefreshUnifiedMachineGuiAvailability();
             MessageBox.Show(this, ex.Message, "Machine GUI cannot be opened safely", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
     private void ApplyUnifiedMachineGuiEditor()
     {
-        if (_unifiedMachineGuiSession is null)
+        if (_unifiedMachineGuiSession is null ||
+            _unifiedMachineGuiOwner is null ||
+            _unifiedMachineGuiIdentity is null)
             return;
+
+        if (!ReferenceEquals(_machineBuilderDocument, _unifiedMachineGuiOwner) ||
+            !ForeverMachineGuiEditorAccess.Matches(_unifiedMachineGuiIdentity, _machineBuilderDocument))
+        {
+            MessageBox.Show(
+                this,
+                "The Machine Project or GUI screen changed after this editor session was opened. The changes were not applied. Return to Machine Builder and reopen the intended GUI.",
+                "Machine GUI context changed",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
 
         try
         {
@@ -211,11 +285,12 @@ public partial class MainWindow
             }
 
             var displayName = _unifiedMachineGuiSession.Context.DisplayName;
+            var screenId = _unifiedMachineGuiIdentity.ScreenId;
             _unifiedMachineGuiSession.Commit();
             MarkMachineBuilderPhase5Dirty();
             ReturnFromUnifiedMachineGuiEditor();
             RefreshMachineBuilderGuiDesigner();
-            StatusText.Text = $"Applied shared GUI editor changes to Machine Project '{displayName}'. Save the Machine Project to persist them on disk.";
+            StatusText.Text = $"Applied shared GUI editor changes to '{screenId}' on Machine Project '{displayName}'. Save the Machine Project to persist them on disk.";
         }
         catch (Exception ex) when (ex is InvalidDataException or InvalidOperationException or JsonException)
         {
@@ -249,6 +324,8 @@ public partial class MainWindow
         var previousWorkspace = _unifiedPreviousStudioWorkspace;
 
         _unifiedMachineGuiSession = null;
+        _unifiedMachineGuiOwner = null;
+        _unifiedMachineGuiIdentity = null;
         _unifiedPreviousLayoutJson = null;
         _unifiedPreviousPath = null;
         _unifiedPreviousTemplate = null;
@@ -274,6 +351,7 @@ public partial class MainWindow
         if (_studioMachineBuilderWorkspace is not null)
             _studioMachineBuilderWorkspace.Visibility = Visibility.Visible;
         Title = "Forever Studio — Machine Builder";
+        RefreshUnifiedMachineGuiAvailability();
     }
 
     private void DisableUnifiedGuiContextSwitching()
