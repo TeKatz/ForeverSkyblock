@@ -134,9 +134,9 @@ public static class GuiDocumentContract
     public static void Normalize(GuiDocument document)
     {
         if (document.FormatVersion <= 0)
-            document.FormatVersion = CurrentFormatVersion;
-        if (document.FormatVersion > CurrentFormatVersion)
-            throw new InvalidDataException($"Unsupported GUI document formatVersion {document.FormatVersion}; this Studio supports {CurrentFormatVersion}.");
+            document.FormatVersion = GuiDocument.CurrentFormatVersion;
+        if (document.FormatVersion > GuiDocument.CurrentFormatVersion)
+            throw new InvalidDataException($"Unsupported GUI document formatVersion {document.FormatVersion}; this Studio supports {GuiDocument.CurrentFormatVersion}.");
 
         document.Name ??= "Untitled GUI";
         document.Width = Math.Max(1, document.Width);
