@@ -12,6 +12,10 @@ namespace ForeverGuiDesigner.Services;
 public static class ForeverGuiLegacyEditorProjection
 {
     public const string OriginalKindProperty = "foreverStudioOriginalKind";
+    public const string OriginalXProperty = "foreverStudioOriginalX";
+    public const string OriginalYProperty = "foreverStudioOriginalY";
+    public const string OriginalWidthProperty = "foreverStudioOriginalWidth";
+    public const string OriginalHeightProperty = "foreverStudioOriginalHeight";
 
     public static ForeverGuiDocument Create(ForeverGuiDocument source)
     {
@@ -19,13 +23,18 @@ public static class ForeverGuiLegacyEditorProjection
         var projected = Clone(source);
         foreach (var element in projected.Elements)
         {
-            if (Enum.TryParse<GuiElementType>(element.Kind, ignoreCase: true, out _))
-                continue;
-
             element.Properties ??= new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
-            if (!element.Properties.ContainsKey(OriginalKindProperty))
-                element.Properties[OriginalKindProperty] = JsonSerializer.SerializeToElement(element.Kind);
-            element.Kind = ProjectKind(element.Kind).ToString();
+            if (!Enum.TryParse<GuiElementType>(element.Kind, ignoreCase: true, out _))
+            {
+                if (!element.Properties.ContainsKey(OriginalKindProperty))
+                    element.Properties[OriginalKindProperty] = JsonSerializer.SerializeToElement(element.Kind);
+                element.Kind = ProjectKind(element.Kind).ToString();
+            }
+
+            ProjectGeometry(element, OriginalXProperty, element.X, value => element.X = value);
+            ProjectGeometry(element, OriginalYProperty, element.Y, value => element.Y = value);
+            ProjectGeometry(element, OriginalWidthProperty, element.Width, value => element.Width = Math.Max(1, value));
+            ProjectGeometry(element, OriginalHeightProperty, element.Height, value => element.Height = Math.Max(1, value));
         }
         return projected;
     }
@@ -36,14 +45,19 @@ public static class ForeverGuiLegacyEditorProjection
         var restored = Clone(projected);
         foreach (var element in restored.Elements)
         {
-            if (element.Properties is null ||
-                !element.Properties.TryGetValue(OriginalKindProperty, out var original) ||
-                original.ValueKind != JsonValueKind.String ||
-                string.IsNullOrWhiteSpace(original.GetString()))
-                continue;
+            element.Properties ??= new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+            if (element.Properties.TryGetValue(OriginalKindProperty, out var original) &&
+                original.ValueKind == JsonValueKind.String &&
+                !string.IsNullOrWhiteSpace(original.GetString()))
+            {
+                element.Kind = original.GetString()!;
+                element.Properties.Remove(OriginalKindProperty);
+            }
 
-            element.Kind = original.GetString()!;
-            element.Properties.Remove(OriginalKindProperty);
+            RestoreGeometry(element, OriginalXProperty, element.X, value => element.X = value);
+            RestoreGeometry(element, OriginalYProperty, element.Y, value => element.Y = value);
+            RestoreGeometry(element, OriginalWidthProperty, element.Width, value => element.Width = value);
+            RestoreGeometry(element, OriginalHeightProperty, element.Height, value => element.Height = value);
         }
         return restored;
     }
@@ -53,6 +67,36 @@ public static class ForeverGuiLegacyEditorProjection
 
     public static ForeverGuiDocument FromLegacyLayout(GuiLayoutModel layout)
         => Restore(ForeverGuiDocumentService.FromLegacyLayout(layout));
+
+    private static void ProjectGeometry(
+        ForeverGuiElement element,
+        string property,
+        double exactValue,
+        Action<double> setProjected)
+    {
+        var projected = Math.Round(exactValue, MidpointRounding.AwayFromZero);
+        if (Math.Abs(exactValue - projected) <= 0.0001)
+            return;
+
+        if (!element.Properties.ContainsKey(property))
+            element.Properties[property] = JsonSerializer.SerializeToElement(exactValue);
+        setProjected(projected);
+    }
+
+    private static void RestoreGeometry(
+        ForeverGuiElement element,
+        string property,
+        double editedValue,
+        Action<double> restore)
+    {
+        if (!element.Properties.TryGetValue(property, out var exactJson) || !exactJson.TryGetDouble(out var exactValue))
+            return;
+
+        var originallyProjected = Math.Round(exactValue, MidpointRounding.AwayFromZero);
+        if (Math.Abs(editedValue - originallyProjected) <= 0.0001)
+            restore(exactValue);
+        element.Properties.Remove(property);
+    }
 
     private static GuiElementType ProjectKind(string kind)
         => kind.ToLowerInvariant() switch
