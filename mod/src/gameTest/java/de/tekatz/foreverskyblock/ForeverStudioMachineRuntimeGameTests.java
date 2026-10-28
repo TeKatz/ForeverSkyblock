@@ -56,6 +56,13 @@ public final class ForeverStudioMachineRuntimeGameTests {
         loadInputs(machine);
         fillWater(helper, machine, 500);
 
+        check(helper, ForeverStudioGraphRuntime.booleanValue(machine, "find_recipe", "found"),
+                "Find Recipe must expose a compatible authored recipe before processing starts");
+        check(helper, ForeverStudioGraphRuntime.booleanValue(machine, "output_space", "result"),
+                "Output Has Space must accept an empty ordered item/fluid output set");
+        check(helper, ForeverStudioGraphRuntime.booleanValue(machine, "has_fluid", "result"),
+                "Has Fluid must resolve its connected authored tank and current amount");
+
         tick(helper, machine, 45);
         check(helper, machine.progress() == 45,
                 "Studio runtime must make deterministic partial progress before the save point");
@@ -112,6 +119,11 @@ public final class ForeverStudioMachineRuntimeGameTests {
         machine.inventory().insertItem(0, new ItemStack(Items.COBBLESTONE), false);
         fillWater(helper, machine, 500);
 
+        check(helper, !ForeverStudioGraphRuntime.booleanValue(machine, "find_recipe", "found"),
+                "Find Recipe must remain false while an ordered input is missing");
+        check(helper, ForeverStudioGraphRuntime.booleanValue(machine, "has_fluid", "result"),
+                "Has Fluid must remain independent from missing item inputs");
+
         tick(helper, machine, 20);
         check(helper, machine.progress() == 0,
                 "Studio multi-input runtime must not start with a missing ordered input");
@@ -127,7 +139,19 @@ public final class ForeverStudioMachineRuntimeGameTests {
         var machine = machine(helper);
         loadInputs(machine);
         fillWater(helper, machine, 500);
+
+        check(helper, ForeverStudioGraphRuntime.booleanValue(machine, "find_recipe", "found"),
+                "Find Recipe must find the recipe before output capacity is blocked");
+        check(helper, ForeverStudioGraphRuntime.booleanValue(machine, "output_space", "result"),
+                "Output Has Space must be true before an incompatible output is inserted");
+        check(helper, ForeverStudioGraphRuntime.booleanValue(machine, "has_fluid", "result"),
+                "Has Fluid must resolve the connected water tank before output blocking");
+
         machine.inventory().setStackInSlot(2, new ItemStack(Items.DIAMOND));
+        check(helper, ForeverStudioGraphRuntime.booleanValue(machine, "find_recipe", "found"),
+                "Find Recipe must stay true when inputs still match but an output becomes blocked");
+        check(helper, !ForeverStudioGraphRuntime.booleanValue(machine, "output_space", "result"),
+                "Output Has Space must become false for an incompatible ordered output stack");
 
         tick(helper, machine, 20);
         check(helper, machine.status() == ForeverStudioMachineBlockEntity.BLOCKED,
