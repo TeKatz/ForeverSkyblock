@@ -29,8 +29,6 @@ public final class ForeverStudioMachineBlock extends Block implements EntityBloc
     public ResourceLocation machineId() { return machineId; }
 
     @Override protected RenderShape getRenderShape(BlockState state) {
-        // Runtime machines are rendered by ForeverStudioMachineRenderer so authored transforms can
-        // affect the real block geometry instead of drawing an animated duplicate over a static model.
         return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
@@ -42,8 +40,11 @@ public final class ForeverStudioMachineBlock extends Block implements EntityBloc
             Level level, BlockState state, BlockEntityType<T> type) {
         if (level.isClientSide || type != de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get())
             return null;
-        return (tickerLevel, pos, tickerState, blockEntity) ->
-                ForeverStudioMachineBlockEntity.tick(tickerLevel, pos, tickerState, (ForeverStudioMachineBlockEntity) blockEntity);
+        return (tickerLevel, pos, tickerState, blockEntity) -> {
+            ForeverStudioMachineBlockEntity machine = (ForeverStudioMachineBlockEntity) blockEntity;
+            ForeverStudioMachineBlockEntity.tick(tickerLevel, pos, tickerState, machine);
+            de.tekatz.foreverskyblock.network.ForeverStudioMachineNetwork.tick(machine);
+        };
     }
 
     @Override protected InteractionResult useWithoutItem(
