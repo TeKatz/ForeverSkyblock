@@ -9,7 +9,7 @@ on:
   push:
     branches:
       - main
-      - feature/forever-studio-runtime-production
+      - feature/forever-studio-gui-builder-phase2
     paths:
       - 'tools/ForeverGuiDesigner/**'
       - 'tools/ForeverGuiDesigner.CompilerTests/**'
@@ -88,7 +88,7 @@ jobs:
             size = $item.Length
             builtAt = (Get-Date).ToUniversalTime().ToString('o')
             notes = if ($channel -eq 'development') {
-              'Latest development build from feature/forever-studio-runtime-production.'
+              'Latest development build from feature/forever-studio-gui-builder-phase2.'
             } else {
               'Latest stable build from main.'
             }
