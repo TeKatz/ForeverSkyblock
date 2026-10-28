@@ -17,6 +17,7 @@ public final class ForeverStudioGraphRuntime {
     private ForeverStudioGraphRuntime() { }
 
     public static boolean allowsProcessor(ForeverStudioMachineBlockEntity machine) {
+        ForeverStudioGraphSignals.beginTick(machine);
         if (machine.definition().graphNodes().isEmpty() || machine.definition().graphConnections().isEmpty()) return true;
         var processor = machine.definition().graphNodes().stream().filter(node -> isProcessor(node.kind())).findFirst().orElse(null);
         if (processor == null) return false;
@@ -29,6 +30,7 @@ public final class ForeverStudioGraphRuntime {
 
     public static double animationPhase(ForeverStudioMachineBlockEntity machine,
                                         ForeverStudioMachineDefinition.AnimationDefinition animation) {
+        ForeverStudioGraphSignals.beginTick(machine);
         double value;
         if (!animation.sourceNode().isBlank()) {
             value = isBooleanPort(animation.sourcePort())
@@ -54,9 +56,11 @@ public final class ForeverStudioGraphRuntime {
     }
 
     public static boolean booleanValue(ForeverStudioMachineBlockEntity machine, String node, String port) {
+        ForeverStudioGraphSignals.beginTick(machine);
         return bool(machine, node, port, new HashSet<>(), 0);
     }
     public static double numberValue(ForeverStudioMachineBlockEntity machine, String node, String port) {
+        ForeverStudioGraphSignals.beginTick(machine);
         return number(machine, node, port, new HashSet<>(), 0);
     }
 
@@ -71,11 +75,11 @@ public final class ForeverStudioGraphRuntime {
                 case "core.machine-entry", "function.on-tick" -> true;
                 case "function.on-use" -> machine.playerUsePulse();
                 case "function.on-inventory-changed" -> machine.inventoryChangedPulse();
-                case "function.on-redstone-changed" -> machine.redstoneStrength() > 0;
-                case "function.on-neighbor-changed" -> true;
-                case "function.on-recipe-start" -> machine.running();
-                case "function.on-recipe-complete" -> machine.progress() == 0 && machine.status() == ForeverStudioMachineBlockEntity.RUNNING;
-                case "function.on-state-enter" -> stateMatches(machine, node);
+                case "function.on-redstone-changed" -> ForeverStudioGraphSignals.redstoneChanged(machine);
+                case "function.on-neighbor-changed" -> ForeverStudioGraphSignals.neighborChanged(machine);
+                case "function.on-recipe-start" -> ForeverStudioGraphSignals.recipeStarted(machine);
+                case "function.on-recipe-complete" -> ForeverStudioGraphSignals.recipeCompleted(machine);
+                case "function.on-state-enter" -> ForeverStudioGraphSignals.stateEntered(machine) && stateMatches(machine, node);
                 case "function.branch" -> {
                     boolean enabled = incomingFlow(machine, nodeId, visiting, depth + 1);
                     boolean condition = boolInput(machine, nodeId, "condition", visiting, depth + 1);
@@ -89,11 +93,7 @@ public final class ForeverStudioGraphRuntime {
                     }
                     yield enabled;
                 }
-                case "function.consume-item", "function.produce-item", "function.consume-energy", "function.generate-energy",
-                     "function.transfer-energy", "function.consume-fluid", "function.produce-fluid", "function.transfer-fluid",
-                     "function.start-process", "function.complete-process" -> incomingFlow(machine, nodeId, visiting, depth + 1);
-                default -> isProcessor(node.kind()) ? machine.running() && port.equals("completed")
-                        : incomingFlow(machine, nodeId, visiting, depth + 1);
+                default -> isProcessor(node.kind()) ? machine.running() && port.equals("completed") : false;
             };
         } finally { visiting.remove(key); }
     }
@@ -150,7 +150,6 @@ public final class ForeverStudioGraphRuntime {
                         numeric(node.properties(), "fromMin", 0), numeric(node.properties(), "fromMax", 1),
                         numeric(node.properties(), "toMin", 0), numeric(node.properties(), "toMax", 1));
                 case "function.timer" -> timer(machine, node);
-                case "function.counter" -> numeric(node.properties(), "value", 0) + numberInput(machine, nodeId, "delta", visiting, depth + 1);
                 default -> isProcessor(node.kind()) && port.equals("progress") ? progress(machine) : 0;
             };
         } finally { visiting.remove(key); }
