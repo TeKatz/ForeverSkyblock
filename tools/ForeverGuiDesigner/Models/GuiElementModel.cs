@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ForeverGuiDesigner.Models;
@@ -24,6 +25,14 @@ public sealed class GuiElementModel
     public string? TexturePath { get; set; }
     public bool Visible { get; set; } = true;
 
+    // Shared GUI-document metadata. The standalone editor does not need to actively understand all
+    // of these fields to preserve them while a contextual editor (Machine/Menu/HUD) enriches them.
+    public string? LayerId { get; set; }
+    public string? AssetId { get; set; }
+    public string? StyleId { get; set; }
+    public List<string> EffectIds { get; set; } = [];
+    public Dictionary<string, JsonElement> Properties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
     // Phase 8 editor metadata. Defaults keep older layout JSON fully compatible.
     public bool Locked { get; set; }
     public string? Group { get; set; }
@@ -48,6 +57,11 @@ public sealed class GuiElementModel
     [JsonIgnore]
     public bool EditorSourceOwned { get; set; }
 
+    // Forward-compatible fields added by newer GUI engines or contextual editors must survive a
+    // standalone-editor round trip even when this build does not understand them yet.
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+
     public GuiElementModel Clone()
     {
         return new GuiElementModel
@@ -61,6 +75,14 @@ public sealed class GuiElementModel
             Content = Content,
             TexturePath = TexturePath,
             Visible = Visible,
+            LayerId = LayerId,
+            AssetId = AssetId,
+            StyleId = StyleId,
+            EffectIds = [.. EffectIds],
+            Properties = Properties.ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value.Clone(),
+                StringComparer.OrdinalIgnoreCase),
             Locked = Locked,
             Group = Group,
             TextShadow = TextShadow,
@@ -75,7 +97,11 @@ public sealed class GuiElementModel
             EditorTextOverride = EditorTextOverride,
             EditorZIndexOverride = EditorZIndexOverride,
             EditorCustomTextureOverride = EditorCustomTextureOverride,
-            EditorSourceOwned = EditorSourceOwned
+            EditorSourceOwned = EditorSourceOwned,
+            ExtensionData = ExtensionData?.ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value.Clone(),
+                StringComparer.OrdinalIgnoreCase)
         };
     }
 
