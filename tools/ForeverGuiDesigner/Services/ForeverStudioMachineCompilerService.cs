@@ -19,9 +19,11 @@ public static class ForeverStudioMachineCompilerService
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(catalog);
 
-        return HasRuntimeAuthoring(document)
-            ? ForeverStudioRuntimeCompiler.BuildPlan(repoRoot, document, catalog)
-            : ForeverStudioMachineProductionService.BuildPlan(repoRoot, document, catalog);
+        if (!HasRuntimeAuthoring(document))
+            return ForeverStudioMachineProductionService.BuildPlan(repoRoot, document, catalog);
+
+        var runtime = ForeverStudioRuntimeCompiler.BuildPlan(repoRoot, document, catalog);
+        return ForeverStudioRuntimePlanFixup.Normalize(repoRoot, document, runtime);
     }
 
     public static ForeverStudioMachineProductionApplyResult Apply(ForeverStudioMachineProductionPlan plan)
