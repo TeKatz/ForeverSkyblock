@@ -64,7 +64,7 @@ public static partial class ForeverStudioRepositorySyncService
 
     private sealed record LanguageDelta(IReadOnlyDictionary<string, LanguageDeltaEntry> Entries)
     {
-        public static LanguageDelta Empty { get; } = new Dictionary<string, LanguageDeltaEntry>(StringComparer.Ordinal);
+        public static LanguageDelta Empty { get; } = new(new Dictionary<string, LanguageDeltaEntry>(StringComparer.Ordinal));
     }
 
     [GeneratedRegex(@"COMPILER_CONTRACT_VERSION\s*=\s*(\d+)", RegexOptions.CultureInvariant)]
