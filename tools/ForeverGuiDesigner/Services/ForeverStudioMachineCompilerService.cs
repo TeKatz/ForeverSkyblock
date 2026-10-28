@@ -22,6 +22,21 @@ public static class ForeverStudioMachineCompilerService
         if (!HasRuntimeAuthoring(document))
             return ForeverStudioMachineProductionService.BuildPlan(repoRoot, document, catalog);
 
+        var repositoryIssue = ForeverStudioRuntimeRepositoryContract.Validate(repoRoot);
+        if (repositoryIssue is not null)
+        {
+            var issues = ForeverStudioMachineProjectService.Validate(document, catalog)
+                .Where(issue => issue.Severity != StudioValidationSeverity.Info)
+                .ToList();
+            issues.Add(repositoryIssue);
+            return new ForeverStudioMachineProductionPlan(
+                document.AssetId,
+                document.DisplayName,
+                ProductionKindRuntimeMachine,
+                [],
+                issues);
+        }
+
         var runtime = ForeverStudioRuntimeCompiler.BuildPlan(repoRoot, document, catalog);
         var supportIssues = ForeverStudioRuntimeSupportPolicy.Validate(document);
         if (supportIssues.Count > 0)
