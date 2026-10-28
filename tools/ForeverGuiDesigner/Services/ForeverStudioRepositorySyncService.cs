@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace ForeverGuiDesigner.Services;
@@ -15,10 +16,10 @@ public sealed record ForeverStudioRepositorySyncInspection(
     string? Error)
 {
     public IReadOnlyList<ForeverStudioRepositoryChange> ManualChanges => Changes.Where(change => !change.StudioManaged).ToArray();
-    public bool NeedsUpdate => Error is null &&
-                               (!CurrentBranch.Equals(TargetBranch, StringComparison.OrdinalIgnoreCase) ||
-                                !HeadCommit.Equals(TargetCommit, StringComparison.OrdinalIgnoreCase));
-    public bool CanUpdate => Error is null && ManualChanges.Count == 0 && LocalTargetAhead == 0;
+    public bool NeedsUpdate =>
+        !CurrentBranch.Equals(TargetBranch, StringComparison.OrdinalIgnoreCase) ||
+        !HeadCommit.Equals(TargetCommit, StringComparison.OrdinalIgnoreCase);
+    public bool CanUpdate => Error is null && LocalTargetAhead == 0 && ManualChanges.Count == 0;
 }
 
 public sealed record ForeverStudioRepositorySyncResult(
@@ -29,10 +30,10 @@ public sealed record ForeverStudioRepositorySyncResult(
     string? Error);
 
 /// <summary>
-/// Safely aligns the selected local checkout with the repository revision family used by the running
-/// Forever Studio build. Machine Project source JSON is treated as authoritative and backed up before
-/// Git touches the working tree; generated Studio output is deliberately regenerated after the sync.
-/// Unknown/manual working-tree changes fail closed instead of being stashed or overwritten.
+/// Safely aligns the selected local checkout with the repository branch used by the running Forever
+/// Studio build. Machine Project source JSON is authoritative and backed up before Git touches the
+/// working tree; generated Studio output is deliberately regenerated afterwards. Unknown/manual
+/// changes fail closed instead of being stashed, overwritten or hidden from the user.
 /// </summary>
 public static partial class ForeverStudioRepositorySyncService
 {
@@ -46,6 +47,8 @@ public static partial class ForeverStudioRepositorySyncService
     private const string StudioRecipePrefix = "mod/src/main/resources/data/forever_skyblock/recipe/forever_studio/";
     private const string StudioAssetPrefix = "mod/src/main/resources/assets/forever_skyblock/forever_studio/";
     private const string StudioComponentModelPrefix = "mod/src/main/resources/assets/forever_skyblock/models/block/forever_studio/";
+    private const string GeneratedBridgeMarker =
+        "de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines.register(modBus); // Forever Studio generated machines";
 
     [GeneratedRegex(@"COMPILER_CONTRACT_VERSION\s*=\s*(\d+)", RegexOptions.CultureInvariant)]
     private static partial Regex ContractVersionRegex();
@@ -117,7 +120,9 @@ public static partial class ForeverStudioRepositorySyncService
                 root,
                 ["-c", "core.quotepath=false", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
                 cancellationToken);
-            var changes = ParseStatus(status.StdOut, assetId);
+            var knownAssetIds = KnownMachineAssetIds(root, assetId);
+            var changes = ParseStatus(status.StdOut, knownAssetIds);
+            changes = await VerifySharedStudioChangesAsync(root, changes, knownAssetIds, cancellationToken);
 
             string? error = null;
             if (localTargetAhead > 0)
@@ -152,18 +157,18 @@ public static partial class ForeverStudioRepositorySyncService
         CancellationToken cancellationToken = default)
     {
         var inspection = await InspectAsync(repoRoot, assetId, targetBranch, progress, cancellationToken);
+        if (!inspection.NeedsUpdate)
+        {
+            progress?.Report($"> Repository already matches '{inspection.TargetBranch}'.");
+            return new ForeverStudioRepositorySyncResult(true, false, inspection.TargetBranch, [], null);
+        }
+
         if (!inspection.CanUpdate)
         {
             var manual = inspection.ManualChanges.Take(5).Select(change => change.Path).ToArray();
             var detail = manual.Length == 0 ? inspection.Error :
                 $"{inspection.Error} Files: {string.Join(", ", manual)}{(inspection.ManualChanges.Count > manual.Length ? ", …" : string.Empty)}";
             return new ForeverStudioRepositorySyncResult(false, false, inspection.TargetBranch, [], detail ?? "Repository sync is blocked.");
-        }
-
-        if (!inspection.NeedsUpdate)
-        {
-            progress?.Report($"> Repository already matches '{inspection.TargetBranch}'.");
-            return new ForeverStudioRepositorySyncResult(true, false, inspection.TargetBranch, [], null);
         }
 
         var root = Path.GetFullPath(repoRoot.Trim());
@@ -282,7 +287,34 @@ public static partial class ForeverStudioRepositorySyncService
             : DevelopmentBranch;
     }
 
-    private static IReadOnlyList<ForeverStudioRepositoryChange> ParseStatus(string output, string assetId)
+    private static HashSet<string> KnownMachineAssetIds(string root, string currentAssetId)
+    {
+        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(currentAssetId))
+            ids.Add(ForeverStudioMachineProjectService.SanitizeAssetId(currentAssetId));
+
+        var directory = Resolve(root, ForeverStudioMachineProjectService.RelativeDirectory);
+        if (!Directory.Exists(directory))
+            return ids;
+
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(directory, "*.json", SearchOption.TopDirectoryOnly))
+            {
+                var id = Path.GetFileNameWithoutExtension(file);
+                if (string.Equals(id, ForeverStudioMachineProjectService.SanitizeAssetId(id), StringComparison.Ordinal))
+                    ids.Add(id);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // The project loader will report the directory problem separately. Keeping only the
+            // active asset here makes sync classification conservative rather than destructive.
+        }
+        return ids;
+    }
+
+    private static IReadOnlyList<ForeverStudioRepositoryChange> ParseStatus(string output, IReadOnlySet<string> assetIds)
     {
         var changes = new List<ForeverStudioRepositoryChange>();
         var entries = output.Split('\0', StringSplitOptions.RemoveEmptyEntries);
@@ -295,19 +327,113 @@ public static partial class ForeverStudioRepositorySyncService
             var path = NormalizePath(entry[3..]);
             if (status.IndexOfAny(['R', 'C']) >= 0)
             {
-                // Porcelain -z reports the second rename/copy path as the following token. Treat
-                // renames conservatively; asset ids are intentionally stable in Machine Builder.
                 if (index + 1 < entries.Length)
                     path += " -> " + NormalizePath(entries[++index]);
                 changes.Add(new ForeverStudioRepositoryChange(status, path, false));
                 continue;
             }
-            changes.Add(new ForeverStudioRepositoryChange(status, path, IsStudioManagedPath(path, assetId)));
+            changes.Add(new ForeverStudioRepositoryChange(status, path, IsStudioManagedPath(path, assetIds)));
         }
         return changes;
     }
 
+    private static async Task<IReadOnlyList<ForeverStudioRepositoryChange>> VerifySharedStudioChangesAsync(
+        string root,
+        IReadOnlyList<ForeverStudioRepositoryChange> changes,
+        IReadOnlySet<string> assetIds,
+        CancellationToken cancellationToken)
+    {
+        var result = new List<ForeverStudioRepositoryChange>(changes.Count);
+        foreach (var change in changes)
+        {
+            if (!change.StudioManaged ||
+                (!change.Path.Equals(MainModPath, StringComparison.OrdinalIgnoreCase) &&
+                 !change.Path.Equals(LanguagePath, StringComparison.OrdinalIgnoreCase)))
+            {
+                result.Add(change);
+                continue;
+            }
+
+            var managed = change.Path.Equals(MainModPath, StringComparison.OrdinalIgnoreCase)
+                ? await IsGeneratedBridgeOnlyChangeAsync(root, change.Path, cancellationToken)
+                : await IsMachineLanguageOnlyChangeAsync(root, change.Path, assetIds, cancellationToken);
+            result.Add(change with { StudioManaged = managed });
+        }
+        return result;
+    }
+
+    private static async Task<bool> IsGeneratedBridgeOnlyChangeAsync(
+        string root,
+        string relativePath,
+        CancellationToken cancellationToken)
+    {
+        var workingPath = Resolve(root, relativePath);
+        if (!File.Exists(workingPath))
+            return false;
+        var head = await RunGitAsync(root, ["show", $"HEAD:{relativePath}"], cancellationToken, throwOnFailure: false);
+        if (head.ExitCode != 0)
+            return false;
+        string working;
+        try { working = File.ReadAllText(workingPath); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
+        return string.Equals(StripGeneratedBridge(working), StripGeneratedBridge(head.StdOut), StringComparison.Ordinal);
+    }
+
+    private static string StripGeneratedBridge(string source)
+    {
+        source = source.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        return string.Join("\n", source.Split('\n')
+            .Where(line => !line.Contains(GeneratedBridgeMarker, StringComparison.Ordinal)));
+    }
+
+    private static async Task<bool> IsMachineLanguageOnlyChangeAsync(
+        string root,
+        string relativePath,
+        IReadOnlySet<string> assetIds,
+        CancellationToken cancellationToken)
+    {
+        var workingPath = Resolve(root, relativePath);
+        if (!File.Exists(workingPath))
+            return false;
+        var head = await RunGitAsync(root, ["show", $"HEAD:{relativePath}"], cancellationToken, throwOnFailure: false);
+        if (head.ExitCode != 0)
+            return false;
+
+        try
+        {
+            using var beforeDoc = JsonDocument.Parse(head.StdOut);
+            using var afterDoc = JsonDocument.Parse(File.ReadAllText(workingPath));
+            if (beforeDoc.RootElement.ValueKind != JsonValueKind.Object || afterDoc.RootElement.ValueKind != JsonValueKind.Object)
+                return false;
+
+            var before = beforeDoc.RootElement.EnumerateObject().ToDictionary(property => property.Name, property => property.Value.Clone(), StringComparer.Ordinal);
+            var after = afterDoc.RootElement.EnumerateObject().ToDictionary(property => property.Name, property => property.Value.Clone(), StringComparer.Ordinal);
+            var allowed = assetIds.Select(id => $"block.forever_skyblock.{id}").ToHashSet(StringComparer.Ordinal);
+            foreach (var key in before.Keys.Concat(after.Keys).Distinct(StringComparer.Ordinal))
+            {
+                if (allowed.Contains(key))
+                    continue;
+                if (!before.TryGetValue(key, out var beforeValue) || !after.TryGetValue(key, out var afterValue) ||
+                    !string.Equals(beforeValue.GetRawText(), afterValue.GetRawText(), StringComparison.Ordinal))
+                    return false;
+            }
+            return true;
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
     public static bool IsStudioManagedPath(string path, string assetId)
+    {
+        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(assetId))
+            ids.Add(ForeverStudioMachineProjectService.SanitizeAssetId(assetId));
+        return IsStudioManagedPath(path, ids);
+    }
+
+    private static bool IsStudioManagedPath(string path, IReadOnlySet<string> assetIds)
     {
         path = NormalizePath(path);
         var machinePrefix = ForeverStudioMachineProjectService.RelativeDirectory + "/";
@@ -321,13 +447,15 @@ public static partial class ForeverStudioRepositorySyncService
             path.Equals(LanguagePath, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        if (string.IsNullOrWhiteSpace(assetId))
-            return false;
-        var safe = ForeverStudioMachineProjectService.SanitizeAssetId(assetId);
-        return path.Equals($"mod/src/main/resources/assets/forever_skyblock/blockstates/{safe}.json", StringComparison.OrdinalIgnoreCase) ||
-               path.Equals($"mod/src/main/resources/assets/forever_skyblock/models/block/{safe}.json", StringComparison.OrdinalIgnoreCase) ||
-               path.Equals($"mod/src/main/resources/assets/forever_skyblock/models/item/{safe}.json", StringComparison.OrdinalIgnoreCase) ||
-               path.Equals($"mod/src/main/resources/data/forever_skyblock/loot_table/blocks/{safe}.json", StringComparison.OrdinalIgnoreCase);
+        foreach (var id in assetIds)
+        {
+            if (path.Equals($"mod/src/main/resources/assets/forever_skyblock/blockstates/{id}.json", StringComparison.OrdinalIgnoreCase) ||
+                path.Equals($"mod/src/main/resources/assets/forever_skyblock/models/block/{id}.json", StringComparison.OrdinalIgnoreCase) ||
+                path.Equals($"mod/src/main/resources/assets/forever_skyblock/models/item/{id}.json", StringComparison.OrdinalIgnoreCase) ||
+                path.Equals($"mod/src/main/resources/data/forever_skyblock/loot_table/blocks/{id}.json", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 
     private static bool HasExpectedRuntimeContract(string source)

@@ -9,8 +9,9 @@ namespace ForeverGuiDesigner;
 
 /// <summary>
 /// One-click local mod build/test tooling for Machine Builder Phase 6. A production action first
-/// saves the Machine Project, validates/applies pending generated output, then delegates to the
-/// repository-owned Gradle wrapper without blocking the WPF UI thread.
+/// saves the Machine Project, safely aligns the selected repository with this Studio build, applies
+/// pending generated output, then delegates to the repository-owned Gradle wrapper without blocking
+/// the WPF UI thread.
 /// </summary>
 public partial class MainWindow
 {
@@ -320,39 +321,63 @@ public partial class MainWindow
     {
         if (_machineBuilderDocument is null || string.IsNullOrWhiteSpace(_repoRoot))
             return false;
-        if (!ForeverStudioMachineCompilerService.UsesRuntimeBackend(_machineBuilderDocument))
-            return true;
-        if (ForeverStudioRuntimeRepositoryContract.Validate(_repoRoot) is null)
-            return true;
 
-        AppendMachineBuilderGradleLog("> Local repository runtime is older than this Forever Studio build.");
-        AppendMachineBuilderGradleLog("> Attempting safe automatic repository synchronization…");
-        SetMachineBuilderGradleStatus("UPDATING LOCAL REPOSITORY…", "#D8B26A");
         var progress = new Progress<string>(AppendMachineBuilderGradleLog);
-        var result = await ForeverStudioRepositorySyncService.SynchronizeAsync(
+        AppendMachineBuilderGradleLog("> Checking repository revision for this Forever Studio build…");
+        var inspection = await ForeverStudioRepositorySyncService.InspectAsync(
             _repoRoot,
             _machineBuilderDocument.AssetId,
             progress: progress,
             cancellationToken: cancellationToken);
-        if (!result.Succeeded)
+
+        if (inspection.NeedsUpdate)
         {
-            AppendMachineBuilderGradleLog("! " + result.Error);
-            AppendMachineBuilderGradleLog("! Use UPDATE LOCAL REPOSITORY after resolving the listed manual changes.");
-            SetMachineBuilderGradleStatus("REPOSITORY SYNC BLOCKED", "#E18B8B");
-            return false;
+            if (!inspection.CanUpdate)
+            {
+                AppendMachineBuilderGradleLog("! Local repository update is required, but automatic sync is blocked.");
+                if (!string.IsNullOrWhiteSpace(inspection.Error))
+                    AppendMachineBuilderGradleLog("! " + inspection.Error);
+                foreach (var change in inspection.ManualChanges.Take(5))
+                    AppendMachineBuilderGradleLog($"! Manual change: {change.Path}");
+                SetMachineBuilderGradleStatus("REPOSITORY SYNC BLOCKED", "#E18B8B");
+                return false;
+            }
+
+            AppendMachineBuilderGradleLog(
+                $"> Repository update required: '{inspection.CurrentBranch}' → '{inspection.TargetBranch}'.");
+            SetMachineBuilderGradleStatus("UPDATING LOCAL REPOSITORY…", "#D8B26A");
+            var result = await ForeverStudioRepositorySyncService.SynchronizeAsync(
+                _repoRoot,
+                _machineBuilderDocument.AssetId,
+                inspection.TargetBranch,
+                progress,
+                cancellationToken);
+            if (!result.Succeeded)
+            {
+                AppendMachineBuilderGradleLog("! " + result.Error);
+                AppendMachineBuilderGradleLog("! Use UPDATE LOCAL REPOSITORY after resolving the listed manual changes.");
+                SetMachineBuilderGradleStatus("REPOSITORY SYNC BLOCKED", "#E18B8B");
+                return false;
+            }
+
+            RefreshMachineBuilderRepositoryContext();
+            if (_machineBuilderGradleOutputPath is not null)
+                _machineBuilderGradleOutputPath.Text = $"Repository branch: {result.TargetBranch}";
+            AppendMachineBuilderGradleLog("> Repository is aligned. Continuing build automatically…");
+        }
+        else if (!string.IsNullOrWhiteSpace(inspection.TargetBranch))
+        {
+            AppendMachineBuilderGradleLog($"> Repository already matches '{inspection.TargetBranch}'.");
         }
 
-        RefreshMachineBuilderRepositoryContext();
-        if (_machineBuilderGradleOutputPath is not null)
-            _machineBuilderGradleOutputPath.Text = $"Repository branch: {result.TargetBranch}";
-        if (ForeverStudioRuntimeRepositoryContract.Validate(_repoRoot) is { } issue)
+        if (ForeverStudioMachineCompilerService.UsesRuntimeBackend(_machineBuilderDocument) &&
+            ForeverStudioRuntimeRepositoryContract.Validate(_repoRoot) is { } runtimeIssue)
         {
-            AppendMachineBuilderGradleLog("! " + issue.Message);
+            AppendMachineBuilderGradleLog("! " + runtimeIssue.Message);
             SetMachineBuilderGradleStatus("REPOSITORY INCOMPATIBLE", "#E18B8B");
             return false;
         }
 
-        AppendMachineBuilderGradleLog("> Repository runtime is now compatible. Continuing build automatically…");
         return true;
     }
 

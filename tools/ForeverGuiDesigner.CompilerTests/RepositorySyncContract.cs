@@ -59,6 +59,8 @@ public final class ForeverStudioRuntimeContract {
                 "{\"assetId\":\"redstone\",\"local\":true}\n");
             File.AppendAllText(Path.Combine(work, "mod", "src", "main", "java", "de", "tekatz", "foreverskyblock", "ForeverSkyblock.java"),
                 "// Forever Studio generated machines\n");
+            Write(work, "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json",
+                "{\n  \"item.forever_skyblock.fixture\": \"Fixture\",\n  \"block.forever_skyblock.redstone\": \"Redstone\"\n}\n");
             Write(work, "mod/src/main/resources/assets/forever_skyblock/blockstates/redstone.json", "{\"generated\":true}\n");
 
             var inspection = ForeverStudioRepositorySyncService.InspectAsync(
@@ -86,6 +88,10 @@ public final class ForeverStudioRuntimeContract {
                 .Replace("\r\n", "\n", StringComparison.Ordinal);
             Check(runtimeSource == "feature runtime\n",
                 "Remote runtime source must win over stale generated bridge edits.");
+            Check(!File.ReadAllText(Path.Combine(work,
+                    "mod", "src", "main", "resources", "assets", "forever_skyblock", "lang", "en_us.json"))
+                    .Contains("block.forever_skyblock.redstone", StringComparison.Ordinal),
+                "Stale Studio-owned language output must be discarded before regeneration.");
             Check(ForeverStudioRuntimeRepositoryContract.Validate(work) is null,
                 "Updated checkout must satisfy the runtime repository contract.");
 
@@ -95,11 +101,16 @@ public final class ForeverStudioRuntimeContract {
                 .GetAwaiter().GetResult();
             Check(blocked.ManualChanges.Any(change => change.Path == "manual-user-file.txt"),
                 "Unknown local files must be classified as manual changes.");
-            var blockedResult = ForeverStudioRepositorySyncService.SynchronizeAsync(
+            File.Delete(Path.Combine(work, "manual-user-file.txt"));
+
+            Write(work, "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json",
+                "{\n  \"item.forever_skyblock.fixture\": \"Manual user edit\"\n}\n");
+            var manualLanguage = ForeverStudioRepositorySyncService.InspectAsync(
                     work, "redstone", ForeverStudioRepositorySyncService.DevelopmentBranch)
                 .GetAwaiter().GetResult();
-            Check(!blockedResult.Succeeded && File.Exists(Path.Combine(work, "manual-user-file.txt")),
-                "Automatic sync must fail closed and preserve manual user files.");
+            Check(manualLanguage.ManualChanges.Any(change =>
+                    change.Path == "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json"),
+                "Unrelated language edits must not be discarded as Studio-generated output.");
         }
         finally
         {
