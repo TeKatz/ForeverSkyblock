@@ -174,7 +174,7 @@ public static class SelfUpdateService
             BuiltAt = release.PublishedAt ?? DateTimeOffset.MinValue,
             Notes = channel == UpdateChannel.Stable
                 ? "Latest stable build from main."
-                : "Latest development build from feature/forever-studio-runtime-production."
+                : "Latest development build from feature/forever-studio-gui-builder-phase2."
         };
     }
 
