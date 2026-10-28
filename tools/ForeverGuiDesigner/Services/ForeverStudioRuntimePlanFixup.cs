@@ -31,6 +31,7 @@ internal static class ForeverStudioRuntimePlanFixup
             "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json",
             "mod/src/main/java/de/tekatz/foreverskyblock/generated/ForeverStudioGeneratedMachines.java",
             $"mod/src/main/resources/data/forever_skyblock/forever_studio/runtime/{asset}.json",
+            $"mod/src/main/resources/data/forever_skyblock/forever_studio/gui/{asset}.json",
             $"mod/src/main/resources/data/forever_skyblock/recipe/forever_studio/{asset}.json",
             manifestPath
         };
