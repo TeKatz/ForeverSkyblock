@@ -33,7 +33,9 @@ public sealed record ForeverStudioRepositorySyncResult(
 /// Safely aligns the selected local checkout with the repository branch used by the running Forever
 /// Studio build. Machine Project source JSON is authoritative and backed up before Git touches the
 /// working tree; generated Studio output is deliberately regenerated afterwards. Unknown/manual
-/// changes fail closed instead of being stashed, overwritten or hidden from the user.
+/// changes fail closed instead of being stashed, overwritten or hidden from the user. Valid local
+/// en_us.json overrides are handled specially: non-Studio key deltas are preserved and replayed
+/// onto the updated target branch with same-key conflict detection.
 /// </summary>
 public static partial class ForeverStudioRepositorySyncService
 {
@@ -51,6 +53,19 @@ public static partial class ForeverStudioRepositorySyncService
     private const string StudioComponentModelPrefix = "mod/src/main/resources/assets/forever_skyblock/models/block/forever_studio/";
     private const string GeneratedBridgeMarker =
         "de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines.register(modBus); // Forever Studio generated machines";
+
+    private static readonly JsonSerializerOptions LanguageJsonOptions = new() { WriteIndented = true };
+
+    private sealed record LanguageDeltaEntry(
+        bool BeforeExists,
+        JsonElement BeforeValue,
+        bool AfterExists,
+        JsonElement AfterValue);
+
+    private sealed record LanguageDelta(IReadOnlyDictionary<string, LanguageDeltaEntry> Entries)
+    {
+        public static LanguageDelta Empty { get; } = new Dictionary<string, LanguageDeltaEntry>(StringComparer.Ordinal);
+    }
 
     [GeneratedRegex(@"COMPILER_CONTRACT_VERSION\s*=\s*(\d+)", RegexOptions.CultureInvariant)]
     private static partial Regex ContractVersionRegex();
@@ -176,7 +191,11 @@ public static partial class ForeverStudioRepositorySyncService
         var root = Path.GetFullPath(repoRoot.Trim());
         var backupRoot = Path.Combine(Path.GetTempPath(), "ForeverStudio", "repository-sync", Guid.NewGuid().ToString("N"));
         var backupMachines = Path.Combine(backupRoot, "machines");
+        var backupLanguage = Path.Combine(backupRoot, "en_us.json");
         var machineRoot = Resolve(root, ForeverStudioMachineProjectService.RelativeDirectory);
+        var languageFile = Resolve(root, LanguagePath);
+        var knownAssetIds = KnownMachineAssetIds(root, assetId);
+        var languageDelta = LanguageDelta.Empty;
         var deletedMachineProjects = inspection.Changes
             .Where(change => change.Path.StartsWith(ForeverStudioMachineProjectService.RelativeDirectory + "/", StringComparison.OrdinalIgnoreCase) &&
                              change.Status.Contains('D'))
@@ -198,6 +217,14 @@ public static partial class ForeverStudioRepositorySyncService
                     File.Copy(file, target, overwrite: true);
                     preservedProjects.Add(Path.Combine(ForeverStudioMachineProjectService.RelativeDirectory, relative).Replace('\\', '/'));
                 }
+            }
+
+            if (File.Exists(languageFile))
+            {
+                File.Copy(languageFile, backupLanguage, overwrite: true);
+                languageDelta = await CaptureLanguageDeltaAsync(root, knownAssetIds, cancellationToken);
+                if (languageDelta.Entries.Count > 0)
+                    progress?.Report($"> Preserved {languageDelta.Entries.Count} local language override(s) for conflict-safe replay.");
             }
 
             progress?.Report($"> Preserved {preservedProjects.Count} Machine Project source file(s).");
@@ -231,6 +258,12 @@ public static partial class ForeverStudioRepositorySyncService
                 }
             }
 
+            if (languageDelta.Entries.Count > 0)
+            {
+                ApplyLanguageDelta(languageFile, languageDelta);
+                progress?.Report($"> Restored {languageDelta.Entries.Count} local language override(s) onto the updated branch.");
+            }
+
             foreach (var deleted in deletedMachineProjects)
             {
                 var fullPath = Resolve(root, deleted);
@@ -248,11 +281,13 @@ public static partial class ForeverStudioRepositorySyncService
         catch (OperationCanceledException)
         {
             TryRestoreMachineProjects(backupMachines, machineRoot);
+            TryRestoreFile(backupLanguage, languageFile);
             throw;
         }
         catch (Exception ex)
         {
             TryRestoreMachineProjects(backupMachines, machineRoot);
+            TryRestoreFile(backupLanguage, languageFile);
             return new ForeverStudioRepositorySyncResult(false, false, inspection.TargetBranch, preservedProjects,
                 $"Repository sync failed: {ex.Message}");
         }
@@ -365,7 +400,7 @@ public static partial class ForeverStudioRepositorySyncService
 
             var managed = change.Path.Equals(MainModPath, StringComparison.OrdinalIgnoreCase)
                 ? await IsGeneratedBridgeOnlyChangeAsync(root, change.Path, cancellationToken)
-                : await IsMachineLanguageOnlyChangeAsync(root, change.Path, assetIds, cancellationToken);
+                : await IsSafeLanguageChangeAsync(root, assetIds, cancellationToken);
             result.Add(change with { StudioManaged = managed });
         }
         return result;
@@ -395,43 +430,118 @@ public static partial class ForeverStudioRepositorySyncService
             .Where(line => !line.Contains(GeneratedBridgeMarker, StringComparison.Ordinal)));
     }
 
-    private static async Task<bool> IsMachineLanguageOnlyChangeAsync(
+    private static async Task<bool> IsSafeLanguageChangeAsync(
         string root,
-        string relativePath,
         IReadOnlySet<string> assetIds,
         CancellationToken cancellationToken)
     {
-        var workingPath = Resolve(root, relativePath);
-        if (!File.Exists(workingPath))
-            return false;
-        var head = await RunGitAsync(root, ["show", $"HEAD:{relativePath}"], cancellationToken, throwOnFailure: false);
-        if (head.ExitCode != 0)
-            return false;
-
         try
         {
-            using var beforeDoc = JsonDocument.Parse(head.StdOut);
-            using var afterDoc = JsonDocument.Parse(File.ReadAllText(workingPath));
-            if (beforeDoc.RootElement.ValueKind != JsonValueKind.Object || afterDoc.RootElement.ValueKind != JsonValueKind.Object)
-                return false;
-
-            var before = beforeDoc.RootElement.EnumerateObject().ToDictionary(property => property.Name, property => property.Value.Clone(), StringComparer.Ordinal);
-            var after = afterDoc.RootElement.EnumerateObject().ToDictionary(property => property.Name, property => property.Value.Clone(), StringComparer.Ordinal);
-            var allowed = assetIds.Select(id => $"block.forever_skyblock.{id}").ToHashSet(StringComparer.Ordinal);
-            foreach (var key in before.Keys.Concat(after.Keys).Distinct(StringComparer.Ordinal))
-            {
-                if (allowed.Contains(key))
-                    continue;
-                if (!before.TryGetValue(key, out var beforeValue) || !after.TryGetValue(key, out var afterValue) ||
-                    !JsonValuesEqual(beforeValue, afterValue))
-                    return false;
-            }
+            _ = await CaptureLanguageDeltaAsync(root, assetIds, cancellationToken);
             return true;
         }
-        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException or ArgumentException)
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
         {
             return false;
         }
+    }
+
+    private static async Task<LanguageDelta> CaptureLanguageDeltaAsync(
+        string root,
+        IReadOnlySet<string> assetIds,
+        CancellationToken cancellationToken)
+    {
+        var workingPath = Resolve(root, LanguagePath);
+        if (!File.Exists(workingPath))
+            throw new IOException($"Language file is missing: {LanguagePath}");
+
+        var head = await RunGitAsync(root, ["show", $"HEAD:{LanguagePath}"], cancellationToken, throwOnFailure: false);
+        if (head.ExitCode != 0)
+            throw new InvalidOperationException($"Cannot read HEAD version of {LanguagePath}.");
+
+        using var beforeDoc = JsonDocument.Parse(head.StdOut);
+        using var afterDoc = JsonDocument.Parse(File.ReadAllText(workingPath));
+        if (beforeDoc.RootElement.ValueKind != JsonValueKind.Object || afterDoc.RootElement.ValueKind != JsonValueKind.Object)
+            throw new JsonException("Language files must contain a JSON object.");
+
+        var before = beforeDoc.RootElement.EnumerateObject()
+            .ToDictionary(property => property.Name, property => property.Value.Clone(), StringComparer.Ordinal);
+        var after = afterDoc.RootElement.EnumerateObject()
+            .ToDictionary(property => property.Name, property => property.Value.Clone(), StringComparer.Ordinal);
+        var studioKeys = MachineLanguageKeys(assetIds);
+        var entries = new Dictionary<string, LanguageDeltaEntry>(StringComparer.Ordinal);
+
+        foreach (var key in before.Keys.Concat(after.Keys).Distinct(StringComparer.Ordinal))
+        {
+            if (studioKeys.Contains(key))
+                continue;
+
+            var beforeExists = before.TryGetValue(key, out var beforeValue);
+            var afterExists = after.TryGetValue(key, out var afterValue);
+            if (beforeExists && afterExists && JsonValuesEqual(beforeValue, afterValue))
+                continue;
+            if (!beforeExists && !afterExists)
+                continue;
+
+            entries[key] = new LanguageDeltaEntry(
+                beforeExists,
+                beforeExists ? beforeValue.Clone() : default,
+                afterExists,
+                afterExists ? afterValue.Clone() : default);
+        }
+
+        return entries.Count == 0 ? LanguageDelta.Empty : new LanguageDelta(entries);
+    }
+
+    private static HashSet<string> MachineLanguageKeys(IReadOnlySet<string> assetIds)
+    {
+        var keys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var id in assetIds)
+        {
+            keys.Add($"block.forever_skyblock.{id}");
+            keys.Add($"item.forever_skyblock.{id}");
+        }
+        return keys;
+    }
+
+    private static void ApplyLanguageDelta(string languageFile, LanguageDelta delta)
+    {
+        if (delta.Entries.Count == 0)
+            return;
+
+        var source = File.Exists(languageFile) ? File.ReadAllText(languageFile) : "{}";
+        using var targetDoc = JsonDocument.Parse(source);
+        if (targetDoc.RootElement.ValueKind != JsonValueKind.Object)
+            throw new JsonException("Updated language file must contain a JSON object.");
+
+        var target = targetDoc.RootElement.EnumerateObject()
+            .ToDictionary(property => property.Name, property => property.Value.Clone(), StringComparer.Ordinal);
+
+        foreach (var pair in delta.Entries)
+        {
+            var entry = pair.Value;
+            var targetExists = target.TryGetValue(pair.Key, out var targetValue);
+            var targetMatchesBefore = entry.BeforeExists
+                ? targetExists && JsonValuesEqual(targetValue, entry.BeforeValue)
+                : !targetExists;
+            var targetMatchesAfter = entry.AfterExists
+                ? targetExists && JsonValuesEqual(targetValue, entry.AfterValue)
+                : !targetExists;
+
+            if (!targetMatchesBefore && !targetMatchesAfter)
+            {
+                throw new InvalidOperationException(
+                    $"Language key '{pair.Key}' changed both locally and on the target branch. Your original en_us.json was preserved; resolve that key manually before retrying.");
+            }
+
+            if (entry.AfterExists)
+                target[pair.Key] = entry.AfterValue.Clone();
+            else
+                target.Remove(pair.Key);
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(languageFile)!);
+        File.WriteAllText(languageFile, JsonSerializer.Serialize(target, LanguageJsonOptions) + Environment.NewLine);
     }
 
     private static bool JsonValuesEqual(JsonElement left, JsonElement right)
@@ -553,6 +663,21 @@ public static partial class ForeverStudioRepositorySyncService
         catch
         {
             // The backup directory remains until finally. Preserve the original sync error.
+        }
+    }
+
+    private static void TryRestoreFile(string backupPath, string destinationPath)
+    {
+        try
+        {
+            if (!File.Exists(backupPath))
+                return;
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+            File.Copy(backupPath, destinationPath, overwrite: true);
+        }
+        catch
+        {
+            // Preserve the original sync error. The temporary backup remains until finally.
         }
     }
 
