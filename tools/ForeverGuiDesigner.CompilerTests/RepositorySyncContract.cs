@@ -81,8 +81,10 @@ public final class ForeverStudioRuntimeContract {
             Check(!File.Exists(Path.Combine(work,
                     "mod", "src", "main", "resources", "assets", "forever_skyblock", "blockstates", "redstone.json")),
                 "Stale generated output must be discarded so it can be regenerated against the new runtime.");
-            Check(File.ReadAllText(Path.Combine(work,
-                    "mod", "src", "main", "java", "de", "tekatz", "foreverskyblock", "ForeverSkyblock.java")) == "feature runtime\n",
+            var runtimeSource = File.ReadAllText(Path.Combine(work,
+                    "mod", "src", "main", "java", "de", "tekatz", "foreverskyblock", "ForeverSkyblock.java"))
+                .Replace("\r\n", "\n", StringComparison.Ordinal);
+            Check(runtimeSource == "feature runtime\n",
                 "Remote runtime source must win over stale generated bridge edits.");
             Check(ForeverStudioRuntimeRepositoryContract.Validate(work) is null,
                 "Updated checkout must satisfy the runtime repository contract.");
