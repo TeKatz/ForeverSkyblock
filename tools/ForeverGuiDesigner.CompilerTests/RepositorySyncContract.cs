@@ -1,0 +1,164 @@
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using ForeverGuiDesigner.Services;
+
+internal static class RepositorySyncContract
+{
+    [ModuleInitializer]
+    internal static void Run()
+    {
+        Check(ForeverStudioRepositorySyncService.IsStudioManagedPath(
+                "mod/src/main/resources/data/forever_skyblock/forever_studio/machines/redstone.json", "redstone"),
+            "Machine Project source must be recognized as Studio-managed.");
+        Check(ForeverStudioRepositorySyncService.IsStudioManagedPath(
+                "mod/src/main/resources/assets/forever_skyblock/blockstates/redstone.json", "redstone"),
+            "Generated blockstate must be recognized as Studio-managed.");
+        Check(!ForeverStudioRepositorySyncService.IsStudioManagedPath(
+                "mod/src/main/java/de/tekatz/foreverskyblock/some/ManualThing.java", "redstone"),
+            "Unrelated Java source must never be classified as Studio-managed.");
+
+        if (!GitAvailable())
+            return;
+
+        var root = Path.Combine(Path.GetTempPath(), "forever studio repository sync " + Guid.NewGuid().ToString("N"));
+        var remote = Path.Combine(root, "origin.git");
+        var seed = Path.Combine(root, "seed repo");
+        var work = Path.Combine(root, "working repo");
+        try
+        {
+            Directory.CreateDirectory(root);
+            RunGit(root, "init", "--bare", remote);
+            Directory.CreateDirectory(seed);
+            RunGit(seed, "init", "-b", "main");
+            RunGit(seed, "config", "user.email", "studio-contract@example.invalid");
+            RunGit(seed, "config", "user.name", "Forever Studio Contract");
+
+            Write(seed, "mod/src/main/java/de/tekatz/foreverskyblock/ForeverSkyblock.java", "old main\n");
+            Write(seed, "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json", "{\n  \"item.forever_skyblock.fixture\": \"Fixture\"\n}\n");
+            RunGit(seed, "add", ".");
+            RunGit(seed, "commit", "-m", "old main");
+            RunGit(seed, "remote", "add", "origin", remote);
+            RunGit(seed, "push", "-u", "origin", "main");
+
+            RunGit(seed, "switch", "-c", ForeverStudioRepositorySyncService.DevelopmentBranch);
+            Write(seed, ForeverStudioRuntimeRepositoryContract.RelativeMarkerPath, """
+package de.tekatz.foreverskyblock.studio.runtime;
+public final class ForeverStudioRuntimeContract {
+    public static final int COMPILER_CONTRACT_VERSION = 2;
+}
+""");
+            Write(seed, "mod/src/main/java/de/tekatz/foreverskyblock/ForeverSkyblock.java", "feature runtime\n");
+            Write(seed, "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json", "{\n  \"item.forever_skyblock.fixture\": \"Feature Fixture\"\n}\n");
+            RunGit(seed, "add", ".");
+            RunGit(seed, "commit", "-m", "runtime feature");
+            RunGit(seed, "push", "-u", "origin", ForeverStudioRepositorySyncService.DevelopmentBranch);
+
+            RunGit(root, "clone", "--branch", "main", remote, work);
+            Write(work,
+                "mod/src/main/resources/data/forever_skyblock/forever_studio/machines/redstone.json",
+                "{\"assetId\":\"redstone\",\"local\":true}\n");
+            File.AppendAllText(Path.Combine(work, "mod", "src", "main", "java", "de", "tekatz", "foreverskyblock", "ForeverSkyblock.java"),
+                "// Forever Studio generated machines\n");
+            Write(work, "mod/src/main/resources/assets/forever_skyblock/blockstates/redstone.json", "{\"generated\":true}\n");
+
+            var inspection = ForeverStudioRepositorySyncService.InspectAsync(
+                    work, "redstone", ForeverStudioRepositorySyncService.DevelopmentBranch)
+                .GetAwaiter().GetResult();
+            Check(inspection.CanUpdate, "Studio-only working changes must allow repository sync: " + inspection.Error);
+            Check(inspection.NeedsUpdate, "Old main checkout must require an update to the runtime feature branch.");
+            Check(inspection.ManualChanges.Count == 0, "Studio-owned generated files must not be reported as manual changes.");
+
+            var result = ForeverStudioRepositorySyncService.SynchronizeAsync(
+                    work, "redstone", ForeverStudioRepositorySyncService.DevelopmentBranch)
+                .GetAwaiter().GetResult();
+            Check(result.Succeeded && result.Updated, "Safe repository sync must complete successfully: " + result.Error);
+            Check(RunGit(work, "branch", "--show-current").Trim() == ForeverStudioRepositorySyncService.DevelopmentBranch,
+                "Repository sync must switch to the required runtime branch.");
+            Check(File.ReadAllText(Path.Combine(work,
+                    "mod", "src", "main", "resources", "data", "forever_skyblock", "forever_studio", "machines", "redstone.json"))
+                    .Contains("\"local\":true", StringComparison.Ordinal),
+                "Local Machine Project source must survive repository sync.");
+            Check(!File.Exists(Path.Combine(work,
+                    "mod", "src", "main", "resources", "assets", "forever_skyblock", "blockstates", "redstone.json")),
+                "Stale generated output must be discarded so it can be regenerated against the new runtime.");
+            Check(File.ReadAllText(Path.Combine(work,
+                    "mod", "src", "main", "java", "de", "tekatz", "foreverskyblock", "ForeverSkyblock.java")) == "feature runtime\n",
+                "Remote runtime source must win over stale generated bridge edits.");
+            Check(ForeverStudioRuntimeRepositoryContract.Validate(work) is null,
+                "Updated checkout must satisfy the runtime repository contract.");
+
+            Write(work, "manual-user-file.txt", "do not touch\n");
+            var blocked = ForeverStudioRepositorySyncService.InspectAsync(
+                    work, "redstone", ForeverStudioRepositorySyncService.DevelopmentBranch)
+                .GetAwaiter().GetResult();
+            Check(blocked.ManualChanges.Any(change => change.Path == "manual-user-file.txt"),
+                "Unknown local files must be classified as manual changes.");
+            var blockedResult = ForeverStudioRepositorySyncService.SynchronizeAsync(
+                    work, "redstone", ForeverStudioRepositorySyncService.DevelopmentBranch)
+                .GetAwaiter().GetResult();
+            Check(!blockedResult.Succeeded && File.Exists(Path.Combine(work, "manual-user-file.txt")),
+                "Automatic sync must fail closed and preserve manual user files.");
+        }
+        finally
+        {
+            try { Directory.Delete(root, recursive: true); } catch { }
+        }
+    }
+
+    private static bool GitAvailable()
+    {
+        try
+        {
+            var start = new ProcessStartInfo("git")
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            start.ArgumentList.Add("--version");
+            using var process = Process.Start(start);
+            if (process is null) return false;
+            process.WaitForExit();
+            return process.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string RunGit(string workingDirectory, params string[] arguments)
+    {
+        var start = new ProcessStartInfo("git")
+        {
+            WorkingDirectory = workingDirectory,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        foreach (var argument in arguments)
+            start.ArgumentList.Add(argument);
+        using var process = Process.Start(start) ?? throw new InvalidOperationException("Could not start git.");
+        var stdout = process.StandardOutput.ReadToEnd();
+        var stderr = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        if (process.ExitCode != 0)
+            throw new InvalidOperationException($"git {string.Join(' ', arguments)} failed ({process.ExitCode}): {stderr}");
+        return stdout;
+    }
+
+    private static void Write(string root, string relative, string content)
+    {
+        var path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, content);
+    }
+
+    private static void Check(bool condition, string message)
+    {
+        if (!condition)
+            throw new InvalidOperationException(message);
+    }
+}

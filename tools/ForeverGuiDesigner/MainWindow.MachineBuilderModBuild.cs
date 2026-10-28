@@ -19,6 +19,7 @@ public partial class MainWindow
     private readonly Queue<string> _machineBuilderGradleLogLines = new();
     private Button? _machineBuilderBuildJarButton;
     private Button? _machineBuilderLaunchClientButton;
+    private Button? _machineBuilderUpdateRepositoryButton;
     private Button? _machineBuilderCancelGradleButton;
     private Button? _machineBuilderOpenJarFolderButton;
     private TextBlock? _machineBuilderGradleStatus;
@@ -61,7 +62,7 @@ public partial class MainWindow
         });
         console.Children.Add(new TextBlock
         {
-            Text = "One click saves and applies the current Machine Project, then runs the repository Gradle wrapper. The test client stays attached so it can be stopped cleanly from Studio.",
+            Text = "One click saves the Machine Project, safely synchronizes an outdated local repository when needed, applies fresh generated output, then runs the repository Gradle wrapper.",
             Foreground = Brush("#7F929A"),
             FontSize = 9.3,
             TextWrapping = TextWrapping.Wrap,
@@ -97,7 +98,7 @@ public partial class MainWindow
             BorderThickness = new Thickness(1),
             FontFamily = new FontFamily("Consolas"),
             FontSize = 9,
-            Height = 96,
+            Height = 112,
             Padding = new Thickness(7, 5, 7, 5)
         };
         console.Children.Add(_machineBuilderGradleLog);
@@ -106,7 +107,7 @@ public partial class MainWindow
         var actions = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         _machineBuilderBuildJarButton = CreateStudioChromeButton("BUILD MOD JAR", 178, true);
         _machineBuilderBuildJarButton.Height = 36;
-        _machineBuilderBuildJarButton.ToolTip = "Save + apply the current machine, run Gradle build, and locate the distributable JAR.";
+        _machineBuilderBuildJarButton.ToolTip = "Save + safely sync the repository when needed + apply the current machine + run Gradle build.";
         _machineBuilderBuildJarButton.Click += async (_, _) =>
             await RunMachineBuilderGradleOperationAsync(ForeverStudioGradleOperation.BuildModJar);
         actions.Children.Add(_machineBuilderBuildJarButton);
@@ -114,10 +115,17 @@ public partial class MainWindow
         _machineBuilderLaunchClientButton = CreateStudioChromeButton("LAUNCH TEST CLIENT", 178, false);
         _machineBuilderLaunchClientButton.Height = 34;
         _machineBuilderLaunchClientButton.Margin = new Thickness(0, 7, 0, 0);
-        _machineBuilderLaunchClientButton.ToolTip = "Save + apply the current machine, then run the NeoForge development client from this repository.";
+        _machineBuilderLaunchClientButton.ToolTip = "Save + safely sync the repository when needed + apply the current machine + launch the NeoForge development client.";
         _machineBuilderLaunchClientButton.Click += async (_, _) =>
             await RunMachineBuilderGradleOperationAsync(ForeverStudioGradleOperation.LaunchTestClient);
         actions.Children.Add(_machineBuilderLaunchClientButton);
+
+        _machineBuilderUpdateRepositoryButton = CreateStudioChromeButton("UPDATE LOCAL REPOSITORY", 178, false);
+        _machineBuilderUpdateRepositoryButton.Height = 32;
+        _machineBuilderUpdateRepositoryButton.Margin = new Thickness(0, 7, 0, 0);
+        _machineBuilderUpdateRepositoryButton.ToolTip = "Safely align the selected local checkout with the branch/runtime used by this Forever Studio build. Machine Project source is preserved; unknown manual changes block the update.";
+        _machineBuilderUpdateRepositoryButton.Click += async (_, _) => await RunMachineBuilderRepositorySyncAsync();
+        actions.Children.Add(_machineBuilderUpdateRepositoryButton);
 
         _machineBuilderCancelGradleButton = CreateStudioChromeButton("STOP", 178, false);
         _machineBuilderCancelGradleButton.Height = 32;
@@ -158,9 +166,20 @@ public partial class MainWindow
             operation == ForeverStudioGradleOperation.BuildModJar ? "PREPARING MOD BUILD…" : "PREPARING TEST CLIENT…",
             "#D8B26A");
         SetMachineBuilderGradleBusy(true);
+        _machineBuilderGradleCancellation = new CancellationTokenSource();
 
         try
         {
+            if (!TrySaveMachineBuilderProjectForBuild(out var saveError))
+            {
+                AppendMachineBuilderGradleLog("! " + saveError);
+                SetMachineBuilderGradleStatus("BLOCKED", "#E18B8B");
+                return;
+            }
+
+            if (!await EnsureMachineBuilderRepositoryReadyAsync(_machineBuilderGradleCancellation.Token))
+                return;
+
             if (!TryPrepareMachineBuilderForGradle(out var preparationError))
             {
                 AppendMachineBuilderGradleLog("! " + preparationError);
@@ -176,7 +195,6 @@ public partial class MainWindow
                 return;
             }
 
-            _machineBuilderGradleCancellation = new CancellationTokenSource();
             var task = ForeverStudioGradleService.TaskFor(operation);
             AppendMachineBuilderGradleLog($"> Starting Gradle task '{task}'…");
             SetMachineBuilderGradleStatus(
@@ -221,6 +239,11 @@ public partial class MainWindow
                 SetMachineBuilderGradleStatus("TEST CLIENT CLOSED", "#74C99A");
             }
         }
+        catch (OperationCanceledException)
+        {
+            AppendMachineBuilderGradleLog("> Operation stopped by user.");
+            SetMachineBuilderGradleStatus("STOPPED", "#D8B26A");
+        }
         catch (Exception ex)
         {
             AppendMachineBuilderGradleLog("! " + ex.Message);
@@ -235,7 +258,105 @@ public partial class MainWindow
         }
     }
 
-    private bool TryPrepareMachineBuilderForGradle(out string error)
+    private async Task RunMachineBuilderRepositorySyncAsync()
+    {
+        if (_machineBuilderGradleBusy)
+            return;
+
+        ClearMachineBuilderGradleLog();
+        SetMachineBuilderGradleStatus("CHECKING LOCAL REPOSITORY…", "#D8B26A");
+        SetMachineBuilderGradleBusy(true);
+        _machineBuilderGradleCancellation = new CancellationTokenSource();
+        try
+        {
+            if (!TrySaveMachineBuilderProjectForBuild(out var saveError))
+            {
+                AppendMachineBuilderGradleLog("! " + saveError);
+                SetMachineBuilderGradleStatus("SYNC BLOCKED", "#E18B8B");
+                return;
+            }
+            if (_machineBuilderDocument is null || string.IsNullOrWhiteSpace(_repoRoot))
+                return;
+
+            var progress = new Progress<string>(AppendMachineBuilderGradleLog);
+            SetMachineBuilderGradleStatus("UPDATING LOCAL REPOSITORY…", "#D8B26A");
+            var result = await ForeverStudioRepositorySyncService.SynchronizeAsync(
+                _repoRoot,
+                _machineBuilderDocument.AssetId,
+                progress: progress,
+                cancellationToken: _machineBuilderGradleCancellation.Token);
+            if (!result.Succeeded)
+            {
+                AppendMachineBuilderGradleLog("! " + result.Error);
+                SetMachineBuilderGradleStatus("SYNC BLOCKED", "#E18B8B");
+                return;
+            }
+
+            RefreshMachineBuilderRepositoryContext();
+            RefreshMachineBuilderProductionReview();
+            if (_machineBuilderGradleOutputPath is not null)
+                _machineBuilderGradleOutputPath.Text = $"Repository branch: {result.TargetBranch}";
+            SetMachineBuilderGradleStatus(result.Updated ? "REPOSITORY UPDATED" : "REPOSITORY READY", "#74C99A");
+        }
+        catch (OperationCanceledException)
+        {
+            AppendMachineBuilderGradleLog("> Repository update stopped by user.");
+            SetMachineBuilderGradleStatus("STOPPED", "#D8B26A");
+        }
+        catch (Exception ex)
+        {
+            AppendMachineBuilderGradleLog("! " + ex.Message);
+            SetMachineBuilderGradleStatus("SYNC FAILED", "#E18B8B");
+        }
+        finally
+        {
+            _machineBuilderGradleCancellation?.Dispose();
+            _machineBuilderGradleCancellation = null;
+            SetMachineBuilderGradleBusy(false);
+        }
+    }
+
+    private async Task<bool> EnsureMachineBuilderRepositoryReadyAsync(CancellationToken cancellationToken)
+    {
+        if (_machineBuilderDocument is null || string.IsNullOrWhiteSpace(_repoRoot))
+            return false;
+        if (!ForeverStudioMachineCompilerService.UsesRuntimeBackend(_machineBuilderDocument))
+            return true;
+        if (ForeverStudioRuntimeRepositoryContract.Validate(_repoRoot) is null)
+            return true;
+
+        AppendMachineBuilderGradleLog("> Local repository runtime is older than this Forever Studio build.");
+        AppendMachineBuilderGradleLog("> Attempting safe automatic repository synchronization…");
+        SetMachineBuilderGradleStatus("UPDATING LOCAL REPOSITORY…", "#D8B26A");
+        var progress = new Progress<string>(AppendMachineBuilderGradleLog);
+        var result = await ForeverStudioRepositorySyncService.SynchronizeAsync(
+            _repoRoot,
+            _machineBuilderDocument.AssetId,
+            progress: progress,
+            cancellationToken: cancellationToken);
+        if (!result.Succeeded)
+        {
+            AppendMachineBuilderGradleLog("! " + result.Error);
+            AppendMachineBuilderGradleLog("! Use UPDATE LOCAL REPOSITORY after resolving the listed manual changes.");
+            SetMachineBuilderGradleStatus("REPOSITORY SYNC BLOCKED", "#E18B8B");
+            return false;
+        }
+
+        RefreshMachineBuilderRepositoryContext();
+        if (_machineBuilderGradleOutputPath is not null)
+            _machineBuilderGradleOutputPath.Text = $"Repository branch: {result.TargetBranch}";
+        if (ForeverStudioRuntimeRepositoryContract.Validate(_repoRoot) is { } issue)
+        {
+            AppendMachineBuilderGradleLog("! " + issue.Message);
+            SetMachineBuilderGradleStatus("REPOSITORY INCOMPATIBLE", "#E18B8B");
+            return false;
+        }
+
+        AppendMachineBuilderGradleLog("> Repository runtime is now compatible. Continuing build automatically…");
+        return true;
+    }
+
+    private bool TrySaveMachineBuilderProjectForBuild(out string error)
     {
         error = string.Empty;
         if (_machineBuilderDocument is null)
@@ -249,24 +370,33 @@ public partial class MainWindow
             return false;
         }
 
-        if (ForeverStudioMachineCompilerService.UsesRuntimeBackend(_machineBuilderDocument) &&
-            ForeverStudioRuntimeRepositoryContract.Validate(_repoRoot) is { } runtimeIssue)
-        {
-            error = runtimeIssue.Message;
-            return false;
-        }
-
         if (_machineBuilderDirty ||
             _machineBuilderSourceHash.Equals(ForeverStudioMachineProjectService.MissingHash, StringComparison.Ordinal))
         {
-            AppendMachineBuilderGradleLog("> Saving Machine Project…");
+            AppendMachineBuilderGradleLog("> Saving Machine Project source…");
             SaveMachineBuilderProject();
             if (_machineBuilderDirty ||
                 _machineBuilderSourceHash.Equals(ForeverStudioMachineProjectService.MissingHash, StringComparison.Ordinal))
             {
-                error = "The Machine Project could not be saved. Resolve its validation errors before building.";
+                error = "The Machine Project could not be saved. Resolve its validation errors before building or synchronizing.";
                 return false;
             }
+        }
+        return true;
+    }
+
+    private bool TryPrepareMachineBuilderForGradle(out string error)
+    {
+        error = string.Empty;
+        if (_machineBuilderDocument is null)
+        {
+            error = "No Machine Project is open.";
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(_repoRoot) || !Directory.Exists(_repoRoot))
+        {
+            error = "Choose a valid local ForeverSkyblock repository first.";
+            return false;
         }
 
         RefreshMachineBuilderProductionReview();
@@ -316,6 +446,8 @@ public partial class MainWindow
             _machineBuilderBuildJarButton.IsEnabled = repoReady && !_machineBuilderGradleBusy;
         if (_machineBuilderLaunchClientButton is not null)
             _machineBuilderLaunchClientButton.IsEnabled = repoReady && !_machineBuilderGradleBusy;
+        if (_machineBuilderUpdateRepositoryButton is not null)
+            _machineBuilderUpdateRepositoryButton.IsEnabled = repoReady && !_machineBuilderGradleBusy;
         if (_machineBuilderCancelGradleButton is not null)
             _machineBuilderCancelGradleButton.IsEnabled = _machineBuilderGradleBusy;
         if (_machineBuilderOpenJarFolderButton is not null)
