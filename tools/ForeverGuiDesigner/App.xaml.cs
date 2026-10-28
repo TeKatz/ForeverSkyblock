@@ -38,6 +38,7 @@ public partial class App : Application
         window.EnableForeverMachineBuilderBindingsPhase5();
         window.EnableForeverMachineBuilderGuiDesignerPhase4();
         window.EnableForeverStudioMultiResourceRecipeAuthoring();
+        window.EnableForeverUnifiedGuiEditorBridge();
         window.EnableForeverMachineBuilderFunctionTemplatesPhase3();
         window.EnableForeverMachineBuilderFunctionToolbarRepair();
         window.EnableForeverMachineBuilderProductionPhase6();
