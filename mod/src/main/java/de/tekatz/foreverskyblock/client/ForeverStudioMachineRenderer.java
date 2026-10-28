@@ -4,18 +4,20 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import de.tekatz.foreverskyblock.studio.runtime.ForeverStudioMachineBlockEntity;
 import de.tekatz.foreverskyblock.studio.runtime.ForeverStudioMachineDefinition;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 
 import java.util.Locale;
 
 /**
- * Generic renderer for Studio-generated machine blocks. Runtime machines use ENTITYBLOCK_ANIMATED,
- * so this renderer owns the real baked block model and authored transforms never double-render it.
- * The runtime contract retains target component ids; until the model compiler emits split baked
- * component models, authored transforms compose on the generated machine model as one unit.
+ * Generic renderer for Studio-generated machine blocks. New runtime builds expose independently
+ * baked component models, so authored transforms affect only their target component. Older runtime
+ * outputs without a component manifest retain the monolithic fallback for backwards compatibility.
  */
 public final class ForeverStudioMachineRenderer implements BlockEntityRenderer<ForeverStudioMachineBlockEntity> {
     private final BlockRenderDispatcher blocks;
@@ -27,6 +29,42 @@ public final class ForeverStudioMachineRenderer implements BlockEntityRenderer<F
     @Override
     public void render(ForeverStudioMachineBlockEntity machine, float partialTick, PoseStack poses,
                        MultiBufferSource buffers, int packedLight, int packedOverlay) {
+        var components = ForeverStudioMachineComponentModels.modelsFor(machine.machineId());
+        if (components.isEmpty()) {
+            renderLegacy(machine, poses, buffers, packedLight, packedOverlay);
+            return;
+        }
+
+        var synced = ForeverStudioMachineClientState.get(machine.getBlockPos()).orElse(null);
+        for (var component : components) {
+            poses.pushPose();
+            boolean visible = true;
+            for (int index = 0; index < machine.definition().animations().size(); index++) {
+                ForeverStudioMachineDefinition.AnimationDefinition animation = machine.definition().animations().get(index);
+                if (!animation.targetComponent().equalsIgnoreCase(component.id())) continue;
+                double phase = synced == null ? machine.animationPhase(index) : synced.animationPhase(index);
+                if (!apply(poses, animation, phase)) {
+                    visible = false;
+                    break;
+                }
+            }
+            if (visible) renderComponent(machine, component, poses, buffers, packedLight, packedOverlay);
+            poses.popPose();
+        }
+    }
+
+    private void renderComponent(ForeverStudioMachineBlockEntity machine,
+                                 ForeverStudioMachineComponentModels.ComponentModel component,
+                                 PoseStack poses, MultiBufferSource buffers, int packedLight, int packedOverlay) {
+        var model = Minecraft.getInstance().getModelManager()
+                .getModel(ModelResourceLocation.standalone(component.model()));
+        blocks.getModelRenderer().renderModel(
+                poses.last(), buffers.getBuffer(RenderType.cutout()), machine.getBlockState(), model,
+                1.0F, 1.0F, 1.0F, packedLight, packedOverlay);
+    }
+
+    private void renderLegacy(ForeverStudioMachineBlockEntity machine, PoseStack poses,
+                              MultiBufferSource buffers, int packedLight, int packedOverlay) {
         var synced = ForeverStudioMachineClientState.get(machine.getBlockPos()).orElse(null);
         poses.pushPose();
         boolean visible = true;
