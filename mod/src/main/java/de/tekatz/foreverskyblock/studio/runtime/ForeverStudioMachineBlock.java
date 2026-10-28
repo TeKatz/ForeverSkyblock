@@ -1,6 +1,7 @@
 package de.tekatz.foreverskyblock.studio.runtime;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionResult;
@@ -8,12 +9,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 /** Generic registered block used by every runtime-capable machine emitted by Forever Studio. */
@@ -27,6 +28,10 @@ public final class ForeverStudioMachineBlock extends Block implements EntityBloc
 
     public ResourceLocation machineId() { return machineId; }
 
+    @Override protected RenderShape getRenderShape(BlockState state) {
+        return RenderShape.ENTITYBLOCK_ANIMATED;
+    }
+
     @Override public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new ForeverStudioMachineBlockEntity(pos, state);
     }
@@ -35,14 +40,25 @@ public final class ForeverStudioMachineBlock extends Block implements EntityBloc
             Level level, BlockState state, BlockEntityType<T> type) {
         if (level.isClientSide || type != de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get())
             return null;
-        return (tickerLevel, pos, tickerState, blockEntity) ->
-                ForeverStudioMachineBlockEntity.tick(tickerLevel, pos, tickerState, (ForeverStudioMachineBlockEntity) blockEntity);
+        return (tickerLevel, pos, tickerState, blockEntity) -> {
+            ForeverStudioMachineBlockEntity machine = (ForeverStudioMachineBlockEntity) blockEntity;
+            ForeverStudioMachineBlockEntity.tick(tickerLevel, pos, tickerState, machine);
+            de.tekatz.foreverskyblock.network.ForeverStudioMachineNetwork.tick(machine);
+        };
+    }
+
+    @Override protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
+                                             BlockPos neighborPos, boolean movedByPiston) {
+        if (!level.isClientSide && level.getBlockEntity(pos) instanceof ForeverStudioMachineBlockEntity machine)
+            ForeverStudioGraphSignals.markNeighborChanged(machine);
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
     }
 
     @Override protected InteractionResult useWithoutItem(
             BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
                 && level.getBlockEntity(pos) instanceof ForeverStudioMachineBlockEntity machine) {
+            machine.markPlayerUse();
             serverPlayer.openMenu(machine, buffer -> buffer.writeUtf(machine.machineId().toString(), 256));
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
@@ -51,9 +67,8 @@ public final class ForeverStudioMachineBlock extends Block implements EntityBloc
     @Override protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
         if (!level.isClientSide && !state.is(newState.getBlock())
                 && level.getBlockEntity(pos) instanceof ForeverStudioMachineBlockEntity machine) {
-            for (int slot = 0; slot < machine.inventory().getSlots(); slot++) {
+            for (int slot = 0; slot < machine.inventory().getSlots(); slot++)
                 ItemStackDrop.drop(level, pos, machine.inventory().getStackInSlot(slot));
-            }
         }
         super.onRemove(state, level, pos, newState, moving);
     }

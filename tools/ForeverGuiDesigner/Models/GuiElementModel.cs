@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ForeverGuiDesigner.Models;
@@ -43,6 +44,11 @@ public sealed class GuiElementModel
     public int? EditorZIndexOverride { get; set; }
     public bool EditorCustomTextureOverride { get; set; }
 
+    // Preserve fields introduced by newer shared-contract/editor revisions. This makes a
+    // legacy-layout open/save cycle non-destructive even before every new field has UI support.
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+
     // Runtime-only classification used to distinguish source-backed controls from
     // ordinary editor-created elements. Reconstructed after load/undo as needed.
     [JsonIgnore]
@@ -75,6 +81,10 @@ public sealed class GuiElementModel
             EditorTextOverride = EditorTextOverride,
             EditorZIndexOverride = EditorZIndexOverride,
             EditorCustomTextureOverride = EditorCustomTextureOverride,
+            ExtensionData = ExtensionData?.ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value.Clone(),
+                StringComparer.Ordinal),
             EditorSourceOwned = EditorSourceOwned
         };
     }

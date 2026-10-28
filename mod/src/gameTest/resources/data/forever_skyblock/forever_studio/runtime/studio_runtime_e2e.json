@@ -1,25 +1,39 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "machine": "forever_skyblock:studio_runtime_e2e",
   "displayName": "Studio Runtime E2E",
   "processor": {
     "nodeId": "processor",
-    "kind": "standard",
+    "kind": "fluid",
     "powered": false
   },
   "inventory": [
     {
-      "nodeId": "input",
+      "nodeId": "input_a",
       "role": "input",
       "slot": 0,
-      "x": 44,
+      "x": 26,
       "y": 35
     },
     {
-      "nodeId": "output",
-      "role": "output",
+      "nodeId": "input_b",
+      "role": "input",
       "slot": 1,
-      "x": 116,
+      "x": 48,
+      "y": 35
+    },
+    {
+      "nodeId": "output_a",
+      "role": "output",
+      "slot": 2,
+      "x": 108,
+      "y": 35
+    },
+    {
+      "nodeId": "output_b",
+      "role": "output",
+      "slot": 3,
+      "x": 130,
       "y": 35
     }
   ],
@@ -28,9 +42,145 @@
     "capacity": 0,
     "maxReceive": 0
   },
+  "fluids": [
+    {
+      "nodeId": "water_tank",
+      "tank": 0,
+      "capacity": 4000,
+      "maxFill": 1000,
+      "maxDrain": 1000
+    }
+  ],
+  "graph": {
+    "states": [
+      {
+        "id": "idle",
+        "initial": true
+      },
+      {
+        "id": "active",
+        "initial": false
+      }
+    ],
+    "nodes": [
+      {
+        "id": "machine_entry",
+        "kind": "core.machine-entry",
+        "properties": {}
+      },
+      {
+        "id": "processor",
+        "kind": "function.fluid-processor",
+        "properties": {}
+      },
+      {
+        "id": "input_a",
+        "kind": "function.item-input",
+        "properties": {}
+      },
+      {
+        "id": "input_b",
+        "kind": "function.item-input",
+        "properties": {}
+      },
+      {
+        "id": "output_a",
+        "kind": "function.item-storage",
+        "properties": {}
+      },
+      {
+        "id": "output_b",
+        "kind": "function.item-storage",
+        "properties": {}
+      },
+      {
+        "id": "water_tank",
+        "kind": "function.fluid-tank",
+        "properties": {
+          "capacity": 4000
+        }
+      },
+      {
+        "id": "find_recipe",
+        "kind": "function.find-recipe",
+        "properties": {}
+      },
+      {
+        "id": "output_space",
+        "kind": "function.output-space",
+        "properties": {}
+      },
+      {
+        "id": "has_fluid",
+        "kind": "function.has-fluid",
+        "properties": {}
+      }
+    ],
+    "connections": [
+      {
+        "id": "entry_processor",
+        "fromNode": "machine_entry",
+        "fromPort": "flow",
+        "toNode": "processor",
+        "toPort": "flow-in"
+      },
+      {
+        "id": "find_output_space",
+        "fromNode": "find_recipe",
+        "fromPort": "recipe",
+        "toNode": "output_space",
+        "toPort": "recipe"
+      },
+      {
+        "id": "tank_has_fluid",
+        "fromNode": "water_tank",
+        "fromPort": "fluid",
+        "toNode": "has_fluid",
+        "toPort": "fluid"
+      }
+    ]
+  },
+  "animations": [
+    {
+      "id": "progress_motion",
+      "preset": "animation.follow-progress",
+      "targetComponent": "housing",
+      "sourceNode": "processor",
+      "sourcePort": "progress",
+      "axis": "y",
+      "scale": 1.0
+    }
+  ],
   "gui": {
     "width": 176,
     "height": 166,
-    "widgets": []
+    "widgets": [
+      {
+        "id": "progress",
+        "type": "progress-bar",
+        "sourceNode": "processor",
+        "sourcePort": "progress",
+        "label": "Progress",
+        "x": 74,
+        "y": 38,
+        "width": 28,
+        "height": 8,
+        "slot": -1,
+        "tank": -1
+      },
+      {
+        "id": "water",
+        "type": "fluid-gauge",
+        "sourceNode": "water_tank",
+        "sourcePort": "ratio",
+        "label": "Water",
+        "x": 80,
+        "y": 56,
+        "width": 12,
+        "height": 40,
+        "slot": -1,
+        "tank": 0
+      }
+    ]
   }
 }

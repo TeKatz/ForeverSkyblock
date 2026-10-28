@@ -54,6 +54,7 @@ public final class ForeverStudioGeneratedMachines {
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, MACHINE_BLOCK_ENTITY.get(), ForeverStudioMachineBlockEntity::itemAutomation);
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, MACHINE_BLOCK_ENTITY.get(), ForeverStudioMachineBlockEntity::energyAutomation);
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, MACHINE_BLOCK_ENTITY.get(), ForeverStudioMachineBlockEntity::fluidAutomation);
     }
 
     private static void addCreativeContents(BuildCreativeModeTabContentsEvent event) {

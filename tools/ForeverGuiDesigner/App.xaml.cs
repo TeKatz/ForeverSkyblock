@@ -37,9 +37,16 @@ public partial class App : Application
         window.EnableForeverMachineBuilderFunctionGraphPhase4();
         window.EnableForeverMachineBuilderBindingsPhase5();
         window.EnableForeverMachineBuilderGuiDesignerPhase4();
+        window.EnableForeverStudioMultiResourceRecipeAuthoring();
+        window.EnableForeverUnifiedGuiEditorBridge();
+        window.EnableForeverUnifiedGuiBindingInspector();
+        window.EnableForeverUnifiedGuiMachineAssetPalette();
+        window.EnableForeverUnifiedMachineGuiPreview();
+        window.EnableForeverUnifiedGuiStyleEffects();
         window.EnableForeverMachineBuilderFunctionTemplatesPhase3();
         window.EnableForeverMachineBuilderFunctionToolbarRepair();
         window.EnableForeverMachineBuilderProductionPhase6();
+        window.EnableForeverMachineBuilderModBuild();
         window.EnableForeverMachineBuilderUxPolish();
         window.EnableForeverMachineBuilderButtonStabilityFix();
         window.EnableForeverBlockModelViewer();
