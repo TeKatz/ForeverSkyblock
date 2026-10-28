@@ -45,6 +45,7 @@ public static class ForeverStudioMachineCompilerService
                 Issues = runtime.Issues.Concat(supportIssues).ToList()
             };
         var normalized = ForeverStudioRuntimePlanFixup.Normalize(repoRoot, document, runtime);
+        normalized = ForeverStudioGuiRuntimePlanFixup.Normalize(repoRoot, document, normalized);
         normalized = ForeverStudioRuntimeComponentModelFixup.Normalize(repoRoot, document, catalog, normalized);
         return NormalizeGeneratedRegistryBridge(repoRoot, normalized);
     }
