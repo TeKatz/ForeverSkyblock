@@ -38,7 +38,8 @@ final class ForeverStudioGuiPresentation {
     }
 
     record ElementPresentation(JsonObject style, List<Effect> effects) {
-        static final ElementPresentation EMPTY = new(new JsonObject(), List.of());
+        static final ElementPresentation EMPTY =
+                new ElementPresentation(new JsonObject(), List.of());
 
         double opacity() {
             if (!style.has("opacity") || !style.get("opacity").isJsonPrimitive()) return 1.0;
@@ -63,7 +64,8 @@ final class ForeverStudioGuiPresentation {
         }
     }
 
-    private static final ForeverStudioGuiPresentation EMPTY = new(Map.of());
+    private static final ForeverStudioGuiPresentation EMPTY =
+            new ForeverStudioGuiPresentation(Map.of());
     private static final Map<ResourceLocation, ForeverStudioGuiPresentation> CACHE = new ConcurrentHashMap<>();
 
     private final Map<String, ElementPresentation> elements;
