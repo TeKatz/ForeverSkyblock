@@ -106,7 +106,7 @@ internal static class ForeverStudioGuiRuntimePlanFixup
         var text = JsonSerializer.Serialize(new Dictionary<string, object?>
         {
             ["schemaVersion"] = SchemaVersion,
-            ["machine"] = $"{document.Namespace}:{document.AssetId}",
+            ["machine"] = $"forever_skyblock:{document.AssetId}",
             ["elements"] = elements
         }, new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine;
         var normalized = NormalizeNewlines(text);
