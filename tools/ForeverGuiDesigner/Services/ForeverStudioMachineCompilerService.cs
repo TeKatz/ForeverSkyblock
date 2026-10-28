@@ -23,6 +23,13 @@ public static class ForeverStudioMachineCompilerService
             return ForeverStudioMachineProductionService.BuildPlan(repoRoot, document, catalog);
 
         var runtime = ForeverStudioRuntimeCompiler.BuildPlan(repoRoot, document, catalog);
+        var supportIssues = ForeverStudioRuntimeSupportPolicy.Validate(document);
+        if (supportIssues.Count > 0)
+            return runtime with
+            {
+                Changes = [],
+                Issues = runtime.Issues.Concat(supportIssues).ToList()
+            };
         return ForeverStudioRuntimePlanFixup.Normalize(repoRoot, document, runtime);
     }
 
