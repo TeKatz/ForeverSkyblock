@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using ForeverGuiDesigner.Services;
 
 internal static class RepositorySyncContract
@@ -34,7 +35,13 @@ internal static class RepositorySyncContract
             RunGit(seed, "config", "user.name", "Forever Studio Contract");
 
             Write(seed, "mod/src/main/java/de/tekatz/foreverskyblock/ForeverSkyblock.java", "old main\n");
-            Write(seed, "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json", "{\n  \"item.forever_skyblock.fixture\": \"Fixture\"\n}\n");
+            Write(seed, "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json", """
+{
+  "item.forever_skyblock.fixture": "Fixture",
+  "item.forever_skyblock.local_override": "Original",
+  "tooltip.forever_skyblock.formatting": "§aReady"
+}
+""");
             RunGit(seed, "add", ".");
             RunGit(seed, "commit", "-m", "old main");
             RunGit(seed, "remote", "add", "origin", remote);
@@ -48,7 +55,14 @@ public final class ForeverStudioRuntimeContract {
 }
 """);
             Write(seed, "mod/src/main/java/de/tekatz/foreverskyblock/ForeverSkyblock.java", "feature runtime\n");
-            Write(seed, "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json", "{\n  \"item.forever_skyblock.fixture\": \"Feature Fixture\"\n}\n");
+            Write(seed, "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json", """
+{
+  "item.forever_skyblock.fixture": "Feature Fixture",
+  "item.forever_skyblock.local_override": "Original",
+  "tooltip.forever_skyblock.formatting": "§aReady",
+  "item.forever_skyblock.remote_only": "Runtime Feature"
+}
+""");
             RunGit(seed, "add", ".");
             RunGit(seed, "commit", "-m", "runtime feature");
             RunGit(seed, "push", "-u", "origin", ForeverStudioRepositorySyncService.DevelopmentBranch);
@@ -59,16 +73,23 @@ public final class ForeverStudioRuntimeContract {
                 "{\"assetId\":\"redstone\",\"local\":true}\n");
             File.AppendAllText(Path.Combine(work, "mod", "src", "main", "java", "de", "tekatz", "foreverskyblock", "ForeverSkyblock.java"),
                 "        de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines.register(modBus); // Forever Studio generated machines\n");
-            Write(work, "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json",
-                "{\n  \"item.forever_skyblock.fixture\": \"Fixture\",\n  \"block.forever_skyblock.redstone\": \"Redstone\"\n}\n");
+            Write(work, "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json", """
+{
+  "item.forever_skyblock.fixture": "Fixture",
+  "item.forever_skyblock.local_override": "Local Override",
+  "tooltip.forever_skyblock.formatting": "\u00A7aReady",
+  "block.forever_skyblock.redstone": "Redstone"
+}
+""");
             Write(work, "mod/src/main/resources/assets/forever_skyblock/blockstates/redstone.json", "{\"generated\":true}\n");
 
             var inspection = ForeverStudioRepositorySyncService.InspectAsync(
                     work, "redstone", ForeverStudioRepositorySyncService.DevelopmentBranch)
                 .GetAwaiter().GetResult();
-            Check(inspection.CanUpdate, "Studio-only working changes must allow repository sync: " + inspection.Error);
+            Check(inspection.CanUpdate, "Studio output plus mergeable language overrides must allow repository sync: " + inspection.Error);
             Check(inspection.NeedsUpdate, "Old main checkout must require an update to the runtime feature branch.");
-            Check(inspection.ManualChanges.Count == 0, "Studio-owned generated files must not be reported as manual changes.");
+            Check(inspection.ManualChanges.Count == 0,
+                "Mergeable language overrides and Studio-owned generated files must not be reported as manual changes.");
 
             var result = ForeverStudioRepositorySyncService.SynchronizeAsync(
                     work, "redstone", ForeverStudioRepositorySyncService.DevelopmentBranch)
@@ -88,10 +109,24 @@ public final class ForeverStudioRuntimeContract {
                 .Replace("\r\n", "\n", StringComparison.Ordinal);
             Check(runtimeSource == "feature runtime\n",
                 "Remote runtime source must win over stale generated bridge edits.");
-            Check(!File.ReadAllText(Path.Combine(work,
-                    "mod", "src", "main", "resources", "assets", "forever_skyblock", "lang", "en_us.json"))
-                    .Contains("block.forever_skyblock.redstone", StringComparison.Ordinal),
-                "Stale Studio-owned language output must be discarded before regeneration.");
+
+            var languagePath = Path.Combine(work,
+                "mod", "src", "main", "resources", "assets", "forever_skyblock", "lang", "en_us.json");
+            using (var language = JsonDocument.Parse(File.ReadAllText(languagePath)))
+            {
+                var rootElement = language.RootElement;
+                Check(!rootElement.TryGetProperty("block.forever_skyblock.redstone", out _),
+                    "Stale Studio-owned language output must be discarded before regeneration.");
+                Check(rootElement.GetProperty("item.forever_skyblock.local_override").GetString() == "Local Override",
+                    "Local non-Studio language override must survive repository sync.");
+                Check(rootElement.GetProperty("item.forever_skyblock.fixture").GetString() == "Feature Fixture",
+                    "Unmodified local keys must receive the target branch value.");
+                Check(rootElement.GetProperty("item.forever_skyblock.remote_only").GetString() == "Runtime Feature",
+                    "Target-only language keys must survive local override replay.");
+                Check(rootElement.GetProperty("tooltip.forever_skyblock.formatting").GetString() == "§aReady",
+                    "Semantically identical Unicode escaping differences must not create a language override delta.");
+            }
+
             Check(ForeverStudioRuntimeRepositoryContract.Validate(work) is null,
                 "Updated checkout must satisfy the runtime repository contract.");
 
@@ -100,17 +135,16 @@ public final class ForeverStudioRuntimeContract {
                     work, "redstone", ForeverStudioRepositorySyncService.DevelopmentBranch)
                 .GetAwaiter().GetResult();
             Check(blocked.ManualChanges.Any(change => change.Path == "manual-user-file.txt"),
-                "Unknown local files must be classified as manual changes.");
+                "Unknown local files must still be classified as manual changes.");
             File.Delete(Path.Combine(work, "manual-user-file.txt"));
 
-            Write(work, "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json",
-                "{\n  \"item.forever_skyblock.fixture\": \"Manual user edit\"\n}\n");
-            var manualLanguage = ForeverStudioRepositorySyncService.InspectAsync(
+            Write(work, "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json", "{ not-json\n");
+            var malformedLanguage = ForeverStudioRepositorySyncService.InspectAsync(
                     work, "redstone", ForeverStudioRepositorySyncService.DevelopmentBranch)
                 .GetAwaiter().GetResult();
-            Check(manualLanguage.ManualChanges.Any(change =>
+            Check(malformedLanguage.ManualChanges.Any(change =>
                     change.Path == "mod/src/main/resources/assets/forever_skyblock/lang/en_us.json"),
-                "Unrelated language edits must not be discarded as Studio-generated output.");
+                "Malformed language JSON must remain a hard sync blocker.");
         }
         finally
         {
