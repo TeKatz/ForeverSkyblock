@@ -2,9 +2,11 @@ package de.tekatz.foreverskyblock.client;
 
 import de.tekatz.foreverskyblock.ForeverSkyblock;
 import de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines;
+import de.tekatz.foreverskyblock.network.ForeverStudioMachineNetwork;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
@@ -12,6 +14,11 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 @EventBusSubscriber(modid = ForeverSkyblock.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ForeverStudioMachineClientEvents {
     private ForeverStudioMachineClientEvents() { }
+
+    @SubscribeEvent
+    public static void setup(FMLClientSetupEvent event) {
+        event.enqueueWork(() -> ForeverStudioMachineNetwork.setClientReceiver(ForeverStudioMachineClientState::accept));
+    }
 
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
