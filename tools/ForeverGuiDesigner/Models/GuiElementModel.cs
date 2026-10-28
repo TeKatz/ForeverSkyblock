@@ -78,11 +78,12 @@ public sealed class GuiElementModel
             LayerId = LayerId,
             AssetId = AssetId,
             StyleId = StyleId,
-            EffectIds = [.. EffectIds],
-            Properties = Properties.ToDictionary(
+            EffectIds = EffectIds is null ? [] : [.. EffectIds],
+            Properties = Properties?.ToDictionary(
                 pair => pair.Key,
                 pair => pair.Value.Clone(),
-                StringComparer.OrdinalIgnoreCase),
+                StringComparer.OrdinalIgnoreCase)
+                ?? new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase),
             Locked = Locked,
             Group = Group,
             TextShadow = TextShadow,
