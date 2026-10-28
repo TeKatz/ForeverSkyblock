@@ -1,6 +1,7 @@
 package de.tekatz.foreverskyblock.studio.runtime;
 
 import de.tekatz.foreverskyblock.ForeverSkyblock;
+import de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -9,7 +10,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -20,21 +20,17 @@ public final class ForeverStudioMachineRuntimeGameTests {
     private static final ResourceLocation MACHINE_ID =
             ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "studio_runtime_e2e");
 
-    // The fixture is intentionally not registered: GameTest discovery runs after registries freeze, so
-    // creating a new Block would fail. A standalone BlockEntityType is safe, and declaring STONE as
-    // its valid block keeps BlockEntity#setLevel's validity check consistent with the inert state used
-    // by this runtime-only fixture. The explicit machine id still exercises the real Studio definition,
-    // recipe type, processing and persistence contracts.
-    private static final BlockEntityType<ForeverStudioMachineBlockEntity> TEST_BLOCK_ENTITY =
-            BlockEntityType.Builder.<ForeverStudioMachineBlockEntity>of((pos, state) -> null, Blocks.STONE).build(null);
-
     private static void check(GameTestHelper helper, boolean condition, String message) {
         helper.assertTrue(condition, message);
     }
 
     private static ForeverStudioMachineBlockEntity machine(GameTestHelper helper) {
+        // GameTest discovery happens after registries are frozen. Reuse the real Studio
+        // BlockEntityType that NeoForge registered during mod initialization instead of constructing
+        // any registry-backed fixture here. The explicit machine id lets this runtime-only fixture use
+        // an inert vanilla BlockState while still exercising the compiled Studio definition/recipe.
         var machine = new ForeverStudioMachineBlockEntity(
-                TEST_BLOCK_ENTITY,
+                ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get(),
                 helper.absolutePos(POS),
                 Blocks.STONE.defaultBlockState(),
                 MACHINE_ID);
