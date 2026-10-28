@@ -99,6 +99,21 @@
         "properties": {
           "capacity": 4000
         }
+      },
+      {
+        "id": "find_recipe",
+        "kind": "function.find-recipe",
+        "properties": {}
+      },
+      {
+        "id": "output_space",
+        "kind": "function.output-space",
+        "properties": {}
+      },
+      {
+        "id": "has_fluid",
+        "kind": "function.has-fluid",
+        "properties": {}
       }
     ],
     "connections": [
@@ -108,6 +123,20 @@
         "fromPort": "flow",
         "toNode": "processor",
         "toPort": "flow-in"
+      },
+      {
+        "id": "find_output_space",
+        "fromNode": "find_recipe",
+        "fromPort": "recipe",
+        "toNode": "output_space",
+        "toPort": "recipe"
+      },
+      {
+        "id": "tank_has_fluid",
+        "fromNode": "water_tank",
+        "fromPort": "fluid",
+        "toNode": "has_fluid",
+        "toPort": "fluid"
       }
     ]
   },
