@@ -111,6 +111,12 @@ public sealed class ForeverGuiEditorSession
 
     public void MarkDirty() => IsDirty = true;
 
+    public void ReplaceDocument(ForeverGuiDocument document, bool markDirty = true)
+    {
+        Document = document ?? throw new ArgumentNullException(nameof(document));
+        IsDirty = markDirty;
+    }
+
     public IReadOnlyList<ForeverGuiContractIssue> Validate()
         => Context.ValidateDocument(Document);
 
