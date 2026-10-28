@@ -1,6 +1,7 @@
 package de.tekatz.foreverskyblock.studio.runtime;
 
 import de.tekatz.foreverskyblock.ForeverSkyblock;
+import de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -9,7 +10,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -20,21 +20,16 @@ public final class ForeverStudioMachineRuntimeGameTests {
     private static final ResourceLocation MACHINE_ID =
             ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "studio_runtime_e2e");
 
-    // GameTest classes are discovered after vanilla registries have been frozen. Constructing a new
-    // Block here would try to create a new registry-backed holder during static initialization and
-    // crash discovery with "Registry is already frozen". The runtime test does not place its block
-    // entity into the world, so an already-registered vanilla block is the correct inert carrier for
-    // the isolated BlockEntityType and BlockState used by this test.
-    private static final BlockEntityType<ForeverStudioMachineBlockEntity> TEST_BLOCK_ENTITY =
-            BlockEntityType.Builder.<ForeverStudioMachineBlockEntity>of((pos, state) -> null, Blocks.STONE).build(null);
-
     private static void check(GameTestHelper helper, boolean condition, String message) {
         helper.assertTrue(condition, message);
     }
 
     private static ForeverStudioMachineBlockEntity machine(GameTestHelper helper) {
+        // GameTest discovery happens after registries are frozen. Reuse the BlockEntityType that the
+        // mod registered during normal startup instead of constructing any registry-backed test type.
+        // The explicit machine id keeps this fixture independent from a generated Studio block state.
         var machine = new ForeverStudioMachineBlockEntity(
-                TEST_BLOCK_ENTITY,
+                ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get(),
                 helper.absolutePos(POS),
                 Blocks.STONE.defaultBlockState(),
                 MACHINE_ID);
