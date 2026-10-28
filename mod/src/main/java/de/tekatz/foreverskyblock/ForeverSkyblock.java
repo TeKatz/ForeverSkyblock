@@ -167,6 +167,7 @@ public final class ForeverSkyblock {
         RECIPE_TYPES.register(modBus);
         RECIPE_SERIALIZERS.register(modBus);
         de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines.register(modBus);
+        de.tekatz.foreverskyblock.studio.runtime.ForeverStudioRuntimeGameTestFixture.register(modBus);
         modBus.addListener(ForeverSkyblock::addCreativeContents);
         modBus.addListener(ForeverSkyblock::registerCapabilities);
         modBus.addListener(SkillNetwork::register);

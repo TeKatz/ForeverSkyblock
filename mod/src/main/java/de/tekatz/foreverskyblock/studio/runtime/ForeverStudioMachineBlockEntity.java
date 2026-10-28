@@ -62,12 +62,7 @@ public final class ForeverStudioMachineBlockEntity extends BlockEntity implement
         this(ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get(), pos, state, machineIdFromState(state));
     }
 
-    /** Package-private constructor used by tests that supply an explicit machine id. */
-    ForeverStudioMachineBlockEntity(BlockPos pos, BlockState state, ResourceLocation machineId) {
-        this(ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get(), pos, state, machineId);
-    }
-
-    /** Package-private constructor used by GameTests with an isolated, valid test BlockEntityType. */
+    /** Package-private constructor for the registered GameTest fixture. */
     ForeverStudioMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, ResourceLocation machineId) {
         super(type, pos, state);
         this.machineId = machineId;

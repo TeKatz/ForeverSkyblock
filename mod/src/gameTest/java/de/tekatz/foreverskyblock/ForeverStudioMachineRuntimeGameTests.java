@@ -1,12 +1,10 @@
 package de.tekatz.foreverskyblock.studio.runtime;
 
 import de.tekatz.foreverskyblock.ForeverSkyblock;
-import de.tekatz.foreverskyblock.generated.ForeverStudioGeneratedMachines;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -17,25 +15,13 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class ForeverStudioMachineRuntimeGameTests {
     private static final BlockPos POS = new BlockPos(2, 2, 2);
-    private static final ResourceLocation MACHINE_ID =
-            ResourceLocation.fromNamespaceAndPath(ForeverSkyblock.MOD_ID, "studio_runtime_e2e");
-
     private static void check(GameTestHelper helper, boolean condition, String message) {
         helper.assertTrue(condition, message);
     }
 
     private static ForeverStudioMachineBlockEntity machine(GameTestHelper helper) {
-        // GameTest discovery happens after registries are frozen. Reuse the real Studio
-        // BlockEntityType that NeoForge registered during mod initialization instead of constructing
-        // any registry-backed fixture here. The explicit machine id lets this runtime-only fixture use
-        // an inert vanilla BlockState while still exercising the compiled Studio definition/recipe.
-        var machine = new ForeverStudioMachineBlockEntity(
-                ForeverStudioGeneratedMachines.MACHINE_BLOCK_ENTITY.get(),
-                helper.absolutePos(POS),
-                Blocks.STONE.defaultBlockState(),
-                MACHINE_ID);
-        machine.setLevel(helper.getLevel());
-        return machine;
+        helper.setBlock(POS, ForeverStudioRuntimeGameTestFixture.MACHINE_BLOCK.get());
+        return helper.getBlockEntity(POS);
     }
 
     private static void tick(GameTestHelper helper, ForeverStudioMachineBlockEntity machine, int count) {
@@ -68,6 +54,7 @@ public final class ForeverStudioMachineRuntimeGameTests {
         check(helper, savedProgress == 45,
                 "Studio runtime save data must contain the exact partial progress");
 
+        helper.setBlock(POS, Blocks.AIR);
         var restored = machine(helper);
         restored.loadAdditional(snapshot, registries);
         check(helper, restored.menuData().get(0) == savedProgress,
