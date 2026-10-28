@@ -116,17 +116,17 @@ public partial class MainWindow
             case "progress-bar":
                 border.Background = Brush("#202B31");
                 border.BorderBrush = Brush("#40535C");
-                border.Child = UnifiedMachineMeter(preview, vertical: false, "#4EB8BC");
+                border.Child = UnifiedMachineMeter(preview, vertical: false, "#4EB8BC", border.Width, border.Height);
                 break;
             case "energy-bar":
                 border.Background = Brush("#202B31");
                 border.BorderBrush = Brush("#40535C");
-                border.Child = UnifiedMachineMeter(preview, vertical: true, "#B58BDA");
+                border.Child = UnifiedMachineMeter(preview, vertical: true, "#B58BDA", border.Width, border.Height);
                 break;
             case "fluid-gauge":
                 border.Background = Brush("#202B31");
                 border.BorderBrush = Brush("#40535C");
-                border.Child = UnifiedMachineMeter(preview, vertical: true, "#4E9DD4");
+                border.Child = UnifiedMachineMeter(preview, vertical: true, "#4E9DD4", border.Width, border.Height);
                 break;
             case "status":
                 border.Background = Brush("#10171B");
@@ -157,7 +157,12 @@ public partial class MainWindow
         }
     }
 
-    private static FrameworkElement UnifiedMachineMeter(string preview, bool vertical, string fillColor)
+    private static FrameworkElement UnifiedMachineMeter(
+        string preview,
+        bool vertical,
+        string fillColor,
+        double width,
+        double height)
     {
         var ratio = ParseUnifiedPreviewRatio(preview);
         var grid = new Grid { Background = Brush("#11181C"), Margin = new Thickness(1) };
@@ -168,9 +173,9 @@ public partial class MainWindow
             VerticalAlignment = vertical ? VerticalAlignment.Bottom : VerticalAlignment.Stretch
         };
         if (vertical)
-            fill.Height = Math.Max(1, 48 * ratio);
+            fill.Height = Math.Max(1, Math.Max(1, height - 4) * ratio);
         else
-            fill.Width = Math.Max(1, 46 * ratio);
+            fill.Width = Math.Max(1, Math.Max(1, width - 4) * ratio);
         grid.Children.Add(fill);
         return grid;
     }
@@ -180,7 +185,7 @@ public partial class MainWindow
         var parts = preview.Split('|', 2, StringSplitOptions.TrimEntries);
         var item = parts.Length > 0 && !string.IsNullOrWhiteSpace(parts[0]) ? parts[0] : "item";
         var count = parts.Length > 1 && !string.IsNullOrWhiteSpace(parts[1]) ? parts[1] : "1";
-        var path = item.Contains(':', StringComparison.Ordinal) ? item[(item.IndexOf(':') + 1)..] : item;
+        var path = item.Contains(':') ? item[(item.IndexOf(':') + 1)..] : item;
         var words = path.Split(['_', '/', '-'], StringSplitOptions.RemoveEmptyEntries);
         var abbreviation = words.Length == 0
             ? "?"
