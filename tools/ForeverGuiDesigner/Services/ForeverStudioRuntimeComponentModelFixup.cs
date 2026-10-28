@@ -45,17 +45,23 @@ internal static class ForeverStudioRuntimeComponentModelFixup
             AddChange(changes, root, ForeverStudioMachineProductionChangeKind.BlockModel, relativePath,
                 $"Compile Studio component '{group.Key}' into an independently renderable baked model.",
                 SerializeBlockModel(model, group.Select(value => value.index)));
+
+            var component = document.Components.FirstOrDefault(candidate => candidate.Id.Equals(group.Key, StringComparison.OrdinalIgnoreCase));
+            var pivot = component is null
+                ? new[] { 8d, 8d, 8d }
+                : ForeverStudioVisualAssemblyService.ReadVector(component, "pivot", [8d, 8d, 8d]);
             entries.Add(new Dictionary<string, object?>
             {
                 ["id"] = group.Key,
-                ["model"] = $"forever_skyblock:block/forever_studio/components/{document.AssetId}/{modelKey}"
+                ["model"] = $"forever_skyblock:block/forever_studio/components/{document.AssetId}/{modelKey}",
+                ["pivot"] = pivot.Select(value => value / 16.0).ToArray()
             });
         }
 
         var componentManifestPath = $"mod/src/main/resources/assets/forever_skyblock/forever_studio/components/{document.AssetId}.json";
         intended.Add(componentManifestPath);
         AddChange(changes, root, ForeverStudioMachineProductionChangeKind.BuildManifest, componentManifestPath,
-            "Map authored component ids to independently baked runtime models.",
+            "Map authored component ids and pivots to independently baked runtime models.",
             Json(new Dictionary<string, object?>
             {
                 ["schemaVersion"] = 1,
@@ -63,7 +69,7 @@ internal static class ForeverStudioRuntimeComponentModelFixup
                 ["components"] = entries
             }));
 
-        AddStaleComponentDeletes(changes, root, document.AssetId, currentComponentPaths, componentManifestPath);
+        AddStaleComponentDeletes(changes, root, document.AssetId, currentComponentPaths);
         ReplaceOwnershipManifest(changes, root, document, intended);
         return plan with { Changes = changes };
     }
@@ -132,7 +138,7 @@ internal static class ForeverStudioRuntimeComponentModelFixup
     }
 
     private static void AddStaleComponentDeletes(List<ForeverStudioMachineProductionChange> changes, string root,
-        string assetId, HashSet<string> currentComponentPaths, string currentManifestPath)
+        string assetId, HashSet<string> currentComponentPaths)
     {
         var ownershipPath = $"mod/src/main/resources/data/forever_skyblock/forever_studio/generated/{assetId}.json";
         var fullOwnership = ResolveRepoPath(root, ownershipPath);
@@ -145,9 +151,7 @@ internal static class ForeverStudioRuntimeComponentModelFixup
             foreach (var item in files.EnumerateArray())
             {
                 if (item.ValueKind != JsonValueKind.String || item.GetString() is not { } path) continue;
-                var staleComponent = path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !currentComponentPaths.Contains(path);
-                var staleManifest = path.Equals(currentManifestPath, StringComparison.OrdinalIgnoreCase) && !File.Exists(ResolveRepoPath(root, currentManifestPath));
-                if (staleComponent || staleManifest)
+                if (path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !currentComponentPaths.Contains(path))
                     AddDelete(changes, root, path, "Remove stale Studio-owned component model output.");
             }
         }
