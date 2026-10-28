@@ -41,6 +41,7 @@ public partial class App : Application
         window.EnableForeverUnifiedGuiEditorBridge();
         window.EnableForeverUnifiedGuiBindingInspector();
         window.EnableForeverUnifiedGuiMachineAssetPalette();
+        window.EnableForeverUnifiedMachineGuiPreview();
         window.EnableForeverMachineBuilderFunctionTemplatesPhase3();
         window.EnableForeverMachineBuilderFunctionToolbarRepair();
         window.EnableForeverMachineBuilderProductionPhase6();
