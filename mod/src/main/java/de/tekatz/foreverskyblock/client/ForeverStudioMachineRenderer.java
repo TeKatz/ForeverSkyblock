@@ -16,8 +16,8 @@ import java.util.Locale;
 
 /**
  * Generic renderer for Studio-generated machine blocks. New runtime builds expose independently
- * baked component models, so authored transforms affect only their target component. Older runtime
- * outputs without a component manifest retain the monolithic fallback for backwards compatibility.
+ * baked component models, so authored transforms affect only their target component and use the
+ * component's authored pivot. Older outputs retain the monolithic fallback for compatibility.
  */
 public final class ForeverStudioMachineRenderer implements BlockEntityRenderer<ForeverStudioMachineBlockEntity> {
     private final BlockRenderDispatcher blocks;
@@ -43,7 +43,7 @@ public final class ForeverStudioMachineRenderer implements BlockEntityRenderer<F
                 ForeverStudioMachineDefinition.AnimationDefinition animation = machine.definition().animations().get(index);
                 if (!animation.targetComponent().equalsIgnoreCase(component.id())) continue;
                 double phase = synced == null ? machine.animationPhase(index) : synced.animationPhase(index);
-                if (!apply(poses, animation, phase)) {
+                if (!apply(poses, animation, phase, component.pivotX(), component.pivotY(), component.pivotZ())) {
                     visible = false;
                     break;
                 }
@@ -71,7 +71,7 @@ public final class ForeverStudioMachineRenderer implements BlockEntityRenderer<F
         for (int index = 0; index < machine.definition().animations().size(); index++) {
             ForeverStudioMachineDefinition.AnimationDefinition animation = machine.definition().animations().get(index);
             double phase = synced == null ? machine.animationPhase(index) : synced.animationPhase(index);
-            if (!apply(poses, animation, phase)) {
+            if (!apply(poses, animation, phase, 0.5, 0.5, 0.5)) {
                 visible = false;
                 break;
             }
@@ -81,7 +81,8 @@ public final class ForeverStudioMachineRenderer implements BlockEntityRenderer<F
         poses.popPose();
     }
 
-    private static boolean apply(PoseStack poses, ForeverStudioMachineDefinition.AnimationDefinition animation, double phase) {
+    private static boolean apply(PoseStack poses, ForeverStudioMachineDefinition.AnimationDefinition animation,
+                                 double phase, double pivotX, double pivotY, double pivotZ) {
         String preset = animation.preset().toLowerCase(Locale.ROOT);
         String axis = animation.axis().toLowerCase(Locale.ROOT);
         double clamped = Math.clamp(phase, 0.0, 1.0);
@@ -91,14 +92,14 @@ public final class ForeverStudioMachineRenderer implements BlockEntityRenderer<F
 
         if (preset.contains("rotate") || preset.contains("spin") || preset.contains("valve") ||
                 preset.contains("mixer") || preset.contains("drill")) {
-            aroundCenter(poses, () -> rotate(poses, axis, (float)(clamped * 360.0)));
+            aroundPivot(poses, pivotX, pivotY, pivotZ, () -> rotate(poses, axis, (float)(clamped * 360.0)));
             return true;
         }
 
         if (preset.contains("scale") || preset.contains("pulse") || preset.contains("heat-glow") ||
                 preset.contains("energy-pulse")) {
             float scale = (float)(1.0 + clamped * 0.12);
-            aroundCenter(poses, () -> poses.scale(scale, scale, scale));
+            aroundPivot(poses, pivotX, pivotY, pivotZ, () -> poses.scale(scale, scale, scale));
             return true;
         }
 
@@ -116,10 +117,10 @@ public final class ForeverStudioMachineRenderer implements BlockEntityRenderer<F
         return true;
     }
 
-    private static void aroundCenter(PoseStack poses, Runnable transform) {
-        poses.translate(0.5, 0.5, 0.5);
+    private static void aroundPivot(PoseStack poses, double x, double y, double z, Runnable transform) {
+        poses.translate(x, y, z);
         transform.run();
-        poses.translate(-0.5, -0.5, -0.5);
+        poses.translate(-x, -y, -z);
     }
 
     private static void rotate(PoseStack poses, String axis, float degrees) {
