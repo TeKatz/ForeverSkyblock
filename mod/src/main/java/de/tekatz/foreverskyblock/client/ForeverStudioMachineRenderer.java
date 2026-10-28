@@ -41,9 +41,13 @@ public final class ForeverStudioMachineRenderer implements BlockEntityRenderer<F
             boolean visible = true;
             for (int index = 0; index < machine.definition().animations().size(); index++) {
                 ForeverStudioMachineDefinition.AnimationDefinition animation = machine.definition().animations().get(index);
-                if (!animation.targetComponent().equalsIgnoreCase(component.id())) continue;
+                boolean rootTarget = animation.targetComponent().equalsIgnoreCase("root");
+                if (!rootTarget && !animation.targetComponent().equalsIgnoreCase(component.id())) continue;
                 double phase = synced == null ? machine.animationPhase(index) : synced.animationPhase(index);
-                if (!apply(poses, animation, phase, component.pivotX(), component.pivotY(), component.pivotZ())) {
+                double pivotX = rootTarget ? 0.5 : component.pivotX();
+                double pivotY = rootTarget ? 0.5 : component.pivotY();
+                double pivotZ = rootTarget ? 0.5 : component.pivotZ();
+                if (!apply(poses, animation, phase, pivotX, pivotY, pivotZ)) {
                     visible = false;
                     break;
                 }
