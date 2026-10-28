@@ -1,12 +1,11 @@
 namespace ForeverGuiDesigner.Models;
 
-public sealed class GuiLayoutModel
+/// <summary>
+/// Backwards-compatible name for the standalone editor document. The canonical contract now lives
+/// in GuiDocument; keeping this derived type avoids breaking older editor code and layout JSON.
+/// </summary>
+public sealed class GuiLayoutModel : GuiDocument
 {
-    public string Name { get; set; } = "Untitled GUI";
-    public int Width { get; set; } = 176;
-    public int Height { get; set; } = 166;
-    public List<GuiElementModel> Elements { get; set; } = [];
-
     public static GuiLayoutModel CreateExample()
     {
         return new GuiLayoutModel
