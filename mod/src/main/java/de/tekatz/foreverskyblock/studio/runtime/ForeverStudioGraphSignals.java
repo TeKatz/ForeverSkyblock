@@ -29,11 +29,13 @@ final class ForeverStudioGraphSignals {
         String semanticState = machine.stateId();
 
         if (state.initialized) {
+            boolean enteredRunning = status == ForeverStudioMachineBlockEntity.RUNNING
+                    && state.status != ForeverStudioMachineBlockEntity.RUNNING;
             state.redstoneChanged = redstone != state.redstone;
-            state.recipeStarted = status == ForeverStudioMachineBlockEntity.RUNNING
-                    && state.status != ForeverStudioMachineBlockEntity.RUNNING
-                    && state.progress == 0 && progress > 0;
-            state.recipeCompleted = state.progress > 0 && progress == 0;
+            state.recipeStarted = enteredRunning && state.progress == 0;
+            state.recipeCompleted = status == ForeverStudioMachineBlockEntity.RUNNING
+                    && ((state.progress > 0 && progress == 0)
+                    || (enteredRunning && state.progress == 0 && progress == 0));
             state.stateEntered = !semanticState.equalsIgnoreCase(state.semanticState);
         } else {
             state.redstoneChanged = false;
