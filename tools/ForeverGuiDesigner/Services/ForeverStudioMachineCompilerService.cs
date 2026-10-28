@@ -30,7 +30,8 @@ public static class ForeverStudioMachineCompilerService
                 Changes = [],
                 Issues = runtime.Issues.Concat(supportIssues).ToList()
             };
-        return ForeverStudioRuntimePlanFixup.Normalize(repoRoot, document, runtime);
+        var normalized = ForeverStudioRuntimePlanFixup.Normalize(repoRoot, document, runtime);
+        return ForeverStudioRuntimeComponentModelFixup.Normalize(repoRoot, document, catalog, normalized);
     }
 
     public static ForeverStudioMachineProductionApplyResult Apply(ForeverStudioMachineProductionPlan plan)
