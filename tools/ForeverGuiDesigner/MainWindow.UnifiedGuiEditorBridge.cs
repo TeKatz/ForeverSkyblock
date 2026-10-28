@@ -24,6 +24,7 @@ public partial class MainWindow
     private bool _unifiedPreviousDirty;
     private int _unifiedPreviousSnapIndex;
     private ForeverMachineTemplate? _unifiedPreviousTemplate;
+    private StudioWorkspace _unifiedPreviousStudioWorkspace = StudioWorkspace.ProjectHome;
     private readonly List<Button> _unifiedDisabledNavigationButtons = [];
 
     public void EnableForeverUnifiedGuiEditorBridge()
@@ -160,6 +161,7 @@ public partial class MainWindow
             _unifiedPreviousDirty = _dirty;
             _unifiedPreviousSnapIndex = SnapCombo.SelectedIndex;
             _unifiedPreviousTemplate = _activeForeverTemplate;
+            _unifiedPreviousStudioWorkspace = _studioWorkspace;
             _unifiedMachineGuiSession = session;
 
             _activeForeverTemplate = null;
@@ -171,7 +173,7 @@ public partial class MainWindow
                 _unifiedGuiContextText.Text = $"MACHINE GUI · {session.Context.DisplayName} · shared document";
             if (_unifiedGuiContextBar is not null)
                 _unifiedGuiContextBar.Visibility = Visibility.Visible;
-            DisableUnifiedGuiProjectNavigation();
+            DisableUnifiedGuiContextSwitching();
 
             if (_studioMachineBuilderWorkspace is not null)
                 _studioMachineBuilderWorkspace.Visibility = Visibility.Collapsed;
@@ -244,6 +246,7 @@ public partial class MainWindow
         var previousDirty = _unifiedPreviousDirty;
         var previousSnapIndex = _unifiedPreviousSnapIndex;
         var previousTemplate = _unifiedPreviousTemplate;
+        var previousWorkspace = _unifiedPreviousStudioWorkspace;
 
         _unifiedMachineGuiSession = null;
         _unifiedPreviousLayoutJson = null;
@@ -264,30 +267,49 @@ public partial class MainWindow
 
         if (_unifiedGuiContextBar is not null)
             _unifiedGuiContextBar.Visibility = Visibility.Collapsed;
-        RestoreUnifiedGuiProjectNavigation();
+        RestoreUnifiedGuiContextSwitching();
         if (_studioGuiWorkspace is not null)
             _studioGuiWorkspace.Visibility = Visibility.Collapsed;
+        _studioWorkspace = previousWorkspace;
         if (_studioMachineBuilderWorkspace is not null)
             _studioMachineBuilderWorkspace.Visibility = Visibility.Visible;
         Title = "Forever Studio — Machine Builder";
     }
 
-    private void DisableUnifiedGuiProjectNavigation()
+    private void DisableUnifiedGuiContextSwitching()
     {
         _unifiedDisabledNavigationButtons.Clear();
         if (_studioGuiWorkspace is null)
             return;
+
         foreach (var button in FindStudioVisualChildren<Button>(_studioGuiWorkspace))
         {
-            if (!button.IsEnabled || !FindStudioVisualChildren<TextBlock>(button)
-                    .Any(text => text.Text.Contains("Project Home", StringComparison.OrdinalIgnoreCase)))
+            if (!button.IsEnabled || !IsUnsafeUnifiedGuiContextButton(button))
                 continue;
             button.IsEnabled = false;
             _unifiedDisabledNavigationButtons.Add(button);
         }
     }
 
-    private void RestoreUnifiedGuiProjectNavigation()
+    private static bool IsUnsafeUnifiedGuiContextButton(Button button)
+    {
+        var text = button.Content as string ??
+                   FindStudioVisualChildren<TextBlock>(button).FirstOrDefault()?.Text ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+        return text.Equals("New", StringComparison.OrdinalIgnoreCase) ||
+               text.Equals("Open", StringComparison.OrdinalIgnoreCase) ||
+               text.Equals("Save", StringComparison.OrdinalIgnoreCase) ||
+               text.Equals("Save As", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("Repo", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("Project Home", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("Load machine", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("Scan project", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("Reload source", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("Review Java", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void RestoreUnifiedGuiContextSwitching()
     {
         foreach (var button in _unifiedDisabledNavigationButtons)
             button.IsEnabled = true;
