@@ -184,9 +184,9 @@ public static class ForeverStudioGradleService
         started.Stop();
 
         var wasCancelled = Volatile.Read(ref cancelled) != 0 || cancellationToken.IsCancellationRequested;
-        var jars = operation == ForeverStudioGradleOperation.BuildModJar && process.ExitCode == 0 && !wasCancelled
+        IReadOnlyList<string> jars = operation == ForeverStudioGradleOperation.BuildModJar && process.ExitCode == 0 && !wasCancelled
             ? FindBuiltJars(repoRoot)
-            : [];
+            : Array.Empty<string>();
         return new ForeverStudioGradleResult(
             operation,
             process.ExitCode,
