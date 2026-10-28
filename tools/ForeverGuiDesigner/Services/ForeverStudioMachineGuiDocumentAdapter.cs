@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using ForeverGuiDesigner.Models;
 
@@ -11,7 +10,45 @@ namespace ForeverGuiDesigner.Services;
 /// </summary>
 public static class ForeverStudioMachineGuiDocumentAdapter
 {
+    public const string ExtensionKey = "guiDocument";
     private const string MainLayerId = "machine-main";
+
+    /// <summary>
+    /// Loads the authoritative shared GUI document from the Machine Project. Older projects that do
+    /// not have one yet are migrated in memory from the legacy Gui.Bindings projection.
+    /// </summary>
+    public static GuiDocument LoadAuthoringDocument(ForeverStudioMachineDocument machine)
+    {
+        ArgumentNullException.ThrowIfNull(machine);
+        if (machine.ExtensionData is not null &&
+            machine.ExtensionData.TryGetValue(ExtensionKey, out var json) &&
+            json.ValueKind == JsonValueKind.Object)
+        {
+            var document = GuiDocumentContract.Deserialize(json.GetRawText());
+            if (string.IsNullOrWhiteSpace(document.Name))
+                document.Name = string.IsNullOrWhiteSpace(machine.DisplayName) ? machine.AssetId : machine.DisplayName;
+            return document;
+        }
+
+        return Capture(machine);
+    }
+
+    /// <summary>
+    /// Persists the shared authoring document without changing the Machine Project schema version.
+    /// JsonExtensionData makes this additive and keeps older project readers compatible. The legacy
+    /// binding list is refreshed in the same operation so the existing production compiler remains
+    /// functional during the GUI-engine migration.
+    /// </summary>
+    public static void PersistAuthoringDocument(ForeverStudioMachineDocument machine, GuiDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(machine);
+        ArgumentNullException.ThrowIfNull(document);
+        GuiDocumentContract.Normalize(document);
+        machine.ExtensionData ??= new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+        using var parsed = JsonDocument.Parse(GuiDocumentContract.Serialize(document));
+        machine.ExtensionData[ExtensionKey] = parsed.RootElement.Clone();
+        Apply(machine, document);
+    }
 
     public static GuiDocument Capture(ForeverStudioMachineDocument machine)
     {
