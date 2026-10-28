@@ -16,6 +16,8 @@ public partial class App : Application
             return;
         }
 
+        StudioCrashDiagnostics.Install(this);
+
         var window = new MainWindow();
         window.PrepareStartupPresentation();
         window.EnableForeverStudioFoundation();
@@ -25,6 +27,21 @@ public partial class App : Application
         window.EnableForeverStudioStartScreenPolishV3();
         window.EnableForeverStudioStartScreenPolishV4();
         window.EnableForeverStudioStartScreenPolishV5();
+        window.EnableForeverMachineBuilderFoundation();
+        window.EnableForeverMachineBuilderLibraryPhase2();
+        window.EnableForeverMachineBuilderLibraryPhase2EntryFix();
+        window.EnableForeverMachineBuilderVisualDesignPhase3();
+        window.EnableForeverMachineBuilderVisualDirectManipulationPhase3();
+        window.EnableForeverMachineBuilderAssetExpansionPhase3();
+        window.EnableForeverMachineBuilderAssetBrowserPhase3();
+        window.EnableForeverMachineBuilderFunctionGraphPhase4();
+        window.EnableForeverMachineBuilderBindingsPhase5();
+        window.EnableForeverMachineBuilderGuiDesignerPhase4();
+        window.EnableForeverMachineBuilderFunctionTemplatesPhase3();
+        window.EnableForeverMachineBuilderFunctionToolbarRepair();
+        window.EnableForeverMachineBuilderProductionPhase6();
+        window.EnableForeverMachineBuilderUxPolish();
+        window.EnableForeverMachineBuilderButtonStabilityFix();
         window.EnableForeverBlockModelViewer();
         window.EnableForeverBlockEditorRepositoryReloadFix();
         window.EnableForeverUvTextureEditor();
@@ -37,6 +54,7 @@ public partial class App : Application
         window.EnableForeverMachineBlockEntityPreviewParity();
         window.EnableForeverBlockstateEditor();
         window.EnableForeverReviewValidationApply();
+        window.EnableForeverBlockBuilderCompletion();
         window.EnableForeverAnimationStudio();
         window.EnableForeverAnimationStudioInteraction();
         window.EnableForeverAnimationTimelineStability();
@@ -49,20 +67,19 @@ public partial class App : Application
         window.EnableForeverAnimationDiscreteChannels();
         window.EnableForeverAnimationMaterialEffects();
         window.EnableForeverAnimationMaterialResolver();
-        window.EnableForeverAnimationPhase17CLabels();
         window.EnableForeverAnimationPersistence();
         window.EnableForeverAnimationPersistenceDirtyTracking();
         window.EnableForeverAnimationPersistenceDirtySignals();
         window.EnableForeverAnimationRuntimeTargetAuthoring();
         window.EnableForeverAnimationRuntimeTargetPreview();
         window.EnableForeverAnimationRuntimeTargetRefresh();
-        window.EnableForeverAnimationPhase17DLabels();
         window.EnableForeverAnimationPhase17Q();
         window.EnableForeverAnimationPhase17QWorkflowPolish();
         window.EnableForeverAnimationPhase17QLayoutTuning();
         window.EnableForeverAnimationPhase17QDensityFix();
         window.EnableForeverAnimationPhase17R();
         window.EnableForeverFutureProofRuntimeMetadata();
+        window.EnableForeverDevelopmentPhaseUiCleanup();
         MainWindow = window;
         window.Show();
 
@@ -99,6 +116,7 @@ public partial class App : Application
             window.EnableStartupPresentationHooks();
             window.EnableAttachmentAndResizeFix();
             window.EnableCondenserCombinedAttachmentPolish();
+            window.CleanForeverDevelopmentPhaseUiNow();
         }, DispatcherPriority.ContextIdle);
     }
 }

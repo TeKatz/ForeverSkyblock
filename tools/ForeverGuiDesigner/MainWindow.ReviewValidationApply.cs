@@ -65,7 +65,7 @@ public partial class MainWindow
         List<StudioReviewChange> changes;
         try
         {
-            changes = CollectStudioReviewChanges();
+            changes = CollectStudioCompletedReviewChanges();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
@@ -197,11 +197,12 @@ public partial class MainWindow
         var safetyText = new TextBlock
         {
             Text = errors == 0
-                ? "Apply will re-check every reviewed source hash immediately before writing."
+                ? "Apply stages every payload, re-checks reviewed source hashes, replaces existing files atomically, verifies the written hashes, and rolls back the batch on failure."
                 : "Apply is blocked until all validation errors are resolved.",
             Foreground = Brush(errors == 0 ? "#71848D" : "#E18B8B"),
             FontSize = 10,
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center,
+            TextWrapping = TextWrapping.Wrap
         };
         Grid.SetColumn(safetyText, 0);
         footer.Children.Add(safetyText);
@@ -223,7 +224,7 @@ public partial class MainWindow
 
             try
             {
-                ForeverStudioReviewApplyService.ApplyChanges(changes);
+                ForeverStudioBlockBuilderCompletionService.ApplyChangesAtomically(changes);
                 AcceptStudioAppliedChanges(changes);
                 MessageBox.Show(
                     dialog,
@@ -336,6 +337,7 @@ public partial class MainWindow
 
     private void AcceptStudioAppliedChanges(IReadOnlyList<StudioReviewChange> changes)
     {
+        AcceptStudioBlockBuilderAppliedChanges(changes);
         var appliedPaths = changes.Select(change => Path.GetFullPath(change.FullPath))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -361,8 +363,10 @@ public partial class MainWindow
         // Re-scan after Apply rather than trusting the pre-write typed snapshots. This makes the
         // files on disk the source of truth again and also exercises the roundtrip immediately.
         RefreshStudioBlockCatalog(force: true);
+        AugmentStudioBlockCatalogWithReadOnlyAssets();
         LoadSelectedStudioBlockVariant();
         LoadStudioBlockstateDocument();
+        UpdateStudioBlockstateAuthoringSafety();
         RefreshStudioFaceEditor();
         UpdateStudioModelEditState();
 

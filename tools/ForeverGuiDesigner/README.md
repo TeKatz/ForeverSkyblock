@@ -42,6 +42,22 @@ Use **Repo…** to select the local ForeverSkyblock repository. When the applica
 
 The asset browser scans `mod/src/main/resources/assets/forever_skyblock/textures`, shows decoded PNG previews with nearest-neighbor scaling, and stores repository-relative texture paths.
 
+### Block Builder
+
+The Block Builder works directly against the selected Forever Skyblock repository and keeps edits staged in memory until the explicit review/apply step.
+
+- Scans blockstates and resolves their block-model parent chains and texture references.
+- Provides a 3D model viewport with element selection plus direct move/scale gizmos.
+- Supports element geometry, rotation, face, UV and texture editing with immediate preview updates.
+- Keeps edits for multiple block models staged while switching between block assets instead of discarding the previous model when another block is opened.
+- Supports visual editing of simple `variants` blockstates.
+- Weighted variant arrays and `multipart` blockstates are deliberately read-only. Multipart assets remain browsable through a representative model preview; their conditions, apply lists and weighted alternatives are never rewritten by the simple variant editor.
+- Review collects all staged block models, blockstates and PNG edits for the active repository in one change set.
+- Validation checks model geometry, legal model/blockstate rotations, model and texture targets, UVs, cull faces, tint indices, duplicate variants and generated JSON roundtrips.
+- Apply stages every payload, rechecks reviewed source hashes, atomically replaces existing files with rollback backups, verifies the written SHA-256 values and then reloads the Block Builder from disk.
+
+No Block Builder source file is written by direct viewport, model, UV, texture or blockstate editing. Repository writes only occur after the explicit **Review changes → Apply** confirmation.
+
 ## Forever project integration
 
 1. Select the local ForeverSkyblock repository with **Repo…**.

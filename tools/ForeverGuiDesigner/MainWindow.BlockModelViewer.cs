@@ -327,7 +327,7 @@ public partial class MainWindow
         try
         {
             var model = MinecraftBlockModelPreviewService.LoadResolvedModel(_repoRoot, variant.ModelReference);
-            LoadStudioBlockEditorModel(model, variant.XRotation, variant.YRotation);
+            LoadStudioBlockEditorDocumentModel(model, variant.XRotation, variant.YRotation);
 
             SetBlockViewerText(_studioBlockVariantText, variant.Key);
             SetBlockViewerText(_studioBlockModelText, model.ModelReference);

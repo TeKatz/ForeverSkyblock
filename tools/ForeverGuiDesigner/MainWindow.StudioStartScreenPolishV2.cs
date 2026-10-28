@@ -251,7 +251,7 @@ public partial class MainWindow
         SyncStudioStartUpdateSurfaces();
         _studioStartUpdateMirrorTimer = new DispatcherTimer(DispatcherPriority.Background, Dispatcher)
         {
-            Interval = TimeSpan.FromMilliseconds(250)
+            Interval = TimeSpan.FromMilliseconds(500)
         };
         _studioStartUpdateMirrorTimer.Tick += (_, _) => SyncStudioStartUpdateSurfaces();
         _studioStartUpdateMirrorTimer.Start();
@@ -276,11 +276,18 @@ public partial class MainWindow
         {
             foreach (var surface in _studioStartUpdateSurfaces)
             {
-                surface.Status.Text = statusText;
-                surface.Status.Foreground = statusBrush;
-                SetStudioChromeButtonText(surface.Action, buttonText);
-                surface.Action.IsEnabled = buttonEnabled;
-                surface.Action.Opacity = buttonEnabled ? 1 : 0.62;
+                if (!string.Equals(surface.Status.Text, statusText, StringComparison.Ordinal))
+                    surface.Status.Text = statusText;
+                if (!Equals(surface.Status.Foreground, statusBrush))
+                    surface.Status.Foreground = statusBrush;
+                if (!string.Equals(GetStudioChromeButtonText(surface.Action), buttonText, StringComparison.Ordinal))
+                    SetStudioChromeButtonText(surface.Action, buttonText);
+                if (surface.Action.IsEnabled != buttonEnabled)
+                    surface.Action.IsEnabled = buttonEnabled;
+
+                var targetOpacity = buttonEnabled ? 1d : 0.62d;
+                if (Math.Abs(surface.Action.Opacity - targetOpacity) > 0.001)
+                    surface.Action.Opacity = targetOpacity;
                 if (surface.Channel.SelectedIndex != channelIndex)
                     surface.Channel.SelectedIndex = channelIndex;
             }
@@ -290,6 +297,11 @@ public partial class MainWindow
             _studioStartUpdateChannelSync = false;
         }
     }
+
+    private static string? GetStudioChromeButtonText(Button button)
+        => button.Content is Border { Child: TextBlock label }
+            ? label.Text
+            : button.Content?.ToString();
 
     private static void SetStudioChromeButtonText(Button button, string text)
     {
